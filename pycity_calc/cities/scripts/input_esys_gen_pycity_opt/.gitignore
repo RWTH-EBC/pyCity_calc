@@ -1,0 +1,11 @@
+# Ignore everything
+*
+
+# But not these files...
+!.gitignore
+!city_3_buildings.p
+!city_3_buildings_with_dhw.p
+
+
+# ...even if they are in subdirectories
+!*/

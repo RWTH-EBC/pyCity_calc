@@ -1,0 +1,6 @@
+#  Ignore everything
+*
+
+#  Except
+!.gitignore
+!city_3_buildings.p

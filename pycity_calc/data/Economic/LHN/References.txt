@@ -1,0 +1,7 @@
+KMR_pipe_diameter_cost.txt
+
+Cost reference: http://www.leitfaden-nahwaerme.de/leitfaden/pop_kosten.html
+Piping diameter: http://www.umsicht.fraunhofer.de/content/dam/umsicht/de/dokumente/energie/leitfaden-nahwaerme.pdf
+U-values: C. Beier, S. Bargel, C. Dötsch, LowEx in der Nah- und Fernwärme. Abschlussbericht, 2010.
+
+

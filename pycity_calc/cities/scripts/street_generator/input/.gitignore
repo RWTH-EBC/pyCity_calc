@@ -1,0 +1,15 @@
+# Ignore everything
+*
+
+# But not these files...
+!.gitignore
+!__init__.py
+!street_edges.csv
+!street_edges_cluster.csv
+!street_edges_cluster_simple.csv
+!street_nodes.csv
+!street_nodes_cluster.csv
+!street_nodes_cluster_simple.csv
+
+# ...even if they are in subdirectories
+!*/

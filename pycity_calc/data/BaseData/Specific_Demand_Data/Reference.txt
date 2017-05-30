@@ -1,0 +1,25 @@
+Reference for Spec_demand_non_res:
+Specific energy demand values
+Fraunhofer Institut für System- und Innovationsforschung ISI, 
+Energieverbrauch des Sektors Gewerbe, Handel, Dienstleistungen (GHD) 
+in Deutschland für die Jahre 2007 bis 2010: Endbericht an das 
+Bundesministerium für Wirtschaft und Technologie (BMWi), 2013.
+http://www.isi.fraunhofer.de/isi-media/docs/x/de/publikationen/GHD-Erhebung_Bericht_Energieverbrauch_2006-2010.pdf
+
+Reference for Spec_demand_non_res:
+Thermal SLP profile types according to
+Bundesverband der Energie- und Wasserwirtschaft e. V., 
+BDEW/VKU/GEODELeitfaden Abwicklung von Standardlastprofilen Gas, 2011.
+
+Reference for RWI_res_building_spec_th_demand:
+Electrical SLP profile types according to
+KommEnergie, Standardlastprofile (SLP), available at http://www.kommenergie.de/unser-netz/standardlastprofil/standardlastprofile-slp.html 
+(accessed on June 11, 2014).
+M. Frondel, N. Ritter, Datenauswertung zum Energieverbrauch der privaten Haushalte 
+differenziert nach Gebäudemerkmalen: Sonderauswertung im Auftrag des 
+Bundesministeriums für Verkehr, Bau und Stadtentwicklung (BMVBS), Essen, 2012.
+
+Reference for AGEB_res_building_spec_e_demand:
+Specific electrical demand values for residential buildings according to:
+AG Energiebilanzen e.V., Ausgewählte Effizienzindikatoren 
+zur Energiebilanz Deutschland: Daten für die Jahre von 1990 bis 2012, 2013.

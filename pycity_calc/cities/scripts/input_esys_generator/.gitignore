@@ -1,0 +1,16 @@
+# Ignore everything
+*
+
+# But not these files...
+!.gitignore
+!README_template.txt
+!city_3_buildings_with_networks.p
+!city_3_buildings_w_dhw_stoch_with_networks.p
+!city_3_building_enersys.xlsx
+!city_3_building_enersys.txt
+!city_clust_simple_enersys.xlsx
+!city_clust_simple_enersys.txt
+
+
+# ...even if they are in subdirectories
+!*/

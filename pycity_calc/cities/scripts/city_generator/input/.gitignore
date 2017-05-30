@@ -1,0 +1,19 @@
+# Ignore everything
+*
+
+# But not these files...
+!.gitignore
+!__init__.py
+!city_3_buildings.txt
+!city_3_buildings.xlsx
+!city_clust.txt
+!city_clust.xlsx
+!city_clust_simple.txt
+!city_clust_simple.xlsx
+!city_3_buildings_mixed.txt
+!city_3_buildings_mixed.xlsx
+!city_parameterteaser.txt
+!README.txt
+
+# ...even if they are in subdirectories
+!*/

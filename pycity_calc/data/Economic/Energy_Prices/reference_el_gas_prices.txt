@@ -1,0 +1,5 @@
+Eurostat energy database (Data/Database/Energy/...)
+
+http://ec.europa.eu/eurostat/web/energy/data/database
+
+Gas demand data have been converted from GJ to kWh (1000*1000/3600)

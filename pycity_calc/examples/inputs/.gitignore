@@ -1,0 +1,8 @@
+*
+
+!.gitignore
+!city_example_complex_city_generator.txt
+!city_example_complex_city_generator.xlsx
+!city_vdi_6007_input.p
+!street_edges_example_complex_city_generator.csv
+!street_nodes_example_complex_city_generator.csv

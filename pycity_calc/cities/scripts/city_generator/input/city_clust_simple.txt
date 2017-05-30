@@ -1,0 +1,13 @@
+id	X	Y	building_type	tab_ease_building_net_floor_area	tab_ease_building_build_year	tab_ease_building_mod_year	Annual space heat e demand in kWh	Annual electr. E demand in kWh	Usable pv roof area in m2	Number of apartments	Total number of occupants	Number of floors	Height of floors	with ahu	residential layout	neighbour buildings	attic	cellar	dormer	construction type	method_3_type	method_4_type
+1	-20	130	0	100	1980		15000	2500	30	1	2	2	2.8	0	0	0	1	1	0	0		
+2	-10	70	0	150	1980		22500	4000	30	1	5	2	2.8	0	0	0	1	1	0	0		
+3	-10	50	0	125	1980		18750	3200	30	1	4	2	2.8	0	0	0	1	1	0	0		
+4	10	70	0	100	1980		15000	1700	30	1	2	2	2.8	0	0	0	1	1	0	0		
+5	10	50	0	150	1980		22500	3800	30	1	5	2	2.8	0	0	0	1	1	0	0		
+6	50	70	0	125	1980		56250	10500	30	4	16	3	2.8	0	0	0	3	1	1	0		
+7	50	50	0	100	1980		45000	5700	30	4	12	3	2.8	0	0	0	3	1	1	0		
+8	30	90	0	150	1980		22500	4500	30	1	5	2	2.8	0	0	0	1	1	0	0		
+9	20	30	0	125	1980		18750	3000	30	1	4	2	2.8	0	0	0	1	1	0	0		
+10	50	30	0	100	1980		45000	6000	30	4	8	2	2.8	0	0	0	1	1	0	0		
+11	50	10	0	150	1980		67500	9600	30	4	15	3	2.8	0	0	0	3	1	1	0		
+12	40	-10	0	125	1980		18750	3000	30	1	4	2	2.8	0	0	0	1	1	0	0		

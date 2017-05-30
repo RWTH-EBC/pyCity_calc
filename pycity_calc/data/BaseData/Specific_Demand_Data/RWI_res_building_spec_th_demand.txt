@@ -1,0 +1,7 @@
+Start year	Final year	Specific thermal energy demand in kWh/m2
+1800	1977	162.2
+1978	1983	146.9
+1984	1994	148.1
+1995	2001	133.8
+2002	2008	104.7
+2008	2015	104.7

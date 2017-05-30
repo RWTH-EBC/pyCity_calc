@@ -1,0 +1,10 @@
+# Ignore everything
+*
+
+# But not these files...
+!.gitignore
+!test_lolo_networks.txt
+
+
+# ...even if they are in subdirectories
+!*/

@@ -1,0 +1,6 @@
+Number of persons	Annual electrical energy demand in kWh	Specific electrical demand in kWh/person*a
+1	1856	1856
+2	3082	1541
+3	3918	1306
+4	4633	1158.25
+5	6043	1208.6

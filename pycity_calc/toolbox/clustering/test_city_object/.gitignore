@@ -1,0 +1,11 @@
+# Ignore everything
+*
+
+# But not these files...
+!.gitignore
+!__init__.py
+!city_3_buildings.p
+!test_city.p
+
+# ...even if they are in subdirectories
+!*/
