@@ -170,11 +170,11 @@ def calc_sampling_occ_per_app(nb_samples, method='destatis',
 
     Reference
     ---------
-    Statistisches Bundesamt (Destatis) (2017): Bevölkerung in Deutschland.
-    Online verfügbar unter
+    Statistisches Bundesamt (Destatis) (2017): Bevoelkerung in Deutschland.
+    Online verfuegbar unter
     https://www.destatis.de/DE/ZahlenFakten/Indikatoren/LangeReihen/
     Bevoelkerung/lrbev05.html;jsessionid=4AACC10D2225591EC88C40EDEFB5EDAC.cae2,
-    zuletzt geprüft am 05.04.2017.
+    zuletzt geprueft am 05.04.2017.
     """
     assert method in ['equal', 'destatis']
 
@@ -257,8 +257,8 @@ def calc_sampling_el_demand_per_apartment(nb_samples, nb_persons, type,
             use_dict = dict_mfh
 
         # Select min. and max. possible value
-        minv = use_dict[nb_persons][0]
-        maxv = use_dict[nb_persons][1]
+        minv = use_dict[int(nb_persons)][0]
+        maxv = use_dict[int(nb_persons)][1]
 
         for i in range(nb_samples):
             chosen_val = rd.randint(minv, maxv)
@@ -459,7 +459,7 @@ if __name__ == '__main__':
     # the histogram of the data
     plt.hist(list_usr_airx, bins='auto')
     plt.xlabel('User air exchange rates in 1/h')
-    plt.ylabel('Number of values‚')
+    plt.ylabel('Number of valuesï¿½')
     plt.show()
     plt.close()
 
