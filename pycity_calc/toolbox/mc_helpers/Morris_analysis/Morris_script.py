@@ -20,6 +20,7 @@ import pycity_calc.economic.economic_ann as economic_ann
 import pycity_calc.economic.annuity_calculation as eco_calc
 import pycity_calc.simulation.energy_balance_optimization.energy_balance_building as EBB
 import pycity_calc.economic.calc_CO2_emission as GHG_calc
+import pickle
 
 
 def run_Morris():
@@ -29,203 +30,227 @@ def run_Morris():
     print('Initialisation: Reference City Generation')
     print('***********************************************************************************************************')
 
+    load_city = True
     this_path = os.path.dirname(os.path.abspath(__file__))
 
-    #  # Userinputs
-    #  #----------------------------------------------------------------------
+    if load_city == True: # load pickle City
+        load_path = os.path.join(this_path, 'City_generation', 'output', 'aachen_kronenberg_3_mfh_ref_1.pkl')
+        City = pickle.load(open(load_path, mode='rb'))
 
-    #  Generate environment
-    #  ######################################################
-    print('Parameters:')
-    year = 2010
-    print('year : {}'.format(year))
-    timestep = 3600  # Timestep in seconds
-    print('timestep : {}'.format(timestep))
-    # location = (51.529086, 6.944689)  # (latitude, longitude) of Bottrop
-    location = (50.775346, 6.083887)  # (latitude, longitude) of Aachen
-    print('location : {}'.format(timestep))
-    altitude = 266  # Altitude of location in m (Aachen)
-    print('altitude : {}'.format(altitude))
+        #  Add energy systems to city
+        gen_esys = True  # True - Generate energy networks
+        dhw_dim_esys = True  # Use dhw profiles for esys dimensioning
 
-    #  Weather path
-    try_path = None
-    #  If None, used default TRY (region 5, 2010)
+        #  Path to energy system input file (csv/txt; tab separated)
+        esys_filename = 'test_lolo_esys.txt'
+        esys_path = os.path.join(this_path, 'City_generation', 'input', 'input_esys_generator',
+                                 esys_filename)
+        # Generate energy systems for city district
+        if gen_esys:
+            #  Load energy networks planing data
+            list_esys = City_gen.esysgen.load_enersys_input_data(esys_path)
+
+            #  Generate energy systems
+            City_gen.esysgen.gen_esys_for_city(city=City, list_data=list_esys,
+                                      dhw_scale=dhw_dim_esys)
+
+    else: # Generate City
+
+        #  # Userinputs
+        #  #----------------------------------------------------------------------
+
+        #  Generate environment
+        #  ######################################################
+        print('Parameters:')
+        year = 2010
+        print('year : {}'.format(year))
+        timestep = 3600  # Timestep in seconds
+        print('timestep : {}'.format(timestep))
+        # location = (51.529086, 6.944689)  # (latitude, longitude) of Bottrop
+        location = (50.775346, 6.083887)  # (latitude, longitude) of Aachen
+        print('location : {}'.format(timestep))
+        altitude = 266  # Altitude of location in m (Aachen)
+        print('altitude : {}'.format(altitude))
+
+        #  Weather path
+        try_path = None
+        #  If None, used default TRY (region 5, 2010)
 
 
-    #  Space heating load generation
-    #  ######################################################
-    #  Thermal generation method
-    #  1 - SLP (standardized load profile)
-    #  2 - Load and rescale Modelica simulation profile
-    #  (generated with TRY region 12, 2010)
-    #  3 - VDI 6007 calculation (requires el_gen_method = 2)
+        #  Space heating load generation
+        #  ######################################################
+        #  Thermal generation method
+        #  1 - SLP (standardized load profile)
+        #  2 - Load and rescale Modelica simulation profile
+        #  (generated with TRY region 12, 2010)
+        #  3 - VDI 6007 calculation (requires el_gen_method = 2)
 
-    print('Thermal generation : VDI 6007 calculation')
-    th_gen_method = 3
-    #  For non-residential buildings, SLPs are generated automatically.
+        print('Thermal generation : VDI 6007 calculation')
+        th_gen_method = 3
+        #  For non-residential buildings, SLPs are generated automatically.
 
-    #  Manipulate thermal slp to fit to space heating demand?
-    slp_manipulate = False
-    print('slp manipulation : {}'.format(slp_manipulate))
+        #  Manipulate thermal slp to fit to space heating demand?
+        slp_manipulate = False
+        print('slp manipulation : {}'.format(slp_manipulate))
 
-    #  True - Do manipulation
-    #  False - Use original profile
-    #  Only relevant, if th_gen_method == 1
-    #  Sets thermal power to zero in time spaces, where average daily outdoor
-    #  temperature is equal to or larger than 12 °C. Rescales profile to
-    #  original demand value.
+        #  True - Do manipulation
+        #  False - Use original profile
+        #  Only relevant, if th_gen_method == 1
+        #  Sets thermal power to zero in time spaces, where average daily outdoor
+        #  temperature is equal to or larger than 12 °C. Rescales profile to
+        #  original demand value.
 
-    #  Manipulate vdi space heating load to be normalized to given annual net
-    #  space heating demand in kWh
-    vdi_sh_manipulate = False
-    print('vdi manipulation : {}'.format(vdi_sh_manipulate))
+        #  Manipulate vdi space heating load to be normalized to given annual net
+        #  space heating demand in kWh
+        vdi_sh_manipulate = False
+        print('vdi manipulation : {}'.format(vdi_sh_manipulate))
 
-    #  Electrical load generation
-    #  ######################################################
-    #  Choose electric load profile generation method (1 - SLP; 2 - Stochastic)
-    #  Stochastic profile is only generated for residential buildings,
-    #  which have a defined number of occupants (otherwise, SLP is used)
-    print('Electrical load generation : Stochastic method')
+        #  Electrical load generation
+        #  ######################################################
+        #  Choose electric load profile generation method (1 - SLP; 2 - Stochastic)
+        #  Stochastic profile is only generated for residential buildings,
+        #  which have a defined number of occupants (otherwise, SLP is used)
+        print('Electrical load generation : Stochastic method')
 
-    el_gen_method = 2
-    #  If user defines method_3_nb or method_4_nb within input file
-    #  (only valid for non-residential buildings), SLP will not be used.
-    #  Instead, corresponding profile will be loaded (based on measurement
-    #  data, see ElectricalDemand.py within pycity)
+        el_gen_method = 2
+        #  If user defines method_3_nb or method_4_nb within input file
+        #  (only valid for non-residential buildings), SLP will not be used.
+        #  Instead, corresponding profile will be loaded (based on measurement
+        #  data, see ElectricalDemand.py within pycity)
 
-    #  Do normalization of el. load profile
-    #  (only relevant for el_gen_method=2).
-    #  Rescales el. load profile to expected annual el. demand value in kWh
-    do_normalization = False
-    print('normalisation of el.load : {}'.format(do_normalization))
+        #  Do normalization of el. load profile
+        #  (only relevant for el_gen_method=2).
+        #  Rescales el. load profile to expected annual el. demand value in kWh
+        do_normalization = False
+        print('normalisation of el.load : {}'.format(do_normalization))
 
-    #  Randomize electrical demand value (residential buildings, only)
-    el_random = False
-    print('randomization electrical demand value : {}'.format(el_random))
+        #  Randomize electrical demand value (residential buildings, only)
+        el_random = False
+        print('randomization electrical demand value : {}'.format(el_random))
 
-    #  Prevent usage of electrical heating and hot water devices in
-    #  electrical load generation
-    prev_heat_dev = True
-    #  True: Prevent electrical heating device usage for profile generation
-    #  False: Include electrical heating devices in electrical load generation
-    print(' Prevent usage of electrical heating and hot water devices in electrical load generation : {}'.format(prev_heat_dev))
+        #  Prevent usage of electrical heating and hot water devices in
+        #  electrical load generation
+        prev_heat_dev = True
+        #  True: Prevent electrical heating device usage for profile generation
+        #  False: Include electrical heating devices in electrical load generation
+        print(' Prevent usage of electrical heating and hot water devices in electrical load generation : {}'.format(prev_heat_dev))
 
-    #  Use cosine function to increase winter lighting usage and reduce
-    #  summer lighting usage in richardson el. load profiles
-    #  season_mod is factor, which is used to rescale cosine wave with
-    #  lighting power reference (max. lighting power)
-    season_mod = 0.3
-    print('season mod : {}'.format(season_mod))
-    #  If None, do not use cosine wave to estimate seasonal influence
-    #  Else: Define float
-    #  (only relevant if el_gen_method == 2)
+        #  Use cosine function to increase winter lighting usage and reduce
+        #  summer lighting usage in richardson el. load profiles
+        #  season_mod is factor, which is used to rescale cosine wave with
+        #  lighting power reference (max. lighting power)
+        season_mod = 0.3
+        print('season mod : {}'.format(season_mod))
+        #  If None, do not use cosine wave to estimate seasonal influence
+        #  Else: Define float
+        #  (only relevant if el_gen_method == 2)
 
-    #  Hot water profile generation
-    #  ######################################################
-    #  Generate DHW profiles? (True/False)
-    use_dhw = True  # Only relevant for residential buildings
+        #  Hot water profile generation
+        #  ######################################################
+        #  Generate DHW profiles? (True/False)
+        use_dhw = True  # Only relevant for residential buildings
 
-    #  DHW generation method? (1 - Annex 42; 2 - Stochastic profiles)
-    #  Choice of Annex 42 profiles NOT recommended for multiple builings,
-    #  as profile stays the same and only changes scaling.
-    #  Stochastic profiles require defined nb of occupants per residential
-    #  building
-    dhw_method = 2  # Only relevant for residential buildings
-    print('DHW generation method : Stochastic method')
+        #  DHW generation method? (1 - Annex 42; 2 - Stochastic profiles)
+        #  Choice of Annex 42 profiles NOT recommended for multiple builings,
+        #  as profile stays the same and only changes scaling.
+        #  Stochastic profiles require defined nb of occupants per residential
+        #  building
+        dhw_method = 2  # Only relevant for residential buildings
+        print('DHW generation method : Stochastic method')
 
-    #  Define dhw volume per person and day (use_dhw=True)
-    dhw_volumen = 64  # Only relevant for residential buildings
-    print('dhw volumen : {}'.format(dhw_method))
+        #  Define dhw volume per person and day (use_dhw=True)
+        dhw_volumen = 64  # Only relevant for residential buildings
+        print('dhw volumen : {}'.format(dhw_method))
 
-    #  Randomize choosen dhw_volume reference value by selecting new value
-    #  from gaussian distribution with 20 % standard deviation
-    dhw_random = False
-    print('randomization dhw volume reference : {}'.format(dhw_random))
+        #  Randomize choosen dhw_volume reference value by selecting new value
+        #  from gaussian distribution with 20 % standard deviation
+        dhw_random = False
+        print('randomization dhw volume reference : {}'.format(dhw_random))
 
-    #  Use dhw profiles for esys dimensioning
-    dhw_dim_esys = True
+        #  Use dhw profiles for esys dimensioning
+        dhw_dim_esys = True
 
-    #  Plot city district with pycity_calc visualisation
-    plot_pycity_calc = False
+        #  Plot city district with pycity_calc visualisation
+        plot_pycity_calc = False
 
-    #  Efficiency factor of thermal energy systems
-    #  Used to convert input values (final energy demand) to net energy demand
-    eff_factor = 1
-    print('Efficiency factor of thermal energy systems : {}'.format(eff_factor))
+        #  Efficiency factor of thermal energy systems
+        #  Used to convert input values (final energy demand) to net energy demand
+        eff_factor = 1
+        print('Efficiency factor of thermal energy systems : {}'.format(eff_factor))
 
-    #  Define city district input data filename
-    filename = 'test_lolo.txt'
-    txt_path = os.path.join(this_path, 'City_generation', 'input', filename)
+        #  Define city district input data filename
+        filename = 'aachen_kronenberg_3_mfh_ref_1.txt'
+        txt_path = os.path.join(this_path, 'City_generation', 'input', filename)
 
-    #  Define city district output file
-    save_filename = 'test_lolo.p'
-    save_path = os.path.join(this_path, 'City_generation', 'output', save_filename)
+        #  Define city district output file
+        save_filename = 'test_lolo.p'
+        save_path = os.path.join(this_path, 'City_generation', 'output', save_filename)
 
-    #  #####################################
-    t_set_heat = 20  # Heating set temperature in degree Celsius
-    t_set_night = 16  # Night set back temperature in degree Celsius
-    t_set_cool = 70  # Cooling set temperature in degree Celsius
-    print('tset : ',t_set_heat, ' ;', t_set_cool, ' ;', t_set_night)
+        #  #####################################
+        t_set_heat = 20  # Heating set temperature in degree Celsius
+        t_set_night = 16  # Night set back temperature in degree Celsius
+        t_set_cool = 70  # Cooling set temperature in degree Celsius
+        print('tset : ',t_set_heat, ' ;', t_set_cool, ' ;', t_set_night)
 
-    #  Air exchange rate (required for th_gen_method = 3 (VDI 6007 sim.))
-    air_vent_mode = 0
-    print('air exchange rate calculation method : Use constant value')
-    #  int; Define mode for air ventilation rate generation
-    #  0 : Use constant value (vent_factor in 1/h)
-    #  1 : Use deterministic, temperature-dependent profile
-    #  2 : Use stochastic, user-dependent profile
-    #  False: Use static ventilation rate value
+        #  Air exchange rate (required for th_gen_method = 3 (VDI 6007 sim.))
+        air_vent_mode = 0
+        print('air exchange rate calculation method : Use constant value')
+        #  int; Define mode for air ventilation rate generation
+        #  0 : Use constant value (vent_factor in 1/h)
+        #  1 : Use deterministic, temperature-dependent profile
+        #  2 : Use stochastic, user-dependent profile
+        #  False: Use static ventilation rate value
 
-    vent_factor = 0.5  # Constant. ventilation rate
-    print('vent factor: {}'.format(vent_factor))
-    #  (only used, if air_vent_mode = 0)
-    #  #####################################
+        vent_factor = 0.5  # Constant. ventilation rate
+        print('vent factor: {}'.format(vent_factor))
+        #  (only used, if air_vent_mode = 0)
+        #  #####################################
 
-    #  Use TEASER to generate type buildings
-    call_teaser = False
-    teaser_proj_name = filename[:-4]
+        #  Use TEASER to generate type buildings
+        call_teaser = False
+        teaser_proj_name = filename[:-4]
 
-    #  Log file for city_generator
-    do_log = True  # True, generate log file
-    print('Generation of a log file with the inputs : {}'.format(do_log))
-    log_path = os.path.join(this_path, 'City_generation', 'output', 'city_gen_test_lolo_log.txt')
+        #  Log file for city_generator
+        do_log = True  # True, generate log file
+        print('Generation of a log file with the inputs : {}'.format(do_log))
+        log_path = os.path.join(this_path, 'City_generation', 'output', 'city_gen_test_lolo_log.txt')
 
-    #  Generate street networks
-    gen_str = False  # True - Generate street network
+        #  Generate street networks
+        gen_str = False  # True - Generate street network
 
-    #  Street node and edges input filenames
-    str_node_filename = 'street_nodes_cluster_simple.csv'
-    str_edge_filename = 'street_edges_cluster_simple.csv'
+        #  Street node and edges input filenames
+        str_node_filename = 'street_nodes_cluster_simple.csv'
+        str_edge_filename = 'street_edges_cluster_simple.csv'
 
-    #  Load street data from csv
-    str_node_path = os.path.join(this_path, 'input', 'street_generator',
+        #  Load street data from csv
+        str_node_path = os.path.join(this_path, 'input', 'street_generator',
                                  str_node_filename)
-    str_edge_path = os.path.join(this_path, 'input', 'street_generator',
+        str_edge_path = os.path.join(this_path, 'input', 'street_generator',
                                  str_edge_filename)
 
-    #  Add energy networks to city
-    gen_e_net = False  # True - Generate energy networks
+        #  Add energy networks to city
+        gen_e_net = False  # True - Generate energy networks
 
-    #  Path to energy network input file (csv/txt; tab separated)
-    network_filename = 'test_lolo_networks.txt'
-    network_path = os.path.join(this_path,'City_generation', 'input', 'input_en_network_generator',
+        #  Path to energy network input file (csv/txt; tab separated)
+        network_filename = 'test_lolo_networks.txt'
+        network_path = os.path.join(this_path,'City_generation', 'input', 'input_en_network_generator',
                                 network_filename)
 
-    #  Add energy systems to city
-    gen_esys = True  # True - Generate energy networks
+        #  Add energy systems to city
+        gen_esys = True  # True - Generate energy networks
 
-    #  Path to energy system input file (csv/txt; tab separated)
-    esys_filename = 'test_lolo_esys.txt'
-    esys_path = os.path.join(this_path, 'City_generation', 'input','input_esys_generator',
+        #  Path to energy system input file (csv/txt; tab separated)
+        esys_filename = 'test_lolo_esys.txt'
+        esys_path = os.path.join(this_path, 'City_generation', 'input','input_esys_generator',
                              esys_filename)
 
-    #  #----------------------------------------------------------------------
+        #  #----------------------------------------------------------------------
 
-    #  Load district_data file
-    district_data = City_gen.citygen.get_district_data_from_txt(txt_path)
-    print('district data : ', district_data)
+        #  Load district_data file
+        district_data = City_gen.citygen.get_district_data_from_txt(txt_path)
+        print('district data : ', district_data)
 
-    City = City_gen.run_overall_gen_and_dim(timestep=timestep,
+        City = City_gen.run_overall_gen_and_dim(timestep=timestep,
                             year=year,
                             location=location,
                             try_path=try_path, th_gen_method=th_gen_method,
@@ -353,6 +378,9 @@ def run_Morris():
     # Generate samples for the SA of the electrical and gas demand
     param_values = sample(problem, N=Nsample, num_levels=5, grid_jump=1, optimal_trajectories=None)
 
+
+
+
     # Generate samples for the SA of the annuity and GHG emission
     #param_values_el_gas = param_values[:40, :]
     #param_values_eco_ghg = param_values
@@ -364,7 +392,8 @@ def run_Morris():
     print('Do the Morris simulations')
     print('***********************************************************************************************************')
     # Run the "model" -- this will happen offline for external models
-    (Y, Z, H, A) = model_evaluation.evaluate(City, param_values)
+    (Y, Z, H, A, F, liste_max_dhw, liste_max_el, liste_max_sph, liste_shp_curve, liste_el_curve, liste_dhw_curve) = \
+        model_evaluation.evaluate(City, param_values)
 
     #Y[0] = gas_dem_ref
     #Z[0] = el_dem_ref
@@ -396,6 +425,10 @@ def run_Morris():
     Si_ghg = morris.analyze(problem, param_values, H, conf_level=0.95,
                            print_to_console=True,
                            num_levels=5, grid_jump=1, num_resamples=100)
+
+    Si_ghg_spe = morris.analyze(problem, param_values, F, conf_level=0.95,
+                            print_to_console=True,
+                            num_levels=5, grid_jump=1, num_resamples=100)
 
     print('Analysis regarding Annuity')
     Si_a = morris.analyze(problem, param_values, A, conf_level=0.95,
@@ -436,15 +469,41 @@ def run_Morris():
     covariance_plot(ax6, Si_ghg, {}, unit=r"GHG [kg]/year")
     fig3.suptitle ('GHG analysis')
 
+    fig6, (ax9, ax10) = plt.subplots(1, 2)
+    horizontal_bar_plot(ax9, Si_ghg_spe, {}, sortby='mu_star', unit=r"GHG[kg]/kWh*year")
+    covariance_plot(ax10, Si_ghg_spe, {}, unit=r"GHG [kg]/kWh*year")
+    fig6.suptitle('specific GHG analysis')
+
     fig4, (ax7, ax8) = plt.subplots(1, 2)
     horizontal_bar_plot(ax7, Si_a, {}, sortby='mu_star', unit=r"Annuity[Euro]/year")
     covariance_plot(ax8, Si_a, {}, unit=r"Annuity [Euro]/year")
     fig4.suptitle('annuity analysis')
 
+    # visualisation demand curves
+    fig5, axarr = plt.subplots(2, 2)
 
+    for curve in liste_shp_curve:
+        axarr[0, 0].plot(curve/1000, alpha=0.5)
+
+    axarr[0, 0].plot(SaveCity.get_aggr_space_h_power_curve()/1000, 'blue', label='City_ref', linewidth=3, )
+    axarr[0, 0].set_title('Space heating demand in kW')
+
+    for curve in liste_dhw_curve:
+        axarr[0, 1].plot(curve/1000)
+    axarr[0, 1].plot(SaveCity.get_aggr_dhw_power_curve() / 1000, 'blue', label='City_ref', linewidth=2)
+    axarr[0, 1].set_title('Domestic Hot water demand in kW')
+
+    for curve in liste_el_curve:
+        axarr[1, 0].plot(curve/1000)
+    axarr[1, 0].plot(SaveCity.get_aggr_el_power_curve()/1000,'blue', label='City_ref', linewidth=1)
+    axarr[1, 0].set_title('Electrical demand in kW')
+
+    axarr[1, 1].plot = plt.hist(liste_max_sph, 50, normed=1)
+    axarr[1, 1].set_title('max thermal demand in kWh, City_ref: {} kWh'.format(round(SaveCity.get_total_annual_th_demand(), 2)))
+
+    fig5.suptitle('energy demand curves in kW')
     plt.show()
 
 
 if __name__ == '__main__':
-
     run_Morris()

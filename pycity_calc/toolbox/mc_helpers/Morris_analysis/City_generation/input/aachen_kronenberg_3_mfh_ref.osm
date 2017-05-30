@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<osm version="0.6" generator="Overpass API">
+<note>The data included in this document is from www.openstreetmap.org. The data is made available under ODbL.</note>
+<meta osm_base="2017-05-29T07:21:34Z"/>
+
+  <node id="109257748" lat="50.7640262" lon="6.0509013" version="4" timestamp="2016-04-30T20:36:07Z" changeset="39006181" uid="44217" user="kjon"/>
+  <node id="109262575" lat="50.7639000" lon="6.0505367" version="3" timestamp="2016-04-30T20:36:07Z" changeset="39006181" uid="44217" user="kjon"/>
+  <node id="109262577" lat="50.7637157" lon="6.0502516" version="4" timestamp="2016-04-30T20:36:07Z" changeset="39006181" uid="44217" user="kjon"/>
+  <node id="109262578" lat="50.7633594" lon="6.0499186" version="2" timestamp="2009-06-03T00:55:28Z" changeset="1409410" uid="61341" user="Bürste"/>
+  <node id="109262583" lat="50.7629351" lon="6.0494767" version="4" timestamp="2016-04-30T20:36:07Z" changeset="39006181" uid="44217" user="kjon"/>
+  <node id="109262586" lat="50.7625138" lon="6.0487323" version="5" timestamp="2016-04-30T20:36:07Z" changeset="39006181" uid="44217" user="kjon"/>
+  <node id="109262587" lat="50.7626475" lon="6.0483746" version="3" timestamp="2016-04-30T20:36:07Z" changeset="39006181" uid="44217" user="kjon"/>
+  <node id="308767840" lat="50.7632649" lon="6.0506365" version="4" timestamp="2012-03-29T08:59:31Z" changeset="11135103" uid="293774" user="Oli-Wan"/>
+  <node id="308767844" lat="50.7625087" lon="6.0489324" version="3" timestamp="2012-03-30T09:26:04Z" changeset="11149214" uid="293774" user="Oli-Wan"/>
+  <node id="440760722" lat="50.7633882" lon="6.0501892" version="2" timestamp="2013-01-14T09:41:50Z" changeset="14645159" uid="67862" user="HolgerJeromin"/>
+  <node id="440760723" lat="50.7635294" lon="6.0503421" version="2" timestamp="2013-05-11T04:46:34Z" changeset="16074405" uid="143377" user="siejoc"/>
+  <node id="440760724" lat="50.7636072" lon="6.0501469" version="2" timestamp="2016-04-30T20:36:07Z" changeset="39006181" uid="44217" user="kjon"/>
+  <node id="1196576107" lat="50.7635738" lon="6.0504633" version="3" timestamp="2012-10-31T22:57:33Z" changeset="13705527" uid="293774" user="Oli-Wan"/>
+  <node id="1196576123" lat="50.7636534" lon="6.0507415" version="3" timestamp="2012-10-31T22:57:35Z" changeset="13705527" uid="293774" user="Oli-Wan"/>
+  <node id="1196576165" lat="50.7636639" lon="6.0507116" version="3" timestamp="2012-10-31T22:57:38Z" changeset="13705527" uid="293774" user="Oli-Wan"/>
+  <node id="1196576170" lat="50.7633919" lon="6.0502607" version="3" timestamp="2012-10-31T22:57:38Z" changeset="13705527" uid="293774" user="Oli-Wan"/>
+  <node id="1196576212" lat="50.7637093" lon="6.0505824" version="3" timestamp="2012-10-31T22:57:40Z" changeset="13705527" uid="293774" user="Oli-Wan"/>
+  <node id="1196576232" lat="50.7636986" lon="6.0506128" version="3" timestamp="2012-10-31T22:57:40Z" changeset="13705527" uid="293774" user="Oli-Wan"/>
+  <node id="1196576240" lat="50.7635408" lon="6.0505572" version="3" timestamp="2012-10-31T22:57:41Z" changeset="13705527" uid="293774" user="Oli-Wan"/>
+  <node id="1196576267" lat="50.7638295" lon="6.0507278" version="3" timestamp="2012-10-31T22:57:43Z" changeset="13705527" uid="293774" user="Oli-Wan"/>
+  <node id="1196576273" lat="50.7635284" lon="6.0505925" version="3" timestamp="2012-10-31T22:57:43Z" changeset="13705527" uid="293774" user="Oli-Wan"/>
+  <node id="1196576277" lat="50.7635853" lon="6.0504306" version="3" timestamp="2012-10-31T22:57:43Z" changeset="13705527" uid="293774" user="Oli-Wan"/>
+  <node id="1196576294" lat="50.7637843" lon="6.0508565" version="3" timestamp="2012-10-31T22:57:46Z" changeset="13705527" uid="293774" user="Oli-Wan"/>
+  <node id="1196576340" lat="50.7633474" lon="6.0503872" version="3" timestamp="2012-10-31T22:57:48Z" changeset="13705527" uid="293774" user="Oli-Wan"/>
+  <node id="1585460943" lat="50.7634908" lon="6.0503475" version="8" timestamp="2017-03-29T17:34:43Z" changeset="47267540" uid="3298438" user="aixbrick">
+    <tag k="entrance" v="yes"/>
+  </node>
+  <node id="1585460944" lat="50.7636423" lon="6.0505235" version="8" timestamp="2017-03-29T17:34:43Z" changeset="47267540" uid="3298438" user="aixbrick">
+    <tag k="entrance" v="yes"/>
+  </node>
+  <node id="1585460945" lat="50.7636704" lon="6.0505204" version="1" timestamp="2012-01-11T09:06:10Z" changeset="10358701" uid="38515" user="soeren_gasch"/>
+  <node id="1585460946" lat="50.7637557" lon="6.0506282" version="1" timestamp="2012-01-11T09:06:10Z" changeset="10358701" uid="38515" user="soeren_gasch"/>
+  <node id="1585460948" lat="50.7637607" lon="6.0506673" version="8" timestamp="2017-03-29T17:34:44Z" changeset="47267540" uid="3298438" user="aixbrick">
+    <tag k="entrance" v="yes"/>
+  </node>
+  <node id="1585460950" lat="50.7637721" lon="6.0506430" version="2" timestamp="2013-01-14T09:41:50Z" changeset="14645159" uid="67862" user="HolgerJeromin"/>
+  <node id="1585460959" lat="50.7639411" lon="6.0506390" version="3" timestamp="2016-04-30T20:36:07Z" changeset="39006181" uid="44217" user="kjon"/>
+  <node id="1976630823" lat="50.7637085" lon="6.0510034" version="2" timestamp="2016-04-30T20:36:07Z" changeset="39006181" uid="44217" user="kjon">
+    <tag k="barrier" v="cycle_barrier"/>
+  </node>
+  <node id="2110372287" lat="50.7633021" lon="6.0498682" version="1" timestamp="2013-01-14T09:00:12Z" changeset="14645159" uid="67862" user="HolgerJeromin"/>
+  <node id="2110372291" lat="50.7635255" lon="6.0500708" version="2" timestamp="2016-04-30T20:36:07Z" changeset="39006181" uid="44217" user="kjon"/>
+  <node id="2110372293" lat="50.7637660" lon="6.0500857" version="1" timestamp="2013-01-14T09:00:12Z" changeset="14645159" uid="67862" user="HolgerJeromin"/>
+  <node id="2110372294" lat="50.7637660" lon="6.0501419" version="1" timestamp="2013-01-14T09:00:12Z" changeset="14645159" uid="67862" user="HolgerJeromin"/>
+  <node id="2110372296" lat="50.7639118" lon="6.0499882" version="1" timestamp="2013-01-14T09:00:12Z" changeset="14645159" uid="67862" user="HolgerJeromin"/>
+  <node id="2299104864" lat="50.7638465" lon="6.0507282" version="1" timestamp="2013-05-11T04:46:34Z" changeset="16074405" uid="143377" user="siejoc"/>
+  <node id="2299104865" lat="50.7635644" lon="6.0502649" version="1" timestamp="2013-05-11T04:46:34Z" changeset="16074405" uid="143377" user="siejoc"/>
+  <node id="2299104866" lat="50.7635488" lon="6.0503016" version="1" timestamp="2013-05-11T04:46:34Z" changeset="16074405" uid="143377" user="siejoc"/>
+  <node id="4158274305" lat="50.7638121" lon="6.0503767" version="1" timestamp="2016-04-30T20:36:05Z" changeset="39006181" uid="44217" user="kjon"/>
+  <node id="4158274306" lat="50.7637565" lon="6.0510478" version="1" timestamp="2016-04-30T20:36:05Z" changeset="39006181" uid="44217" user="kjon"/>
+  <way id="12077694" version="9" timestamp="2016-04-30T20:36:11Z" changeset="39006181" uid="44217" user="kjon">
+    <nd ref="109257748"/>
+    <nd ref="1585460959"/>
+    <nd ref="109262575"/>
+    <nd ref="4158274305"/>
+    <nd ref="109262577"/>
+    <nd ref="440760724"/>
+    <nd ref="2110372291"/>
+    <nd ref="109262578"/>
+    <nd ref="2110372287"/>
+    <nd ref="109262583"/>
+    <nd ref="308767844"/>
+    <nd ref="109262586"/>
+    <nd ref="109262587"/>
+    <tag k="highway" v="residential"/>
+    <tag k="lit" v="yes"/>
+    <tag k="maxspeed" v="30"/>
+    <tag k="name" v="Am Friedrich"/>
+  </way>
+  <way id="37601557" version="5" timestamp="2016-04-30T20:36:11Z" changeset="39006181" uid="44217" user="kjon">
+    <nd ref="4158274306"/>
+    <nd ref="1976630823"/>
+    <nd ref="308767840"/>
+    <nd ref="440760722"/>
+    <nd ref="440760723"/>
+    <nd ref="1585460945"/>
+    <nd ref="1585460946"/>
+    <tag k="highway" v="footway"/>
+  </way>
+  <way id="103627347" version="2" timestamp="2012-01-11T09:06:12Z" changeset="10358701" uid="38515" user="soeren_gasch">
+    <nd ref="1196576165"/>
+    <nd ref="1196576273"/>
+    <nd ref="1196576240"/>
+    <nd ref="1196576107"/>
+    <nd ref="1585460944"/>
+    <nd ref="1196576212"/>
+    <nd ref="1196576232"/>
+    <nd ref="1196576165"/>
+    <tag k="addr:city" v="Aachen"/>
+    <tag k="addr:country" v="DE"/>
+    <tag k="addr:housenumber" v="85"/>
+    <tag k="addr:street" v="Kronenberg"/>
+    <tag k="building" v="yes"/>
+  </way>
+  <way id="103627355" version="2" timestamp="2012-01-11T09:06:12Z" changeset="10358701" uid="38515" user="soeren_gasch">
+    <nd ref="1196576267"/>
+    <nd ref="1196576294"/>
+    <nd ref="1196576123"/>
+    <nd ref="1196576165"/>
+    <nd ref="1196576232"/>
+    <nd ref="1585460948"/>
+    <nd ref="1196576267"/>
+    <tag k="addr:city" v="Aachen"/>
+    <tag k="addr:country" v="DE"/>
+    <tag k="addr:housenumber" v="83"/>
+    <tag k="addr:street" v="Kronenberg"/>
+    <tag k="building" v="yes"/>
+  </way>
+  <way id="103627356" version="2" timestamp="2012-01-11T09:06:12Z" changeset="10358701" uid="38515" user="soeren_gasch">
+    <nd ref="1196576240"/>
+    <nd ref="1196576340"/>
+    <nd ref="1196576170"/>
+    <nd ref="1585460943"/>
+    <nd ref="1196576277"/>
+    <nd ref="1196576107"/>
+    <nd ref="1196576240"/>
+    <tag k="addr:city" v="Aachen"/>
+    <tag k="addr:country" v="DE"/>
+    <tag k="addr:housenumber" v="87"/>
+    <tag k="addr:street" v="Kronenberg"/>
+    <tag k="building" v="yes"/>
+  </way>
+  <way id="145095744" version="1" timestamp="2012-01-11T09:06:10Z" changeset="10358701" uid="38515" user="soeren_gasch">
+    <nd ref="1585460945"/>
+    <nd ref="1585460944"/>
+    <tag k="highway" v="footway"/>
+  </way>
+  <way id="145095745" version="1" timestamp="2012-01-11T09:06:11Z" changeset="10358701" uid="38515" user="soeren_gasch">
+    <nd ref="1585460950"/>
+    <nd ref="1585460948"/>
+    <tag k="highway" v="footway"/>
+  </way>
+  <way id="145095746" version="1" timestamp="2012-01-11T09:06:11Z" changeset="10358701" uid="38515" user="soeren_gasch">
+    <nd ref="1585460950"/>
+    <nd ref="1585460946"/>
+    <tag k="highway" v="steps"/>
+  </way>
+  <way id="145095747" version="2" timestamp="2013-05-11T04:46:34Z" changeset="16074405" uid="143377" user="siejoc">
+    <nd ref="1585460959"/>
+    <nd ref="2299104864"/>
+    <tag k="highway" v="footway"/>
+  </way>
+  <way id="145095748" version="2" timestamp="2013-05-11T04:46:34Z" changeset="16074405" uid="143377" user="siejoc">
+    <nd ref="440760724"/>
+    <nd ref="2299104865"/>
+    <tag k="highway" v="footway"/>
+  </way>
+  <way id="145095749" version="3" timestamp="2013-05-11T04:46:34Z" changeset="16074405" uid="143377" user="siejoc">
+    <nd ref="1585460950"/>
+    <nd ref="2299104864"/>
+    <tag k="highway" v="footway"/>
+  </way>
+  <way id="201080458" version="1" timestamp="2013-01-14T09:00:12Z" changeset="14645159" uid="67862" user="HolgerJeromin">
+    <nd ref="109262577"/>
+    <nd ref="2110372294"/>
+    <nd ref="2110372293"/>
+    <nd ref="2110372296"/>
+    <tag k="highway" v="footway"/>
+  </way>
+  <way id="220823702" version="2" timestamp="2016-04-30T20:36:11Z" changeset="39006181" uid="44217" user="kjon">
+    <nd ref="2299104864"/>
+    <nd ref="4158274306"/>
+    <tag k="highway" v="steps"/>
+  </way>
+  <way id="220823703" version="1" timestamp="2013-05-11T04:46:34Z" changeset="16074405" uid="143377" user="siejoc">
+    <nd ref="2299104865"/>
+    <nd ref="2299104866"/>
+    <tag k="highway" v="steps"/>
+  </way>
+  <way id="220823704" version="1" timestamp="2013-05-11T04:46:34Z" changeset="16074405" uid="143377" user="siejoc">
+    <nd ref="2299104866"/>
+    <nd ref="440760723"/>
+    <nd ref="1585460943"/>
+    <tag k="highway" v="footway"/>
+  </way>
+
+</osm>

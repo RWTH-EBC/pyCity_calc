@@ -11,9 +11,23 @@ Generation of the Domestic Hot water profile with stochastic method
 step 1: Load the district data
 step 2: Generation of a city
 step 3: energy balance
+step 4: economic calculation
+step 5: emissions calculation
 
 Return: Y: array of gas demand values after energy balance
         Z: array of electrical demand values after the energy balance
+        A : array of annuity
+        H : array of ghg emission kg/year
+        F : array of specific ghg emission kg/kwhyear
+        Inter_el : list of intermediate annual electrical demand (for energy balance)
+        Inter_dhw : list of intermediate annual domestic hot water demand (for energy balance)
+        Inter_sph : list of intermediate annual space heating  demand (for energy balance)
+        liste_shp_curve : list of intermediate electrical curve demand (for energy balance)
+        liste_el_curve : list of intermediate space heating demand curve(for energy balance)
+        liste_dhw_curve : list of intermediate domestic hot water demand curve(for energy balance)
+        liste_max_sph : list of intermediate maximum space heating  demand (for energy balance)
+        liste_max_el : list of intermediate maximum electrical demand (for energy balance)
+        liste_max_dhw : list of intermediate maximum domestic hot water demand (for energy balance)
 
 '''
 
@@ -29,7 +43,7 @@ import copy
 import pycity_calc.toolbox.teaser_usage.teaser_use as teaserusage
 import pycity_calc.toolbox.mc_helpers.Morris_analysis.Building_evaluation_Morris as buildmod
 import pycity_calc.toolbox.mc_helpers.Morris_analysis.Esystems_evaluation_Morris as esysmod
-
+import pycity_calc.toolbox.dimensioning.dim_functions as dimfunc
 
 def evaluate(City, values):
 
@@ -47,10 +61,20 @@ def evaluate(City, values):
     year = 2010
     timestep = City.environment.timer.timeDiscretization  # Timestep in seconds
 
-    Y = np.zeros([values.shape[0]])
-    Z = np.zeros([values.shape[0]])
-    A = np.zeros([values.shape[0]])
-    H = np.zeros([values.shape[0]])
+    Y = np.zeros([values.shape[0]]) # array of annual gas demand
+    Z = np.zeros([values.shape[0]]) # array of annual electrical demand
+    A = np.zeros([values.shape[0]]) # array of annuity
+    H = np.zeros([values.shape[0]]) # array of ghg emission kg/year
+    F = np.zeros([values.shape[0]])  # array of specific ghg emission kg/kwhyear
+    Inter_el = np.zeros([values.shape[0]])
+    Inter_dhw = np.zeros([values.shape[0]])
+    Inter_sph = np.zeros([values.shape[0]])
+    liste_shp_curve = []
+    liste_el_curve = []
+    liste_dhw_curve = []
+    liste_max_sph = np.zeros([values.shape[0]])
+    liste_max_el = np.zeros([values.shape[0]])
+    liste_max_dhw = np.zeros([values.shape[0]])
 
     for loop, row in enumerate(values):
 
@@ -117,6 +141,12 @@ def evaluate(City, values):
                     # TRY path definition
                     try_path = None'''
 
+        ############################################
+
+        # ## Generate new buildings
+
+        ############################################
+
         for n in list_building:
             if City.node[n]['entity']._kind == 'building':
 
@@ -168,10 +198,31 @@ def evaluate(City, values):
 
         annual_el_dem = City.get_annual_el_demand()
         annual_th_dem = City.get_total_annual_th_demand()
+        annual_dhw_dem = City.get_annual_dhw_demand()
+        annual_sph_dem = City.get_annual_space_heating_demand()
+        sph_curve = City.get_aggr_space_h_power_curve()
+        dhw_curve = City.get_aggr_dhw_power_curve()
+        el_curve = City.get_aggr_el_power_curve()
+        max_sph = dimfunc.get_max_p_of_power_curve(sph_curve)
+        max_el = dimfunc.get_max_p_of_power_curve(el_curve)
+        max_dhw = dimfunc.get_max_p_of_power_curve(dhw_curve)
+
         print()
         print('Annual electricity demand : ', annual_el_dem, 'kWh/year')
-        print('Annual thermal demand : ', annual_th_dem, 'kWh/year')
+        print('Annual thermal demand : ', annual_sph_dem, 'kWh/year')
+        print('Annual domestic hot water : ', annual_dhw_dem, 'kWh/year')
         print()
+
+        # return intermediate energy demand
+        Inter_el [loop] = annual_el_dem
+        Inter_sph [loop] = annual_sph_dem
+        Inter_dhw [loop] = annual_dhw_dem
+        liste_shp_curve.append(sph_curve)
+        liste_dhw_curve.append(dhw_curve)
+        liste_el_curve.append(el_curve)
+        liste_max_sph [loop] = max_sph
+        liste_max_el [loop] = max_el
+        liste_max_dhw [loop] = max_dhw
 
         ############################################
 
@@ -301,6 +352,7 @@ def evaluate(City, values):
         GHG_Emission = GHG_calc.CO2_emission_calc(city_object=City, emission_object=GHG , CO2_zero_lowerbound = False, eco_calc_instance= eco_inst )
 
         print(GHG_Emission, 'kg/year')
-        H[loop]=GHG_Emission
+        H[loop] = GHG_Emission
+        F[loop] = GHG_Emission/(annual_sph_dem+annual_dhw_dem+annual_el_dem)
 
-    return(Y, Z, A, H)
+    return(Y, Z, H, A, F, liste_max_dhw, liste_max_el, liste_max_sph, liste_shp_curve, liste_el_curve, liste_dhw_curve)

@@ -87,6 +87,7 @@ def new_evaluation_esys(City, parameters):
                 City.node[build]['entity'].bes.boiler.qNominal = \
                     dimfunc.round_esys_size(demand_building, round_up=True)
 
+                print()
                 print('new boiler capacity kW: ', City.node[build]['entity'].bes.boiler.qNominal/1000)
                 print()
 
