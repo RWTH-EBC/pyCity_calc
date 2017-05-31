@@ -1767,37 +1767,37 @@ if __name__ == '__main__':
     dict_b_node_nb = {}
 
     #  City object pickle file, which should be loaded
-    city_f_name = 'aachen_forsterlinde_5.pkl'
+    city_f_name = 'aachen_forsterlinde_mod_6.pkl'
     key = 'Forsterlinde'
     build_node_nb = 1011  # Forsterlinde
     dict_city_f_names[key] = city_f_name
     dict_b_node_nb[key] = build_node_nb
 
-    city_f_name = 'aachen_frankenberg_5.pkl'
+    city_f_name = 'aachen_frankenberg_mod_6.pkl'
     key = 'Frankenberg'
     build_node_nb = 1020  # Frankenberg
     dict_city_f_names[key] = city_f_name
     dict_b_node_nb[key] = build_node_nb
 
-    city_f_name = 'aachen_kronenberg_5.pkl'
+    city_f_name = 'aachen_kronenberg_mod_6.pkl'
     key = 'Kronenberg'
     build_node_nb = 1002  # Kronenberg
     dict_city_f_names[key] = city_f_name
     dict_b_node_nb[key] = build_node_nb
 
-    city_f_name = 'aachen_preusweg_5b.pkl'
+    city_f_name = 'aachen_preusweg_mod_6.pkl'
     key = 'Preusweg'
     build_node_nb = 1092  # Preusweg
     dict_city_f_names[key] = city_f_name
     dict_b_node_nb[key] = build_node_nb
 
-    city_f_name = 'aachen_tuerme_osm_extr_enriched.pkl'
+    city_f_name = 'aachen_tuerme_mod_6.pkl'
     key = u'Türme'
     build_node_nb = 1010  # Tuerme
     dict_city_f_names[key] = city_f_name
     dict_b_node_nb[key] = build_node_nb
 
-    city_f_name = 'huenefeld_5.pkl'
+    city_f_name = 'aachen_tuerme_mod_6.pkl'
     key = u'Hünefeld'
     build_node_nb = 1003  # Huenefeld
     dict_city_f_names[key] = city_f_name
@@ -1805,7 +1805,7 @@ if __name__ == '__main__':
 
     for key in dict_city_f_names.keys():
         city_f_name = dict_city_f_names[key]
-        load_path = os.path.join(this_path, 'input', 'mc_cities', city_f_name)
+        load_path = os.path.join(this_path, 'input', 'ref_cities', city_f_name)
 
         city = pickle.load(open(load_path, mode='rb'))
 
@@ -1823,12 +1823,12 @@ if __name__ == '__main__':
 
     #############################
     #  For single district
-    key = 'Kronenberg'
-    # #  analysis name
-    name_an = '_single_b_dhw_dem'
-    output_folder_n = key + name_an
+    # key = 'Kronenberg'
+    # # #  analysis name
+    # name_an = '_single_b_dhw_dem'
+    # output_folder_n = key + name_an
 
-    # output_folder_n = 'cities_single_b'
+    output_folder_n = 'cities_single_b_mc'
 
     output_path = os.path.join(this_path, 'output', output_folder_n)
 
@@ -1858,9 +1858,9 @@ if __name__ == '__main__':
     # #  #####################################################################
     # analyze_dhw_demands_hist(mc_res=mc_res, key=key, output_path=output_path)
 
-    # #  Perform space heating box plot analysis for all districts
-    # #  Plot all boxplots in one figure
-    # #  #####################################################################
+    # # #  Perform space heating box plot analysis for all districts
+    # # #  Plot all boxplots in one figure
+    # # #  #####################################################################
     # output_path_curr = os.path.join(output_path, 'th_dem_single_axes')
     # box_plot_analysis(mc_res=mc_res, output_path=output_path_curr,
     #                   output_filename=output_filename, dpi=dpi,
