@@ -378,6 +378,8 @@ def analyze_sh_demands_hist(mc_res, key, output_path):
     city = mc_res.get_city(key=key)
     node_id = mc_res.dict_build_ids[key]
 
+    print(city.nodes())
+
     curr_build = city.node[node_id]['entity']
 
     #  Get reference space heating demand in kWh
@@ -1198,6 +1200,170 @@ def box_plot_analysis_double_plot(mc_res, output_path, output_filename,
     plt.close()
 
 
+def box_plot_analysis_triple_plot(mc_res, output_path, output_filename,
+                                  list_order,
+                                  dpi=100, with_outliners=True):
+    """
+
+    Parameters
+    ----------
+    mc_res
+    output_path
+    output_filename
+    list_order
+    dpi
+    with_outliners
+
+    Returns
+    -------
+
+    """
+
+    gen_path(output_path)
+
+    data_coll = []
+    list_xticks = []
+    list_riqr = []
+
+    for key in list_order:
+
+        list_sh_en = copy.deepcopy(mc_res.get_results(key=key)[0])
+
+        #  Convert kWh to MWh
+        for i in range(len(list_sh_en)):
+            list_sh_en[i] /= 1000
+
+        # Add space heating lists
+        data_coll.append(list_sh_en)
+
+        list_xticks.append(key)
+
+        #  Calc RIQR
+        riqr = calc_riqr(list_sh_en)
+        print('riqr')
+        print(riqr)
+        print('for key: ', key)
+        print()
+        list_riqr.append(riqr)
+
+
+    # for key in mc_res.dict_res.keys():
+    #
+    #     list_sh_en = copy.deepcopy(mc_res.get_results(key=key)[0])
+    #
+    #     #  Convert kWh to MWh
+    #     for i in range(len(list_sh_en)):
+    #         list_sh_en[i] /= 1000
+    #
+    #     # Add space heating lists
+    #     data_coll.append(list_sh_en)
+    #
+    #     list_xticks.append(key)
+    #
+    #     #  Calc RIQR
+    #     riqr = calc_riqr(list_sh_en)
+    #     print('riqr')
+    #     print(riqr)
+    #     print('for key: ', key)
+    #     print()
+    #     list_riqr.append(riqr)
+    #
+    # # Sort by space heating demands
+    # data_coll, list_xticks, list_riqr = zip(
+    #     *sorted(zip(data_coll, list_xticks, list_riqr)))
+
+    plt.rc('font', family='Arial', size=12)
+
+    fig = plt.figure(figsize=(5, 3), dpi=dpi)
+
+    fig.add_subplot(131)
+
+    ax = fig.gca()
+
+    pb = ax.boxplot(data_coll[0:2], showfliers=with_outliners, widths=(0.8, 0.8))
+    plt.ylabel('Net space heating\ndemand in MWh')
+    ax.set_xticklabels(list_xticks[0:2])
+
+    start, end = ax.get_ylim()
+    print(start)
+    print(end)
+    ax.yaxis.set_ticks(np.arange(round(start,-3), end, 100))
+
+    for median in pb['medians']:
+        median.set(color='#E53027')
+
+    for flier in pb['fliers']:
+        flier.set(marker='*', markersize=0.5)
+
+    fig.add_subplot(132)
+
+    ax = fig.gca()
+
+    pb = ax.boxplot(data_coll[2:4], showfliers=with_outliners, widths=(0.8, 0.8))
+    #plt.ylabel('Net space heating\ndemand in MWh')
+    ax.set_xticklabels(list_xticks[2:4])
+
+    start, end = ax.get_ylim()
+    print(start)
+    print(end)
+    ax.yaxis.set_ticks(np.arange(round(start,-3), end, 250))
+
+    for median in pb['medians']:
+        median.set(color='#E53027')
+
+    for flier in pb['fliers']:
+        flier.set(marker='*', markersize=0.5)
+
+    fig.add_subplot(133)
+
+    ax = fig.gca()
+
+    pb = ax.boxplot(data_coll[4:6], showfliers=with_outliners, widths=(0.8, 0.8))
+    #plt.ylabel('Net space heating\ndemand in MWh')
+    ax.set_xticklabels(list_xticks[4:6])
+
+    start, end = ax.get_ylim()
+    print(start)
+    print(end)
+    ax.yaxis.set_ticks(np.arange(round(start,-3), end, 500))
+
+    for median in pb['medians']:
+        median.set(color='#E53027')
+
+    for flier in pb['fliers']:
+        flier.set(marker='*', markersize=0.5)
+
+    fig.autofmt_xdate()
+    plt.tight_layout()
+
+    gen_path(output_path)
+
+    #  Generate file names for different formats
+    file_pdf = output_filename + '.pdf'
+    file_eps = output_filename + '.eps'
+    file_png = output_filename + '.png'
+    file_tiff = output_filename + '.tiff'
+    file_tikz = output_filename + '.tikz'
+
+    #  Generate saving pathes
+    path_pdf = os.path.join(output_path, file_pdf)
+    path_eps = os.path.join(output_path, file_eps)
+    path_png = os.path.join(output_path, file_png)
+    path_tiff = os.path.join(output_path, file_tiff)
+    path_tikz = os.path.join(output_path, file_tikz)
+
+    #  Save figure in different formats
+    plt.savefig(path_pdf, format='pdf', dpi=dpi)
+    plt.savefig(path_eps, format='eps', dpi=dpi)
+    plt.savefig(path_png, format='png', dpi=dpi)
+    # plt.savefig(path_tiff, format='tiff', dpi=dpi)
+    tikz_save(path_tikz, figureheight='\\figureheight',
+              figurewidth='\\figurewidth')
+
+    # plt.show()
+    plt.close()
+
+
 def box_plot_analysis_el_dem(mc_res, output_path, output_filename,
                              with_outliners, list_order, dpi=100):
     """
@@ -1711,43 +1877,43 @@ if __name__ == '__main__':
     #  Add results
     #  ####################################################################
 
-    # filename1 = 'aachen_forsterlinde_5_mc_city_2000_new_dhw_2000.pkl'
-    filename1 = 'aachen_forsterlinde_5_single_b_new_dhw_1011.pkl'
+    filename1 = 'aachen_forsterlinde_5_mc_city_2000_new_dhw_2000.pkl'
+    # filename1 = 'aachen_forsterlinde_5_single_b_new_dhw_1011.pkl'
     output_filename1 = filename1[:-4]
     key1 = 'Forsterlinde'
 
     dict_filenames[key1] = filename1
 
-    # filename2 = 'aachen_frankenberg_5_mc_city_2000_new_dhw_2000.pkl'
-    filename2 = 'aachen_frankenberg_5_single_b_new_dhw_1020.pkl'
+    filename2 = 'aachen_frankenberg_5_mc_city_2000_new_dhw_2000.pkl'
+    # filename2 = 'aachen_frankenberg_5_single_b_new_dhw_1020.pkl'
     output_filename2 = filename2[:-4]
     key2 = 'Frankenberg'
 
     dict_filenames[key2] = filename2
 
-    # filename3 = 'aachen_kronenberg_5_mc_city_2000_new_dhw_2000.pkl'
-    filename3 = 'aachen_kronenberg_5_single_b_new_dhw_1002.pkl'
+    filename3 = 'aachen_kronenberg_5_mc_city_2000_new_dhw_2000.pkl'
+    # filename3 = 'aachen_kronenberg_5_single_b_new_dhw_1002.pkl'
     output_filename3 = filename3[:-4]
     key3 = 'Kronenberg'
 
     dict_filenames[key3] = filename3
 
-    # filename4 = 'aachen_preusweg_5b_mc_city_2000_new_dhw_2000.pkl'
-    filename4 = 'aachen_preusweg_5b_single_b_new_dhw_1092.pkl'
+    filename4 = 'aachen_preusweg_5b_mc_city_2000_new_dhw_2000.pkl'
+    # filename4 = 'aachen_preusweg_5b_single_b_new_dhw_1092.pkl'
     output_filename4 = filename4[:-4]
     key4 = 'Preusweg'
 
     dict_filenames[key4] = filename4
 
-    # filename5 = 'aachen_tuerme_osm_extr_enriched_mc_city_2000_new_dhw_2000.pkl'
-    filename5 = 'aachen_tuerme_osm_extr_enriched_single_b_new_dhw_1010.pkl'
+    filename5 = 'aachen_tuerme_osm_extr_enriched_mc_city_2000_new_dhw_2000.pkl'
+    # filename5 = 'aachen_tuerme_osm_extr_enriched_single_b_new_dhw_1010.pkl'
     output_filename5 = filename5[:-4]
     key5 = u'Türme'
 
     dict_filenames[key5] = filename5
 
-    # filename6 = 'huenefeld_5_mc_city_2000_new_dhw_2000.pkl'
-    filename6 = 'huenefeld_5_single_b_new_dhw_1003.pkl'
+    filename6 = 'huenefeld_5_mc_city_2000_new_dhw_2000.pkl'
+    # filename6 = 'huenefeld_5_single_b_new_dhw_1003.pkl'
     output_filename6 = filename6[:-4]
     key6 = u'Hünefeld'
 
@@ -1755,8 +1921,8 @@ if __name__ == '__main__':
 
     for key in dict_filenames.keys():
         filename = dict_filenames[key]
-        # load_path = os.path.join(this_path, 'input', 'mc_cities', filename)
-        load_path = os.path.join(this_path, 'input', 'mc_buildings', filename)
+        load_path = os.path.join(this_path, 'input', 'mc_cities', filename)
+        # load_path = os.path.join(this_path, 'input', 'mc_buildings', filename)
 
         #  Load results and add them to results object
         mc_res.add_res_from_path(path=load_path, key=key)
@@ -1823,7 +1989,7 @@ if __name__ == '__main__':
 
     #############################
     #  For single district
-    # key = 'Kronenberg'
+    # key = u'Hünefeld'
     # # #  analysis name
     # name_an = '_boxplots'
     # output_folder_n = key + name_an
@@ -1842,21 +2008,21 @@ if __name__ == '__main__':
     # do_sh_load_analysis(mc_res=mc_res, key=key, output_path=output_path,
     #                     output_filename=key)
 
-    #  Perform space heating demand analysis for single district
-    #  #####################################################################
-    analyze_sh_demands_hist(mc_res=mc_res, key=key, output_path=output_path)
-
-    #  Perform space heating power analysis for single district
-    #  #####################################################################
-    analyze_sh_powers_hist(mc_res=mc_res, key=key, output_path=output_path)
-
-    #  Perform electric energy analysis for single district
-    #  #####################################################################
-    analyze_el_demands_hist(mc_res=mc_res, key=key, output_path=output_path)
-
-    #  Perform hot water energy analysis for single district
-    #  #####################################################################
-    analyze_dhw_demands_hist(mc_res=mc_res, key=key, output_path=output_path)
+    # #  Perform space heating demand analysis for single district
+    # #  #####################################################################
+    # analyze_sh_demands_hist(mc_res=mc_res, key=key, output_path=output_path)
+    #
+    # #  Perform space heating power analysis for single district
+    # #  #####################################################################
+    # analyze_sh_powers_hist(mc_res=mc_res, key=key, output_path=output_path)
+    #
+    # #  Perform electric energy analysis for single district
+    # #  #####################################################################
+    # analyze_el_demands_hist(mc_res=mc_res, key=key, output_path=output_path)
+    #
+    # #  Perform hot water energy analysis for single district
+    # #  #####################################################################
+    # analyze_dhw_demands_hist(mc_res=mc_res, key=key, output_path=output_path)
 
     # # #  Perform space heating box plot analysis for all districts
     # # #  Plot all boxplots in one figure
@@ -1875,7 +2041,16 @@ if __name__ == '__main__':
     #                               output_filename=output_filename, dpi=dpi,
     #                               with_outliners=with_outliners,
     #                               list_order=list_order)
-    #
+
+    # #  Perform space heating box plot analysis for all districts
+    # #  Plot boxplots in two figure
+    # #  #####################################################################
+    output_path_curr = os.path.join(output_path, 'th_dem_three_axes')
+    box_plot_analysis_triple_plot(mc_res=mc_res, output_path=output_path_curr,
+                                  output_filename=output_filename, dpi=dpi,
+                                  with_outliners=with_outliners,
+                                  list_order=list_order)
+
     # # #  Perform electric demand box plot analysis for all districts
     # # #  Plot all boxplots in one figure
     # # #  #####################################################################
