@@ -21,20 +21,38 @@ import pycity_calc.economic.annuity_calculation as eco_calc
 import pycity_calc.simulation.energy_balance_optimization.energy_balance_building as EBB
 import pycity_calc.economic.calc_CO2_emission as GHG_calc
 import pickle
+import numpy as np
 
 
 def run_Morris():
+
+    # Define the Morris parameters
+    # #############################################################################################################
+
+    # number of samples
+    Nsample = 1
+    print(Nsample)
+    Morris_name = 'Morris_values.txt' # filename of the parameters definition variation space for the Morris analysis
+
+    # City generation mode
+    load_city = True # load a pickle City file
+    # if set to False: generation of a City with city_generator
+    city_pickle_name = 'aachen_kronenberg_3_mfh_ref_1.pkl'
+
+    # results
+    save_result = True # if set to false: no generation of results txt file
+    results_name = 'Morris_results.txt'
 
     # City Generation with start district data values and default parameters
     print('***********************************************************************************************************')
     print('Initialisation: Reference City Generation')
     print('***********************************************************************************************************')
 
-    load_city = True
+
     this_path = os.path.dirname(os.path.abspath(__file__))
 
     if load_city == True: # load pickle City
-        load_path = os.path.join(this_path, 'City_generation', 'output', 'aachen_kronenberg_3_mfh_ref_1.pkl')
+        load_path = os.path.join(this_path, 'City_generation', 'output', city_pickle_name)
         City = pickle.load(open(load_path, mode='rb'))
 
         #  Add energy systems to city
@@ -368,12 +386,11 @@ def run_Morris():
     # Read the parameter range file and generate samples
 
     this_path = os.path.dirname(os.path.abspath(__file__))
-    load_path_pam = os.path.join(this_path, 'City_generation', 'Morris_values.txt')
+    load_path_pam = os.path.join(this_path, 'City_generation', Morris_name)
 
     problem = read_param_file(load_path_pam)
 
-    Nsample = 1
-    print(Nsample)
+    Nparameters = len(problem['names'])
 
     # Generate samples for the SA of the electrical and gas demand
     param_values = sample(problem, N=Nsample, num_levels=5, grid_jump=1, optimal_trajectories=None)
@@ -392,7 +409,7 @@ def run_Morris():
     print('Do the Morris simulations')
     print('***********************************************************************************************************')
     # Run the "model" -- this will happen offline for external models
-    (Y, Z, H, A, F, liste_max_dhw, liste_max_el, liste_max_sph, liste_shp_curve, liste_el_curve, liste_dhw_curve) = \
+    (Y, Z, H, A, F, liste_max_dhw, liste_max_el, liste_max_sph, liste_shp_curve, liste_el_curve, liste_dhw_curve, Nboiler_rescaled) = \
         model_evaluation.evaluate(City, param_values)
 
     #Y[0] = gas_dem_ref
@@ -400,10 +417,10 @@ def run_Morris():
     #H[0] = GHG_Emission_ref
     #A[0] = total_annuity_ref
 
-    print('Y: gas_dem after energy balance', Y)
-    print('Z: el_dem after energy balance', Z)
-    print('H: GHG emissions', H)
-    print('A : annuity ', A)
+    #print('Y: gas_dem after energy balance', Y)
+    #print('Z: el_dem after energy balance', Z)
+    #print('H: GHG emissions', H)
+    #print('A : annuity ', A)
 
 
     print('***********************************************************************************************************')
@@ -413,8 +430,8 @@ def run_Morris():
     Si_gas = morris.analyze(problem, param_values, Y, conf_level=0.95,
                     print_to_console=True,
                     num_levels=5, grid_jump=1, num_resamples=100)
-    print (Si_gas)
-    print (Si_gas.keys())
+    #print (Si_gas)
+    #print (Si_gas.keys())
 
     print('Analysis regarding el_dem')
     Si_el = morris.analyze(problem, param_values, Z, conf_level=0.95,
@@ -436,24 +453,126 @@ def run_Morris():
                             num_levels=5, grid_jump=1, num_resamples=100)
 
 
-
-
-
     # Returns a dictionary with keys 'mu', 'mu_star', 'sigma', and 'mu_star_conf'
     # e.g. Si['mu_star'] contains the mu* value for each parameter, in the
     # same order as the parameter file
 
-    print('Savecity: Annual electricity demand : ', SaveCity.get_annual_el_demand(), 'kWh/year')
+    #print('Savecity: Annual electricity demand : ', SaveCity.get_annual_el_demand(), 'kWh/year')
 
-    print('Y', Y)
+    #print('Y', Y)
 
-    print('Savecity: Annual thermal demand : ', SaveCity.get_total_annual_th_demand(), 'kWh/year')
+    #print('Savecity: Annual thermal demand : ', SaveCity.get_total_annual_th_demand(), 'kWh/year')
 
-    print('Z', Z)
+    #print('Z', Z)
+
+    print('***********************************************************************************************************')
+    print('Save results')
+    print('***********************************************************************************************************')
+
+    if save_result:
+        #  Write results file
+
+        #  Log file path
+        this_path = os.path.dirname(os.path.abspath(__file__))
+        results_path = os.path.join(this_path, 'output', results_name)
+
+        write_results = open(results_path, mode='w')
+        write_results.write(' Morris analysis\n ')
+
+        write_results.write(' Number of sampling :' + str(Nsample))
+        write_results.write('\n##############Parameters for the sensibility##############\n')
+        write_results.write(str(np.genfromtxt(load_path_pam)))
+        write_results.write('\n############## City reference ##############\n')
+        if load_city == True:
+            generation_mode = 'load City from pickle file'
+            write_results.write('Generation mode: ' + generation_mode)
+            write_results.write('pickle file path :  ' + str(load_path))
+        else:
+            generation_mode = 'generation of a city with City_generator'
+            write_results.write('Generation mode: ' + generation_mode)
+            write_results.write('*-*- City ref parameters: ')
+            write_results.write('generation_mode: ' + str(generation_mode) + '\n')
+            write_results.write('timestep in seconds: ' + str(timestep) + '\n')
+            write_results.write('Year: ' + str(year) + '\n')
+            write_results.write('Location: ' + str(location) + '\n')
+            write_results.write('District data: ' + district_data + '\n')
+            write_results.write('t_set_heat: ' + str(t_set_heat) + '\n')
+            write_results.write('t_set_night: ' + str(t_set_night) + '\n')
+            write_results.write('t_set_cool: ' + str(t_set_cool) + '\n')
+            write_results.write('air_vent_mode: ' + str(air_vent_mode) + '\n')
+            write_results.write('vent_factor: ' + str(vent_factor) + '\n')
+            write_results.write('el_gen_method: ' + str(el_gen_method) + '\n')
+            write_results.write(
+                'Normalize el. profile: ' + str(do_normalization) + '\n')
+            write_results.write(
+                'Do random el. normalization: ' + str(el_random) + '\n')
+            write_results.write(
+                'Prevent el. heating devices for el load generation: '
+                '' + str(prev_heat_dev) + '\n')
+            write_results.write(
+                'Rescaling factor lighting power curve to implement seasonal '
+                'influence: ' + str(season_mod) + '\n')
+
+            write_results.write('use_dhw: ' + str(use_dhw) + '\n')
+            write_results.write('dhw_method: ' + str(dhw_method) + '\n')
+            write_results.write('dhw_volumen: ' + str(dhw_volumen) + '\n')
+            write_results.write(
+                'Do random dhw. normalization: ' + str(dhw_random) + '\n')
+        write_results.write('\n############################Results #########################\n')
+        write_results.write('\n gas demand\n')
+        write_results.write("\n {0:<30} {1:>10} {2:>10} {3:>15} {4:>10} \n".format("Parameter", "Mu_Star",
+                                                                             "Mu", "Mu_Star_Conf", "Sigma"))
+        for j in list(range(len(Si_gas['names']))):
+            write_results.write(" {0:30} {1:10.3f} {2:10.3f} {3:15.3f} {4:10.3f} \n".format(Si_gas['names'][j],
+                                                                                        Si_gas['mu_star'][j],
+                                                                                        Si_gas['mu'][j],
+                                                                                        Si_gas['mu_star_conf'][j],
+                                                                                        Si_gas['sigma'][j]))
+        write_results.write('\n------------------------------------------------------------------\n')
+        write_results.write('\nelectrical demand\n')
+        write_results.write("\n {0:<30} {1:>10} {2:>10} {3:>15} {4:>10}\n".format("Parameter", "Mu_Star",
+                                                                             "Mu", "Mu_Star_Conf", "Sigma"))
+        for j in list(range(len(Si_el['names']))):
+            write_results.write(" {0:30} {1:10.3f} {2:10.3f} {3:15.3f} {4:10.3f} \n".format(Si_el['names'][j],
+                                                                                        Si_el['mu_star'][j],
+                                                                                        Si_el['mu'][j],
+                                                                                        Si_el['mu_star_conf'][j],
+                                                                                        Si_el['sigma'][j]))
+
+        write_results.write('\n------------------------------------------------------------------\n')
+        write_results.write('annuity')
+        write_results.write(" {0:<30} {1:>10} {2:>10} {3:>15} {4:>10} \n".format("Parameter", "Mu_Star",
+                                                                             "Mu", "Mu_Star_Conf", "Sigma"))
+        for j in list(range(len(Si_a['names']))):
+            write_results.write(" {0:30} {1:10.3f} {2:10.3f} {3:15.3f} {4:10.3f} \n".format(Si_a['names'][j],
+                                                                                        Si_a['mu_star'][j],
+                                                                                        Si_a['mu'][j],
+                                                                                        Si_a['mu_star_conf'][j],
+                                                                                        Si_a['sigma'][j]))
+        write_results.write('\n------------------------------------------------------------------\n')
+        write_results.write('\n Ghg\n')
+        write_results.write(" {0:<30} {1:>10} {2:>10} {3:>15} {4:>10} \n".format("Parameter", "Mu_Star",
+                                                                             "Mu", "Mu_Star_Conf", "Sigma"))
+        for j in list(range(len(Si_ghg['names']))):
+            write_results.write(" {0:30} {1:10.3f} {2:10.3f} {3:15.3f} {4:10.3f}\n".format(Si_ghg['names'][j],
+                                                                                        Si_ghg['mu_star'][j],
+                                                                                        Si_ghg['mu'][j],
+                                                                                        Si_ghg['mu_star_conf'][j],
+                                                                                        Si_ghg['sigma'][j]))
+        write_results.write('\n------------------------------------------------------------------\n')
+        write_results.write('\n  Number of City generated {}\n'.format(Nsample*(Nparameters+1)))
+        write_results.write('\n Number of City with boiler rescaled {} \n'.format(Nboiler_rescaled))
+
+
 
     print('***********************************************************************************************************')
     print('Visualisation')
     print('***********************************************************************************************************')
+    print ()
+    print ('Number of samples: {} '.format(Nsample))
+    print ('Number of City generated {}'.format(Nsample*(Nparameters+1)))
+    print ('Number of City with boiler rescaled {} '.format(Nboiler_rescaled))
+
     fig, (ax1, ax2) = plt.subplots(1, 2)
     horizontal_bar_plot(ax1, Si_gas,{}, sortby='mu_star', unit=r"gas_dem[kWh]/year")
     covariance_plot(ax2, Si_gas, {}, unit=r"gas_dem[kWh]/year")

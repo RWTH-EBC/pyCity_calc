@@ -20,7 +20,8 @@ def new_evaluation_esys(City, parameters):
         parameters: np array
             new parameters for energy systems
 
-        Return : City
+        Return :  City : City modified with the new energy systems
+                  rescale_boiler : boolean : True if the boiler of the building was rescaled
         -------
 
         """
@@ -81,14 +82,17 @@ def new_evaluation_esys(City, parameters):
 
         demand_building = dimfunc.get_max_power_of_building(City.node[build]['entity'], with_dhw=True)
 
+        rescale_boiler = False # boolean to keep track of the number of rescaled boiler
+
         if Cityref.node[build]['entity'].bes.hasBoiler == True:
 
             if demand_building > boiler_qNominal:
                 City.node[build]['entity'].bes.boiler.qNominal = \
                     dimfunc.round_esys_size(demand_building, round_up=True)
+                rescale_boiler = True
 
                 print()
                 print('new boiler capacity kW: ', City.node[build]['entity'].bes.boiler.qNominal/1000)
                 print()
 
-    return City
+    return City, rescale_boiler

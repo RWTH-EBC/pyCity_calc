@@ -96,13 +96,19 @@ def new_evaluation_building(building, parameters):
         print('ref el curve', ref_el_demand_curve)
 
         # ## Rescaling domestic hot water
+
         tFlow = parameters[6]
         Tsupply = parameters[7]
 
+        # stochastic generation of domestic hot water, new generation only if input parameters change
+        # otherwise impact on the sensitivity analysis
+
+        #if tFlow != 60 or Tsupply != 25 or ref_appart_occupants != curr_occupants:
+
         building.apartments[appart].demandDomesticHotWater = \
             DomHotWat.DomesticHotWater(building.environment, tFlow=tFlow, method=2, supplyTemperature=Tsupply,
-                                      occupancy=building.apartments[appart].occupancy.occupancy)
-
-        print('DHW', building.apartments[appart].demandDomesticHotWater)
+                                    occupancy=building.apartments[appart].occupancy.occupancy)
+        print ('\n new dhw curve generation')
+        #print('DHW', building.apartments[appart].demandDomesticHotWater)
 
         return building

@@ -2,14 +2,14 @@
 # coding=utf-8
 
 '''
-Script to evaluate the output array for the Morris Analysis of a city object
+Script to evaluate  output arrays for the Morris Analysis of a city object
 Residential buildings only
 Thermal space heating calculate with TEASER
 Electrical load curve calculate with method 2: stochastic method
 Generation of the Domestic Hot water profile with stochastic method
 
-step 1: Load the district data
-step 2: Generation of a city
+step 1: Initialisation
+step 2: Generation of a new city (energy curves recalculation)
 step 3: energy balance
 step 4: economic calculation
 step 5: emissions calculation
@@ -28,6 +28,8 @@ Return: Y: array of gas demand values after energy balance
         liste_max_sph : list of intermediate maximum space heating  demand (for energy balance)
         liste_max_el : list of intermediate maximum electrical demand (for energy balance)
         liste_max_dhw : list of intermediate maximum domestic hot water demand (for energy balance)
+
+        Nboiler_rescale : number of City with  rescaled boiler(space heating demand to high)
 
 '''
 
@@ -50,6 +52,24 @@ def evaluate(City, values):
     if type(values) != np.ndarray:
         raise TypeError("The argument `values` must be a numpy ndarray")
 
+    Y = np.zeros([values.shape[0]])  # array of annual gas demand
+    Z = np.zeros([values.shape[0]])  # array of annual electrical demand after energy balance
+    A = np.zeros([values.shape[0]])  # array of annuity
+    H = np.zeros([values.shape[0]])  # array of ghg emission kg/year
+    F = np.zeros([values.shape[0]])  # array of specific ghg emission kg/kwhyear
+    Inter_el = np.zeros([values.shape[0]])  # array of annual electrical demand for energy balance
+    Inter_dhw = np.zeros([values.shape[0]])  # array of annual dhw demand
+    Inter_sph = np.zeros([values.shape[0]])  # array of annual SPH demand
+    liste_shp_curve = []
+    liste_el_curve = []
+    liste_dhw_curve = []
+    liste_max_sph = np.zeros([values.shape[0]])
+    liste_max_el = np.zeros([values.shape[0]])
+    liste_max_dhw = np.zeros([values.shape[0]])
+
+    Nboiler_rescaled = 0 # number of boiler rescaled (thermal demand to high)
+
+
     # Save the City and building numbers
 
     City_ref = copy.deepcopy(City)
@@ -61,20 +81,6 @@ def evaluate(City, values):
     year = 2010
     timestep = City.environment.timer.timeDiscretization  # Timestep in seconds
 
-    Y = np.zeros([values.shape[0]]) # array of annual gas demand
-    Z = np.zeros([values.shape[0]]) # array of annual electrical demand
-    A = np.zeros([values.shape[0]]) # array of annuity
-    H = np.zeros([values.shape[0]]) # array of ghg emission kg/year
-    F = np.zeros([values.shape[0]])  # array of specific ghg emission kg/kwhyear
-    Inter_el = np.zeros([values.shape[0]])
-    Inter_dhw = np.zeros([values.shape[0]])
-    Inter_sph = np.zeros([values.shape[0]])
-    liste_shp_curve = []
-    liste_el_curve = []
-    liste_dhw_curve = []
-    liste_max_sph = np.zeros([values.shape[0]])
-    liste_max_el = np.zeros([values.shape[0]])
-    liste_max_dhw = np.zeros([values.shape[0]])
 
     for loop, row in enumerate(values):
 
@@ -186,9 +192,10 @@ def evaluate(City, values):
 
         #  Generate energy systems
 
-        City = esysmod.new_evaluation_esys(City, parameters=row[15: 40])
+        City, rescale_boiler = esysmod.new_evaluation_esys(City, parameters=row[15: 40])
 
-
+        if rescale_boiler == True:
+            Nboiler_rescaled += 1
 
         ############################################
 
@@ -355,4 +362,4 @@ def evaluate(City, values):
         H[loop] = GHG_Emission
         F[loop] = GHG_Emission/(annual_sph_dem+annual_dhw_dem+annual_el_dem)
 
-    return(Y, Z, H, A, F, liste_max_dhw, liste_max_el, liste_max_sph, liste_shp_curve, liste_el_curve, liste_dhw_curve)
+    return(Y, Z, H, A, F, liste_max_dhw, liste_max_el, liste_max_sph, liste_shp_curve, liste_el_curve, liste_dhw_curve, Nboiler_rescaled)
