@@ -1224,8 +1224,11 @@ def box_plot_analysis_triple_plot(mc_res, output_path, output_filename,
     data_coll = []
     list_xticks = []
     list_riqr = []
+    list_ref_values = []
 
     for key in list_order:
+
+        print('Key: ', key)
 
         list_sh_en = copy.deepcopy(mc_res.get_results(key=key)[0])
 
@@ -1237,6 +1240,13 @@ def box_plot_analysis_triple_plot(mc_res, output_path, output_filename,
         data_coll.append(list_sh_en)
 
         list_xticks.append(key)
+
+        #  Get reference demand
+        curr_city = mc_res.dict_cities[key]
+        sh_ref = curr_city.get_annual_space_heating_demand() / 1000 #  in MWh
+        list_ref_values.append(sh_ref)
+        print('Reference sh demand in MWh:')
+        print(sh_ref)
 
         #  Calc RIQR
         riqr = calc_riqr(list_sh_en)
@@ -1284,6 +1294,13 @@ def box_plot_analysis_triple_plot(mc_res, output_path, output_filename,
     plt.ylabel('Net space heating\ndemand in MWh')
     ax.set_xticklabels(list_xticks[0:2])
 
+    ax.plot([0.6, 1.4], [list_ref_values[0], list_ref_values[0]],
+            label='Reference', color='#1058B0',
+            linewidth=1)
+    ax.plot([1.6, 2.4], [list_ref_values[1], list_ref_values[1]],
+            label='Reference', color='#1058B0',
+            linewidth=1)
+
     start, end = ax.get_ylim()
     print(start)
     print(end)
@@ -1293,7 +1310,7 @@ def box_plot_analysis_triple_plot(mc_res, output_path, output_filename,
         median.set(color='#E53027')
 
     for flier in pb['fliers']:
-        flier.set(marker='*', markersize=0.5)
+        flier.set(marker='.', markersize=1)
 
     fig.add_subplot(132)
 
@@ -1303,16 +1320,23 @@ def box_plot_analysis_triple_plot(mc_res, output_path, output_filename,
     #plt.ylabel('Net space heating\ndemand in MWh')
     ax.set_xticklabels(list_xticks[2:4])
 
+    ax.plot([0.6, 1.4], [list_ref_values[2], list_ref_values[2]],
+            label='Reference', color='#1058B0',
+            linewidth=1)
+    ax.plot([1.6, 2.4], [list_ref_values[3], list_ref_values[3]],
+            label='Reference', color='#1058B0',
+            linewidth=1)
+
     start, end = ax.get_ylim()
     print(start)
     print(end)
-    ax.yaxis.set_ticks(np.arange(round(start,-3), end, 250))
+    ax.yaxis.set_ticks(np.arange(round(start,-3), end, 200))
 
     for median in pb['medians']:
         median.set(color='#E53027')
 
     for flier in pb['fliers']:
-        flier.set(marker='*', markersize=0.5)
+        flier.set(marker='.', markersize=1)
 
     fig.add_subplot(133)
 
@@ -1321,6 +1345,13 @@ def box_plot_analysis_triple_plot(mc_res, output_path, output_filename,
     pb = ax.boxplot(data_coll[4:6], showfliers=with_outliners, widths=(0.8, 0.8))
     #plt.ylabel('Net space heating\ndemand in MWh')
     ax.set_xticklabels(list_xticks[4:6])
+
+    ax.plot([0.6, 1.4], [list_ref_values[4], list_ref_values[4]],
+            label='Reference', color='#1058B0',
+            linewidth=1)
+    ax.plot([1.6, 2.4], [list_ref_values[5], list_ref_values[5]],
+            label='Reference', color='#1058B0',
+            linewidth=1)
 
     start, end = ax.get_ylim()
     print(start)
@@ -1331,7 +1362,13 @@ def box_plot_analysis_triple_plot(mc_res, output_path, output_filename,
         median.set(color='#E53027')
 
     for flier in pb['fliers']:
-        flier.set(marker='*', markersize=0.5)
+        flier.set(marker='.', markersize=1)
+
+    import matplotlib.lines as mlines
+    #  Generate proxy arist for legend
+    median_proxy = mlines.Line2D([], [], color='#E53027', label='Median')
+
+    plt.legend(handles=[median_proxy])
 
     fig.autofmt_xdate()
     plt.tight_layout()
@@ -1963,7 +2000,7 @@ if __name__ == '__main__':
     dict_city_f_names[key] = city_f_name
     dict_b_node_nb[key] = build_node_nb
 
-    city_f_name = 'aachen_tuerme_mod_6.pkl'
+    city_f_name = 'aachen_huenefeld_mod_6.pkl'
     key = u'Hünefeld'
     build_node_nb = 1003  # Huenefeld
     dict_city_f_names[key] = city_f_name
@@ -1988,8 +2025,8 @@ if __name__ == '__main__':
                   'Hünefeld', 'Türme']
 
     #############################
-    #  For single district
-    # key = u'Hünefeld'
+    # #  For single district
+    # key = u'Preusweg'
     # # #  analysis name
     # name_an = '_boxplots'
     # output_folder_n = key + name_an
