@@ -1711,42 +1711,42 @@ if __name__ == '__main__':
     #  Add results
     #  ####################################################################
 
-    # filename1 = '.pkl'
+    # filename1 = 'aachen_forsterlinde_5_mc_city_2000_new_dhw_2000.pkl'
     filename1 = 'aachen_forsterlinde_5_single_b_new_dhw_1011.pkl'
     output_filename1 = filename1[:-4]
     key1 = 'Forsterlinde'
 
     dict_filenames[key1] = filename1
 
-    # filename2 = '.pkl'
+    # filename2 = 'aachen_frankenberg_5_mc_city_2000_new_dhw_2000.pkl'
     filename2 = 'aachen_frankenberg_5_single_b_new_dhw_1020.pkl'
     output_filename2 = filename2[:-4]
     key2 = 'Frankenberg'
 
     dict_filenames[key2] = filename2
 
-    # filename3 = '.pkl'
+    # filename3 = 'aachen_kronenberg_5_mc_city_2000_new_dhw_2000.pkl'
     filename3 = 'aachen_kronenberg_5_single_b_new_dhw_1002.pkl'
     output_filename3 = filename3[:-4]
     key3 = 'Kronenberg'
 
     dict_filenames[key3] = filename3
 
-    # filename4 = '.pkl'
+    # filename4 = 'aachen_preusweg_5b_mc_city_2000_new_dhw_2000.pkl'
     filename4 = 'aachen_preusweg_5b_single_b_new_dhw_1092.pkl'
     output_filename4 = filename4[:-4]
     key4 = 'Preusweg'
 
     dict_filenames[key4] = filename4
 
-    # filename5 = '.pkl'
+    # filename5 = 'aachen_tuerme_osm_extr_enriched_mc_city_2000_new_dhw_2000.pkl'
     filename5 = 'aachen_tuerme_osm_extr_enriched_single_b_new_dhw_1010.pkl'
     output_filename5 = filename5[:-4]
     key5 = u'Türme'
 
     dict_filenames[key5] = filename5
 
-    # filename6 = '.pkl'
+    # filename6 = 'huenefeld_5_mc_city_2000_new_dhw_2000.pkl'
     filename6 = 'huenefeld_5_single_b_new_dhw_1003.pkl'
     output_filename6 = filename6[:-4]
     key6 = u'Hünefeld'
@@ -1825,10 +1825,10 @@ if __name__ == '__main__':
     #  For single district
     # key = 'Kronenberg'
     # # #  analysis name
-    # name_an = '_single_b_dhw_dem'
+    # name_an = '_boxplots'
     # output_folder_n = key + name_an
 
-    output_folder_n = 'cities_single_b_mc'
+    output_folder_n = 'cities_mc'
 
     output_path = os.path.join(this_path, 'output', output_folder_n)
 
@@ -1842,21 +1842,21 @@ if __name__ == '__main__':
     # do_sh_load_analysis(mc_res=mc_res, key=key, output_path=output_path,
     #                     output_filename=key)
 
-    # #  Perform space heating demand analysis for single district
-    # #  #####################################################################
-    # analyze_sh_demands_hist(mc_res=mc_res, key=key, output_path=output_path)
+    #  Perform space heating demand analysis for single district
+    #  #####################################################################
+    analyze_sh_demands_hist(mc_res=mc_res, key=key, output_path=output_path)
 
-    # #  Perform space heating power analysis for single district
-    # #  #####################################################################
-    # analyze_sh_powers_hist(mc_res=mc_res, key=key, output_path=output_path)
+    #  Perform space heating power analysis for single district
+    #  #####################################################################
+    analyze_sh_powers_hist(mc_res=mc_res, key=key, output_path=output_path)
 
-    # #  Perform electric energy analysis for single district
-    # #  #####################################################################
-    # analyze_el_demands_hist(mc_res=mc_res, key=key, output_path=output_path)
+    #  Perform electric energy analysis for single district
+    #  #####################################################################
+    analyze_el_demands_hist(mc_res=mc_res, key=key, output_path=output_path)
 
-    # #  Perform hot water energy analysis for single district
-    # #  #####################################################################
-    # analyze_dhw_demands_hist(mc_res=mc_res, key=key, output_path=output_path)
+    #  Perform hot water energy analysis for single district
+    #  #####################################################################
+    analyze_dhw_demands_hist(mc_res=mc_res, key=key, output_path=output_path)
 
     # # #  Perform space heating box plot analysis for all districts
     # # #  Plot all boxplots in one figure
