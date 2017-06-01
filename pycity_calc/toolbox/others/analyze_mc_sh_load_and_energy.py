@@ -780,261 +780,261 @@ def analyze_sh_powers_hist(mc_res, key, output_path):
                                              dict_v_lines=dict_v_lines)
 
 
-def box_plot_analysis(mc_res, output_path, output_filename, with_outliners,
-                      list_order,
-                      dpi=100):
-    """
-
-    Parameters
-    ----------
-    mc_res
-    output_path
-    output_filename
-    with_outliners
-    list_order
-    dpi
-
-    Returns
-    -------
-
-    """
-
-    gen_path(output_path)
-
-    data_coll = []
-    list_xticks = []
-    list_riqr = []
-
-    for key in list_order:
-
-        list_sh_en = copy.deepcopy(mc_res.get_results(key=key)[0])
-
-        #  Convert kWh to MWh
-        for i in range(len(list_sh_en)):
-            list_sh_en[i] /= 1000
-
-        # Add space heating lists
-        data_coll.append(list_sh_en)
-
-        list_xticks.append(key)
-
-        #  Calc RIQR
-        riqr = calc_riqr(list_sh_en)
-        print('riqr')
-        print(riqr)
-        print('for key: ', key)
-        print()
-        list_riqr.append(riqr)
-
-    # for key in mc_res.dict_res.keys():
-    #
-    #     list_sh_en = copy.deepcopy(mc_res.get_results(key=key)[0])
-    #
-    #     #  Convert kWh to MWh
-    #     for i in range(len(list_sh_en)):
-    #         list_sh_en[i] /= 1000
-    #
-    #     # Add space heating lists
-    #     data_coll.append(list_sh_en)
-    #
-    #     list_xticks.append(key)
-    #
-    #     #  Calc RIQR
-    #     riqr = calc_riqr(list_sh_en)
-    #     print('riqr')
-    #     print(riqr)
-    #     print('for key: ', key)
-    #     print()
-    #     list_riqr.append(riqr)
-
-    # # Sort by space heating demands
-    # data_coll, list_xticks, list_riqr = zip(
-    #     *sorted(zip(data_coll, list_xticks, list_riqr)))
-
-    plt.rc('font', family='Arial', size=12)
-
-    fig = plt.figure(figsize=(5, 3), dpi=dpi)
-
-    ax = fig.gca()
-
-    pb = ax.boxplot(data_coll, showfliers=with_outliners)
-
-    ax.set_xticklabels(list_xticks)
-
-    for median in pb['medians']:
-        median.set(color='#E53027')
-
-    for flier in pb['fliers']:
-        flier.set(marker='*', markersize=0.5)
-
-    fig.autofmt_xdate()
-    plt.tight_layout()
-    plt.ylabel('Net space heating\ndemand in MWh')
-
-    #  Generate file names for different formats
-    file_pdf = output_filename + '.pdf'
-    file_eps = output_filename + '.eps'
-    file_png = output_filename + '.png'
-    file_tiff = output_filename + '.tiff'
-    file_tikz = output_filename + '.tikz'
-
-    #  Generate saving pathes
-    path_pdf = os.path.join(output_path, file_pdf)
-    path_eps = os.path.join(output_path, file_eps)
-    path_png = os.path.join(output_path, file_png)
-    path_tiff = os.path.join(output_path, file_tiff)
-    path_tikz = os.path.join(output_path, file_tikz)
-
-    #  Save figure in different formats
-    plt.savefig(path_pdf, format='pdf', dpi=dpi)
-    plt.savefig(path_eps, format='eps', dpi=dpi)
-    plt.savefig(path_png, format='png', dpi=dpi)
-    # plt.savefig(path_tiff, format='tiff', dpi=dpi)
-    tikz_save(path_tikz, figureheight='\\figureheight',
-              figurewidth='\\figurewidth')
-
-    # plt.show()
-    plt.close()
-
-
-def box_plot_analysis_double_plot(mc_res, output_path, output_filename,
-                                  list_order,
-                                  dpi=100, with_outliners=True):
-    """
-
-    Parameters
-    ----------
-    mc_res
-    output_path
-    output_filename
-    list_order
-    dpi
-    with_outliners
-
-    Returns
-    -------
-
-    """
-
-    gen_path(output_path)
-
-    data_coll = []
-    list_xticks = []
-    list_riqr = []
-
-    for key in list_order:
-
-        list_sh_en = copy.deepcopy(mc_res.get_results(key=key)[0])
-
-        #  Convert kWh to MWh
-        for i in range(len(list_sh_en)):
-            list_sh_en[i] /= 1000
-
-        # Add space heating lists
-        data_coll.append(list_sh_en)
-
-        list_xticks.append(key)
-
-        #  Calc RIQR
-        riqr = calc_riqr(list_sh_en)
-        print('riqr')
-        print(riqr)
-        print('for key: ', key)
-        print()
-        list_riqr.append(riqr)
-
-
-    # for key in mc_res.dict_res.keys():
-    #
-    #     list_sh_en = copy.deepcopy(mc_res.get_results(key=key)[0])
-    #
-    #     #  Convert kWh to MWh
-    #     for i in range(len(list_sh_en)):
-    #         list_sh_en[i] /= 1000
-    #
-    #     # Add space heating lists
-    #     data_coll.append(list_sh_en)
-    #
-    #     list_xticks.append(key)
-    #
-    #     #  Calc RIQR
-    #     riqr = calc_riqr(list_sh_en)
-    #     print('riqr')
-    #     print(riqr)
-    #     print('for key: ', key)
-    #     print()
-    #     list_riqr.append(riqr)
-    #
-    # # Sort by space heating demands
-    # data_coll, list_xticks, list_riqr = zip(
-    #     *sorted(zip(data_coll, list_xticks, list_riqr)))
-
-    plt.rc('font', family='Arial', size=12)
-
-    fig = plt.figure(figsize=(5, 3), dpi=dpi)
-
-    fig.add_subplot(121)
-
-    ax = fig.gca()
-
-    pb = ax.boxplot(data_coll[0:4], showfliers=with_outliners)
-    plt.ylabel('Net space heating\ndemand in MWh')
-    ax.set_xticklabels(list_xticks[0:4])
-
-    for median in pb['medians']:
-        median.set(color='#E53027')
-
-    for flier in pb['fliers']:
-        flier.set(marker='*', markersize=0.5)
-
-    fig.add_subplot(122)
-
-    ax = fig.gca()
-
-    pb = ax.boxplot(data_coll[4:6], showfliers=with_outliners)
-    plt.ylabel('Net space heating\ndemand in MWh')
-    ax.set_xticklabels(list_xticks[4:6])
-
-    for median in pb['medians']:
-        median.set(color='#E53027')
-
-    for flier in pb['fliers']:
-        flier.set(marker='*', markersize=0.5)
-
-    fig.autofmt_xdate()
-    plt.tight_layout()
-
-    gen_path(output_path)
-
-    #  Generate file names for different formats
-    file_pdf = output_filename + '.pdf'
-    file_eps = output_filename + '.eps'
-    file_png = output_filename + '.png'
-    file_tiff = output_filename + '.tiff'
-    file_tikz = output_filename + '.tikz'
-
-    #  Generate saving pathes
-    path_pdf = os.path.join(output_path, file_pdf)
-    path_eps = os.path.join(output_path, file_eps)
-    path_png = os.path.join(output_path, file_png)
-    path_tiff = os.path.join(output_path, file_tiff)
-    path_tikz = os.path.join(output_path, file_tikz)
-
-    #  Save figure in different formats
-    plt.savefig(path_pdf, format='pdf', dpi=dpi)
-    plt.savefig(path_eps, format='eps', dpi=dpi)
-    plt.savefig(path_png, format='png', dpi=dpi)
-    # plt.savefig(path_tiff, format='tiff', dpi=dpi)
-    tikz_save(path_tikz, figureheight='\\figureheight',
-              figurewidth='\\figurewidth')
-
-    # plt.show()
-    plt.close()
+# def box_plot_analysis(mc_res, output_path, output_filename, with_outliners,
+#                       list_order,
+#                       dpi=100):
+#     """
+#
+#     Parameters
+#     ----------
+#     mc_res
+#     output_path
+#     output_filename
+#     with_outliners
+#     list_order
+#     dpi
+#
+#     Returns
+#     -------
+#
+#     """
+#
+#     gen_path(output_path)
+#
+#     data_coll = []
+#     list_xticks = []
+#     list_riqr = []
+#
+#     for key in list_order:
+#
+#         list_sh_en = copy.deepcopy(mc_res.get_results(key=key)[0])
+#
+#         #  Convert kWh to MWh
+#         for i in range(len(list_sh_en)):
+#             list_sh_en[i] /= 1000
+#
+#         # Add space heating lists
+#         data_coll.append(list_sh_en)
+#
+#         list_xticks.append(key)
+#
+#         #  Calc RIQR
+#         riqr = calc_riqr(list_sh_en)
+#         print('riqr')
+#         print(riqr)
+#         print('for key: ', key)
+#         print()
+#         list_riqr.append(riqr)
+#
+#     # for key in mc_res.dict_res.keys():
+#     #
+#     #     list_sh_en = copy.deepcopy(mc_res.get_results(key=key)[0])
+#     #
+#     #     #  Convert kWh to MWh
+#     #     for i in range(len(list_sh_en)):
+#     #         list_sh_en[i] /= 1000
+#     #
+#     #     # Add space heating lists
+#     #     data_coll.append(list_sh_en)
+#     #
+#     #     list_xticks.append(key)
+#     #
+#     #     #  Calc RIQR
+#     #     riqr = calc_riqr(list_sh_en)
+#     #     print('riqr')
+#     #     print(riqr)
+#     #     print('for key: ', key)
+#     #     print()
+#     #     list_riqr.append(riqr)
+#
+#     # # Sort by space heating demands
+#     # data_coll, list_xticks, list_riqr = zip(
+#     #     *sorted(zip(data_coll, list_xticks, list_riqr)))
+#
+#     plt.rc('font', family='Arial', size=12)
+#
+#     fig = plt.figure(figsize=(5, 3), dpi=dpi)
+#
+#     ax = fig.gca()
+#
+#     pb = ax.boxplot(data_coll, showfliers=with_outliners)
+#
+#     ax.set_xticklabels(list_xticks)
+#
+#     for median in pb['medians']:
+#         median.set(color='#E53027')
+#
+#     for flier in pb['fliers']:
+#         flier.set(marker='*', markersize=0.5)
+#
+#     fig.autofmt_xdate()
+#     plt.tight_layout()
+#     plt.ylabel('Net space heating\ndemand in MWh')
+#
+#     #  Generate file names for different formats
+#     file_pdf = output_filename + '.pdf'
+#     file_eps = output_filename + '.eps'
+#     file_png = output_filename + '.png'
+#     file_tiff = output_filename + '.tiff'
+#     file_tikz = output_filename + '.tikz'
+#
+#     #  Generate saving pathes
+#     path_pdf = os.path.join(output_path, file_pdf)
+#     path_eps = os.path.join(output_path, file_eps)
+#     path_png = os.path.join(output_path, file_png)
+#     path_tiff = os.path.join(output_path, file_tiff)
+#     path_tikz = os.path.join(output_path, file_tikz)
+#
+#     #  Save figure in different formats
+#     plt.savefig(path_pdf, format='pdf', dpi=dpi)
+#     plt.savefig(path_eps, format='eps', dpi=dpi)
+#     plt.savefig(path_png, format='png', dpi=dpi)
+#     # plt.savefig(path_tiff, format='tiff', dpi=dpi)
+#     tikz_save(path_tikz, figureheight='\\figureheight',
+#               figurewidth='\\figurewidth')
+#
+#     # plt.show()
+#     plt.close()
+#
+#
+# def box_plot_analysis_double_plot(mc_res, output_path, output_filename,
+#                                   list_order,
+#                                   dpi=100, with_outliners=True):
+#     """
+#
+#     Parameters
+#     ----------
+#     mc_res
+#     output_path
+#     output_filename
+#     list_order
+#     dpi
+#     with_outliners
+#
+#     Returns
+#     -------
+#
+#     """
+#
+#     gen_path(output_path)
+#
+#     data_coll = []
+#     list_xticks = []
+#     list_riqr = []
+#
+#     for key in list_order:
+#
+#         list_sh_en = copy.deepcopy(mc_res.get_results(key=key)[0])
+#
+#         #  Convert kWh to MWh
+#         for i in range(len(list_sh_en)):
+#             list_sh_en[i] /= 1000
+#
+#         # Add space heating lists
+#         data_coll.append(list_sh_en)
+#
+#         list_xticks.append(key)
+#
+#         #  Calc RIQR
+#         riqr = calc_riqr(list_sh_en)
+#         print('riqr')
+#         print(riqr)
+#         print('for key: ', key)
+#         print()
+#         list_riqr.append(riqr)
+#
+#
+#     # for key in mc_res.dict_res.keys():
+#     #
+#     #     list_sh_en = copy.deepcopy(mc_res.get_results(key=key)[0])
+#     #
+#     #     #  Convert kWh to MWh
+#     #     for i in range(len(list_sh_en)):
+#     #         list_sh_en[i] /= 1000
+#     #
+#     #     # Add space heating lists
+#     #     data_coll.append(list_sh_en)
+#     #
+#     #     list_xticks.append(key)
+#     #
+#     #     #  Calc RIQR
+#     #     riqr = calc_riqr(list_sh_en)
+#     #     print('riqr')
+#     #     print(riqr)
+#     #     print('for key: ', key)
+#     #     print()
+#     #     list_riqr.append(riqr)
+#     #
+#     # # Sort by space heating demands
+#     # data_coll, list_xticks, list_riqr = zip(
+#     #     *sorted(zip(data_coll, list_xticks, list_riqr)))
+#
+#     plt.rc('font', family='Arial', size=12)
+#
+#     fig = plt.figure(figsize=(5, 3), dpi=dpi)
+#
+#     fig.add_subplot(121)
+#
+#     ax = fig.gca()
+#
+#     pb = ax.boxplot(data_coll[0:4], showfliers=with_outliners)
+#     plt.ylabel('Net space heating\ndemand in MWh')
+#     ax.set_xticklabels(list_xticks[0:4])
+#
+#     for median in pb['medians']:
+#         median.set(color='#E53027')
+#
+#     for flier in pb['fliers']:
+#         flier.set(marker='*', markersize=0.5)
+#
+#     fig.add_subplot(122)
+#
+#     ax = fig.gca()
+#
+#     pb = ax.boxplot(data_coll[4:6], showfliers=with_outliners)
+#     plt.ylabel('Net space heating\ndemand in MWh')
+#     ax.set_xticklabels(list_xticks[4:6])
+#
+#     for median in pb['medians']:
+#         median.set(color='#E53027')
+#
+#     for flier in pb['fliers']:
+#         flier.set(marker='*', markersize=0.5)
+#
+#     fig.autofmt_xdate()
+#     plt.tight_layout()
+#
+#     gen_path(output_path)
+#
+#     #  Generate file names for different formats
+#     file_pdf = output_filename + '.pdf'
+#     file_eps = output_filename + '.eps'
+#     file_png = output_filename + '.png'
+#     file_tiff = output_filename + '.tiff'
+#     file_tikz = output_filename + '.tikz'
+#
+#     #  Generate saving pathes
+#     path_pdf = os.path.join(output_path, file_pdf)
+#     path_eps = os.path.join(output_path, file_eps)
+#     path_png = os.path.join(output_path, file_png)
+#     path_tiff = os.path.join(output_path, file_tiff)
+#     path_tikz = os.path.join(output_path, file_tikz)
+#
+#     #  Save figure in different formats
+#     plt.savefig(path_pdf, format='pdf', dpi=dpi)
+#     plt.savefig(path_eps, format='eps', dpi=dpi)
+#     plt.savefig(path_png, format='png', dpi=dpi)
+#     # plt.savefig(path_tiff, format='tiff', dpi=dpi)
+#     tikz_save(path_tikz, figureheight='\\figureheight',
+#               figurewidth='\\figurewidth')
+#
+#     # plt.show()
+#     plt.close()
 
 
 def box_plot_analysis_triple_plot(mc_res, output_path, output_filename,
-                                  list_order,
-                                  dpi=100, with_outliners=True):
+                                  list_order, mode, mc_city=True,
+                                  dpi=1000, with_outliners=True):
     """
 
     Parameters
@@ -1043,6 +1043,12 @@ def box_plot_analysis_triple_plot(mc_res, output_path, output_filename,
     output_path
     output_filename
     list_order
+    mode : str
+        Mode for histogram analysis. Options:
+        - 'sh' : space heating
+        - 'el' : electric demand
+        - 'dhw' : Hot water
+    mc_city : bool, optional
     dpi
     with_outliners
 
@@ -1050,6 +1056,16 @@ def box_plot_analysis_triple_plot(mc_res, output_path, output_filename,
     -------
 
     """
+
+    assert mode in ['sh', 'el', 'dhw']
+
+    #  Get reference  demand in kWh (per building)
+    if mode == 'sh':
+        e_name = 'net space heating energy'
+    elif mode == 'el':
+        e_name = 'el. energy demand'
+    elif mode == 'dhw':
+        e_name = 'hot water energy demand'
 
     gen_path(output_path)
 
@@ -1062,26 +1078,73 @@ def box_plot_analysis_triple_plot(mc_res, output_path, output_filename,
 
         print('Key: ', key)
 
-        list_sh_en = copy.deepcopy(mc_res.get_results(key=key)[0])
+        if mc_city:
+            if mode == 'sh':
+                list_energy = \
+                    copy.deepcopy(mc_res.get_results_mc_city(key=key)[0])
+            elif mode == 'el':
+                list_energy = \
+                    copy.deepcopy(mc_res.get_results_mc_city(key=key)[2])
+            elif mode == 'dhw':
+                list_energy = \
+                    copy.deepcopy(mc_res.get_results_mc_city(key=key)[3])
+        else:
+            if mode == 'sh':
+                list_energy = \
+                    copy.deepcopy(mc_res.get_results_mc_build(key=key)[0])
+            elif mode == 'el':
+                list_energy = \
+                    copy.deepcopy(mc_res.get_results_mc_build(key=key)[2])
+            elif mode == 'dhw':
+                list_energy = \
+                    copy.deepcopy(mc_res.get_results_mc_build(key=key)[3])
 
         #  Convert kWh to MWh
-        for i in range(len(list_sh_en)):
-            list_sh_en[i] /= 1000
+        for i in range(len(list_energy)):
+            list_energy[i] /= 1000
 
-        # Add space heating lists
-        data_coll.append(list_sh_en)
+        # Add energy lists
+        data_coll.append(list_energy)
 
         list_xticks.append(key)
 
         #  Get reference demand
         curr_city = mc_res.dict_cities[key]
-        sh_ref = curr_city.get_annual_space_heating_demand() / 1000 #  in MWh
-        list_ref_values.append(sh_ref)
-        print('Reference sh demand in MWh:')
-        print(sh_ref)
+
+        if mc_city:
+            if mode == 'sh':
+                ref_dem = \
+                    curr_city.get_annual_space_heating_demand() / 1000
+                    # in MWh
+            elif mode == 'el':
+                ref_dem = \
+                    curr_city.get_annual_el_demand() / 1000
+                # in MWh
+            elif mode == 'dhw':
+                ref_dem = \
+                    curr_city.get_annual_dhw_demand() / 1000
+        else:
+            curr_id = mc_res.dict_build_ids[key]
+            curr_build = curr_city.node[curr_id]['entity']
+            if mode == 'sh':
+                ref_dem = \
+                    curr_build.get_annual_space_heat_demand() / 1000
+                    # in MWh
+            elif mode == 'el':
+                ref_dem = \
+                    curr_build.get_annual_el_demand() / 1000
+                # in MWh
+            elif mode == 'dhw':
+                ref_dem = \
+                    curr_build.get_annual_dhw_demand() / 1000
+
+        list_ref_values.append(ref_dem)
+
+        print('Reference ' + str(e_name) +' in MWh:')
+        print(ref_dem)
 
         #  Calc RIQR
-        riqr = calc_riqr(list_sh_en)
+        riqr = calc_riqr(list_energy)
         print('riqr')
         print(riqr)
         print('for key: ', key)
@@ -1114,16 +1177,27 @@ def box_plot_analysis_triple_plot(mc_res, output_path, output_filename,
     # data_coll, list_xticks, list_riqr = zip(
     #     *sorted(zip(data_coll, list_xticks, list_riqr)))
 
-    plt.rc('font', family='Arial', size=12)
+
+
+    plt.rc('font', family='Arial', size=fontsize)
 
     fig = plt.figure(figsize=(5, 3), dpi=dpi)
 
+    #  Subplot 1
+    #  #################################################################
     fig.add_subplot(131)
 
     ax = fig.gca()
 
-    pb = ax.boxplot(data_coll[0:2], showfliers=with_outliners, widths=(0.8, 0.8))
-    plt.ylabel('Net space heating\ndemand in MWh')
+    pb = ax.boxplot(data_coll[0:2], showfliers=with_outliners,
+                    widths=(0.8, 0.8))
+    if mode == 'sh':
+        plt.ylabel('Net space heating\ndemand in MWh')
+    elif mode == 'el':
+        plt.ylabel('Electric energy\ndemand in MWh')
+    elif mode == 'dhw':
+        plt.ylabel('Hot water\ndemand in MWh')
+
     ax.set_xticklabels(list_xticks[0:2])
 
     ax.plot([0.6, 1.4], [list_ref_values[0], list_ref_values[0]],
@@ -1136,7 +1210,13 @@ def box_plot_analysis_triple_plot(mc_res, output_path, output_filename,
     start, end = ax.get_ylim()
     print(start)
     print(end)
-    ax.yaxis.set_ticks(np.arange(round(start,-3), end, 100))
+    # start = round(start / 100, ndigits=0) * 100
+    start = 0
+    end = round(end / 1000, ndigits=0) * 1000
+
+    stepsize = round((end - start) / 10, ndigits=0)
+
+    ax.yaxis.set_ticks(np.arange(start, end, stepsize))
 
     for median in pb['medians']:
         median.set(color='#E53027')
@@ -1144,12 +1224,14 @@ def box_plot_analysis_triple_plot(mc_res, output_path, output_filename,
     for flier in pb['fliers']:
         flier.set(marker='.', markersize=1)
 
+    #  Subplot 2
+    #  #################################################################
     fig.add_subplot(132)
 
     ax = fig.gca()
 
-    pb = ax.boxplot(data_coll[2:4], showfliers=with_outliners, widths=(0.8, 0.8))
-    #plt.ylabel('Net space heating\ndemand in MWh')
+    pb = ax.boxplot(data_coll[2:4], showfliers=with_outliners,
+                    widths=(0.8, 0.8))
     ax.set_xticklabels(list_xticks[2:4])
 
     ax.plot([0.6, 1.4], [list_ref_values[2], list_ref_values[2]],
@@ -1162,7 +1244,13 @@ def box_plot_analysis_triple_plot(mc_res, output_path, output_filename,
     start, end = ax.get_ylim()
     print(start)
     print(end)
-    ax.yaxis.set_ticks(np.arange(round(start,-3), end, 200))
+    # start = round(start / 100, ndigits=0) * 100
+    start = 0
+    end = round(end / 1000, ndigits=0) * 1000
+
+    stepsize = round((end - start) / 10, ndigits=0)
+
+    ax.yaxis.set_ticks(np.arange(start, end, stepsize))
 
     for median in pb['medians']:
         median.set(color='#E53027')
@@ -1170,12 +1258,14 @@ def box_plot_analysis_triple_plot(mc_res, output_path, output_filename,
     for flier in pb['fliers']:
         flier.set(marker='.', markersize=1)
 
+    #  Subplot 3
+    #  #################################################################
     fig.add_subplot(133)
 
     ax = fig.gca()
 
-    pb = ax.boxplot(data_coll[4:6], showfliers=with_outliners, widths=(0.8, 0.8))
-    #plt.ylabel('Net space heating\ndemand in MWh')
+    pb = ax.boxplot(data_coll[4:6], showfliers=with_outliners,
+                    widths=(0.8, 0.8))
     ax.set_xticklabels(list_xticks[4:6])
 
     ax.plot([0.6, 1.4], [list_ref_values[4], list_ref_values[4]],
@@ -1188,7 +1278,13 @@ def box_plot_analysis_triple_plot(mc_res, output_path, output_filename,
     start, end = ax.get_ylim()
     print(start)
     print(end)
-    ax.yaxis.set_ticks(np.arange(round(start,-3), end, 500))
+    # start = round(start / 100, ndigits=0) * 100
+    start = 0
+    end = round(end / 1000, ndigits=0) * 1000
+
+    stepsize = round((end - start) / 10, ndigits=0)
+
+    ax.yaxis.set_ticks(np.arange(start, end, stepsize))
 
     for median in pb['medians']:
         median.set(color='#E53027')
@@ -1233,506 +1329,506 @@ def box_plot_analysis_triple_plot(mc_res, output_path, output_filename,
     plt.close()
 
 
-def box_plot_analysis_el_dem(mc_res, output_path, output_filename,
-                             with_outliners, list_order, dpi=100):
-    """
-    Perform box plot analysis for electrical demand
-
-    Parameters
-    ----------
-    mc_res
-    output_path
-    output_filename
-    with_outliners
-    list_order
-    dpi
-
-    Returns
-    -------
-
-    """
-
-    gen_path(output_path)
-
-    data_coll = []
-    list_xticks = []
-    list_riqr = []
-
-    for key in list_order:
-
-        list_el_en = copy.deepcopy(mc_res.get_results(key=key)[2])
-
-        #  Convert kWh to MWh
-        for i in range(len(list_el_en)):
-            list_el_en[i] /= 1000
-
-        # Add space heating lists
-        data_coll.append(list_el_en)
-
-        list_xticks.append(key)
-
-        #  Calc RIQR
-        riqr = calc_riqr(list_el_en)
-        print('riqr')
-        print(riqr)
-        print('for key: ', key)
-        print()
-        list_riqr.append(riqr)
-
-    # for key in mc_res.dict_res.keys():
-    #
-    #     list_el_en = copy.deepcopy(mc_res.get_results(key=key)[2])
-    #
-    #     #  Convert kWh to MWh
-    #     for i in range(len(list_el_en)):
-    #         list_el_en[i] /= 1000
-    #
-    #     # Add space heating lists
-    #     data_coll.append(list_el_en)
-    #
-    #     list_xticks.append(key)
-    #
-    #     #  Calc RIQR
-    #     riqr = calc_riqr(list_el_en)
-    #     print('riqr')
-    #     print(riqr)
-    #     print('for key: ', key)
-    #     print()
-    #     list_riqr.append(riqr)
-    #
-    # # Sort by space heating demands
-    # data_coll, list_xticks, list_riqr = zip(
-    #     *sorted(zip(data_coll, list_xticks, list_riqr)))
-
-    plt.rc('font', family='Arial', size=12)
-
-    fig = plt.figure(figsize=(5, 3), dpi=dpi)
-
-    ax = fig.gca()
-
-    pb = ax.boxplot(data_coll, showfliers=with_outliners)
-
-    ax.set_xticklabels(list_xticks)
-
-    for median in pb['medians']:
-        median.set(color='#E53027')
-
-    for flier in pb['fliers']:
-        flier.set(marker='*', markersize=0.5)
-
-    fig.autofmt_xdate()
-    plt.tight_layout()
-    plt.ylabel('Electric demand in MWh')
-
-    #  Generate file names for different formats
-    file_pdf = output_filename + '.pdf'
-    file_eps = output_filename + '.eps'
-    file_png = output_filename + '.png'
-    file_tiff = output_filename + '.tiff'
-    file_tikz = output_filename + '.tikz'
-
-    #  Generate saving pathes
-    path_pdf = os.path.join(output_path, file_pdf)
-    path_eps = os.path.join(output_path, file_eps)
-    path_png = os.path.join(output_path, file_png)
-    path_tiff = os.path.join(output_path, file_tiff)
-    path_tikz = os.path.join(output_path, file_tikz)
-
-    #  Save figure in different formats
-    plt.savefig(path_pdf, format='pdf', dpi=dpi)
-    plt.savefig(path_eps, format='eps', dpi=dpi)
-    plt.savefig(path_png, format='png', dpi=dpi)
-    # plt.savefig(path_tiff, format='tiff', dpi=dpi)
-    tikz_save(path_tikz, figureheight='\\figureheight',
-              figurewidth='\\figurewidth')
-
-    # plt.show()
-    plt.close()
-
-
-def box_plot_analysis_double_plot_el_dem(mc_res, output_path,
-                                         output_filename, list_order,
-                                         dpi=100, with_outliners=True):
-    """
-
-    Parameters
-    ----------
-    mc_res
-    output_path
-    output_filename
-    list_order
-    dpi
-    with_outliners
-
-    Returns
-    -------
-
-    """
-
-    gen_path(output_path)
-
-    data_coll = []
-    list_xticks = []
-    list_riqr = []
-
-    for key in list_order:
-
-        list_el_en = copy.deepcopy(mc_res.get_results(key=key)[2])
-
-        #  Convert kWh to MWh
-        for i in range(len(list_el_en)):
-            list_el_en[i] /= 1000
-
-        # Add space heating lists
-        data_coll.append(list_el_en)
-
-        list_xticks.append(key)
-
-        #  Calc RIQR
-        riqr = calc_riqr(list_el_en)
-        print('riqr')
-        print(riqr)
-        print('for key: ', key)
-        print()
-        list_riqr.append(riqr)
-
-    # for key in mc_res.dict_res.keys():
-    #
-    #     list_el_en = copy.deepcopy(mc_res.get_results(key=key)[2])
-    #
-    #     #  Convert kWh to MWh
-    #     for i in range(len(list_el_en)):
-    #         list_el_en[i] /= 1000
-    #
-    #     # Add space heating lists
-    #     data_coll.append(list_el_en)
-    #
-    #     list_xticks.append(key)
-    #
-    #     #  Calc RIQR
-    #     riqr = calc_riqr(list_el_en)
-    #     print('riqr')
-    #     print(riqr)
-    #     print('for key: ', key)
-    #     print()
-    #     list_riqr.append(riqr)
-    #
-    # # Sort by space heating demands
-    # data_coll, list_xticks, list_riqr = zip(
-    #     *sorted(zip(data_coll, list_xticks, list_riqr)))
-
-    plt.rc('font', family='Arial', size=12)
-
-    fig = plt.figure(figsize=(5, 3), dpi=dpi)
-
-    fig.add_subplot(121)
-
-    ax = fig.gca()
-
-    pb = ax.boxplot(data_coll[0:4], showfliers=with_outliners)
-    plt.ylabel('Electric demand in MWh')
-    ax.set_xticklabels(list_xticks[0:4])
-
-    for median in pb['medians']:
-        median.set(color='#E53027')
-
-    for flier in pb['fliers']:
-        flier.set(marker='*', markersize=0.5)
-
-    fig.add_subplot(122)
-
-    ax = fig.gca()
-
-    pb = ax.boxplot(data_coll[4:6], showfliers=with_outliners)
-    plt.ylabel('Electric demand in MWh')
-    ax.set_xticklabels(list_xticks[4:6])
-
-    for median in pb['medians']:
-        median.set(color='#E53027')
-
-    for flier in pb['fliers']:
-        flier.set(marker='*', markersize=0.5)
-
-    fig.autofmt_xdate()
-    plt.tight_layout()
-
-    gen_path(output_path)
-
-    #  Generate file names for different formats
-    file_pdf = output_filename + '.pdf'
-    file_eps = output_filename + '.eps'
-    file_png = output_filename + '.png'
-    file_tiff = output_filename + '.tiff'
-    file_tikz = output_filename + '.tikz'
-
-    #  Generate saving pathes
-    path_pdf = os.path.join(output_path, file_pdf)
-    path_eps = os.path.join(output_path, file_eps)
-    path_png = os.path.join(output_path, file_png)
-    path_tiff = os.path.join(output_path, file_tiff)
-    path_tikz = os.path.join(output_path, file_tikz)
-
-    #  Save figure in different formats
-    plt.savefig(path_pdf, format='pdf', dpi=dpi)
-    plt.savefig(path_eps, format='eps', dpi=dpi)
-    plt.savefig(path_png, format='png', dpi=dpi)
-    # plt.savefig(path_tiff, format='tiff', dpi=dpi)
-    tikz_save(path_tikz, figureheight='\\figureheight',
-              figurewidth='\\figurewidth')
-
-    # plt.show()
-    plt.close()
-
-
-def box_plot_analysis_dhw_dem(mc_res, output_path, output_filename,
-                             with_outliners, list_order, dpi=100):
-    """
-    Perform box plot analysis for electrical demand
-
-    Parameters
-    ----------
-    mc_res
-    output_path
-    output_filename
-    with_outliners
-    list_order
-    dpi
-
-    Returns
-    -------
-
-    """
-
-    gen_path(output_path)
-
-    data_coll = []
-    list_xticks = []
-    list_riqr = []
-
-    for key in list_order:
-
-        list_dhw_en = copy.deepcopy(mc_res.get_results(key=key)[3])
-
-        #  Convert kWh to MWh
-        for i in range(len(list_dhw_en)):
-            list_dhw_en[i] /= 1000
-
-        # Add space heating lists
-        data_coll.append(list_dhw_en)
-
-        list_xticks.append(key)
-
-        #  Calc RIQR
-        riqr = calc_riqr(list_dhw_en)
-        print('riqr')
-        print(riqr)
-        print('for key: ', key)
-        print()
-        list_riqr.append(riqr)
-
-    # for key in mc_res.dict_res.keys():
-    #
-    #     list_dhw_en = copy.deepcopy(mc_res.get_results(key=key)[2])
-    #
-    #     #  Convert kWh to MWh
-    #     for i in range(len(list_dhw_en)):
-    #         list_dhw_en[i] /= 1000
-    #
-    #     # Add space heating lists
-    #     data_coll.append(list_dhw_en)
-    #
-    #     list_xticks.append(key)
-    #
-    #     #  Calc RIQR
-    #     riqr = calc_riqr(list_dhw_en)
-    #     print('riqr')
-    #     print(riqr)
-    #     print('for key: ', key)
-    #     print()
-    #     list_riqr.append(riqr)
-    #
-    # # Sort by space heating demands
-    # data_coll, list_xticks, list_riqr = zip(
-    #     *sorted(zip(data_coll, list_xticks, list_riqr)))
-
-    plt.rc('font', family='Arial', size=12)
-
-    fig = plt.figure(figsize=(5, 3), dpi=dpi)
-
-    ax = fig.gca()
-
-    pb = ax.boxplot(data_coll, showfliers=with_outliners)
-
-    ax.set_xticklabels(list_xticks)
-
-    for median in pb['medians']:
-        median.set(color='#E53027')
-
-    for flier in pb['fliers']:
-        flier.set(marker='*', markersize=0.5)
-
-    fig.autofmt_xdate()
-    plt.tight_layout()
-    plt.ylabel('Hot water demand in MWh')
-
-    #  Generate file names for different formats
-    file_pdf = output_filename + '.pdf'
-    file_eps = output_filename + '.eps'
-    file_png = output_filename + '.png'
-    file_tiff = output_filename + '.tiff'
-    file_tikz = output_filename + '.tikz'
-
-    #  Generate saving pathes
-    path_pdf = os.path.join(output_path, file_pdf)
-    path_eps = os.path.join(output_path, file_eps)
-    path_png = os.path.join(output_path, file_png)
-    path_tiff = os.path.join(output_path, file_tiff)
-    path_tikz = os.path.join(output_path, file_tikz)
-
-    #  Save figure in different formats
-    plt.savefig(path_pdf, format='pdf', dpi=dpi)
-    plt.savefig(path_eps, format='eps', dpi=dpi)
-    plt.savefig(path_png, format='png', dpi=dpi)
-    # plt.savefig(path_tiff, format='tiff', dpi=dpi)
-    tikz_save(path_tikz, figureheight='\\figureheight',
-              figurewidth='\\figurewidth')
-
-    # plt.show()
-    plt.close()
-
-
-def box_plot_analysis_double_plot_dhw_dem(mc_res, output_path,
-                                         output_filename, list_order,
-                                         dpi=100, with_outliners=True):
-    """
-
-    Parameters
-    ----------
-    mc_res
-    output_path
-    output_filename
-    list_order
-    dpi
-    with_outliners
-
-    Returns
-    -------
-
-    """
-
-    gen_path(output_path)
-
-    data_coll = []
-    list_xticks = []
-    list_riqr = []
-
-    for key in list_order:
-
-        list_dhw_en = copy.deepcopy(mc_res.get_results(key=key)[3])
-
-        #  Convert kWh to MWh
-        for i in range(len(list_dhw_en)):
-            list_dhw_en[i] /= 1000
-
-        # Add space heating lists
-        data_coll.append(list_dhw_en)
-
-        list_xticks.append(key)
-
-        #  Calc RIQR
-        riqr = calc_riqr(list_dhw_en)
-        print('riqr')
-        print(riqr)
-        print('for key: ', key)
-        print()
-        list_riqr.append(riqr)
-
-    # for key in mc_res.dict_res.keys():
-    #
-    #     list_dhw_en = copy.deepcopy(mc_res.get_results(key=key)[2])
-    #
-    #     #  Convert kWh to MWh
-    #     for i in range(len(list_dhw_en)):
-    #         list_dhw_en[i] /= 1000
-    #
-    #     # Add space heating lists
-    #     data_coll.append(list_dhw_en)
-    #
-    #     list_xticks.append(key)
-    #
-    #     #  Calc RIQR
-    #     riqr = calc_riqr(list_dhw_en)
-    #     print('riqr')
-    #     print(riqr)
-    #     print('for key: ', key)
-    #     print()
-    #     list_riqr.append(riqr)
-    #
-    # # Sort by space heating demands
-    # data_coll, list_xticks, list_riqr = zip(
-    #     *sorted(zip(data_coll, list_xticks, list_riqr)))
-
-    plt.rc('font', family='Arial', size=12)
-
-    fig = plt.figure(figsize=(5, 3), dpi=dpi)
-
-    fig.add_subplot(121)
-
-    ax = fig.gca()
-
-    pb = ax.boxplot(data_coll[0:4], showfliers=with_outliners)
-    plt.ylabel('Hot water demand in MWh')
-    ax.set_xticklabels(list_xticks[0:4])
-
-    for median in pb['medians']:
-        median.set(color='#E53027')
-
-    for flier in pb['fliers']:
-        flier.set(marker='*', markersize=0.5)
-
-    fig.add_subplot(122)
-
-    ax = fig.gca()
-
-    pb = ax.boxplot(data_coll[4:6], showfliers=with_outliners)
-    plt.ylabel('Hot water demand in MWh')
-    ax.set_xticklabels(list_xticks[4:6])
-
-    for median in pb['medians']:
-        median.set(color='#E53027')
-
-    for flier in pb['fliers']:
-        flier.set(marker='*', markersize=0.5)
-
-    fig.autofmt_xdate()
-    plt.tight_layout()
-
-    gen_path(output_path)
-
-    #  Generate file names for different formats
-    file_pdf = output_filename + '.pdf'
-    file_eps = output_filename + '.eps'
-    file_png = output_filename + '.png'
-    file_tiff = output_filename + '.tiff'
-    file_tikz = output_filename + '.tikz'
-
-    #  Generate saving pathes
-    path_pdf = os.path.join(output_path, file_pdf)
-    path_eps = os.path.join(output_path, file_eps)
-    path_png = os.path.join(output_path, file_png)
-    path_tiff = os.path.join(output_path, file_tiff)
-    path_tikz = os.path.join(output_path, file_tikz)
-
-    #  Save figure in different formats
-    plt.savefig(path_pdf, format='pdf', dpi=dpi)
-    plt.savefig(path_eps, format='eps', dpi=dpi)
-    plt.savefig(path_png, format='png', dpi=dpi)
-    # plt.savefig(path_tiff, format='tiff', dpi=dpi)
-    tikz_save(path_tikz, figureheight='\\figureheight',
-              figurewidth='\\figurewidth')
-
-    # plt.show()
-    plt.close()
+# def box_plot_analysis_el_dem(mc_res, output_path, output_filename,
+#                              with_outliners, list_order, dpi=100):
+#     """
+#     Perform box plot analysis for electrical demand
+#
+#     Parameters
+#     ----------
+#     mc_res
+#     output_path
+#     output_filename
+#     with_outliners
+#     list_order
+#     dpi
+#
+#     Returns
+#     -------
+#
+#     """
+#
+#     gen_path(output_path)
+#
+#     data_coll = []
+#     list_xticks = []
+#     list_riqr = []
+#
+#     for key in list_order:
+#
+#         list_el_en = copy.deepcopy(mc_res.get_results(key=key)[2])
+#
+#         #  Convert kWh to MWh
+#         for i in range(len(list_el_en)):
+#             list_el_en[i] /= 1000
+#
+#         # Add space heating lists
+#         data_coll.append(list_el_en)
+#
+#         list_xticks.append(key)
+#
+#         #  Calc RIQR
+#         riqr = calc_riqr(list_el_en)
+#         print('riqr')
+#         print(riqr)
+#         print('for key: ', key)
+#         print()
+#         list_riqr.append(riqr)
+#
+#     # for key in mc_res.dict_res.keys():
+#     #
+#     #     list_el_en = copy.deepcopy(mc_res.get_results(key=key)[2])
+#     #
+#     #     #  Convert kWh to MWh
+#     #     for i in range(len(list_el_en)):
+#     #         list_el_en[i] /= 1000
+#     #
+#     #     # Add space heating lists
+#     #     data_coll.append(list_el_en)
+#     #
+#     #     list_xticks.append(key)
+#     #
+#     #     #  Calc RIQR
+#     #     riqr = calc_riqr(list_el_en)
+#     #     print('riqr')
+#     #     print(riqr)
+#     #     print('for key: ', key)
+#     #     print()
+#     #     list_riqr.append(riqr)
+#     #
+#     # # Sort by space heating demands
+#     # data_coll, list_xticks, list_riqr = zip(
+#     #     *sorted(zip(data_coll, list_xticks, list_riqr)))
+#
+#     plt.rc('font', family='Arial', size=12)
+#
+#     fig = plt.figure(figsize=(5, 3), dpi=dpi)
+#
+#     ax = fig.gca()
+#
+#     pb = ax.boxplot(data_coll, showfliers=with_outliners)
+#
+#     ax.set_xticklabels(list_xticks)
+#
+#     for median in pb['medians']:
+#         median.set(color='#E53027')
+#
+#     for flier in pb['fliers']:
+#         flier.set(marker='*', markersize=0.5)
+#
+#     fig.autofmt_xdate()
+#     plt.tight_layout()
+#     plt.ylabel('Electric demand in MWh')
+#
+#     #  Generate file names for different formats
+#     file_pdf = output_filename + '.pdf'
+#     file_eps = output_filename + '.eps'
+#     file_png = output_filename + '.png'
+#     file_tiff = output_filename + '.tiff'
+#     file_tikz = output_filename + '.tikz'
+#
+#     #  Generate saving pathes
+#     path_pdf = os.path.join(output_path, file_pdf)
+#     path_eps = os.path.join(output_path, file_eps)
+#     path_png = os.path.join(output_path, file_png)
+#     path_tiff = os.path.join(output_path, file_tiff)
+#     path_tikz = os.path.join(output_path, file_tikz)
+#
+#     #  Save figure in different formats
+#     plt.savefig(path_pdf, format='pdf', dpi=dpi)
+#     plt.savefig(path_eps, format='eps', dpi=dpi)
+#     plt.savefig(path_png, format='png', dpi=dpi)
+#     # plt.savefig(path_tiff, format='tiff', dpi=dpi)
+#     tikz_save(path_tikz, figureheight='\\figureheight',
+#               figurewidth='\\figurewidth')
+#
+#     # plt.show()
+#     plt.close()
+#
+#
+# def box_plot_analysis_double_plot_el_dem(mc_res, output_path,
+#                                          output_filename, list_order,
+#                                          dpi=100, with_outliners=True):
+#     """
+#
+#     Parameters
+#     ----------
+#     mc_res
+#     output_path
+#     output_filename
+#     list_order
+#     dpi
+#     with_outliners
+#
+#     Returns
+#     -------
+#
+#     """
+#
+#     gen_path(output_path)
+#
+#     data_coll = []
+#     list_xticks = []
+#     list_riqr = []
+#
+#     for key in list_order:
+#
+#         list_el_en = copy.deepcopy(mc_res.get_results(key=key)[2])
+#
+#         #  Convert kWh to MWh
+#         for i in range(len(list_el_en)):
+#             list_el_en[i] /= 1000
+#
+#         # Add space heating lists
+#         data_coll.append(list_el_en)
+#
+#         list_xticks.append(key)
+#
+#         #  Calc RIQR
+#         riqr = calc_riqr(list_el_en)
+#         print('riqr')
+#         print(riqr)
+#         print('for key: ', key)
+#         print()
+#         list_riqr.append(riqr)
+#
+#     # for key in mc_res.dict_res.keys():
+#     #
+#     #     list_el_en = copy.deepcopy(mc_res.get_results(key=key)[2])
+#     #
+#     #     #  Convert kWh to MWh
+#     #     for i in range(len(list_el_en)):
+#     #         list_el_en[i] /= 1000
+#     #
+#     #     # Add space heating lists
+#     #     data_coll.append(list_el_en)
+#     #
+#     #     list_xticks.append(key)
+#     #
+#     #     #  Calc RIQR
+#     #     riqr = calc_riqr(list_el_en)
+#     #     print('riqr')
+#     #     print(riqr)
+#     #     print('for key: ', key)
+#     #     print()
+#     #     list_riqr.append(riqr)
+#     #
+#     # # Sort by space heating demands
+#     # data_coll, list_xticks, list_riqr = zip(
+#     #     *sorted(zip(data_coll, list_xticks, list_riqr)))
+#
+#     plt.rc('font', family='Arial', size=12)
+#
+#     fig = plt.figure(figsize=(5, 3), dpi=dpi)
+#
+#     fig.add_subplot(121)
+#
+#     ax = fig.gca()
+#
+#     pb = ax.boxplot(data_coll[0:4], showfliers=with_outliners)
+#     plt.ylabel('Electric demand in MWh')
+#     ax.set_xticklabels(list_xticks[0:4])
+#
+#     for median in pb['medians']:
+#         median.set(color='#E53027')
+#
+#     for flier in pb['fliers']:
+#         flier.set(marker='*', markersize=0.5)
+#
+#     fig.add_subplot(122)
+#
+#     ax = fig.gca()
+#
+#     pb = ax.boxplot(data_coll[4:6], showfliers=with_outliners)
+#     plt.ylabel('Electric demand in MWh')
+#     ax.set_xticklabels(list_xticks[4:6])
+#
+#     for median in pb['medians']:
+#         median.set(color='#E53027')
+#
+#     for flier in pb['fliers']:
+#         flier.set(marker='*', markersize=0.5)
+#
+#     fig.autofmt_xdate()
+#     plt.tight_layout()
+#
+#     gen_path(output_path)
+#
+#     #  Generate file names for different formats
+#     file_pdf = output_filename + '.pdf'
+#     file_eps = output_filename + '.eps'
+#     file_png = output_filename + '.png'
+#     file_tiff = output_filename + '.tiff'
+#     file_tikz = output_filename + '.tikz'
+#
+#     #  Generate saving pathes
+#     path_pdf = os.path.join(output_path, file_pdf)
+#     path_eps = os.path.join(output_path, file_eps)
+#     path_png = os.path.join(output_path, file_png)
+#     path_tiff = os.path.join(output_path, file_tiff)
+#     path_tikz = os.path.join(output_path, file_tikz)
+#
+#     #  Save figure in different formats
+#     plt.savefig(path_pdf, format='pdf', dpi=dpi)
+#     plt.savefig(path_eps, format='eps', dpi=dpi)
+#     plt.savefig(path_png, format='png', dpi=dpi)
+#     # plt.savefig(path_tiff, format='tiff', dpi=dpi)
+#     tikz_save(path_tikz, figureheight='\\figureheight',
+#               figurewidth='\\figurewidth')
+#
+#     # plt.show()
+#     plt.close()
+#
+#
+# def box_plot_analysis_dhw_dem(mc_res, output_path, output_filename,
+#                              with_outliners, list_order, dpi=100):
+#     """
+#     Perform box plot analysis for electrical demand
+#
+#     Parameters
+#     ----------
+#     mc_res
+#     output_path
+#     output_filename
+#     with_outliners
+#     list_order
+#     dpi
+#
+#     Returns
+#     -------
+#
+#     """
+#
+#     gen_path(output_path)
+#
+#     data_coll = []
+#     list_xticks = []
+#     list_riqr = []
+#
+#     for key in list_order:
+#
+#         list_dhw_en = copy.deepcopy(mc_res.get_results(key=key)[3])
+#
+#         #  Convert kWh to MWh
+#         for i in range(len(list_dhw_en)):
+#             list_dhw_en[i] /= 1000
+#
+#         # Add space heating lists
+#         data_coll.append(list_dhw_en)
+#
+#         list_xticks.append(key)
+#
+#         #  Calc RIQR
+#         riqr = calc_riqr(list_dhw_en)
+#         print('riqr')
+#         print(riqr)
+#         print('for key: ', key)
+#         print()
+#         list_riqr.append(riqr)
+#
+#     # for key in mc_res.dict_res.keys():
+#     #
+#     #     list_dhw_en = copy.deepcopy(mc_res.get_results(key=key)[2])
+#     #
+#     #     #  Convert kWh to MWh
+#     #     for i in range(len(list_dhw_en)):
+#     #         list_dhw_en[i] /= 1000
+#     #
+#     #     # Add space heating lists
+#     #     data_coll.append(list_dhw_en)
+#     #
+#     #     list_xticks.append(key)
+#     #
+#     #     #  Calc RIQR
+#     #     riqr = calc_riqr(list_dhw_en)
+#     #     print('riqr')
+#     #     print(riqr)
+#     #     print('for key: ', key)
+#     #     print()
+#     #     list_riqr.append(riqr)
+#     #
+#     # # Sort by space heating demands
+#     # data_coll, list_xticks, list_riqr = zip(
+#     #     *sorted(zip(data_coll, list_xticks, list_riqr)))
+#
+#     plt.rc('font', family='Arial', size=12)
+#
+#     fig = plt.figure(figsize=(5, 3), dpi=dpi)
+#
+#     ax = fig.gca()
+#
+#     pb = ax.boxplot(data_coll, showfliers=with_outliners)
+#
+#     ax.set_xticklabels(list_xticks)
+#
+#     for median in pb['medians']:
+#         median.set(color='#E53027')
+#
+#     for flier in pb['fliers']:
+#         flier.set(marker='*', markersize=0.5)
+#
+#     fig.autofmt_xdate()
+#     plt.tight_layout()
+#     plt.ylabel('Hot water demand in MWh')
+#
+#     #  Generate file names for different formats
+#     file_pdf = output_filename + '.pdf'
+#     file_eps = output_filename + '.eps'
+#     file_png = output_filename + '.png'
+#     file_tiff = output_filename + '.tiff'
+#     file_tikz = output_filename + '.tikz'
+#
+#     #  Generate saving pathes
+#     path_pdf = os.path.join(output_path, file_pdf)
+#     path_eps = os.path.join(output_path, file_eps)
+#     path_png = os.path.join(output_path, file_png)
+#     path_tiff = os.path.join(output_path, file_tiff)
+#     path_tikz = os.path.join(output_path, file_tikz)
+#
+#     #  Save figure in different formats
+#     plt.savefig(path_pdf, format='pdf', dpi=dpi)
+#     plt.savefig(path_eps, format='eps', dpi=dpi)
+#     plt.savefig(path_png, format='png', dpi=dpi)
+#     # plt.savefig(path_tiff, format='tiff', dpi=dpi)
+#     tikz_save(path_tikz, figureheight='\\figureheight',
+#               figurewidth='\\figurewidth')
+#
+#     # plt.show()
+#     plt.close()
+#
+#
+# def box_plot_analysis_double_plot_dhw_dem(mc_res, output_path,
+#                                          output_filename, list_order,
+#                                          dpi=100, with_outliners=True):
+#     """
+#
+#     Parameters
+#     ----------
+#     mc_res
+#     output_path
+#     output_filename
+#     list_order
+#     dpi
+#     with_outliners
+#
+#     Returns
+#     -------
+#
+#     """
+#
+#     gen_path(output_path)
+#
+#     data_coll = []
+#     list_xticks = []
+#     list_riqr = []
+#
+#     for key in list_order:
+#
+#         list_dhw_en = copy.deepcopy(mc_res.get_results(key=key)[3])
+#
+#         #  Convert kWh to MWh
+#         for i in range(len(list_dhw_en)):
+#             list_dhw_en[i] /= 1000
+#
+#         # Add space heating lists
+#         data_coll.append(list_dhw_en)
+#
+#         list_xticks.append(key)
+#
+#         #  Calc RIQR
+#         riqr = calc_riqr(list_dhw_en)
+#         print('riqr')
+#         print(riqr)
+#         print('for key: ', key)
+#         print()
+#         list_riqr.append(riqr)
+#
+#     # for key in mc_res.dict_res.keys():
+#     #
+#     #     list_dhw_en = copy.deepcopy(mc_res.get_results(key=key)[2])
+#     #
+#     #     #  Convert kWh to MWh
+#     #     for i in range(len(list_dhw_en)):
+#     #         list_dhw_en[i] /= 1000
+#     #
+#     #     # Add space heating lists
+#     #     data_coll.append(list_dhw_en)
+#     #
+#     #     list_xticks.append(key)
+#     #
+#     #     #  Calc RIQR
+#     #     riqr = calc_riqr(list_dhw_en)
+#     #     print('riqr')
+#     #     print(riqr)
+#     #     print('for key: ', key)
+#     #     print()
+#     #     list_riqr.append(riqr)
+#     #
+#     # # Sort by space heating demands
+#     # data_coll, list_xticks, list_riqr = zip(
+#     #     *sorted(zip(data_coll, list_xticks, list_riqr)))
+#
+#     plt.rc('font', family='Arial', size=12)
+#
+#     fig = plt.figure(figsize=(5, 3), dpi=dpi)
+#
+#     fig.add_subplot(121)
+#
+#     ax = fig.gca()
+#
+#     pb = ax.boxplot(data_coll[0:4], showfliers=with_outliners)
+#     plt.ylabel('Hot water demand in MWh')
+#     ax.set_xticklabels(list_xticks[0:4])
+#
+#     for median in pb['medians']:
+#         median.set(color='#E53027')
+#
+#     for flier in pb['fliers']:
+#         flier.set(marker='*', markersize=0.5)
+#
+#     fig.add_subplot(122)
+#
+#     ax = fig.gca()
+#
+#     pb = ax.boxplot(data_coll[4:6], showfliers=with_outliners)
+#     plt.ylabel('Hot water demand in MWh')
+#     ax.set_xticklabels(list_xticks[4:6])
+#
+#     for median in pb['medians']:
+#         median.set(color='#E53027')
+#
+#     for flier in pb['fliers']:
+#         flier.set(marker='*', markersize=0.5)
+#
+#     fig.autofmt_xdate()
+#     plt.tight_layout()
+#
+#     gen_path(output_path)
+#
+#     #  Generate file names for different formats
+#     file_pdf = output_filename + '.pdf'
+#     file_eps = output_filename + '.eps'
+#     file_png = output_filename + '.png'
+#     file_tiff = output_filename + '.tiff'
+#     file_tikz = output_filename + '.tikz'
+#
+#     #  Generate saving pathes
+#     path_pdf = os.path.join(output_path, file_pdf)
+#     path_eps = os.path.join(output_path, file_eps)
+#     path_png = os.path.join(output_path, file_png)
+#     path_tiff = os.path.join(output_path, file_tiff)
+#     path_tikz = os.path.join(output_path, file_tikz)
+#
+#     #  Save figure in different formats
+#     plt.savefig(path_pdf, format='pdf', dpi=dpi)
+#     plt.savefig(path_eps, format='eps', dpi=dpi)
+#     plt.savefig(path_png, format='png', dpi=dpi)
+#     # plt.savefig(path_tiff, format='tiff', dpi=dpi)
+#     tikz_save(path_tikz, figureheight='\\figureheight',
+#               figurewidth='\\figurewidth')
+#
+#     # plt.show()
+#     plt.close()
 
 
 if __name__ == '__main__':
@@ -1873,7 +1969,7 @@ if __name__ == '__main__':
     #  ###############################################
 
     mc_city = True
-    all_cities = False  # all cities / all buildings or only specific key
+    all_cities = True  # all cities / all buildings or only specific key
 
     with_outliners = True
     dpi = 1000
@@ -1912,100 +2008,70 @@ if __name__ == '__main__':
     gen_path(output_path)
     #############################
 
+    if all_cities is False:
 
-    #  Perform space heating load analysis for single district
-    #  Plot all space heating load curves
-    #  #####################################################################
-    # do_sh_load_analysis(mc_res=mc_res, key=key, output_path=output_path,
-    #                     output_filename=key, dpi=300,
-    #                     mc_city=True, fontsize=fontsize)
+        print('Single district analysis for: ', key)
 
-    #  Perform space heating demand analysis for single district
-    #  #####################################################################
-    analyze_demands_hist(mc_res=mc_res, key=key, mode='sh',
-                         output_path=output_path, dpi=dpi,
-                         mc_city=mc_city, fontsize=fontsize)
+        #  Perform space heating load analysis for single district
+        #  Plot all space heating load curves
+        #  #####################################################################
+        # do_sh_load_analysis(mc_res=mc_res, key=key, output_path=output_path,
+        #                     output_filename=key, dpi=300,
+        #                     mc_city=True, fontsize=fontsize)
 
-    # #  Perform space heating power analysis for single district
-    # #  #####################################################################
-    # analyze_sh_powers_hist(mc_res=mc_res, key=key, output_path=output_path)
+        # #  Perform space heating demand analysis for single district
+        # #  #####################################################################
+        # analyze_demands_hist(mc_res=mc_res, key=key, mode='sh',
+        #                      output_path=output_path, dpi=dpi,
+        #                      mc_city=mc_city, fontsize=fontsize)
+        #
+        # # #  Perform space heating power analysis for single district
+        # # #  #####################################################################
+        # # analyze_sh_powers_hist(mc_res=mc_res, key=key, output_path=output_path)
+        #
+        # #  Perform electric energy analysis for single district
+        # #  #####################################################################
+        # analyze_demands_hist(mc_res=mc_res, key=key, mode='el',
+        #                      output_path=output_path, dpi=dpi,
+        #                      mc_city=mc_city, fontsize=fontsize)
+        #
+        # #  Perform hot water energy analysis for single district
+        # #  #####################################################################
+        # analyze_demands_hist(mc_res=mc_res, key=key, mode='dhw',
+        #                      output_path=output_path, dpi=dpi,
+        #                      mc_city=mc_city, fontsize=fontsize)
 
-    #  Perform electric energy analysis for single district
-    #  #####################################################################
-    analyze_demands_hist(mc_res=mc_res, key=key, mode='el',
-                         output_path=output_path, dpi=dpi,
-                         mc_city=mc_city, fontsize=fontsize)
 
-    #  Perform hot water energy analysis for single district
-    #  #####################################################################
-    analyze_demands_hist(mc_res=mc_res, key=key, mode='dhw',
-                         output_path=output_path, dpi=dpi,
-                         mc_city=mc_city, fontsize=fontsize)
+    elif all_cities is True:
 
+        print('Analysis for all districts')
 
-    # # #  Perform space heating box plot analysis for all districts
-    # # #  Plot all boxplots in one figure
-    # # #  #####################################################################
-    # output_path_curr = os.path.join(output_path, 'th_dem_single_axes')
-    # box_plot_analysis(mc_res=mc_res, output_path=output_path_curr,
-    #                   output_filename=output_filename, dpi=dpi,
-    #                   with_outliners=with_outliners,
-    #                   list_order=list_order)
-    #
-    # # #  Perform space heating box plot analysis for all districts
-    # # #  Plot boxplots in two figure
-    # # #  #####################################################################
-    # output_path_curr = os.path.join(output_path, 'th_dem_two_axes')
-    # box_plot_analysis_double_plot(mc_res=mc_res, output_path=output_path_curr,
-    #                               output_filename=output_filename, dpi=dpi,
-    #                               with_outliners=with_outliners,
-    #                               list_order=list_order)
+        # #  Perform space heating box plot analysis for all districts
+        # #  Plot boxplots with three axes
+        # #  #####################################################################
+        output_path_curr = os.path.join(output_path, 'th_dem_three_axes')
+        box_plot_analysis_triple_plot(mc_res=mc_res, output_path=output_path_curr,
+                                      output_filename=output_filename, dpi=dpi,
+                                      with_outliners=with_outliners,
+                                      list_order=list_order, mode='sh',
+                                      mc_city=mc_city)
 
-    # # #  Perform space heating box plot analysis for all districts
-    # # #  Plot boxplots in two figure
-    # # #  #####################################################################
-    # output_path_curr = os.path.join(output_path, 'th_dem_three_axes')
-    # box_plot_analysis_triple_plot(mc_res=mc_res, output_path=output_path_curr,
-    #                               output_filename=output_filename, dpi=dpi,
-    #                               with_outliners=with_outliners,
-    #                               list_order=list_order)
+        # #  Perform electric energy box plot analysis for all districts
+        # #  Plot boxplots with three axes
+        # #  #####################################################################
+        output_path_curr = os.path.join(output_path, 'el_dem_three_axes')
+        box_plot_analysis_triple_plot(mc_res=mc_res, output_path=output_path_curr,
+                                      output_filename=output_filename, dpi=dpi,
+                                      with_outliners=with_outliners,
+                                      list_order=list_order, mode='el',
+                                      mc_city=mc_city)
 
-    # # #  Perform electric demand box plot analysis for all districts
-    # # #  Plot all boxplots in one figure
-    # # #  #####################################################################
-    # output_path_curr = os.path.join(output_path, 'el_dem_single_axes')
-    # box_plot_analysis_el_dem(mc_res=mc_res, output_path=output_path_curr,
-    #                          output_filename=output_filename, dpi=dpi,
-    #                          with_outliners=with_outliners,
-    #                          list_order=list_order)
-    #
-    # # #  Perform electric demand box plot analysis for all districts
-    # # #  Plot all boxplots in one figure
-    # # #  #####################################################################
-    # output_path_curr = os.path.join(output_path, 'el_dem_two_axes')
-    # box_plot_analysis_double_plot_el_dem(mc_res=mc_res,
-    #                                      output_path=output_path_curr,
-    #                                      output_filename=output_filename,
-    #                                      dpi=dpi,
-    #                                      with_outliners=with_outliners,
-    #                                      list_order=list_order)
-    #
-    # # #  Perform electric demand box plot analysis for all districts
-    # # #  Plot all boxplots in one figure
-    # # #  #####################################################################
-    # output_path_curr = os.path.join(output_path, 'dhw_dem_single_axes')
-    # box_plot_analysis_dhw_dem(mc_res=mc_res, output_path=output_path_curr,
-    #                          output_filename=output_filename, dpi=dpi,
-    #                          with_outliners=with_outliners,
-    #                          list_order=list_order)
-    #
-    # # #  Perform electric demand box plot analysis for all districts
-    # # #  Plot all boxplots in one figure
-    # # #  #####################################################################
-    # output_path_curr = os.path.join(output_path, 'dhw_dem_two_axes')
-    # box_plot_analysis_double_plot_dhw_dem(mc_res=mc_res,
-    #                                      output_path=output_path_curr,
-    #                                      output_filename=output_filename,
-    #                                      dpi=dpi,
-    #                                      with_outliners=with_outliners,
-    #                                      list_order=list_order)
+        # #  Perform hot water energy box plot analysis for all districts
+        # #  Plot boxplots with three axes
+        # #  #####################################################################
+        output_path_curr = os.path.join(output_path, 'dhw_dem_three_axes')
+        box_plot_analysis_triple_plot(mc_res=mc_res, output_path=output_path_curr,
+                                      output_filename=output_filename, dpi=dpi,
+                                      with_outliners=with_outliners,
+                                      list_order=list_order, mode='dhw',
+                                      mc_city=mc_city)
