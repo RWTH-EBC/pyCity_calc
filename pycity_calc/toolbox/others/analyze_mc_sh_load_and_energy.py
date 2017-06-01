@@ -45,13 +45,15 @@ class McCityRes(object):
             Dictionary holding city objects (with name as key)
         """
 
-        self.dict_res = {}
+        self.dict_res_mc_city = {}
+        self.dict_res_mc_build = {}
         self.dict_cities = {}
         self.dict_build_ids = {}
 
-    def add_res_list(self, list_res, key):
+    def add_res_list_mc_city(self, list_res, key):
         """
-        Add results list with
+        Add results list
+
         Parameters
         ----------
         list_res : list
@@ -60,11 +62,26 @@ class McCityRes(object):
             Key/name to add list to dictionary
         """
 
-        self.dict_res[key] = list_res
+        self.dict_res_mc_city[key] = list_res
 
-    def add_res_from_path(self, path, key):
+    def add_res_list_mc_build(self, list_res, key):
         """
-        Add result lists from path, where pickle file is stored
+        Add results list
+
+        Parameters
+        ----------
+        list_res : list
+            List holding sample result lists
+        key : str
+            Key/name to add list to dictionary
+        """
+
+        self.dict_res_mc_build[key] = list_res
+
+    def add_res_mc_city_from_path(self, path, key):
+        """
+        Add result lists (mc city analysis)
+        from path, where pickle file is stored
 
         Parameters
         ----------
@@ -76,7 +93,24 @@ class McCityRes(object):
 
         list_res = load_results_from_path(path=path)
 
-        self.add_res_list(list_res=list_res, key=key)
+        self.add_res_list_mc_city(list_res=list_res, key=key)
+
+    def add_res_mc_build_from_path(self, path, key):
+        """
+        Add result lists (building mc analysis)
+        from path, where pickle file is stored
+
+        Parameters
+        ----------
+        path : str
+            Path to pickle file
+        key : str
+            Key/name to add list to dictionary
+        """
+
+        list_res = load_results_from_path(path=path)
+
+        self.add_res_list_mc_build(list_res=list_res, key=key)
 
     def add_city(self, key, city):
         """
@@ -92,9 +126,9 @@ class McCityRes(object):
 
         self.dict_cities[key] = city
 
-    def get_results(self, key):
+    def get_results_mc_city(self, key):
         """
-        Return results list
+        Return results list (of mc analysis of city)
 
         Parameters
         ----------
@@ -112,7 +146,29 @@ class McCityRes(object):
             4. Entry: list holding hot water net energy demands in kWh
         """
 
-        return self.dict_res[key]
+        return self.dict_res_mc_city[key]
+
+    def get_results_mc_build(self, key):
+        """
+        Return results list (of mc analysis of building)
+
+        Parameters
+        ----------
+        key : str
+            Key/name to add list to dictionary
+
+        Returns
+        -------
+        list_res : list
+            List of result lists
+            (list_sh, list_el, list_dhw, list_sh_curves)
+            1. Entry: list holding net space heating demands in kWh as float
+            2. Entry: list holding space heating power curves in W as arrays
+            3. Entry: list holding net electric energy demands in kWh
+            4. Entry: list holding hot water net energy demands in kWh
+        """
+
+        return self.dict_res_mc_build[key]
 
     def get_city(self, key):
         """
@@ -236,7 +292,8 @@ def calc_min_max_av_sh_load_curves(list_sh_curves):
     return (min_array, max_array, av_array)
 
 
-def do_sh_load_analysis(mc_res, key, output_path, output_filename, dpi=300):
+def do_sh_load_analysis(mc_res, key, output_path, output_filename, dpi=300,
+                        mc_city=True, fontsize=12):
     """
 
     Parameters
@@ -246,14 +303,18 @@ def do_sh_load_analysis(mc_res, key, output_path, output_filename, dpi=300):
     output_path
     output_filename
     dpi
+    mc_city : bool, optional
 
     Returns
     -------
 
     """
 
-    #  Extract list with space heating arrays
-    list_sh_curves = mc_res.get_results(key=key)[1]
+    if mc_city:
+        #  Extract list with space heating arrays
+        list_sh_curves = mc_res.get_results_mc_city(key=key)[1]
+    else:
+        list_sh_curves = mc_res.get_results_mc_build(key=key)[1]
 
     #  Sort list by sum of arrays
     list_sh_curves.sort(key=sum, reverse=True)
@@ -261,7 +322,7 @@ def do_sh_load_analysis(mc_res, key, output_path, output_filename, dpi=300):
     (min_array, max_array, av_array) = \
         calc_min_max_av_sh_load_curves(list_sh_curves=list_sh_curves)
 
-    plt.rc('font', family='Arial', size=10)
+    plt.rc('font', family='Arial', size=fontsize)
 
     fig = plt.figure(figsize=(5, 3), dpi=dpi)
 
@@ -355,56 +416,101 @@ def do_sh_load_analysis(mc_res, key, output_path, output_filename, dpi=300):
     plt.close()
 
 
-def analyze_sh_demands_hist(mc_res, key, output_path):
+def analyze_demands_hist(mc_res, key, mode, output_path, dpi=1000,
+                        mc_city=True, fontsize=12):
     """
 
     Parameters
     ----------
     mc_res
     key
+    mode : str
+        Mode for histogram analysis. Options:
+        - 'sh' : space heating
+        - 'el' : electric demand
+        - 'dhw' : Hot water
     output_path
+    dpi
+    mc_city
+    fontsize
 
     Returns
     -------
 
     """
 
-    #  Extract space heating demands
-    #  ##################################################################
-    list_sh_dem = mc_res.get_results(key=key)[0]
+    assert mode in ['sh', 'el', 'dhw']
 
-    #  Extract reference space heating demand
+    if mode == 'sh':
+        midx = 0
+    elif mode == 'el':
+        midx = 2
+    elif mode == 'dhw':
+        midx = 3
+
+    if mc_city:
+        #  Extract list with sampling demand values in kWh
+        list_dem = mc_res.get_results_mc_city(key=key)[midx]
+    else:
+        list_dem = mc_res.get_results_mc_build(key=key)[midx]
+
+    #  Extract reference demand
     #  ##################################################################
+
+    #  Extract city
     city = mc_res.get_city(key=key)
-    node_id = mc_res.dict_build_ids[key]
 
-    print(city.nodes())
+    if mc_city:
+        #  Get reference  demand in kWh (per building)
+        if mode == 'sh':
+            ref_dem = city.get_annual_space_heating_demand()
+        elif mode == 'el':
+            ref_dem = city.get_annual_el_demand()
+        elif mode == 'dhw':
+            ref_dem = city.get_annual_dhw_demand()
 
-    curr_build = city.node[node_id]['entity']
+    else:
+        node_id = mc_res.dict_build_ids[key]
 
-    #  Get reference space heating demand in kWh
-    sh_dem_ref = curr_build.get_annual_space_heat_demand()
+        curr_build = city.node[node_id]['entity']
+
+        #  Get reference  demand in kWh (per building)
+        if mode == 'sh':
+            ref_dem = curr_build.get_annual_space_heat_demand()
+        elif mode == 'el':
+            ref_dem = curr_build.get_annual_el_demand()
+        elif mode == 'dhw':
+            ref_dem = curr_build.get_annual_dhw_demand()
+
 
     dict_v_lines = {}
-    dict_v_lines['Reference'] = sh_dem_ref
+    dict_v_lines['Reference'] = ref_dem
+
+    #  Get reference  demand in kWh (per building)
+    if mode == 'sh':
+        e_name = 'net space heating energy'
+    elif mode == 'el':
+        e_name = 'el. energy demand'
+    elif mode == 'dhw':
+        e_name = 'hot water energy demand'
 
     print()
-    print('Mean net space heating energy value in kWh:')
-    mean = np.mean(list_sh_dem)
+    print('Mean ' + str(e_name) + ' value in kWh:')
+    mean = np.mean(list_dem)
     print(mean)
     print()
 
-    print('Standard deviation of net space heating energy value in kWh:')
-    stdev = np.std(a=list_sh_dem)
+    print('Standard deviation of ' + str(e_name) + ' value in kWh:')
+    stdev = np.std(a=list_dem)
     print()
 
-    print('Median net space heating energy value in kWh:')
-    median = np.median(a=list_sh_dem)
+    print('Median  ' + str(e_name) + '  value in kWh:')
+    median = np.median(a=list_dem)
     print(median)
     print()
 
     print('Interquartile range (IQR):')
-    iqr = scipy.stats.iqr(x=list_sh_dem)
+    iqr = scipy.stats.iqr(x=list_dem)
     print(iqr)
     print()
 
@@ -422,22 +528,30 @@ def analyze_sh_demands_hist(mc_res, key, output_path):
     #  English infos
     title_engl = None  # Add 'u' in front of string to define it as unicode
     # (e.g. when using non-ascii characters)
-    xlab_engl = 'Space heating demand in kWh'
-    ylab_engl = 'Number of demand values'
+    #  Get reference  demand in kWh (per building)
+    if mode == 'sh':
+        xlab_engl = 'Space heating demand in kWh'
+        ylab_engl = 'Number of demand values'
+    elif mode == 'el':
+        xlab_engl = 'Electric energy demand in kWh'
+        ylab_engl = 'Number of demand values'
+    elif mode == 'dhw':
+        xlab_engl = 'Hot water energy demand in kWh'
+        ylab_engl = 'Number of demand values'
 
     #  German infos
     title_dt = None  # Add 'u' in front of string to define it as unicode
     # (e.g. when using non-ascii characters)
-    xlab_dt = 'Raumwärmebedarf in kWh'
-    ylab_dt = 'Anzahl Energiebedarfswerte'
+    if mode == 'sh':
+        xlab_dt = 'Raumwärmebedarf in kWh'
+        ylab_dt = 'Anzahl Energiebedarfswerte'
+    elif mode == 'el':
+        xlab_dt = 'Elektrischer Energiebedarf in kWh'
+        ylab_dt = 'Anzahl Energiebedarfswerte'
+    elif mode == 'dhw':
+        xlab_dt = 'Warmwasserenergiebedarf in kWh'
+        ylab_dt = 'Anzahl Energiebedarfswerte'
     #  ylab only used if plot_sub == False
-
-    #  Fontsize
-    fontsize = 12
-    #  dpi size
-    dpi = 1000
-    #  Linewidth
-    linewidth = 1
 
     #  Plot figures?
     show_plot = False
@@ -475,11 +589,22 @@ def analyze_sh_demands_hist(mc_res, key, output_path):
 
     plot_std = True
 
-    output_filename = key + '_sh_demand'
+    if mc_city:
+        addname = '_city'
+    else:
+        addname = '_build_id_' + str(node_id)
+
+    #  Get reference  demand in kWh (per building)
+    if mode == 'sh':
+        output_filename = key + '_sh_demand' + addname
+    elif mode == 'el':
+        output_filename = key + '_el_demand' + addname
+    elif mode == 'dhw':
+        output_filename = key + '_dhw_demand' + addname
 
     #  #--------------------------------------------------------------
 
-    ebchist.plot_multi_lang_multi_color_hist(list_data=list_sh_dem,
+    ebchist.plot_multi_lang_multi_color_hist(list_data=list_dem,
                                              output_path=output_path,
                                              output_filename=output_filename,
                                              show_plot=show_plot,
@@ -653,299 +778,6 @@ def analyze_sh_powers_hist(mc_res, key, output_path):
                                              plot_mean=plot_mean,
                                              plot_std=plot_std,
                                              dict_v_lines=dict_v_lines)
-
-def analyze_el_demands_hist(mc_res, key, output_path):
-    """
-
-    Parameters
-    ----------
-    mc_res
-    key
-    output_path
-
-    Returns
-    -------
-
-    """
-
-    #  Extract electric energy demands
-    #  ##################################################################
-    list_el_dem = mc_res.get_results(key=key)[2]
-
-    #  Extract reference electric energy demand
-    #  ##################################################################
-    city = mc_res.get_city(key=key)
-    node_id = mc_res.dict_build_ids[key]
-
-    curr_build = city.node[node_id]['entity']
-
-    #  Get reference electric energy demand in kWh
-    sh_dem_ref = curr_build.get_annual_el_demand()
-
-    dict_v_lines = {}
-    dict_v_lines['Reference'] = sh_dem_ref
-
-    print()
-    print('Mean electric energy demand value in kWh:')
-    mean = np.mean(list_el_dem)
-    print(mean)
-    print()
-
-    print('Standard deviation of electric energy demand value in kWh:')
-    stdev = np.std(a=list_el_dem)
-    print()
-
-    print('Median net electric energy demand value in kWh:')
-    median = np.median(a=list_el_dem)
-    print(median)
-    print()
-
-    print('Interquartile range (IQR):')
-    iqr = scipy.stats.iqr(x=list_el_dem)
-    print(iqr)
-    print()
-
-    print('Relative interquartile range (RIQR):')
-    riqr = iqr / median
-    print(riqr)
-    print()
-
-    print('95 % confidence interval for single draw:')
-    conf_int = scipy.stats.norm.interval(0.95, loc=mean, scale=stdev)
-    print(conf_int)
-    print()
-
-    #  EBC hist plot
-    #  English infos
-    title_engl = None  # Add 'u' in front of string to define it as unicode
-    # (e.g. when using non-ascii characters)
-    xlab_engl = 'Electric energy demand in kWh'
-    ylab_engl = 'Number of demand values'
-
-    #  German infos
-    title_dt = None  # Add 'u' in front of string to define it as unicode
-    # (e.g. when using non-ascii characters)
-    xlab_dt = 'Elektrischer Energiebedarf in kWh'
-    ylab_dt = 'Anzahl Energiebedarfswerte'
-    #  ylab only used if plot_sub == False
-
-    #  Fontsize
-    fontsize = 12
-    #  dpi size
-    dpi = 1000
-    #  Linewidth
-    linewidth = 1
-
-    #  Plot figures?
-    show_plot = False
-
-    #  Use tight layout?
-    use_tight = True
-
-    #  Adjust figure size to default (None), 'a4' or 'a4_half', 'a5'
-    fig_adjust = 'a5'  # 'a4_half', 'a5'
-    #  fig_adjust = None  # default
-
-    #  Font type
-    # use_font = 'tex'  # Latex font
-    use_font = 'arial'  # Arial font
-    #  Pre-defines used font in matplotlib rc parameters
-    #  Options:
-    #  - 'tex' : Use Latex fonts in plots
-    #  - 'arial' : Use arial fonts
-
-    #  Copy Python code into output folder?
-    copy_py = True
-
-    #  Additionally save as tikz for latex?
-    save_tikz = True
-
-    #  Save data array as pickle file?
-    save_data_array = True
-
-    #  Rotate x labels?
-    rotate_x_labels = False
-
-    plot_edgecolor = True
-
-    plot_mean = True
-
-    plot_std = True
-
-    output_filename = key + '_el_demand'
-
-    #  #--------------------------------------------------------------
-
-    ebchist.plot_multi_lang_multi_color_hist(list_data=list_el_dem,
-                                             output_path=output_path,
-                                             output_filename=output_filename,
-                                             show_plot=show_plot,
-                                             use_tight=use_tight,
-                                             title_engl=title_engl,
-                                             xlab_engl=xlab_engl,
-                                             ylab_engl=ylab_engl,
-                                             title_dt=title_dt,
-                                             xlab_dt=xlab_dt,
-                                             ylab_dt=ylab_dt,
-                                             fontsize=fontsize,
-                                             fig_adjust=fig_adjust,
-                                             dpi=dpi, copy_py=copy_py,
-                                             save_data_array=save_data_array,
-                                             save_tikz=save_tikz,
-                                             rotate_x_labels=rotate_x_labels,
-                                             use_font=use_font,
-                                             plot_edgecolor=plot_edgecolor,
-                                             plot_mean=plot_mean,
-                                             plot_std=plot_std,
-                                             dict_v_lines=dict_v_lines
-                                             )
-
-
-def analyze_dhw_demands_hist(mc_res, key, output_path):
-    """
-
-    Parameters
-    ----------
-    mc_res
-    key
-    output_path
-
-    Returns
-    -------
-
-    """
-
-    #  Extract space heating demands
-    #  ##################################################################
-    list_dhw_en = mc_res.get_results(key=key)[3]
-
-    #  Extract reference space heating demand
-    #  ##################################################################
-    city = mc_res.get_city(key=key)
-    node_id = mc_res.dict_build_ids[key]
-
-    curr_build = city.node[node_id]['entity']
-
-    #  Get reference hot water energy demand in kWh
-    sh_dem_ref = curr_build.get_annual_dhw_demand()
-
-    dict_v_lines = {}
-    dict_v_lines['Reference'] = sh_dem_ref
-
-    print()
-    print('Mean net hot water energy value in kWh:')
-    mean = np.mean(list_dhw_en)
-    print(mean)
-    print()
-
-    print('Standard deviation of hot water energy value in kWh:')
-    stdev = np.std(a=list_dhw_en)
-    print()
-
-    print('Median hot water energy value in kWh:')
-    median = np.median(a=list_dhw_en)
-    print(median)
-    print()
-
-    print('Interquartile range (IQR):')
-    iqr = scipy.stats.iqr(x=list_dhw_en)
-    print(iqr)
-    print()
-
-    print('Relative interquartile range (RIQR):')
-    riqr = iqr / median
-    print(riqr)
-    print()
-
-    print('95 % confidence interval for single draw:')
-    conf_int = scipy.stats.norm.interval(0.95, loc=mean, scale=stdev)
-    print(conf_int)
-    print()
-
-    #  EBC hist plot
-    #  English infos
-    title_engl = None  # Add 'u' in front of string to define it as unicode
-    # (e.g. when using non-ascii characters)
-    xlab_engl = 'Hot water energy demand in kWh'
-    ylab_engl = 'Number of demand values'
-
-    #  German infos
-    title_dt = None  # Add 'u' in front of string to define it as unicode
-    # (e.g. when using non-ascii characters)
-    xlab_dt = 'Warmwasserenergiebedarf in kWh'
-    ylab_dt = 'Anzahl Energiebedarfswerte'
-    #  ylab only used if plot_sub == False
-
-    #  Fontsize
-    fontsize = 12
-    #  dpi size
-    dpi = 1000
-    #  Linewidth
-    linewidth = 1
-
-    #  Plot figures?
-    show_plot = False
-
-    #  Use tight layout?
-    use_tight = True
-
-    #  Adjust figure size to default (None), 'a4' or 'a4_half', 'a5'
-    fig_adjust = 'a5'  # 'a4_half', 'a5'
-    #  fig_adjust = None  # default
-
-    #  Font type
-    # use_font = 'tex'  # Latex font
-    use_font = 'arial'  # Arial font
-    #  Pre-defines used font in matplotlib rc parameters
-    #  Options:
-    #  - 'tex' : Use Latex fonts in plots
-    #  - 'arial' : Use arial fonts
-
-    #  Copy Python code into output folder?
-    copy_py = True
-
-    #  Additionally save as tikz for latex?
-    save_tikz = True
-
-    #  Save data array as pickle file?
-    save_data_array = True
-
-    #  Rotate x labels?
-    rotate_x_labels = False
-
-    plot_edgecolor = True
-
-    plot_mean = True
-
-    plot_std = True
-
-    output_filename = key + '_dhw_demand'
-
-    #  #--------------------------------------------------------------
-
-    ebchist.plot_multi_lang_multi_color_hist(list_data=list_dhw_en,
-                                             output_path=output_path,
-                                             output_filename=output_filename,
-                                             show_plot=show_plot,
-                                             use_tight=use_tight,
-                                             title_engl=title_engl,
-                                             xlab_engl=xlab_engl,
-                                             ylab_engl=ylab_engl,
-                                             title_dt=title_dt,
-                                             xlab_dt=xlab_dt,
-                                             ylab_dt=ylab_dt,
-                                             fontsize=fontsize,
-                                             fig_adjust=fig_adjust,
-                                             dpi=dpi, copy_py=copy_py,
-                                             save_data_array=save_data_array,
-                                             save_tikz=save_tikz,
-                                             rotate_x_labels=rotate_x_labels,
-                                             use_font=use_font,
-                                             plot_edgecolor=plot_edgecolor,
-                                             plot_mean=plot_mean,
-                                             plot_std=plot_std,
-                                             dict_v_lines=dict_v_lines
-                                             )
 
 
 def box_plot_analysis(mc_res, output_path, output_filename, with_outliners,
@@ -1904,65 +1736,85 @@ def box_plot_analysis_double_plot_dhw_dem(mc_res, output_path,
 
 
 if __name__ == '__main__':
+
     this_path = os.path.dirname(os.path.abspath(__file__))
 
     #  Generate results object
     mc_res = McCityRes()
 
-    dict_filenames = {}
+    dict_files_city = {}
+    dict_files_build = {}
 
-    #  Add results
+    #  Add results of mc analyses
     #  ####################################################################
 
-    filename1 = 'aachen_forsterlinde_5_mc_city_2000_new_dhw_2000.pkl'
-    # filename1 = 'aachen_forsterlinde_5_single_b_new_dhw_1011.pkl'
-    output_filename1 = filename1[:-4]
-    key1 = 'Forsterlinde'
+    filename_city = 'aachen_forsterlinde_5_mc_city_2000_new_dhw_2000.pkl'
+    filename_b = 'aachen_forsterlinde_5_single_b_new_dhw_1011.pkl'
+    output_city = filename_city[:-4]
+    output_b = filename_b[:-4]
+    key = 'Forsterlinde'
 
-    dict_filenames[key1] = filename1
+    dict_files_city[key] = filename_city
+    dict_files_build[key] = filename_b
 
-    filename2 = 'aachen_frankenberg_5_mc_city_2000_new_dhw_2000.pkl'
-    # filename2 = 'aachen_frankenberg_5_single_b_new_dhw_1020.pkl'
-    output_filename2 = filename2[:-4]
-    key2 = 'Frankenberg'
+    filename_city = 'aachen_frankenberg_5_mc_city_2000_new_dhw_2000.pkl'
+    filename_b = 'aachen_frankenberg_5_single_b_new_dhw_1020.pkl'
+    output_city = filename_city[:-4]
+    output_b = filename_b[:-4]
+    key = 'Frankenberg'
 
-    dict_filenames[key2] = filename2
+    dict_files_city[key] = filename_city
+    dict_files_build[key] = filename_b
 
-    filename3 = 'aachen_kronenberg_5_mc_city_2000_new_dhw_2000.pkl'
-    # filename3 = 'aachen_kronenberg_5_single_b_new_dhw_1002.pkl'
-    output_filename3 = filename3[:-4]
-    key3 = 'Kronenberg'
+    filename_city = 'aachen_kronenberg_5_mc_city_2000_new_dhw_2000.pkl'
+    filename_b = 'aachen_kronenberg_5_single_b_new_dhw_1002.pkl'
+    output_city = filename_city[:-4]
+    output_b = filename_b[:-4]
+    key = 'Kronenberg'
 
-    dict_filenames[key3] = filename3
+    dict_files_city[key] = filename_city
+    dict_files_build[key] = filename_b
 
-    filename4 = 'aachen_preusweg_5b_mc_city_2000_new_dhw_2000.pkl'
-    # filename4 = 'aachen_preusweg_5b_single_b_new_dhw_1092.pkl'
-    output_filename4 = filename4[:-4]
-    key4 = 'Preusweg'
+    filename_city = 'aachen_preusweg_5b_mc_city_2000_new_dhw_2000.pkl'
+    filename_b = 'aachen_preusweg_5b_single_b_new_dhw_1092.pkl'
+    output_city = filename_city[:-4]
+    output_b = filename_b[:-4]
+    key = 'Preusweg'
 
-    dict_filenames[key4] = filename4
+    dict_files_city[key] = filename_city
+    dict_files_build[key] = filename_b
 
-    filename5 = 'aachen_tuerme_osm_extr_enriched_mc_city_2000_new_dhw_2000.pkl'
-    # filename5 = 'aachen_tuerme_osm_extr_enriched_single_b_new_dhw_1010.pkl'
-    output_filename5 = filename5[:-4]
-    key5 = u'Türme'
+    filename_city = 'aachen_tuerme_osm_extr_enriched_mc_city_2000_new_dhw_2000.pkl'
+    filename_b = 'aachen_tuerme_osm_extr_enriched_single_b_new_dhw_1010.pkl'
+    output_city = filename_city[:-4]
+    output_b = filename_b[:-4]
+    key = u'Türme'
 
-    dict_filenames[key5] = filename5
+    dict_files_city[key] = filename_city
+    dict_files_build[key] = filename_b
 
-    filename6 = 'huenefeld_5_mc_city_2000_new_dhw_2000.pkl'
-    # filename6 = 'huenefeld_5_single_b_new_dhw_1003.pkl'
-    output_filename6 = filename6[:-4]
-    key6 = u'Hünefeld'
+    filename_city = 'huenefeld_5_mc_city_2000_new_dhw_2000.pkl'
+    filename_b = 'huenefeld_5_single_b_new_dhw_1003.pkl'
+    output_city = filename_city[:-4]
+    output_b = filename_b[:-4]
+    key = u'Hünefeld'
 
-    dict_filenames[key6] = filename6
+    dict_files_city[key] = filename_city
+    dict_files_build[key] = filename_b
 
-    for key in dict_filenames.keys():
-        filename = dict_filenames[key]
-        load_path = os.path.join(this_path, 'input', 'mc_cities', filename)
-        # load_path = os.path.join(this_path, 'input', 'mc_buildings', filename)
+    for key in dict_files_city.keys():
+        file_city = dict_files_city[key]
+        file_build = dict_files_build[key]
+
+        load_path_city = os.path.join(this_path, 'input', 'mc_cities',
+                                      file_city)
+        load_path_build = os.path.join(this_path, 'input', 'mc_buildings',
+                                       file_build)
 
         #  Load results and add them to results object
-        mc_res.add_res_from_path(path=load_path, key=key)
+        mc_res.add_res_mc_city_from_path(path=load_path_city, key=key)
+        mc_res.add_res_mc_build_from_path(path=load_path_build, key=key)
+
 
     # Add cities
     #  ######################################################################
@@ -2017,21 +1869,43 @@ if __name__ == '__main__':
 
     mc_res.dict_build_ids = dict_b_node_nb
 
-    output_filename = 'mc_single_building_2000'
+    #  User input
+    #  ###############################################
+
+    mc_city = True
+    all_cities = False  # all cities / all buildings or only specific key
+
     with_outliners = True
     dpi = 1000
+    fontsize = 12
+
+
+    if mc_city:
+        output_filename = 'mc_city'
+    else:
+        output_filename = 'mc_single_build'
 
     list_order = ['Preusweg', 'Forsterlinde', 'Kronenberg', 'Frankenberg',
                   'Hünefeld', 'Türme']
 
     #############################
-    # #  For single district
-    # key = u'Preusweg'
-    # # #  analysis name
-    # name_an = '_boxplots'
-    # output_folder_n = key + name_an
+    if all_cities:
+        if mc_city:
+            output_folder_n = 'cities_mc'
+        else:
+            output_folder_n = 'buildings_mc'
 
-    output_folder_n = 'cities_mc'
+    else:
+        #  For single analysis (only one district)
+        key = u'Preusweg'
+        if mc_city:
+            #  For single district
+            name_an = '_s_city'
+            output_folder_n = key + name_an
+        else:
+            #  For single building
+            name_an = '_s_build'
+            output_folder_n = key + name_an
 
     output_path = os.path.join(this_path, 'output', output_folder_n)
 
@@ -2039,27 +1913,35 @@ if __name__ == '__main__':
     #############################
 
 
-    # #  Perform space heating load analysis for single district
-    # #  Plot all space heating load curves
-    # #  #####################################################################
+    #  Perform space heating load analysis for single district
+    #  Plot all space heating load curves
+    #  #####################################################################
     # do_sh_load_analysis(mc_res=mc_res, key=key, output_path=output_path,
-    #                     output_filename=key)
+    #                     output_filename=key, dpi=300,
+    #                     mc_city=True, fontsize=fontsize)
 
-    # #  Perform space heating demand analysis for single district
-    # #  #####################################################################
-    # analyze_sh_demands_hist(mc_res=mc_res, key=key, output_path=output_path)
-    #
+    #  Perform space heating demand analysis for single district
+    #  #####################################################################
+    analyze_demands_hist(mc_res=mc_res, key=key, mode='sh',
+                         output_path=output_path, dpi=dpi,
+                         mc_city=mc_city, fontsize=fontsize)
+
     # #  Perform space heating power analysis for single district
     # #  #####################################################################
     # analyze_sh_powers_hist(mc_res=mc_res, key=key, output_path=output_path)
-    #
-    # #  Perform electric energy analysis for single district
-    # #  #####################################################################
-    # analyze_el_demands_hist(mc_res=mc_res, key=key, output_path=output_path)
-    #
-    # #  Perform hot water energy analysis for single district
-    # #  #####################################################################
-    # analyze_dhw_demands_hist(mc_res=mc_res, key=key, output_path=output_path)
+
+    #  Perform electric energy analysis for single district
+    #  #####################################################################
+    analyze_demands_hist(mc_res=mc_res, key=key, mode='el',
+                         output_path=output_path, dpi=dpi,
+                         mc_city=mc_city, fontsize=fontsize)
+
+    #  Perform hot water energy analysis for single district
+    #  #####################################################################
+    analyze_demands_hist(mc_res=mc_res, key=key, mode='dhw',
+                         output_path=output_path, dpi=dpi,
+                         mc_city=mc_city, fontsize=fontsize)
+
 
     # # #  Perform space heating box plot analysis for all districts
     # # #  Plot all boxplots in one figure
@@ -2079,14 +1961,14 @@ if __name__ == '__main__':
     #                               with_outliners=with_outliners,
     #                               list_order=list_order)
 
-    # #  Perform space heating box plot analysis for all districts
-    # #  Plot boxplots in two figure
-    # #  #####################################################################
-    output_path_curr = os.path.join(output_path, 'th_dem_three_axes')
-    box_plot_analysis_triple_plot(mc_res=mc_res, output_path=output_path_curr,
-                                  output_filename=output_filename, dpi=dpi,
-                                  with_outliners=with_outliners,
-                                  list_order=list_order)
+    # # #  Perform space heating box plot analysis for all districts
+    # # #  Plot boxplots in two figure
+    # # #  #####################################################################
+    # output_path_curr = os.path.join(output_path, 'th_dem_three_axes')
+    # box_plot_analysis_triple_plot(mc_res=mc_res, output_path=output_path_curr,
+    #                               output_filename=output_filename, dpi=dpi,
+    #                               with_outliners=with_outliners,
+    #                               list_order=list_order)
 
     # # #  Perform electric demand box plot analysis for all districts
     # # #  Plot all boxplots in one figure
