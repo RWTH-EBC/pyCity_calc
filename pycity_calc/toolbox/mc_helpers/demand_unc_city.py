@@ -154,14 +154,14 @@ if __name__ == '__main__':
     weather_year = 2010
     nb_occ_unc = True
 
-    # city_f_name = 'aachen_forsterlinde_5.pkl'
-    # city_f_name = 'aachen_frankenberg_5.pkl'
-    # city_f_name = 'aachen_kronenberg_5.pkl'
-    # city_f_name = 'aachen_preusweg_5b.pkl'
-    # city_f_name = 'huenefeld_5.pkl'
-    city_f_name = 'aachen_tuerme_osm_extr_enriched.pkl'
+    # city_f_name = 'aachen_forsterlinde_mod_6.pkl'
+    # city_f_name = 'aachen_frankenberg_mod_6.pkl'
+    # city_f_name = 'aachen_huenefeld_mod_6.pkl'
+    # city_f_name = 'aachen_kronenberg_mod_6.pkl'
+    # city_f_name = 'aachen_preusweg_mod_6.pkl'
+    city_f_name = 'aachen_tuerme_mod_6.pkl'
 
-    save_f_name = city_f_name[:-4] + '_mc_city_2000_new_dhw_' + str(nb_samples) + '.pkl'
+    save_f_name = city_f_name[:-4] + '_mc_city_samples_' + str(nb_samples) + '.pkl'
 
     #  Define, if older years of construction should be set to enable a larger
     #  variation of modernization years
