@@ -1955,9 +1955,9 @@ def run_city_generator(generation_mode, timestep, year, location,
                         else:
                             curr_spec_el_dem_occ = cur_spec_el_dem_per_occ_high
 
-                        print('Calculated spec. el. demand per person in '
-                              'kWh/a:')
-                        print(round(curr_spec_el_dem_occ, ndigits=2))
+                        # print('Calculated spec. el. demand per person in '
+                        #       'kWh/a:')
+                        # print(round(curr_spec_el_dem_occ, ndigits=2))
 
                         #  Specific el. demand per person (dependend on av.
                         #  number of occupants in each apartment)
@@ -1970,8 +1970,8 @@ def run_city_generator(generation_mode, timestep, year, location,
                             curr_spec_el_dem_occ * curr_nb_of_occupants \
                             / curr_nfa
 
-                        print('Spec. el. energy demand in kWh/m2:')
-                        print(curr_spec_el_demand)
+                        # print('Spec. el. energy demand in kWh/m2:')
+                        # print(curr_spec_el_demand)
 
                     else:
                         raise AssertionError('Invalid number of occupants')
@@ -1984,10 +1984,33 @@ def run_city_generator(generation_mode, timestep, year, location,
                             np.random.normal(loc=curr_spec_el_demand,
                                              scale=0.10 * curr_spec_el_demand)
                     else:
+                        #  Randomize rounding up and down of curr_av_occ_per_ap
+                        if round(curr_av_occ_per_app) > curr_av_occ_per_app:
+                            #  Round up
+                            delta = round(curr_av_occ_per_app) - \
+                                    curr_av_occ_per_app
+                            prob_r_up = 1 - delta
+                            rnb = random.random()
+                            if rnb < prob_r_up:
+                                use_occ = math.ceil(curr_av_occ_per_app)
+                            else:
+                                use_occ = math.floor(curr_av_occ_per_app)
+
+                        else:
+                            #  Round down
+                            delta = curr_av_occ_per_app - \
+                                    round(curr_av_occ_per_app)
+                            prob_r_down = 1 - delta
+                            rnb = random.random()
+                            if rnb < prob_r_down:
+                                use_occ = math.floor(curr_av_occ_per_app)
+                            else:
+                                use_occ = math.ceil(curr_av_occ_per_app)
+
                         sample_el_per_app = \
-                            usunc.calc_sampling_el_demand_per_apartment(nb_samples=1,
-                                                                  nb_persons=curr_av_occ_per_app,
-                                                                  type=btype)[0]
+                                usunc.calc_sampling_el_demand_per_apartment(nb_samples=1,
+                                                                      nb_persons=use_occ,
+                                                                      type=btype)[0]
 
                         #  Divide sampled el. demand per apartment through
                         #  number of persons of apartment (according to
