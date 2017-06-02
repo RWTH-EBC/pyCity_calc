@@ -4,6 +4,7 @@ Script to generate city object.
 """
 
 import os
+import math
 import numpy as np
 import pickle
 import warnings
@@ -1901,18 +1902,6 @@ def run_city_generator(generation_mode, timestep, year, location,
                     #  Only valid for array like [2012    38.7]
 
                 else:
-                    # #  Use RWI values
-                    # #  Calculate specific electric demand values depending
-                    # #  on number of occupants
-                    # if curr_nb_of_occupants <= 5 and curr_nb_of_occupants > 0:
-                    #     #  Divide annual el. energy demand with net floor area
-                    #     curr_spec_el_demand = \
-                    #         spec_el_dem_res_building_per_person[
-                    #             curr_nb_of_occupants - 1][1] / curr_nfa
-                    # elif curr_nb_of_occupants >= 5:
-                    #     curr_spec_el_demand = \
-                    #         spec_el_dem_res_building_per_person[4][
-                    #             2] * curr_nb_of_occupants / curr_nfa
                     #  Use Stromspiegel 2017 values
                     #  Calculate specific electric demand values depending
                     #  on number of occupants
@@ -1926,14 +1915,49 @@ def run_city_generator(generation_mode, timestep, year, location,
                     curr_av_occ_per_app = \
                         curr_nb_of_occupants / curr_nb_of_apartments
                     print('Average number of occupants per apartment')
-                    print(curr_av_occ_per_app)
+                    print(round(curr_av_occ_per_app, ndigits=2))
 
                     if curr_av_occ_per_app <= 5 and curr_av_occ_per_app > 0:
+                        #  Correctur factor for non-int. av. number of
+                        #  occupants (#19)
+
                         #  Divide annual el. energy demand with net floor area
                         if btype == 'sfh':
-                            row_idx = curr_av_occ_per_app - 1
+                            row_idx_low = math.ceil(curr_av_occ_per_app) - 1
+                            row_idx_high = math.floor(curr_av_occ_per_app) - 1
                         elif btype == 'mfh':
-                            row_idx = curr_av_occ_per_app - 1 + 5
+                            row_idx_low = math.ceil(curr_av_occ_per_app) - 1 \
+                                           + 5
+                            row_idx_high = math.floor(curr_av_occ_per_app) - 1 \
+                                          + 5
+
+                        cur_spec_el_dem_per_occ_high = \
+                            spec_el_dem_res_building_per_person[row_idx_high][2]
+                        cur_spec_el_dem_per_occ_low = \
+                            spec_el_dem_res_building_per_person[row_idx_low][2]
+
+                        print('Chosen reference spec. el. demands per person '
+                              'in kWh/a (high and low value):')
+                        print(cur_spec_el_dem_per_occ_high)
+                        print(cur_spec_el_dem_per_occ_low)
+
+                        delta = round(curr_av_occ_per_app, 0) - \
+                                curr_av_occ_per_app
+
+                        if delta < 0:
+                            curr_spec_el_dem_occ = cur_spec_el_dem_per_occ_high + \
+                                               (cur_spec_el_dem_per_occ_high -
+                                                cur_spec_el_dem_per_occ_low) * delta
+                        elif delta > 0:
+                            curr_spec_el_dem_occ = cur_spec_el_dem_per_occ_low + \
+                                               (cur_spec_el_dem_per_occ_high -
+                                                cur_spec_el_dem_per_occ_low) * delta
+                        else:
+                            curr_spec_el_dem_occ = cur_spec_el_dem_per_occ_high
+
+                        # print('Calculated spec. el. demand per person in '
+                        #       'kWh/a:')
+                        # print(round(curr_spec_el_dem_occ, ndigits=2))
 
                         #  Specific el. demand per person (dependend on av.
                         #  number of occupants in each apartment)
@@ -1941,22 +1965,13 @@ def run_city_generator(generation_mode, timestep, year, location,
                         #  --> Total el. energy demand in kWh
                         #  --> Divided with net floor area
                         #  --> Spec. el. energy demand in kWh/a
-                        curr_spec_el_demand = \
-                            spec_el_dem_res_building_per_person[int(row_idx)][2] \
-                            * curr_nb_of_occupants/ curr_nfa
 
-                    # elif curr_nb_of_occupants >= 5:
-                    #     if btype == 'sfh':
-                    #         row_idx = 4
-                    #     elif btype == 'mfh':
-                    #         row_idx = 9
-                    #
-                    #     #  Get spec. el. demand per occupant --> Multiply
-                    #     #  with occupant number --> Divide by net floor area
-                    #     #  --> Get specific el. demand per area
-                    #     curr_spec_el_demand = \
-                    #         spec_el_dem_res_building_per_person[row_idx][2] \
-                    #         * curr_nb_of_occupants / curr_nfa
+                        curr_spec_el_demand = \
+                            curr_spec_el_dem_occ * curr_nb_of_occupants \
+                            / curr_nfa
+
+                        # print('Spec. el. energy demand in kWh/m2:')
+                        # print(curr_spec_el_demand)
 
                     else:
                         raise AssertionError('Invalid number of occupants')
@@ -1969,10 +1984,33 @@ def run_city_generator(generation_mode, timestep, year, location,
                             np.random.normal(loc=curr_spec_el_demand,
                                              scale=0.10 * curr_spec_el_demand)
                     else:
+                        #  Randomize rounding up and down of curr_av_occ_per_ap
+                        if round(curr_av_occ_per_app) > curr_av_occ_per_app:
+                            #  Round up
+                            delta = round(curr_av_occ_per_app) - \
+                                    curr_av_occ_per_app
+                            prob_r_up = 1 - delta
+                            rnb = random.random()
+                            if rnb < prob_r_up:
+                                use_occ = math.ceil(curr_av_occ_per_app)
+                            else:
+                                use_occ = math.floor(curr_av_occ_per_app)
+
+                        else:
+                            #  Round down
+                            delta = curr_av_occ_per_app - \
+                                    round(curr_av_occ_per_app)
+                            prob_r_down = 1 - delta
+                            rnb = random.random()
+                            if rnb < prob_r_down:
+                                use_occ = math.floor(curr_av_occ_per_app)
+                            else:
+                                use_occ = math.ceil(curr_av_occ_per_app)
+
                         sample_el_per_app = \
-                            usunc.calc_sampling_el_demand_per_apartment(nb_samples=1,
-                                                                  nb_persons=curr_av_occ_per_app,
-                                                                  type=btype)[0]
+                                usunc.calc_sampling_el_demand_per_apartment(nb_samples=1,
+                                                                      nb_persons=use_occ,
+                                                                      type=btype)[0]
 
                         #  Divide sampled el. demand per apartment through
                         #  number of persons of apartment (according to
@@ -2447,7 +2485,7 @@ if __name__ == '__main__':
 
     #  For generation_mode == 1:
     #city_osm_input = 'aachen_forsterlinde_5.pkl'
-    city_osm_input = 'aachen_frankenberg_5.pkl'
+    city_osm_input = 'aachen_frankenberg_mod_6.pkl'
     #city_osm_input = 'aachen_huenefeld_5.pkl'
     #city_osm_input = 'aachen_kronenberg_5.pkl'
     #city_osm_input = 'aachen_preusweg_5b.pkl'
