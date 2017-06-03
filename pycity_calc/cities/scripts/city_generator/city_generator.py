@@ -2474,22 +2474,22 @@ if __name__ == '__main__':
     #  ######################################################
     #  Define input data filename
     #filename = 'aachen_forsterlinde_mod_6.txt'
-    filename = 'aachen_frankenberg_mod_6.txt'
+    filename = 'aachen_frankenberg_mod_8.txt'
     #filename = 'aachen_huenefeld_mod_6.txt'
-    #filename = 'aachen_kronenberg_mod_6.txt'
-    #filename = 'aachen_preusweg_mod_6.txt'
+    #filename = 'aachen_kronenberg_mod_8.txt'
+    #filename = 'aachen_preusweg_mod_8.txt'
     #filename = 'aachen_tuerme_mod_6.txt'
 
     #  Output filename
     pickle_city_filename = filename[:-4] + '.pkl'
 
     #  For generation_mode == 1:
-    #city_osm_input = 'aachen_forsterlinde_5.pkl'
-    city_osm_input = 'aachen_frankenberg_mod_6.pkl'
-    #city_osm_input = 'aachen_huenefeld_5.pkl'
-    #city_osm_input = 'aachen_kronenberg_5.pkl'
-    #city_osm_input = 'aachen_preusweg_5b.pkl'
-    #city_osm_input = 'aachen_tuerme_osm_extr_enriched.pkl'
+    #city_osm_input = 'aachen_forsterlinde_mod_7.pkl'
+    city_osm_input = 'aachen_frankenberg_mod_7.pkl'
+    #city_osm_input = 'aachen_huenefeld_mod_7.pkl'
+    #city_osm_input = 'aachen_kronenberg_mod_7.pkl'
+    #city_osm_input = 'aachen_preusweg_mod_7.pkl'
+    #city_osm_input = 'aachen_tuerme_mod_7.pkl'
 
     #  Efficiency factor of thermal energy systems
     #  Used to convert input values (final energy demand) to net energy demand
