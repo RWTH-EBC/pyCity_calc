@@ -1918,37 +1918,37 @@ if __name__ == '__main__':
     dict_b_node_nb = {}
 
     #  City object pickle file, which should be loaded
-    city_f_name = 'aachen_forsterlinde_mod_6.pkl'
+    city_f_name = 'aachen_forsterlinde_mod_7.pkl'
     key = 'Forsterlinde'
     build_node_nb = 1011  # Forsterlinde
     dict_city_f_names[key] = city_f_name
     dict_b_node_nb[key] = build_node_nb
 
-    city_f_name = 'aachen_frankenberg_mod_6.pkl'
+    city_f_name = 'aachen_frankenberg_mod_7.pkl'
     key = 'Frankenberg'
     build_node_nb = 1020  # Frankenberg
     dict_city_f_names[key] = city_f_name
     dict_b_node_nb[key] = build_node_nb
 
-    city_f_name = 'aachen_kronenberg_mod_6.pkl'
+    city_f_name = 'aachen_kronenberg_mod_7.pkl'
     key = 'Kronenberg'
     build_node_nb = 1002  # Kronenberg
     dict_city_f_names[key] = city_f_name
     dict_b_node_nb[key] = build_node_nb
 
-    city_f_name = 'aachen_preusweg_mod_6.pkl'
+    city_f_name = 'aachen_preusweg_mod_7.pkl'
     key = 'Preusweg'
     build_node_nb = 1092  # Preusweg
     dict_city_f_names[key] = city_f_name
     dict_b_node_nb[key] = build_node_nb
 
-    city_f_name = 'aachen_tuerme_mod_6.pkl'
+    city_f_name = 'aachen_tuerme_mod_7.pkl'
     key = u'Türme'
     build_node_nb = 1010  # Tuerme
     dict_city_f_names[key] = city_f_name
     dict_b_node_nb[key] = build_node_nb
 
-    city_f_name = 'aachen_huenefeld_mod_6.pkl'
+    city_f_name = 'aachen_huenefeld_mod_7.pkl'
     key = u'Hünefeld'
     build_node_nb = 1003  # Huenefeld
     dict_city_f_names[key] = city_f_name
