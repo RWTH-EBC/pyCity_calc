@@ -1207,14 +1207,41 @@ def box_plot_analysis_triple_plot(mc_res, output_path, output_filename,
             label='Reference', color='#1058B0',
             linewidth=1)
 
-    start, end = ax.get_ylim()
-    print(start)
-    print(end)
-    # start = round(start / 100, ndigits=0) * 100
-    start = 0
-    end = round(end / 1000, ndigits=0) * 1000
+    def get_start_stop_step(ax):
 
-    stepsize = round((end - start) / 10, ndigits=0)
+        start, end = ax.get_ylim()
+        print(start)
+        print(end)
+        # start = round(start / 100, ndigits=0) * 100
+        start = 0
+        if end < 50:
+            end = round(end / 10, ndigits=0) * 10
+            stepsize = 5
+        elif end < 150:
+            end = round(end / 10, ndigits=0) * 10
+            stepsize = 10
+        elif end < 240:
+            end = round(end / 10, ndigits=0) * 10
+            stepsize = 20
+        elif end < 500:
+            end = round(end / 100, ndigits=0) * 100
+            stepsize = 50
+        elif end < 1500:
+            end = round(end / 100, ndigits=0) * 100
+            stepsize = 100
+        elif end < 2400:
+            end = round(end / 100, ndigits=0) * 100
+            stepsize = 200
+        elif end < 5000:
+            end = round(end / 1000, ndigits=0) * 1000
+            stepsize = 500
+        else:
+            end = round(end / 1000, ndigits=0) * 1000
+            stepsize = 1000
+
+        return (start, end, stepsize)
+
+    (start, end, stepsize) = get_start_stop_step(ax)
 
     ax.yaxis.set_ticks(np.arange(start, end, stepsize))
 
@@ -1241,14 +1268,7 @@ def box_plot_analysis_triple_plot(mc_res, output_path, output_filename,
             label='Reference', color='#1058B0',
             linewidth=1)
 
-    start, end = ax.get_ylim()
-    print(start)
-    print(end)
-    # start = round(start / 100, ndigits=0) * 100
-    start = 0
-    end = round(end / 1000, ndigits=0) * 1000
-
-    stepsize = round((end - start) / 10, ndigits=0)
+    (start, end, stepsize) = get_start_stop_step(ax)
 
     ax.yaxis.set_ticks(np.arange(start, end, stepsize))
 
@@ -1275,14 +1295,7 @@ def box_plot_analysis_triple_plot(mc_res, output_path, output_filename,
             label='Reference', color='#1058B0',
             linewidth=1)
 
-    start, end = ax.get_ylim()
-    print(start)
-    print(end)
-    # start = round(start / 100, ndigits=0) * 100
-    start = 0
-    end = round(end / 1000, ndigits=0) * 1000
-
-    stepsize = round((end - start) / 10, ndigits=0)
+    (start, end, stepsize) = get_start_stop_step(ax)
 
     ax.yaxis.set_ticks(np.arange(start, end, stepsize))
 
@@ -1926,7 +1939,7 @@ if __name__ == '__main__':
     dict_city_f_names[key] = city_f_name
     dict_b_node_nb[key] = build_node_nb
 
-    city_f_name = 'aachen_forsterlinde_mod_8.pkl'
+    city_f_name = 'aachen_frankenberg_mod_7.pkl'
     key = 'Frankenberg'
     build_node_nb = 1020  # Frankenberg
     dict_city_f_names[key] = city_f_name
