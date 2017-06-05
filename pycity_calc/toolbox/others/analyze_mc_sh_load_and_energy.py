@@ -1305,15 +1305,31 @@ def box_plot_analysis_triple_plot(mc_res, output_path, output_filename,
     for flier in pb['fliers']:
         flier.set(marker='.', markersize=1)
 
+    fig.autofmt_xdate()
+
+    plt.tight_layout()
+
+
+
+    #  Generate legend
     import matplotlib.lines as mlines
     #  Generate proxy arist for legend
     median_proxy = mlines.Line2D([], [], color='#E53027', label='Median')
     ref_proxy = mlines.Line2D([], [], color='#1058B0', label='Reference')
 
-    plt.legend(handles=[median_proxy, ref_proxy])
+    box_factor = 0.1
+    for ax in fig.axes:
+        box = ax.get_position()
+        ax.set_position([box.x0, box.y0 + box.height * box_factor,
+                         box.width, box.height * (1 - box_factor)])
 
-    fig.autofmt_xdate()
-    plt.tight_layout()
+    #  Put a legend below current axis
+    lgd = ax.legend(handles=[median_proxy, ref_proxy],
+                    loc='upper center', bbox_to_anchor=(-1.8, -0.4), ncol=2)
+
+    # plt.legend(handles=[median_proxy, ref_proxy], loc='best')
+
+
 
     gen_path(output_path)
 
@@ -1332,9 +1348,9 @@ def box_plot_analysis_triple_plot(mc_res, output_path, output_filename,
     path_tikz = os.path.join(output_path, file_tikz)
 
     #  Save figure in different formats
-    plt.savefig(path_pdf, format='pdf', dpi=dpi)
-    plt.savefig(path_eps, format='eps', dpi=dpi)
-    plt.savefig(path_png, format='png', dpi=dpi)
+    plt.savefig(path_pdf, format='pdf')
+    plt.savefig(path_eps, format='eps')
+    plt.savefig(path_png, format='png')
     # plt.savefig(path_tiff, format='tiff', dpi=dpi)
     tikz_save(path_tikz, figureheight='\\figureheight',
               figurewidth='\\figurewidth')
