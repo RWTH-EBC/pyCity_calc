@@ -1308,8 +1308,9 @@ def box_plot_analysis_triple_plot(mc_res, output_path, output_filename,
     import matplotlib.lines as mlines
     #  Generate proxy arist for legend
     median_proxy = mlines.Line2D([], [], color='#E53027', label='Median')
+    ref_proxy = mlines.Line2D([], [], color='#1058B0', label='Reference')
 
-    plt.legend(handles=[median_proxy])
+    plt.legend(handles=[median_proxy, ref_proxy])
 
     fig.autofmt_xdate()
     plt.tight_layout()
