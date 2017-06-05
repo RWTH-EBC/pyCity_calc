@@ -1903,8 +1903,10 @@ if __name__ == '__main__':
         file_build = dict_files_build[key]
 
         load_path_city = os.path.join(this_path, 'input', 'mc_cities',
+                                      '3_with_2000_samples',
                                       file_city)
         load_path_build = os.path.join(this_path, 'input', 'mc_buildings',
+                                       '3_with_2000',
                                        file_build)
 
         #  Load results and add them to results object
