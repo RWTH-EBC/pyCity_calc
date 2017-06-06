@@ -154,14 +154,11 @@ if __name__ == '__main__':
     weather_year = 2010
     nb_occ_unc = True
 
-    # city_f_name = 'aachen_forsterlinde_5.pkl'
-    # city_f_name = 'aachen_frankenberg_5.pkl'
-    # city_f_name = 'aachen_kronenberg_5.pkl'
-    # city_f_name = 'aachen_preusweg_5b.pkl'
-    # city_f_name = 'huenefeld_5.pkl'
-    city_f_name = 'aachen_tuerme_osm_extr_enriched.pkl'
-
-    save_f_name = city_f_name[:-4] + '_mc_city_2000_new_dhw_' + str(nb_samples) + '.pkl'
+    # city_f_name = 'city_Rheinbaben_sued_mod_jsc_estimate_retrofit_20.p'
+    city_f_name = 'rheinbaben_nord_mod_jsc_estimate_retrofit_overwrite_corrected.p'
+    # city_f_name = 'innenstadt_mod_jsc_estimate_retrofit_overwrite.p'
+    
+    save_f_name = city_f_name[:-2] + '_mc_city_' + str(nb_samples) + '.pkl'
 
     #  Define, if older years of construction should be set to enable a larger
     #  variation of modernization years
@@ -175,7 +172,7 @@ if __name__ == '__main__':
 
     this_path = os.path.dirname(os.path.abspath(__file__))
 
-    city_path = os.path.join(this_path, 'input', city_f_name)
+    city_path = os.path.join(this_path, 'input', 'sustain', city_f_name)
 
     save_path = os.path.join(this_path, 'output', save_f_name)
 
