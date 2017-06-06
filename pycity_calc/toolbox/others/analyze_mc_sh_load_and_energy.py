@@ -1936,7 +1936,7 @@ if __name__ == '__main__':
                                       '3_with_2000_samples',
                                       file_city)
         load_path_build = os.path.join(this_path, 'input', 'mc_buildings',
-                                       '3_with_2000',
+                                       '4_change_el_10000_samples',
                                        file_build)
 
         #  Load results and add them to results object
@@ -1956,7 +1956,7 @@ if __name__ == '__main__':
     dict_city_f_names[key] = city_f_name
     dict_b_node_nb[key] = build_node_nb
 
-    city_f_name = 'aachen_frankenberg_mod_7.pkl'
+    city_f_name = 'aachen_frankenberg_mod_8.pkl'
     key = 'Frankenberg'
     build_node_nb = 1020  # Frankenberg
     dict_city_f_names[key] = city_f_name
