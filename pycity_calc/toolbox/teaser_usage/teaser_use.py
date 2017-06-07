@@ -696,10 +696,10 @@ def calc_th_load_build_vdi6007_ex_build(exbuild, add_th_load=False,
         assert apartment.occupancy is not None, 'Apartment has no occupants!'
 
     # Pointer to timestep
-    timestep = exbuild.environment.timer.timeDiscretization
+    timestep_org = exbuild.environment.timer.timeDiscretization
 
     #  Number of timesteps per year
-    nb_timesteps = 365 * 24 * 3600 / timestep
+    nb_timesteps = 365 * 24 * 3600 / timestep_org
 
     #  #  Create TEASER weather
     #  #####################################################################
@@ -713,7 +713,7 @@ def calc_th_load_build_vdi6007_ex_build(exbuild, add_th_load=False,
         beta=beta, gamma=gamma,
         altitude=exbuild.environment.weather.altitude,
         location=exbuild.environment.location,
-        timestep=timestep,
+        timestep=timestep_org,
         do_sun_rad=False)
     # do_sun_rad=True)
 
@@ -725,13 +725,37 @@ def calc_th_load_build_vdi6007_ex_build(exbuild, add_th_load=False,
     teaser_weather.rad_earth = exbuild.environment.weather.rad_earth
 
     #  Re-calculate sun radiation values
-    teaser_weather.calc_sun_rad(timestep=timestep, nb_timesteps=nb_timesteps)
+    teaser_weather.calc_sun_rad(timestep=timestep_org, nb_timesteps=nb_timesteps)
+
+    if timestep_org != 3600:
+        #  Currently, VDI 6007 core can only handle 3600 seconds timestep.
+        msg = 'Timestep is not equal to 3600 seconds. Thus, input profiles' \
+              ' are going to be changed to 3600 seconds timestep to perform' \
+              ' VDI 6007 simulation. Going to be re-converted after thermal ' \
+              'simulation.'
+        warnings.warn(msg)
+    #  Set timestep to 3600 seconds
+    timestep = 3600
 
     #  Outdoor temperature pointer
     t_out = teaser_weather.temp[:]
+    t_out = chres.changeResolution(t_out, oldResolution=timestep_org,
+                                   newResolution=timestep)
 
     #  Get radiation values
-    rad = np.transpose(teaser_weather.sun_rad)
+    rad = np.transpose(teaser_weather.sun_rad)[:]
+
+    if timestep_org != 3600:
+        #  Convert all 6 radiation directions with new timestep
+        new_rad = np.zeros((8760, len(rad[0])))
+        for i in range(len(rad[0])):
+            new_rd = chres.changeResolution(copy.copy(rad[:,i]),
+                                            oldResolution=timestep_org,
+                                            newResolution=timestep)
+            new_rad[:,i] = new_rd
+        use_rad = new_rad
+    else:
+        use_rad = rad
 
     #  #  Create TEASER project and type building
     #  #####################################################################
@@ -768,12 +792,20 @@ def calc_th_load_build_vdi6007_ex_build(exbuild, add_th_load=False,
                                          oldResolution=org_res,
                                          newResolution=timestep)
 
+    #  Convert array_vent_rate
+    array_vent_rate_res = array_vent_rate[:]
+    if timestep != timestep_org:
+        array_vent_rate_res = chres.changeResolution(array_vent_rate_res,
+                                                 oldResolution=timestep_org,
+                                                 newResolution=timestep)
+
+    #  Perform VDI 6007 thermal simulation
     (temp_in, q_heat_cool, q_in_wall, q_out_wall) = \
         calc_th_load__build_vdi6007(type_build=type_b, temp_out=t_out,
-                                    rad=rad,
+                                    rad=use_rad,
                                     occ_profile=occ_profile,
                                     el_load=el_load,
-                                    array_vent_rate=array_vent_rate,
+                                    array_vent_rate=array_vent_rate_res,
                                     vent_factor=vent_factor,
                                     t_set_heat=t_set_heat,
                                     t_set_cool=t_set_cool,
@@ -782,6 +814,21 @@ def calc_th_load_build_vdi6007_ex_build(exbuild, add_th_load=False,
                                     alpha_rad=alpha_rad,
                                     heat_lim_val=heat_lim_val,
                                     cool_lim_val=cool_lim_val)
+
+    #  Reconvert from timestep to timestep_org
+    temp_in = chres.changeResolution(temp_in, oldResolution=timestep,
+                                     newResolution=timestep_org)
+    q_heat_cool = chres.changeResolution(q_heat_cool,
+                                         oldResolution=timestep,
+                                         newResolution=timestep_org)
+    q_in_wall = chres.changeResolution(q_in_wall,
+                                       oldResolution=timestep,
+                                       newResolution=timestep_org)
+    q_out_wall = chres.changeResolution(q_out_wall,
+                                        oldResolution=timestep,
+                                        newResolution=timestep_org)
+    #  Reset timestep to timestep_org
+    #timestep = timestep_org
 
     if add_th_load:
         #  Add th. load curve to apartment(s)
