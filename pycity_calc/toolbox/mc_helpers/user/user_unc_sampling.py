@@ -257,8 +257,8 @@ def calc_sampling_el_demand_per_apartment(nb_samples, nb_persons, type,
             use_dict = dict_mfh
 
         # Select min. and max. possible value
-        minv = use_dict[int(nb_persons)][0]
-        maxv = use_dict[int(nb_persons)][1]
+        minv = use_dict[nb_persons][0]
+        maxv = use_dict[nb_persons][1]
 
         for i in range(nb_samples):
             chosen_val = rd.randint(minv, maxv)
