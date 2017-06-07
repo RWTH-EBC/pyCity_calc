@@ -2291,7 +2291,7 @@ def run_city_generator(generation_mode, timestep, year, location,
 
                             print()
 
-        # Create and add TEASER type_buildings to every building node
+        # Create and add TEASER typ e_buildings to every building node
         if call_teaser:
             #  Create TEASER project
             project = tusage.create_teaser_project(name=teaser_proj_name)

@@ -8,14 +8,18 @@ Returns standard deviation and mean of the absolute value of the elementary effe
 """
 import os
 import matplotlib.pyplot as plt
-from pycity_calc.toolbox.mc_helpers.Morris_analysis.SALib_master.SALib.plotting.morris import horizontal_bar_plot, covariance_plot, sample_histograms
+#from pycity_calc.toolbox.mc_helpers.Morris_analysis.SALib_master.SALib.plotting.morris import horizontal_bar_plot, covariance_plot, sample_histograms
 import pycity_calc.cities.scripts.overall_gen_and_dimensioning as City_gen
 import copy
 import pycity_calc.environments.market as Mark
-from pycity_calc.toolbox.mc_helpers.Morris_analysis.SALib_master.SALib.sample.morris import sample
-from pycity_calc.toolbox.mc_helpers.Morris_analysis.SALib_master.SALib.util import read_param_file
+#from pycity_calc.toolbox.mc_helpers.Morris_analysis.SALib_master.SALib.sample.morris import sample
+#from pycity_calc.toolbox.mc_helpers.Morris_analysis.SALib_master.SALib.util import read_param_file
 import pycity_calc.toolbox.mc_helpers.Morris_analysis.SA_evaluation_function as model_evaluation
-from pycity_calc.toolbox.mc_helpers.Morris_analysis.SALib_master.SALib.analyze import morris
+#from pycity_calc.toolbox.mc_helpers.Morris_analysis.SALib_master.SALib.analyze import morris
+from SALib.analyze import morris
+from SALib.sample.morris import sample
+from SALib.util import read_param_file
+from SALib.plotting.morris import horizontal_bar_plot, covariance_plot, sample_histograms
 import pycity_calc.economic.economic_ann as economic_ann
 import pycity_calc.economic.annuity_calculation as eco_calc
 import pycity_calc.simulation.energy_balance_optimization.energy_balance_building as EBB
@@ -30,7 +34,7 @@ def run_Morris():
     # #############################################################################################################
 
     # number of samples
-    Nsample = 1
+    Nsample = 100
     print(Nsample)
     Morris_name = 'Morris_values.txt' # filename of the parameters definition variation space for the Morris analysis
 
@@ -41,7 +45,7 @@ def run_Morris():
 
     # results
     save_result = True # if set to false: no generation of results txt file
-    results_name = 'Morris_results.txt'
+    results_name = 'Morris_results2.txt'
 
     # City Generation with start district data values and default parameters
     print('***********************************************************************************************************')
@@ -477,7 +481,7 @@ def run_Morris():
         results_path = os.path.join(this_path, 'output', results_name)
 
         write_results = open(results_path, mode='w')
-        write_results.write(' Morris analysis\n ')
+        write_results.write(' Morris analysis -Test Modernisation year 1977-1995 \n ')
 
         write_results.write(' Number of sampling :' + str(Nsample))
         write_results.write('\n##############Parameters for the sensibility##############\n')
@@ -576,27 +580,27 @@ def run_Morris():
     fig, (ax1, ax2) = plt.subplots(1, 2)
     horizontal_bar_plot(ax1, Si_gas,{}, sortby='mu_star', unit=r"gas_dem[kWh]/year")
     covariance_plot(ax2, Si_gas, {}, unit=r"gas_dem[kWh]/year")
-    fig.suptitle('gas demand analysis')
+    fig.suptitle('gas demand analysis for {} samples'.format(Nsample))
 
     fig2, (ax3, ax4) = plt.subplots(1, 2)
     horizontal_bar_plot(ax3, Si_el, {}, sortby='mu_star', unit=r"el_dem[kWh]/year")
     covariance_plot(ax4, Si_el, {}, unit=r"el_dem[kWh]/year")
-    fig2.suptitle('electrical demand analysis')
+    fig2.suptitle('electrical demand analysis for {} samples'.format(Nsample))
 
     fig3, (ax5, ax6) = plt.subplots(1, 2)
     horizontal_bar_plot(ax5, Si_ghg, {}, sortby='mu_star', unit=r"GHG[kg]/year")
     covariance_plot(ax6, Si_ghg, {}, unit=r"GHG [kg]/year")
-    fig3.suptitle ('GHG analysis')
+    fig3.suptitle ('GHG analysis for {} samples'.format(Nsample))
 
     fig6, (ax9, ax10) = plt.subplots(1, 2)
     horizontal_bar_plot(ax9, Si_ghg_spe, {}, sortby='mu_star', unit=r"GHG[kg]/kWh*year")
     covariance_plot(ax10, Si_ghg_spe, {}, unit=r"GHG [kg]/kWh*year")
-    fig6.suptitle('specific GHG analysis')
+    fig6.suptitle('specific GHG analysis for {} samples'.format(Nsample))
 
     fig4, (ax7, ax8) = plt.subplots(1, 2)
     horizontal_bar_plot(ax7, Si_a, {}, sortby='mu_star', unit=r"Annuity[Euro]/year")
     covariance_plot(ax8, Si_a, {}, unit=r"Annuity [Euro]/year")
-    fig4.suptitle('annuity analysis')
+    fig4.suptitle('annuity analysis for {} samples'.format(Nsample))
 
     # visualisation demand curves
     fig5, axarr = plt.subplots(2, 2)
@@ -620,7 +624,7 @@ def run_Morris():
     axarr[1, 1].plot = plt.hist(liste_max_sph, 50, normed=1)
     axarr[1, 1].set_title('max thermal demand in kWh, City_ref: {} kWh'.format(round(SaveCity.get_total_annual_th_demand(), 2)))
 
-    fig5.suptitle('energy demand curves in kW')
+    fig5.suptitle('energy demand curves in kW ')
     plt.show()
 
 
