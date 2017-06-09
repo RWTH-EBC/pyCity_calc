@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # coding=utf-8
 """
-Test script for city_modifier.py
+Test script for mod_city_geo_pos.py
 """
 
-import pycity_calc.toolbox.city_modifier as citymod
+import pycity_calc.toolbox.modifiers.mod_city_geo_pos as citymod
 
 # import sympy.geometry.point as point
 import shapely.geometry.point as point
