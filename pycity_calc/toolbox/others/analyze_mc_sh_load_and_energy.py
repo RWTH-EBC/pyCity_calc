@@ -1958,7 +1958,7 @@ if __name__ == '__main__':
     dict_city_f_names[key] = city_f_name
     dict_b_node_nb[key] = build_node_nb
 
-    city_f_name = 'aachen_frankenberg_mod_8.pkl'
+    city_f_name = 'aachen_frankenberg_mod_8_el_resc.pkl'
     key = 'Frankenberg'
     build_node_nb = 1020  # Frankenberg
     dict_city_f_names[key] = city_f_name
@@ -1976,7 +1976,7 @@ if __name__ == '__main__':
     dict_city_f_names[key] = city_f_name
     dict_b_node_nb[key] = build_node_nb
 
-    city_f_name = 'aachen_tuerme_mod_7.pkl'
+    city_f_name = 'aachen_tuerme_mod_7_el_resc.pkl'
     key = u'Türme'
     build_node_nb = 1010  # Tuerme
     dict_city_f_names[key] = city_f_name
