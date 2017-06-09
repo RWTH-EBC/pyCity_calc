@@ -1874,8 +1874,8 @@ if __name__ == '__main__':
     #  Add results of mc analyses
     #  ####################################################################
 
-    filename_city = 'aachen_forsterlinde_5_mc_city_2000_new_dhw_2000.pkl'
-    filename_b = 'aachen_forsterlinde_5_single_b_new_dhw_1011.pkl'
+    filename_city = 'aachen_forsterlinde_mod_7_mc_city_samples_10000.pkl'
+    filename_b = 'aachen_forsterlinde_mod_7_single_b_100001011.pkl'
     output_city = filename_city[:-4]
     output_b = filename_b[:-4]
     key = 'Forsterlinde'
@@ -1883,8 +1883,8 @@ if __name__ == '__main__':
     dict_files_city[key] = filename_city
     dict_files_build[key] = filename_b
 
-    filename_city = 'aachen_frankenberg_5_mc_city_2000_new_dhw_2000.pkl'
-    filename_b = 'aachen_frankenberg_5_single_b_new_dhw_1020.pkl'
+    filename_city = 'aachen_frankenberg_mod_6_mc_city_samples_10000.pkl'
+    filename_b = 'aachen_frankenberg_mod_6_single_b_100001020.pkl'
     output_city = filename_city[:-4]
     output_b = filename_b[:-4]
     key = 'Frankenberg'
@@ -1892,8 +1892,8 @@ if __name__ == '__main__':
     dict_files_city[key] = filename_city
     dict_files_build[key] = filename_b
 
-    filename_city = 'aachen_kronenberg_5_mc_city_2000_new_dhw_2000.pkl'
-    filename_b = 'aachen_kronenberg_5_single_b_new_dhw_1002.pkl'
+    filename_city = 'aachen_kronenberg_mod_6_mc_city_samples_10000.pkl'
+    filename_b = 'aachen_kronenberg_mod_6_single_b_100001002.pkl'
     output_city = filename_city[:-4]
     output_b = filename_b[:-4]
     key = 'Kronenberg'
@@ -1901,8 +1901,8 @@ if __name__ == '__main__':
     dict_files_city[key] = filename_city
     dict_files_build[key] = filename_b
 
-    filename_city = 'aachen_preusweg_5b_mc_city_2000_new_dhw_2000.pkl'
-    filename_b = 'aachen_preusweg_5b_single_b_new_dhw_1092.pkl'
+    filename_city = 'aachen_preusweg_mod_6_mc_city_samples_10000.pkl'
+    filename_b = 'aachen_preusweg_mod_6_single_b_100001092.pkl'
     output_city = filename_city[:-4]
     output_b = filename_b[:-4]
     key = 'Preusweg'
@@ -1910,8 +1910,10 @@ if __name__ == '__main__':
     dict_files_city[key] = filename_city
     dict_files_build[key] = filename_b
 
-    filename_city = 'aachen_tuerme_osm_extr_enriched_mc_city_2000_new_dhw_2000.pkl'
-    filename_b = 'aachen_tuerme_osm_extr_enriched_single_b_new_dhw_1010.pkl'
+    #filename_city = 'aachen_tuerme_mod_7_mc_city_samples_10000.pkl'
+    filename_city = 'aachen_tuerme_mod_7_mc_city_samples_10000_with_retro_person_data.pkl'
+    #filename_b = 'aachen_tuerme_mod_6_single_b_100001010.pkl'
+    filename_b = 'aachen_tuerme_mod_7_single_b_10000_fix_year_occ_1010.pkl'
     output_city = filename_city[:-4]
     output_b = filename_b[:-4]
     key = u'Türme'
@@ -1919,8 +1921,8 @@ if __name__ == '__main__':
     dict_files_city[key] = filename_city
     dict_files_build[key] = filename_b
 
-    filename_city = 'huenefeld_5_mc_city_2000_new_dhw_2000.pkl'
-    filename_b = 'huenefeld_5_single_b_new_dhw_1003.pkl'
+    filename_city = 'aachen_huenefeld_mod_6_mc_city_samples_10000.pkl'
+    filename_b = 'aachen_huenefeld_mod_6_single_b_100001003.pkl'
     output_city = filename_city[:-4]
     output_b = filename_b[:-4]
     key = u'Hünefeld'
@@ -1933,7 +1935,7 @@ if __name__ == '__main__':
         file_build = dict_files_build[key]
 
         load_path_city = os.path.join(this_path, 'input', 'mc_cities',
-                                      '3_with_2000_samples',
+                                      '4_with_10000_samples',
                                       file_city)
         load_path_build = os.path.join(this_path, 'input', 'mc_buildings',
                                        '4_change_el_10000_samples',
@@ -2019,7 +2021,7 @@ if __name__ == '__main__':
     #############################
     if all_cities:
         if mc_city:
-            output_folder_n = 'cities_mc'
+            output_folder_n = 'cities_mc_no_year_and_occ_data'
         else:
             output_folder_n = 'buildings_mc'
 
