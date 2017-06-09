@@ -2021,7 +2021,7 @@ if __name__ == '__main__':
     #############################
     if all_cities:
         if mc_city:
-            output_folder_n = 'cities_mc_no_year_and_occ_data'
+            output_folder_n = 'cities_mc'
         else:
             output_folder_n = 'buildings_mc'
 
