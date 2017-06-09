@@ -1030,7 +1030,9 @@ def calc_and_add_vdi_6007_loads_to_city(city,
     #  #####################################################################
     for n in list_build:
 
+        print()
         print('Process (VDI 6007 calculation) building node with id: ', n)
+        print('###########################################################')
 
         #  Check that building type is residential or office
         assert city.node[n]['entity'].build_type in [0, 1]
@@ -1231,6 +1233,8 @@ def calc_and_add_vdi_6007_loads_to_city(city,
             apartment.addEntity(space_heating)
 
         print('Finished VDI calculation for building node with id: ', n)
+        print('###########################################################')
+        print()
 
 
 def add_kfw_retrofit_to_city(city, material=None, thickness=None):
