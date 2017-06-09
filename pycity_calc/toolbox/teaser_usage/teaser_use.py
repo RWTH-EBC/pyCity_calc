@@ -1008,7 +1008,7 @@ def calc_and_add_vdi_6007_loads_to_city(city,
 
     #  Outdoor temperature pointer
     t_out = teaser_weather.temp[:]
-    t_out = chres.changeResolution(t_out, oldResolution=timestep_org,
+    t_out = chres.changeResolution(t_out, oldResolution=(365 * 24 * 3600 / len(t_out)),
                                    newResolution=timestep)
 
     #  Get radiation values
@@ -1019,7 +1019,7 @@ def calc_and_add_vdi_6007_loads_to_city(city,
         new_rad = np.zeros((8760, len(rad[0])))
         for i in range(len(rad[0])):
             new_rd = chres.changeResolution(copy.copy(rad[:, i]),
-                                            oldResolution=timestep_org,
+                                            oldResolution=(365 * 24 * 3600 / len(rad)),
                                             newResolution=timestep)
             new_rad[:, i] = new_rd
         use_rad = new_rad
@@ -1047,9 +1047,6 @@ def calc_and_add_vdi_6007_loads_to_city(city,
         else:
             year = curr_build.mod_year
         inf_rate = usair.get_inf_rate(year)
-
-        # #  Define pointer to outdoor temperature
-        # temp_out = city.environment.weather.tAmbient
 
         if air_vent_mode == 0 or requ_profiles is False:  # Use constant value
             array_vent = None  # If array_vent is None, use constant
@@ -1149,9 +1146,9 @@ def calc_and_add_vdi_6007_loads_to_city(city,
 
         #  Get overall occupancy profile of building
         occupancy_profile = curr_build.get_occupancy_profile()[:]
-        org_res = 365 * 24 * 3600 / len(el_load)
+        org_res = 365 * 24 * 3600 / len(occupancy_profile)
 
-        occupancy_profile = chres.changeResolution(occ_profile,
+        occupancy_profile = chres.changeResolution(occupancy_profile,
                                                    oldResolution=org_res,
                                                    newResolution=timestep)
 
@@ -1162,12 +1159,12 @@ def calc_and_add_vdi_6007_loads_to_city(city,
             #  Generate dummy el. load profile with zeros
             el_load = np.zeros(len(t_out))
 
-        if len(el_load) != nb_timesteps:
+        if len(el_load) != (365 * 24 * 3600 / timestep):
             #  Change resolution to timestep of environment
-            org_res = 365 * 24 * 3600 / len(el_load)
+            res_el = 365 * 24 * 3600 / len(el_load)
 
             el_load = chres.changeResolution(el_load,
-                                             oldResolution=org_res,
+                                             oldResolution=res_el,
                                              newResolution=timestep)
 
         # #  Perform VDI 6007 simulation
