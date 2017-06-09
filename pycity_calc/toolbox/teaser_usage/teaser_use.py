@@ -479,6 +479,11 @@ def calc_th_load__build_vdi6007(type_build, temp_out, rad,
             Heat flow through outer wall in W
     """
 
+    if timestep != 3600:
+        msg = 'Currently, VDI 6007 Python simulation core only supports ' \
+              'timestep of 3600 seconds.'
+        raise AssertionError(msg)
+
     if max(temp_out) >= 70:
         warnings.warn('Temperature inputs seems to be too high. '
                       'Please check your input. It has to be in degree Celsius'
@@ -935,10 +940,10 @@ def calc_and_add_vdi_6007_loads_to_city(city,
     """
 
     #  Pointer to timestep
-    timestep = city.environment.timer.timeDiscretization
+    timestep_org = city.environment.timer.timeDiscretization
 
     #  Number of timesteps per year
-    nb_timesteps = 365 * 24 * 3600 / timestep
+    nb_timesteps = 365 * 24 * 3600 / timestep_org
 
     #  Geneate new teaser project
     teaser_project = create_teaser_project(name=project_name)
@@ -988,13 +993,38 @@ def calc_and_add_vdi_6007_loads_to_city(city,
     teaser_weather.rad_earth = city.environment.weather.rad_earth
 
     #  Re-calculate sun radiation values
-    teaser_weather.calc_sun_rad(timestep=timestep, nb_timesteps=nb_timesteps)
+    teaser_weather.calc_sun_rad(timestep=timestep_org,
+                                nb_timesteps=nb_timesteps)
+
+    if timestep_org != 3600:
+        #  Currently, VDI 6007 core can only handle 3600 seconds timestep.
+        msg = 'Timestep is not equal to 3600 seconds. Thus, input profiles' \
+              ' are going to be changed to 3600 seconds timestep to perform' \
+              ' VDI 6007 simulation. Going to be re-converted after thermal ' \
+              'simulation.'
+        warnings.warn(msg)
+    #  Set timestep to 3600 seconds
+    timestep = 3600
 
     #  Outdoor temperature pointer
     t_out = teaser_weather.temp[:]
+    t_out = chres.changeResolution(t_out, oldResolution=(365 * 24 * 3600 / len(t_out)),
+                                   newResolution=timestep)
 
     #  Get radiation values
-    rad = np.transpose(teaser_weather.sun_rad)
+    rad = np.transpose(teaser_weather.sun_rad)[:]
+
+    if timestep_org != 3600:
+        #  Convert all 6 radiation directions with new timestep
+        new_rad = np.zeros((8760, len(rad[0])))
+        for i in range(len(rad[0])):
+            new_rd = chres.changeResolution(copy.copy(rad[:, i]),
+                                            oldResolution=(365 * 24 * 3600 / len(rad)),
+                                            newResolution=timestep)
+            new_rad[:, i] = new_rd
+        use_rad = new_rad
+    else:
+        use_rad = rad
 
     #  Perform VDI 6007 simulation for every building
     #  #####################################################################
@@ -1018,9 +1048,6 @@ def calc_and_add_vdi_6007_loads_to_city(city,
             year = curr_build.mod_year
         inf_rate = usair.get_inf_rate(year)
 
-        #  Define pointer to outdoor temperature
-        temp_out = city.environment.weather.tAmbient
-
         if air_vent_mode == 0 or requ_profiles is False:  # Use constant value
             array_vent = None  # If array_vent is None, use constant
             print('Use constant air exchange rate.')
@@ -1043,7 +1070,7 @@ def calc_and_add_vdi_6007_loads_to_city(city,
                     #  Create dummy occupancy profile with single
                     occ_profile = np.ones(len(t_out))
 
-                if len(occ_profile) != nb_timesteps:
+                if len(occ_profile) != (365 * 24 * 3600 / timestep):
                     #  Change resolution to timestep of environment
                     org_res = 365 * 24 * 3600 / len(occ_profile)
 
@@ -1056,7 +1083,7 @@ def calc_and_add_vdi_6007_loads_to_city(city,
                     usair.gen_det_air_ex_rate_temp_dependend(occ_profile=
                                                              occ_profile,
                                                              temp_profile=
-                                                             temp_out,
+                                                             t_out,
                                                              inf_rate=0)
 
             #  Finally, add infiltration rate of building
@@ -1083,7 +1110,7 @@ def calc_and_add_vdi_6007_loads_to_city(city,
                     #  Create dummy occupancy profile with single
                     occ_profile = np.ones(len(t_out))
 
-                if len(occ_profile) != nb_timesteps:
+                if len(occ_profile) != (365 * 24 * 3600 / timestep):
                     #  Change resolution to timestep of environment
                     org_res = 365 * 24 * 3600 / len(occ_profile)
 
@@ -1096,7 +1123,7 @@ def calc_and_add_vdi_6007_loads_to_city(city,
                 array_vent += \
                     usair.gen_user_air_ex_rate(
                         occ_profile=occ_profile,
-                        temp_profile=temp_out,
+                        temp_profile=t_out,
                         b_type='res',
                         inf_rate=0)
 
@@ -1118,21 +1145,26 @@ def calc_and_add_vdi_6007_loads_to_city(city,
         #  ##################################################################
 
         #  Get overall occupancy profile of building
-        occupancy_profil = curr_build.get_occupancy_profile()[:]
+        occupancy_profile = curr_build.get_occupancy_profile()[:]
+        org_res = 365 * 24 * 3600 / len(occupancy_profile)
+
+        occupancy_profile = chres.changeResolution(occupancy_profile,
+                                                   oldResolution=org_res,
+                                                   newResolution=timestep)
 
         if requ_profiles:
             # Extract electrical load
             el_load = curr_build.get_electric_power_curve()[:]
         else:
             #  Generate dummy el. load profile with zeros
-            el_load = np.zeros(len(temp_out))
+            el_load = np.zeros(len(t_out))
 
-        if len(el_load) != nb_timesteps:
+        if len(el_load) != (365 * 24 * 3600 / timestep):
             #  Change resolution to timestep of environment
-            org_res = 365 * 24 * 3600 / len(el_load)
+            res_el = 365 * 24 * 3600 / len(el_load)
 
             el_load = chres.changeResolution(el_load,
-                                             oldResolution=org_res,
+                                             oldResolution=res_el,
                                              newResolution=timestep)
 
         # #  Perform VDI 6007 simulation
@@ -1141,8 +1173,8 @@ def calc_and_add_vdi_6007_loads_to_city(city,
         # Do simulation
         (temp_in, q_heat_cool, q_in_wall, q_out_wall) = \
             calc_th_load__build_vdi6007(type_build=curr_type_b,
-                                        temp_out=t_out, rad=rad,
-                                        occ_profile=occupancy_profil,
+                                        temp_out=t_out, rad=use_rad,
+                                        occ_profile=occupancy_profile,
                                         el_load=el_load,
                                         array_vent_rate=array_vent,
                                         vent_factor=vent_factor,
@@ -1153,6 +1185,20 @@ def calc_and_add_vdi_6007_loads_to_city(city,
                                         alpha_rad=alpha_rad,
                                         heat_lim_val=heat_lim_val,
                                         cool_lim_val=cool_lim_val)
+
+        #  Reconvert results to original timestep
+        #  ##################################################################
+        temp_in = chres.changeResolution(temp_in, oldResolution=timestep,
+                                         newResolution=timestep_org)
+        q_heat_cool = chres.changeResolution(q_heat_cool,
+                                             oldResolution=timestep,
+                                             newResolution=timestep_org)
+        q_in_wall = chres.changeResolution(q_in_wall,
+                                           oldResolution=timestep,
+                                           newResolution=timestep_org)
+        q_out_wall = chres.changeResolution(q_out_wall,
+                                            oldResolution=timestep,
+                                            newResolution=timestep_org)
 
         # #  Add space heating power curves to apartments
         #  ##################################################################

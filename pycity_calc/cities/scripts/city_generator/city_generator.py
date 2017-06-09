@@ -2473,9 +2473,11 @@ if __name__ == '__main__':
     #  Input file names and pathes
     #  ######################################################
     #  Define input data filename
-    # filename = 'city_clust_simple.txt'
-    #filename = 'aachen_forsterlinde_mod_6.t
-    filename = 'aachen_frankenberg_mod_8.txt'
+
+    filename = 'city_3_buildings.txt'
+    #filename = 'city_clust_simple.txt'
+    #filename = 'aachen_forsterlinde_mod_6.txt'
+    #filename = 'aachen_frankenberg_mod_6.txt'
     #filename = 'aachen_huenefeld_mod_6.txt'
     #filename = 'aachen_kronenberg_mod_8.txt'
     #filename = 'aachen_preusweg_mod_8.txt'
