@@ -2380,7 +2380,7 @@ if __name__ == '__main__':
     #  osm call (city object should hold nodes, but no entities. City
     #  generator is going to add building, apartment and load entities to
     #  building nodes
-    generation_mode = 1
+    generation_mode = 0
 
     #  Generate environment
     #  ######################################################
@@ -2473,7 +2473,8 @@ if __name__ == '__main__':
     #  Input file names and pathes
     #  ######################################################
     #  Define input data filename
-    #filename = 'aachen_forsterlinde_mod_6.txt'
+    # filename = 'city_clust_simple.txt'
+    #filename = 'aachen_forsterlinde_mod_6.t
     filename = 'aachen_frankenberg_mod_8.txt'
     #filename = 'aachen_huenefeld_mod_6.txt'
     #filename = 'aachen_kronenberg_mod_8.txt'
@@ -2484,6 +2485,7 @@ if __name__ == '__main__':
     pickle_city_filename = filename[:-4] + '.pkl'
 
     #  For generation_mode == 1:
+    # city_osm_input = None
     #city_osm_input = 'aachen_forsterlinde_mod_7.pkl'
     city_osm_input = 'aachen_frankenberg_mod_7.pkl'
     #city_osm_input = 'aachen_huenefeld_mod_7.pkl'
@@ -2521,9 +2523,9 @@ if __name__ == '__main__':
     teaser_proj_name = filename[:-4]
     #  Requires additional attributes (such as nb_of_floors, net_floor_area..)
 
-    txt_path = os.path.join(this_path, 'input', 'aachen_city_gen', filename)
+    txt_path = os.path.join(this_path, 'input', filename)
     if generation_mode == 1:
-        path_city_osm_in = os.path.join(this_path, 'input', 'aachen_city_gen', city_osm_input)
+        path_city_osm_in = os.path.join(this_path, 'input', city_osm_input)
 
     # Path for log file
     log_f_name = log_file_name = str('log_' + filename)
