@@ -68,11 +68,11 @@ if __name__ == '__main__':
 
     #  User input
     #  ###################################################################
-    el_dem = 790000  # El. energy demand for rescaling in kWh/a
+    el_dem = 525000  # El. energy demand for rescaling in kWh/a
 
     city_f_name = 'aachen_tuerme_mod_7.pkl'
 
-    save_f_name = city_f_name[:-4] + '_el_resc.pkl'
+    save_f_name = city_f_name[:-4] + '_el_resc_2.pkl'
 
     #  ###################################################################
 
