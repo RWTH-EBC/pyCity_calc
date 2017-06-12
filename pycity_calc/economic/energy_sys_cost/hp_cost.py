@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 # coding=utf-8
-
-import math
-
 """
 Script to calculate heat pump investment cost
 """
@@ -23,6 +20,8 @@ def calc_spec_cost_hp(q_nom, method='wolf', hp_type='aw'):
         Based on :
         S. Wolf, U. Fahl, M. Blesl, A. Voß, Analyse des Potenzials von
         Industriewärmepumpen in Deutschland, 2014.
+        - 'stinner':
+        #  Fixme: Add reference
     hp_type : str, optional
         Type of heat pump (default 'aw')
         Options:
@@ -41,6 +40,11 @@ def calc_spec_cost_hp(q_nom, method='wolf', hp_type='aw'):
                                           'input.'
     assert hp_type in ['aw', 'ww', 'bw'], 'Unknown heat pump type. Check input'
     assert q_nom > 0, 'Heat pump nominal power has to be larger than zero!'
+
+    if method == 'stinner':
+        if hp_type != 'aw':
+            msg = 'Method stinner can only handle air water heat pump costs.'
+            raise AssertionError(msg)
 
     if method == 'wolf':
 
@@ -80,6 +84,8 @@ def calc_invest_cost_hp(q_nom, method='wolf', hp_type='aw',
         Based on :
         S. Wolf, U. Fahl, M. Blesl, A. Voß, Analyse des Potenzials von
         Industriewärmepumpen in Deutschland, 2014.
+        - 'stinner':
+        #  Fixme: Add reference
     hp_type : str, optional
         Type of heat pump (default 'aw')
         Options:
