@@ -347,6 +347,8 @@ def do_uncertainty_analysis(Nsample=100):
         City, dict_Qlhn, dict_supply = Calculator.eb_balances(dict_bes_data, i)
 
     # Gas and electrical demand
+    el_dem_ref = 0
+    gas_dem_ref = 0
     for n in City.nodes():
         if 'node_type' in City.node[n]:
             #  If node_type is building
@@ -355,14 +357,11 @@ def do_uncertainty_analysis(Nsample=100):
                 if City.node[n]['entity']._kind == 'building':
 
                     if 'electrical demand' in City.node[n]:
-                        if type(City.node[n]['electrical demand']) != int:
-                            el_dem_ref = sum(City.node[n][
-                                                 'electrical demand']) * \
-                                         City.environment.timer.timeDiscretization / 1000 / 3600
+                        el_dem_ref += sum(City.node[n]['electrical demand']) * \
+                                          City.environment.timer.timeDiscretization / 1000 / 3600
 
                     if 'fuel demand' in City.node[n]:
-                        if type(City.node[n]['fuel demand']) != int:
-                            gas_dem_ref = sum(City.node[n]['fuel demand']) * \
+                        gas_dem_ref += sum(City.node[n]['fuel demand']) * \
                                           City.environment.timer.timeDiscretization / 1000 / 3600
 
     # #----------------------------------------------------------------------
@@ -446,7 +445,7 @@ def do_uncertainty_analysis(Nsample=100):
 
     #print (El_results, Gas_results)
 
-    # ## Results analysis - Standard deviation, mean and 95 confident interval
+    # ## Results analysis - Standard deviation, mean and 90 confident interval
 
     # Gas demand
     print ()

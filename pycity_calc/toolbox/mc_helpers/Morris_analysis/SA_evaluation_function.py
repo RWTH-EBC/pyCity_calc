@@ -219,23 +219,23 @@ def evaluate(City, values):
         for i in range(len(dict_bes_data)):
             City, dict_Qlhn, dict_supply = Calculator.eb_balances(dict_bes_data, i)
 
+
         #Gas and electrical demand
+        el_dem = 0
+        gas_dem = 0
         for n in City.nodes():
             if 'node_type' in City.node[n]:
                 #  If node_type is building
                 if City.node[n]['node_type'] == 'building':
                     #  If entity is kind building
                     if City.node[n]['entity']._kind == 'building':
-
                         if 'electrical demand' in City.node[n]:
-                            if type(City.node[n]['electrical demand']) != int:
-                                el_dem = sum(City.node[n][
+                            el_dem += sum(City.node[n][
                                                  'electrical demand']) *\
                                          City.environment.timer.timeDiscretization / 1000 / 3600
 
                         if 'fuel demand' in City.node[n]:
-                            if type(City.node[n]['fuel demand']) != int:
-                                gas_dem = sum(City.node[n]['fuel demand']) *\
+                            gas_dem += sum(City.node[n]['fuel demand']) *\
                                           City.environment.timer.timeDiscretization / 1000 / 3600
 
         print()

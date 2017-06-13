@@ -332,6 +332,10 @@ def run_Morris():
 
     # #----------------------------------------------------------------------
     # #----------------------------------------------------------------------
+    # Save reference city
+    SaveCity = copy.deepcopy(City)
+    annual_electrical_demand_for_EBB = SaveCity.get_annual_el_demand()
+    annual_thermal_demand = SaveCity.get_total_annual_th_demand()
 
     # # Energy balance calculations
 
@@ -343,7 +347,10 @@ def run_Morris():
         City, dict_Qlhn, dict_supply = Calculator.eb_balances(dict_bes_data, i)
 
     # Gas and electrical demand
+    el_dem_ref = 0
+    gas_dem_ref = 0
     for n in City.nodes():
+        
         if 'node_type' in City.node[n]:
             #  If node_type is building
             if City.node[n]['node_type'] == 'building':
@@ -351,16 +358,10 @@ def run_Morris():
                 if City.node[n]['entity']._kind == 'building':
 
                     if 'electrical demand' in City.node[n]:
-                        if type(City.node[n]['electrical demand']) != int:
-                            el_dem_ref = sum(City.node[n][
-                                                 'electrical demand']) * \
-                                         City.environment.timer.timeDiscretization / 1000 / 3600
+                        el_dem_ref += sum(City.node[n]['electrical demand']) *City.environment.timer.timeDiscretization / 1000 / 3600
 
                     if 'fuel demand' in City.node[n]:
-                        if type(City.node[n]['fuel demand']) != int:
-                            gas_dem_ref = sum(City.node[n]['fuel demand']) * \
-                                          City.environment.timer.timeDiscretization / 1000 / 3600
-
+                        gas_dem_ref += sum(City.node[n]['fuel demand']) * City.environment.timer.timeDiscretization / 1000 / 3600
     # #----------------------------------------------------------------------
     # #----------------------------------------------------------------------
 
@@ -399,10 +400,10 @@ def run_Morris():
     print('Save the city')
     print('***********************************************************************************************************')
     # Save reference city
-    SaveCity = copy.deepcopy(City)
+    #SaveCity = copy.deepcopy(City)
 
-    print('Annual electricity demand : ', SaveCity.get_annual_el_demand(), 'kWh/year')
-    print('Annual thermal demand : ', SaveCity.get_total_annual_th_demand(), 'kWh/year')
+    print('Annual electricity demand : ', annual_electrical_demand_for_EBB, 'kWh/year')
+    print('Annual thermal demand : ',annual_thermal_demand , 'kWh/year')
     print('Annual electricity demand reference City after EBB : ', el_dem_ref, 'kWh/year')
     print('Annual gas demand reference City after EBB: ', gas_dem_ref, 'kWh/year')
     print('total reference annuity:', round(total_annuity_ref, 2), ' Euro/year')
