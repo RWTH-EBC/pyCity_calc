@@ -4,18 +4,16 @@
 """
 Script to perform Morris sensitivity analysis using SaLib Library
 
-Returns standard deviation and mean of the absolute value of the elementary effects for each parameter
+Returns standard deviation and mean of the elementary effects absolute value for each parameter
+
 """
+
 import os
 import matplotlib.pyplot as plt
-#from pycity_calc.toolbox.mc_helpers.Morris_analysis.SALib_master.SALib.plotting.morris import horizontal_bar_plot, covariance_plot, sample_histograms
 import pycity_calc.cities.scripts.overall_gen_and_dimensioning as City_gen
 import copy
 import pycity_calc.environments.market as Mark
-#from pycity_calc.toolbox.mc_helpers.Morris_analysis.SALib_master.SALib.sample.morris import sample
-#from pycity_calc.toolbox.mc_helpers.Morris_analysis.SALib_master.SALib.util import read_param_file
 import pycity_calc.toolbox.mc_helpers.Morris_analysis.SA_evaluation_function as model_evaluation
-#from pycity_calc.toolbox.mc_helpers.Morris_analysis.SALib_master.SALib.analyze import morris
 from SALib.analyze import morris
 from SALib.sample.morris import sample
 from SALib.util import read_param_file
@@ -34,30 +32,42 @@ def run_Morris():
     # #############################################################################################################
 
     # number of samples
-    Nsample = 100
+    Nsample = 10
     print(Nsample)
     Morris_name = 'Morris_values.txt' # filename of the parameters definition variation space for the Morris analysis
 
     # City generation mode
-    load_city = True # load a pickle City file
+    load_city = True  # load a pickle City file
     # if set to False: generation of a City with city_generator
     city_pickle_name = 'aachen_kronenberg_3_mfh_ref_1.pkl'
 
     # results
-    save_result = True # if set to false: no generation of results txt file
-    results_name = 'Morris_results2.txt'
+    save_result = True  # if set to false: no generation of results txt file
+    results_name = 'Morris_results.txt'
 
-    # City Generation with start district data values and default parameters
+
     print('***********************************************************************************************************')
     print('Initialisation: Reference City Generation')
     print('***********************************************************************************************************')
+    # City Generation with reference district data values and default parameters
 
+    # #----------------------------------------------------------------------
+    # #----------------------------------------------------------------------
+    # # Generation of City reference:
+    # #   load_city = True : City is load from pickle file
+    # #   load_city 0 False : City is generated with City_generator
 
     this_path = os.path.dirname(os.path.abspath(__file__))
 
-    if load_city == True: # load pickle City
+    if load_city == True:
+        # load pickle City
+
         load_path = os.path.join(this_path, 'City_generation', 'output', city_pickle_name)
         City = pickle.load(open(load_path, mode='rb'))
+
+        print()
+        print('load city from pickle file: {}'.format(city_pickle_name))
+        print()
 
         #  Add energy systems to city
         gen_esys = True  # True - Generate energy networks
@@ -65,21 +75,22 @@ def run_Morris():
 
         #  Path to energy system input file (csv/txt; tab separated)
         esys_filename = 'test_lolo_esys.txt'
-        esys_path = os.path.join(this_path, 'City_generation', 'input', 'input_esys_generator',
-                                 esys_filename)
+        esys_path = os.path.join(this_path, 'City_generation', 'input', 'input_esys_generator', esys_filename)
+
         # Generate energy systems for city district
         if gen_esys:
             #  Load energy networks planing data
             list_esys = City_gen.esysgen.load_enersys_input_data(esys_path)
+            print ('Add energy systems')
 
             #  Generate energy systems
-            City_gen.esysgen.gen_esys_for_city(city=City, list_data=list_esys,
-                                      dhw_scale=dhw_dim_esys)
+            City_gen.esysgen.gen_esys_for_city(city=City, list_data=list_esys, dhw_scale=dhw_dim_esys)
 
-    else: # Generate City
+    else:
+        # Generate City with City_generator
 
         #  # Userinputs
-        #  #----------------------------------------------------------------------
+
 
         #  Generate environment
         #  ######################################################
@@ -155,7 +166,8 @@ def run_Morris():
         prev_heat_dev = True
         #  True: Prevent electrical heating device usage for profile generation
         #  False: Include electrical heating devices in electrical load generation
-        print(' Prevent usage of electrical heating and hot water devices in electrical load generation : {}'.format(prev_heat_dev))
+        print(' Prevent usage of electrical heating and hot water devices in electrical load generation : {}'.format(
+            prev_heat_dev))
 
         #  Use cosine function to increase winter lighting usage and reduce
         #  summer lighting usage in richardson el. load profiles
@@ -212,7 +224,7 @@ def run_Morris():
         t_set_heat = 20  # Heating set temperature in degree Celsius
         t_set_night = 16  # Night set back temperature in degree Celsius
         t_set_cool = 70  # Cooling set temperature in degree Celsius
-        print('tset : ',t_set_heat, ' ;', t_set_cool, ' ;', t_set_night)
+        print('tset : ', t_set_heat, ' ;', t_set_cool, ' ;', t_set_night)
 
         #  Air exchange rate (required for th_gen_method = 3 (VDI 6007 sim.))
         air_vent_mode = 0
@@ -246,73 +258,84 @@ def run_Morris():
 
         #  Load street data from csv
         str_node_path = os.path.join(this_path, 'input', 'street_generator',
-                                 str_node_filename)
+                                     str_node_filename)
         str_edge_path = os.path.join(this_path, 'input', 'street_generator',
-                                 str_edge_filename)
+                                     str_edge_filename)
 
         #  Add energy networks to city
         gen_e_net = False  # True - Generate energy networks
 
         #  Path to energy network input file (csv/txt; tab separated)
         network_filename = 'test_lolo_networks.txt'
-        network_path = os.path.join(this_path,'City_generation', 'input', 'input_en_network_generator',
-                                network_filename)
+        network_path = os.path.join(this_path, 'City_generation', 'input', 'input_en_network_generator',
+                                    network_filename)
 
         #  Add energy systems to city
         gen_esys = True  # True - Generate energy networks
 
         #  Path to energy system input file (csv/txt; tab separated)
         esys_filename = 'test_lolo_esys.txt'
-        esys_path = os.path.join(this_path, 'City_generation', 'input','input_esys_generator',
-                             esys_filename)
+        esys_path = os.path.join(this_path, 'City_generation', 'input', 'input_esys_generator',
+                                 esys_filename)
 
-        #  #----------------------------------------------------------------------
 
-        #  Load district_data file
+
+
+        # # Load district_data file
+
+
+
         district_data = City_gen.citygen.get_district_data_from_txt(txt_path)
         print('district data : ', district_data)
 
-        City = City_gen.run_overall_gen_and_dim(timestep=timestep,
-                            year=year,
-                            location=location,
-                            try_path=try_path, th_gen_method=th_gen_method,
-                            el_gen_method=el_gen_method,
-                            use_dhw=use_dhw,
-                            dhw_method=dhw_method,
-                            district_data=district_data,
-                            gen_str=gen_str,
-                            str_node_path=str_node_path,
-                            str_edge_path=str_edge_path,
-                            generation_mode=0,
-                            eff_factor=eff_factor,
-                            save_path=save_path,
-                            altitude=altitude,
-                            do_normalization=do_normalization,
-                            dhw_volumen=dhw_volumen,
-                            gen_e_net=gen_e_net,
-                            network_path=network_path,
-                            gen_esys=gen_esys,
-                            esys_path=esys_path,
-                            dhw_dim_esys=dhw_dim_esys,
-                            plot_pycity_calc=plot_pycity_calc,
-                            slp_manipulate=slp_manipulate,
-                            call_teaser=call_teaser,
-                            teaser_proj_name=teaser_proj_name,
-                            do_log=do_log, log_path=log_path,
-                            air_vent_mode=air_vent_mode,
-                            vent_factor=vent_factor,
-                            t_set_heat=t_set_heat,
-                            t_set_cool=t_set_cool,
-                            t_night=t_set_night,
-                            vdi_sh_manipulate=vdi_sh_manipulate,
-                            el_random=el_random,
-                            dhw_random=dhw_random,
-                            prev_heat_dev=prev_heat_dev,
-                            season_mod=season_mod)
 
-    #  #----------------------------------------------------------------------
-    # Energy balance calculations
-    print("energy balance calculations")
+
+        # # City Generation
+
+        City = City_gen.run_overall_gen_and_dim(timestep=timestep,
+                                                year=year,
+                                                location=location,
+                                                try_path=try_path, th_gen_method=th_gen_method,
+                                                el_gen_method=el_gen_method,
+                                                use_dhw=use_dhw,
+                                                dhw_method=dhw_method,
+                                                district_data=district_data,
+                                                gen_str=gen_str,
+                                                str_node_path=str_node_path,
+                                                str_edge_path=str_edge_path,
+                                                generation_mode=0,
+                                                eff_factor=eff_factor,
+                                                save_path=save_path,
+                                                altitude=altitude,
+                                                do_normalization=do_normalization,
+                                                dhw_volumen=dhw_volumen,
+                                                gen_e_net=gen_e_net,
+                                                network_path=network_path,
+                                                gen_esys=gen_esys,
+                                                esys_path=esys_path,
+                                                dhw_dim_esys=dhw_dim_esys,
+                                                plot_pycity_calc=plot_pycity_calc,
+                                                slp_manipulate=slp_manipulate,
+                                                call_teaser=call_teaser,
+                                                teaser_proj_name=teaser_proj_name,
+                                                do_log=do_log, log_path=log_path,
+                                                air_vent_mode=air_vent_mode,
+                                                vent_factor=vent_factor,
+                                                t_set_heat=t_set_heat,
+                                                t_set_cool=t_set_cool,
+                                                t_night=t_set_night,
+                                                vdi_sh_manipulate=vdi_sh_manipulate,
+                                                el_random=el_random,
+                                                dhw_random=dhw_random,
+                                                prev_heat_dev=prev_heat_dev,
+                                                season_mod=season_mod)
+
+    # #----------------------------------------------------------------------
+    # #----------------------------------------------------------------------
+
+    # # Energy balance calculations
+
+    print("Energy balance calculations")
     Calculator = EBB.calculator(City)
     dict_bes_data = Calculator.assembler()
 
@@ -322,25 +345,26 @@ def run_Morris():
     # Gas and electrical demand
     for n in City.nodes():
         if 'node_type' in City.node[n]:
-                #  If node_type is building
+            #  If node_type is building
             if City.node[n]['node_type'] == 'building':
-                    #  If entity is kind building
+                #  If entity is kind building
                 if City.node[n]['entity']._kind == 'building':
 
                     if 'electrical demand' in City.node[n]:
                         if type(City.node[n]['electrical demand']) != int:
                             el_dem_ref = sum(City.node[n][
                                                  'electrical demand']) * \
-                                        City.environment.timer.timeDiscretization / 1000 / 3600
+                                         City.environment.timer.timeDiscretization / 1000 / 3600
 
                     if 'fuel demand' in City.node[n]:
                         if type(City.node[n]['fuel demand']) != int:
                             gas_dem_ref = sum(City.node[n]['fuel demand']) * \
-                                        City.environment.timer.timeDiscretization / 1000 / 3600
-
-
+                                          City.environment.timer.timeDiscretization / 1000 / 3600
 
     # #----------------------------------------------------------------------
+    # #----------------------------------------------------------------------
+
+    # # Economic and GHG calculations
 
     time = 10  # Years
     interest = 0.05  # Interest rate
@@ -351,40 +375,41 @@ def run_Morris():
     eco_inst = eco_calc.EconomicCalculation(time=time, interest=interest)
 
     # Annuity Calculation
-    print("annuity calculations")
+    print("Annuity calculations")
     dem_rel_annuity = economic_ann.calc_dem_rel_annuity_city(City, eco_inst, Market_instance)
     total_proc_annuity = economic_ann.calc_proc_annuity_multi_comp_city(City, eco_inst)
     cap_rel_ann, op_rel_ann = economic_ann.calc_cap_and_op_rel_annuity_city(City, eco_inst)
 
     total_annuity_ref = eco_inst.calc_total_annuity(ann_capital=cap_rel_ann,
-                                                ann_demand=dem_rel_annuity,
-                                                ann_op=op_rel_ann,
-                                                ann_proc=total_proc_annuity)
-
+                                                    ann_demand=dem_rel_annuity,
+                                                    ann_op=op_rel_ann,
+                                                    ann_proc=total_proc_annuity)
 
     print("Emission object generation")
 
     GHG = City.environment.co2emissions
 
     GHG_Emission_ref = GHG_calc.CO2_emission_calc(city_object=City, emission_object=GHG, CO2_zero_lowerbound=False,
-                                              eco_calc_instance=eco_inst)
+                                                  eco_calc_instance=eco_inst)
 
-    print(GHG_Emission_ref)
+    #print('GHG emissions: kg/year')
+    #print(GHG_Emission_ref)
 
-    #Save the city
     print('***********************************************************************************************************')
     print('Save the city')
     print('***********************************************************************************************************')
+    # Save reference city
     SaveCity = copy.deepcopy(City)
-    print('Annual electricity demand : ' , SaveCity.get_annual_el_demand(), 'kWh/year')
+
+    print('Annual electricity demand : ', SaveCity.get_annual_el_demand(), 'kWh/year')
     print('Annual thermal demand : ', SaveCity.get_total_annual_th_demand(), 'kWh/year')
     print('Annual electricity demand reference City after EBB : ', el_dem_ref, 'kWh/year')
     print('Annual gas demand reference City after EBB: ', gas_dem_ref, 'kWh/year')
-    print('total reference annuity:', round(total_annuity_ref, 2))
-    print('total emission reference City :', GHG_Emission_ref)
+    print('total reference annuity:', round(total_annuity_ref, 2), ' Euro/year')
+    print('total emission reference City :', GHG_Emission_ref, ' kg/year ')
 
     print('***********************************************************************************************************')
-    print('Do the Morris sample')
+    print('Do the Morris samples')
     print('***********************************************************************************************************')
 
     # Read the parameter range file and generate samples
@@ -399,21 +424,13 @@ def run_Morris():
     # Generate samples for the SA of the electrical and gas demand
     param_values = sample(problem, N=Nsample, num_levels=5, grid_jump=1, optimal_trajectories=None)
 
-
-
-
-    # Generate samples for the SA of the annuity and GHG emission
-    #param_values_el_gas = param_values[:40, :]
-    #param_values_eco_ghg = param_values
-
-
     print('par :  ', param_values)
 
     print('***********************************************************************************************************')
     print('Do the Morris simulations')
     print('***********************************************************************************************************')
     # Run the "model" -- this will happen offline for external models
-    (Y, Z, H, A, F, liste_max_dhw, liste_max_el, liste_max_sph, liste_shp_curve, liste_el_curve, liste_dhw_curve, Nboiler_rescaled) = \
+    (Y, Z, H, A, F, liste_max_dhw, liste_max_el,liste_max_sph, liste_shp_curve,liste_el_curve, liste_dhw_curve,Nboiler_rescaled) =\
         model_evaluation.evaluate(City, param_values)
 
     #Y[0] = gas_dem_ref
@@ -481,7 +498,7 @@ def run_Morris():
         results_path = os.path.join(this_path, 'output', results_name)
 
         write_results = open(results_path, mode='w')
-        write_results.write(' Morris analysis -Test Modernisation year 1977-1995 \n ')
+        write_results.write(' Morris analysis -Test Modernisation year 1995-2015 \n ')
 
         write_results.write(' Number of sampling :' + str(Nsample))
         write_results.write('\n##############Parameters for the sensibility##############\n')
@@ -580,12 +597,12 @@ def run_Morris():
     fig, (ax1, ax2) = plt.subplots(1, 2)
     horizontal_bar_plot(ax1, Si_gas,{}, sortby='mu_star', unit=r"gas_dem[kWh]/year")
     covariance_plot(ax2, Si_gas, {}, unit=r"gas_dem[kWh]/year")
-    fig.suptitle('gas demand analysis for {} samples'.format(Nsample))
+    fig.suptitle('Gas demand analysis for {} samples'.format(Nsample))
 
     fig2, (ax3, ax4) = plt.subplots(1, 2)
     horizontal_bar_plot(ax3, Si_el, {}, sortby='mu_star', unit=r"el_dem[kWh]/year")
     covariance_plot(ax4, Si_el, {}, unit=r"el_dem[kWh]/year")
-    fig2.suptitle('electrical demand analysis for {} samples'.format(Nsample))
+    fig2.suptitle('Electrical demand analysis for {} samples'.format(Nsample))
 
     fig3, (ax5, ax6) = plt.subplots(1, 2)
     horizontal_bar_plot(ax5, Si_ghg, {}, sortby='mu_star', unit=r"GHG[kg]/year")
@@ -595,12 +612,12 @@ def run_Morris():
     fig6, (ax9, ax10) = plt.subplots(1, 2)
     horizontal_bar_plot(ax9, Si_ghg_spe, {}, sortby='mu_star', unit=r"GHG[kg]/kWh*year")
     covariance_plot(ax10, Si_ghg_spe, {}, unit=r"GHG [kg]/kWh*year")
-    fig6.suptitle('specific GHG analysis for {} samples'.format(Nsample))
+    fig6.suptitle('Specific GHG analysis for {} samples'.format(Nsample))
 
     fig4, (ax7, ax8) = plt.subplots(1, 2)
     horizontal_bar_plot(ax7, Si_a, {}, sortby='mu_star', unit=r"Annuity[Euro]/year")
     covariance_plot(ax8, Si_a, {}, unit=r"Annuity [Euro]/year")
-    fig4.suptitle('annuity analysis for {} samples'.format(Nsample))
+    fig4.suptitle('Annuity analysis for {} samples'.format(Nsample))
 
     # visualisation demand curves
     fig5, axarr = plt.subplots(2, 2)
@@ -622,9 +639,9 @@ def run_Morris():
     axarr[1, 0].set_title('Electrical demand in kW')
 
     axarr[1, 1].plot = plt.hist(liste_max_sph, 50, normed=1)
-    axarr[1, 1].set_title('max thermal demand in kWh, City_ref: {} kWh'.format(round(SaveCity.get_total_annual_th_demand(), 2)))
+    axarr[1, 1].set_title('Maximal thermal demand in kWh, City_ref: {} kWh'.format(round(SaveCity.get_total_annual_th_demand(), 2)))
 
-    fig5.suptitle('energy demand curves in kW ')
+    fig5.suptitle('Energy demand curves in kW ')
     plt.show()
 
 

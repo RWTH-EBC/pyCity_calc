@@ -247,7 +247,7 @@ def gen_set_of_weathers(nb_weath, year=2010, timestep=3600, region_nb=5,
             rand_nb = random.uniform(-1, 1)
 
         elif random_method == 'normal':
-            rand_nb = np.random.normal(loc=0, scale=0.23)
+            rand_nb = np.random.normal(loc=0, scale=0.275)
 
         new_weather = \
             calc_lin_ipl_weath(weath_dict=dict_weather, factor=rand_nb)

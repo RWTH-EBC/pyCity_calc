@@ -42,7 +42,7 @@ def building_unc_sampling(exbuilding, nb_samples, max_retro_year=2014,
     Parameters
     ----------
     exbuilding : object
-        Extendec building object of pycity_calc (should hold occupancy profile)
+        Extended building object of pycity_calc (should hold occupancy profile)
     nb_samples : int
         Number of samples
     max_retro_year : int, optional
@@ -238,8 +238,15 @@ def mod_single_build_w_samples(exbuilding, dict_samples, list_wea, i):
     ----------
     exbuilding : object
         Extended building object of py
-    dict_samples : int
-        Number of samples
+    dict_samples : dict
+        Dictionary holding lists with samples for different uncertain parameters
+        Keys:
+        'mod_year' : Holding modification year sample lists
+        'inf' : Holding infiltration rate sample lists
+        'occ' : Holding occupants per apartment sample lists
+        'el' : Holding electrical demand sample lists
+        'set_temp' : Holding set temperature sample lists
+        'user_air' : Holding user air exchange rate sample lists
     list_wea : list (of weather objects)
         List holding weather objects from sampling
     i : int

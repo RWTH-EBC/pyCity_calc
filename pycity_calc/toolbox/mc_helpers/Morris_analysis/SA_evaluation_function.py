@@ -119,34 +119,6 @@ def evaluate(City, values):
 
         City.environment.weather = new_weather
 
-        '''# Save the weather file to further use in the city_generator
-                    # TRY file start to read after lines 38
-                    # qDirect = row [13]
-                    # qDiffuse = row [14]
-                    # tAmbient = row [8]
-                    # first step: generation of an array with the weather data
-
-                    new_weather_array = np.zeros((8798, 18))
-                    new_weather_array[38:, 13] = new_weather.qDiffuse
-                    new_weather_array[38:, 14] = new_weather.qDirect
-                    new_weather_array[38:, 8] = new_weather.tAmbient
-
-                    filname_weather = 'TRY_morris.dat'
-                    Mypath = os.path.dirname(os.path.dirname(
-                        os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
-
-                    save_weather_path = os.path.join(Mypath, 'pyCity', 'pycity', 'inputs', 'weather', filname_weather)
-
-                    save_weather = open(save_weather_path, mode='w')
-
-                    np.savetxt(save_weather_path, new_weather_array)
-
-                    # close the file
-                    save_weather.close()
-
-                    # TRY path definition
-                    try_path = None'''
-
         ############################################
 
         # ## Generate new buildings
@@ -301,7 +273,7 @@ def evaluate(City, values):
         price_ch_sub_pv = row[53]
         life_factor = row[54]
         maintenance_factor = row[55]
-        # market_factor_el = row [65]
+        #  _factor_el = row [65]
         # market_factor_gas = row [66]
 
 
@@ -332,13 +304,6 @@ def evaluate(City, values):
         ## Annuity Calculation
         print("Annuity calculation")
         Market_instance = Mark.Market()
-
-        # Rescaling market object for the SA
-        #Market_instance.el_price_data_res = Market_instance.el_price_data_res*market_factor_el
-        #Market_instance.el_price_data_ind = Market_instance.el_price_data_ind*market_factor_el
-        #Market_instance.gas_price_data_res = Market_instance.gas_price_data_res*market_factor_gas
-        #Market_instance.gas_price_data_ind = Market_instance.gas_price_data_ind*market_factor_gas
-
 
         # Annuity
         dem_rel_annuity = economic_ann.calc_dem_rel_annuity_city(City, eco_inst, Market_instance)
