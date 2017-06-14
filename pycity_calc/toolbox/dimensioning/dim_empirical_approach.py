@@ -18,13 +18,15 @@
 
 import pickle
 import matplotlib.pyplot as plt
+import numpy as np
 
 import pycity.classes.supply.BES as BES
 import pycity_calc.energysystems.boiler as Boiler
-
+import pycity_calc.energysystems.chp as CHP
 
 scen1 = {'supply':'centralized','base':['boiler'],'peak':[]}
-scen2 = {'supply':'decentralized','base':['heatPump','PV','geo_flat'],'peak':['boiler']}
+scen2 = {'supply':'centralized','base':['chp'],'peak':['boiler']}
+#scen3 = {'supply':'decentralized','base':['heatPump','PV','geo_flat'],'peak':['boiler']}
 
 all_scenarios = [scen1, scen2]
 
@@ -39,34 +41,45 @@ def run_approach(city):
     final_scen = []
 
     for scenario in qual_scenarios:
-
+        print('\nDimensioning of scenario: ', scenario)
         if scenario['supply'] == 'centralized':
-            print('\nDimensioning of scenarios with centralized supply...')
             # final_scen wird das dimensionierte scenario angefügt
             final_scen.append(dim_centralized(city, scenario))
 
         elif scenario['supply'] == 'decentralized':
             # die einzelnen Häuser müssen individuell ausgelegt werden. Wie kann das in dieser Struktur realisiert werden?
             # -> Abhängig von genereller Endstruktur der Anlagendaten (liste mit dictionaries o.ä.)
-            print('\nDimensioning of scenarios with decentralized supply...')
             dim_decentralized(city, scenario)
 
     return final_scen
 
+def get_LDC(curve):
+    '''
+    returns Load duration curve (Jahresdauerlinie)
+    :param curve: thermal or electrical curve
+    :return: load duration curve
+    '''
+    return sorted(curve, reverse=True)
 
 
 
 def dim_centralized(city, scenario):
-    # Lastgänge aller Häuser addieren (Gesamtnachfrage wird betrachtet)
-    # return scenario with sizes of units - in welcher form? city_object
-    #[electr_curve heating_curve] = city.get_power_curves() #aus pycity.classes.CityDistrict
-    #for unit in scenario['base']:
+    '''
+    Set sizes of devices in scenario
+    :param scenario:
+    :return: scenario with sizes of devices - in welcher form? city_object
+    '''
 
+    # correction factor for timesteps
+    #timesteps_factor = 3600/city.environment.timer.timeDiscretization
+
+    # get thermal and electrical demand curves
     [el_curve, th_curve] = city.get_power_curves(current_values=False)
 
-    print('Aggregated electrical Demand: ', el_curve)
-    print('Aggregated thermal Demand: ', th_curve)
-    print('Buildings in District: ', city.get_list_build_entity_node_ids())
+    # Load duration curve (Jahresdauerlinie)
+    th_LDC = get_LDC(th_curve)
+
+    op_times = []
 
     # Bestimmung eines Gebäudes als Wärmezentrale - evtl. neues Gebäude erstellen, das Zentrale beinhaltet
     h_central = city.node[1001]['entity']
@@ -77,24 +90,54 @@ def dim_centralized(city, scenario):
         h_central.addEntity(bes)
         print('* Added BES')
 
-    for tech in scenario['base']:
+    for dev in scenario['base']:
 
-        # Add Boiler
-        if tech == 'boiler':
+        if dev == 'boiler':
+            # Add Boiler
+
             lower_activation_limit = 0  # bei welchem Bedarf wird der Boiler angeschmissen?
             q_nominal = max(th_curve)  # Höchster Wert des thermischen Bedarfs
             t_max = 90   # prüfen, wieso 90°C?
             eta = 0.9    # kann so bleiben
             boiler = Boiler.BoilerExtended(city.environment, q_nominal, eta, t_max, lower_activation_limit)
             h_central.bes.addDevice(boiler)
+
             # Boiler übernimmt komplette Wärmeversorgung
             boiler._setQOutput(th_curve)
+
+            # Macht es Sinn den Output in einer anderen Methode einzutragen?
             results_boiler = boiler._getQOutput() #currentValues True/False?
+            op_times.append(results_boiler/q_nominal)
 
-        print('* Added', tech)
+        elif dev == 'chp':
+            # Auslegung nach Volllaststunden -> 5000h/a
+            vlh = 5000 #Volllaststunden
 
-        plt.plot(results_boiler)
-        plt.show()
+            # Add CHP
+            lower_activation_limit = 0.9
+            #q_nominal = th_curve[vlh*timesteps_factor]
+            q_nominal = th_curve[vlh]
+            t_max = 90
+            p_nominal = 0.4*q_nominal
+            eta_total = 0.87
+            chp = CHP.ChpExtended(environment=city.environment,
+                                  p_nominal=p_nominal,
+                                  q_nominal=q_nominal,
+                                  eta_total=eta_total,
+                                  t_max=t_max,
+                                  lower_activation_limit=lower_activation_limit,
+                                  thermal_operation_mode=True)
+            h_central.bes.addDevice(chp)
+
+            # wie lege ich den Output fest, zu jeder Zeit, zu der q_nominal überstiegen wird?
+            #chp._setQOutput()
+
+
+        print('* Added', dev)
+
+    #plot operational times of all devices
+    #for op in op_times: plt.plot(op)
+    #plt.show()
 
     return None
 
@@ -124,9 +167,11 @@ def select_scenarios(city):
         # Höhe Sonneneinstrahlung
         # Verfügbarkeit Erdwärme
 
-        if scenario['base'] != ['boiler']:
-            #qual_scenarios.remove(scenario)
-            print('Removed: ', scenario, ' (base is not boiler)')
+        if scenario['base'] == ['boiler']:
+            qual_scenarios.remove(scenario)
+            print('Removed: ', scenario, ' (base is boiler)')
+
+
 
     return qual_scenarios
 
