@@ -6,6 +6,7 @@ analysis for single buiding and cities
 """
 
 import os
+import math
 import copy
 import pickle
 import numpy as np
@@ -290,6 +291,75 @@ def calc_min_max_av_sh_load_curves(list_sh_curves):
         av_array[t] = (max_array[t] + min_array[t]) / 2
 
     return (min_array, max_array, av_array)
+
+
+def calc_sh_power_to_cov_spec_share_runs(mc_res, share, key, build=True):
+    """
+    Calculate share of covered demand values
+
+    Parameters
+    ----------
+    mc_res : object
+        Mc analysis results object
+    share : float
+        Share of runs, that should be covered (e.g. 0.95 --> 95 % of runs)
+    key : str
+        key of city district
+    build : bool, optional
+        Use building instead of whole city (default: True)
+        True: Use building
+        False: Use city
+
+    Returns
+    -------
+    sh_power : float
+        Space heating power value in W
+    """
+
+    #  Extract space heating power arrays
+    if build:
+        list_sh_arrays = mc_res.get_results_mc_build(key=key)[1]
+    else:
+        list_sh_arrays = mc_res.get_results_mc_city(key=key)[1]
+
+    #  Extract maximum power values in Watt
+    list_sh_power = []
+    for power in list_sh_arrays:
+        list_sh_power.append(max(power))
+
+    # # Extract reference space heating power
+    # #  ##################################################################
+    # city = mc_res.get_city(key=key)
+    #
+    # if build:
+    #     node_id = mc_res.dict_build_ids[key]
+    #
+    #     curr_build = city.node[node_id]['entity']
+    #
+    #     #  Get reference space heating nominal power
+    #     q_sh_ref = dimfunc.get_max_power_of_building(building=curr_build,
+    #                                                  get_therm=True,
+    #                                                  with_dhw=False)
+    # else:
+    #     q_sh_ref = dimfunc.get_max_p_of_city(city_object=city,
+    #                                          get_thermal=True,
+    #                                          with_dhw=False)
+
+    #  Sort list in ascending order
+    list_sh_power.sort()
+
+    total_nb = len(list_sh_power)
+
+    idx = math.ceil(share * total_nb)
+
+    #  Extract thermal power values, which is required to cover share of runs
+    cov_power = list_sh_power[idx]
+
+    print('Required thermal space heating power to cover share of ' +
+          str(share * 100) + ' % of area ' + str(key) + ' in kW:')
+    print(cov_power / 1000)
+
+    return cov_power
 
 
 def do_sh_load_analysis(mc_res, key, output_path, output_filename, dpi=300,
@@ -1874,8 +1944,8 @@ if __name__ == '__main__':
     #  Add results of mc analyses
     #  ####################################################################
 
-    filename_city = 'aachen_forsterlinde_5_mc_city_2000_new_dhw_2000.pkl'
-    filename_b = 'aachen_forsterlinde_5_single_b_new_dhw_1011.pkl'
+    filename_city = 'aachen_forsterlinde_mod_7_mc_city_samples_10000.pkl'
+    filename_b = 'aachen_forsterlinde_mod_7_single_b_100001011.pkl'
     output_city = filename_city[:-4]
     output_b = filename_b[:-4]
     key = 'Forsterlinde'
@@ -1883,8 +1953,8 @@ if __name__ == '__main__':
     dict_files_city[key] = filename_city
     dict_files_build[key] = filename_b
 
-    filename_city = 'aachen_frankenberg_5_mc_city_2000_new_dhw_2000.pkl'
-    filename_b = 'aachen_frankenberg_5_single_b_new_dhw_1020.pkl'
+    filename_city = 'aachen_frankenberg_mod_6_mc_city_samples_10000.pkl'
+    filename_b = 'aachen_frankenberg_mod_6_single_b_100001020.pkl'
     output_city = filename_city[:-4]
     output_b = filename_b[:-4]
     key = 'Frankenberg'
@@ -1892,8 +1962,8 @@ if __name__ == '__main__':
     dict_files_city[key] = filename_city
     dict_files_build[key] = filename_b
 
-    filename_city = 'aachen_kronenberg_5_mc_city_2000_new_dhw_2000.pkl'
-    filename_b = 'aachen_kronenberg_5_single_b_new_dhw_1002.pkl'
+    filename_city = 'aachen_kronenberg_mod_6_mc_city_samples_10000.pkl'
+    filename_b = 'aachen_kronenberg_mod_6_single_b_100001002.pkl'
     output_city = filename_city[:-4]
     output_b = filename_b[:-4]
     key = 'Kronenberg'
@@ -1901,8 +1971,8 @@ if __name__ == '__main__':
     dict_files_city[key] = filename_city
     dict_files_build[key] = filename_b
 
-    filename_city = 'aachen_preusweg_5b_mc_city_2000_new_dhw_2000.pkl'
-    filename_b = 'aachen_preusweg_5b_single_b_new_dhw_1092.pkl'
+    filename_city = 'aachen_preusweg_mod_6_mc_city_samples_10000.pkl'
+    filename_b = 'aachen_preusweg_mod_6_single_b_100001092.pkl'
     output_city = filename_city[:-4]
     output_b = filename_b[:-4]
     key = 'Preusweg'
@@ -1910,8 +1980,8 @@ if __name__ == '__main__':
     dict_files_city[key] = filename_city
     dict_files_build[key] = filename_b
 
-    filename_city = 'aachen_tuerme_osm_extr_enriched_mc_city_2000_new_dhw_2000.pkl'
-    filename_b = 'aachen_tuerme_osm_extr_enriched_single_b_new_dhw_1010.pkl'
+    filename_city = 'aachen_tuerme_mod_7_mc_city_samples_10000.pkl'
+    filename_b = 'aachen_tuerme_mod_6_single_b_100001010.pkl'
     output_city = filename_city[:-4]
     output_b = filename_b[:-4]
     key = u'Türme'
@@ -1919,8 +1989,8 @@ if __name__ == '__main__':
     dict_files_city[key] = filename_city
     dict_files_build[key] = filename_b
 
-    filename_city = 'huenefeld_5_mc_city_2000_new_dhw_2000.pkl'
-    filename_b = 'huenefeld_5_single_b_new_dhw_1003.pkl'
+    filename_city = 'aachen_huenefeld_mod_6_mc_city_samples_10000.pkl'
+    filename_b = 'aachen_huenefeld_mod_6_single_b_100001003.pkl'
     output_city = filename_city[:-4]
     output_b = filename_b[:-4]
     key = u'Hünefeld'
@@ -1933,10 +2003,8 @@ if __name__ == '__main__':
         file_build = dict_files_build[key]
 
         load_path_city = os.path.join(this_path, 'input', 'mc_cities',
-                                      '3_with_2000_samples',
                                       file_city)
         load_path_build = os.path.join(this_path, 'input', 'mc_buildings',
-                                       '4_change_el_10000_samples',
                                        file_build)
 
         #  Load results and add them to results object
@@ -1956,7 +2024,7 @@ if __name__ == '__main__':
     dict_city_f_names[key] = city_f_name
     dict_b_node_nb[key] = build_node_nb
 
-    city_f_name = 'aachen_frankenberg_mod_8.pkl'
+    city_f_name = 'aachen_frankenberg_mod_8_el_resc.pkl'
     key = 'Frankenberg'
     build_node_nb = 1020  # Frankenberg
     dict_city_f_names[key] = city_f_name
@@ -1974,7 +2042,7 @@ if __name__ == '__main__':
     dict_city_f_names[key] = city_f_name
     dict_b_node_nb[key] = build_node_nb
 
-    city_f_name = 'aachen_tuerme_mod_7.pkl'
+    city_f_name = 'aachen_tuerme_mod_7_el_resc_2.pkl'
     key = u'Türme'
     build_node_nb = 1010  # Tuerme
     dict_city_f_names[key] = city_f_name
@@ -2040,6 +2108,11 @@ if __name__ == '__main__':
     gen_path(output_path)
     #############################
 
+
+    share = 0.95
+    calc_sh_power_to_cov_spec_share_runs(mc_res=mc_res, share=share, key=key,
+                                         build=not mc_city)
+
     if all_cities is False:
 
         print('Single district analysis for: ', key)
@@ -2078,32 +2151,32 @@ if __name__ == '__main__':
 
         print('Analysis for all districts')
 
-        # #  Perform space heating box plot analysis for all districts
-        # #  Plot boxplots with three axes
-        # #  #####################################################################
-        output_path_curr = os.path.join(output_path, 'th_dem_three_axes')
-        box_plot_analysis_triple_plot(mc_res=mc_res, output_path=output_path_curr,
-                                      output_filename=output_filename, dpi=dpi,
-                                      with_outliners=with_outliners,
-                                      list_order=list_order, mode='sh',
-                                      mc_city=mc_city)
-
-        # #  Perform electric energy box plot analysis for all districts
-        # #  Plot boxplots with three axes
-        # #  #####################################################################
-        output_path_curr = os.path.join(output_path, 'el_dem_three_axes')
-        box_plot_analysis_triple_plot(mc_res=mc_res, output_path=output_path_curr,
-                                      output_filename=output_filename, dpi=dpi,
-                                      with_outliners=with_outliners,
-                                      list_order=list_order, mode='el',
-                                      mc_city=mc_city)
-
-        # #  Perform hot water energy box plot analysis for all districts
-        # #  Plot boxplots with three axes
-        # #  #####################################################################
-        output_path_curr = os.path.join(output_path, 'dhw_dem_three_axes')
-        box_plot_analysis_triple_plot(mc_res=mc_res, output_path=output_path_curr,
-                                      output_filename=output_filename, dpi=dpi,
-                                      with_outliners=with_outliners,
-                                      list_order=list_order, mode='dhw',
-                                      mc_city=mc_city)
+        # # #  Perform space heating box plot analysis for all districts
+        # # #  Plot boxplots with three axes
+        # # #  #####################################################################
+        # output_path_curr = os.path.join(output_path, 'th_dem_three_axes')
+        # box_plot_analysis_triple_plot(mc_res=mc_res, output_path=output_path_curr,
+        #                               output_filename=output_filename, dpi=dpi,
+        #                               with_outliners=with_outliners,
+        #                               list_order=list_order, mode='sh',
+        #                               mc_city=mc_city)
+        #
+        # # #  Perform electric energy box plot analysis for all districts
+        # # #  Plot boxplots with three axes
+        # # #  #####################################################################
+        # output_path_curr = os.path.join(output_path, 'el_dem_three_axes')
+        # box_plot_analysis_triple_plot(mc_res=mc_res, output_path=output_path_curr,
+        #                               output_filename=output_filename, dpi=dpi,
+        #                               with_outliners=with_outliners,
+        #                               list_order=list_order, mode='el',
+        #                               mc_city=mc_city)
+        #
+        # # #  Perform hot water energy box plot analysis for all districts
+        # # #  Plot boxplots with three axes
+        # # #  #####################################################################
+        # output_path_curr = os.path.join(output_path, 'dhw_dem_three_axes')
+        # box_plot_analysis_triple_plot(mc_res=mc_res, output_path=output_path_curr,
+        #                               output_filename=output_filename, dpi=dpi,
+        #                               with_outliners=with_outliners,
+        #                               list_order=list_order, mode='dhw',
+        #                               mc_city=mc_city)
