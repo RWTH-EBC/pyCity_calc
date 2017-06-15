@@ -2165,7 +2165,7 @@ if __name__ == '__main__':
     dict_city_f_names[key] = city_f_name
     dict_b_node_nb[key] = build_node_nb
 
-    city_f_name = 'aachen_tuerme_mod_7_el_resc_2.pkl'
+    city_f_name = 'aachen_tuerme_mod_7_el_resc_2_dhw_resc.pkl'
     key = u'Türme'
     build_node_nb = 1010  # Tuerme
     dict_city_f_names[key] = city_f_name
