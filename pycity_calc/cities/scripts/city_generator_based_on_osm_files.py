@@ -241,7 +241,8 @@ def main():
     #---------------------------------------------------------------------
 
     #  Convert lat/long to utm coordinates in meters?
-    conv_utm = True
+    #  Only necessary, if no conversion is done within uesgraph itself
+    conv_utm = False
     zone_number = 32
 
     this_path = os.path.dirname(os.path.abspath(__file__))
