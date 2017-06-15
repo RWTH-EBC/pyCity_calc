@@ -327,30 +327,12 @@ def calc_sh_power_to_cov_spec_share_runs(mc_res, share, key, build=True):
     for power in list_sh_arrays:
         list_sh_power.append(max(power))
 
-    # # Extract reference space heating power
-    # #  ##################################################################
-    # city = mc_res.get_city(key=key)
-    #
-    # if build:
-    #     node_id = mc_res.dict_build_ids[key]
-    #
-    #     curr_build = city.node[node_id]['entity']
-    #
-    #     #  Get reference space heating nominal power
-    #     q_sh_ref = dimfunc.get_max_power_of_building(building=curr_build,
-    #                                                  get_therm=True,
-    #                                                  with_dhw=False)
-    # else:
-    #     q_sh_ref = dimfunc.get_max_p_of_city(city_object=city,
-    #                                          get_thermal=True,
-    #                                          with_dhw=False)
-
     #  Sort list in ascending order
     list_sh_power.sort()
 
     total_nb = len(list_sh_power)
 
-    idx = math.ceil(share * total_nb)
+    idx = math.ceil(share * total_nb) - 1
 
     #  Extract thermal power values, which is required to cover share of runs
     cov_power = list_sh_power[idx]
@@ -358,8 +340,147 @@ def calc_sh_power_to_cov_spec_share_runs(mc_res, share, key, build=True):
     print('Required thermal space heating power to cover share of ' +
           str(share * 100) + ' % of area ' + str(key) + ' in kW:')
     print(cov_power / 1000)
+    print()
 
     return cov_power
+
+
+def calc_sh_coverage_cities(mc_res, list_shares=[0.9, 0.95, 0.98, 0.99, 1],
+                            build=True):
+    """
+    Calculate all necessary power values to cover specific shares of runs
+    given in list_shares for all city districts in mc_res.
+
+    Parameters
+    ----------
+    mc_res : object
+        Results object
+    list_shares : list, optional
+        List with desired share to be covered
+        (default: [0.9, 0.95, 0.98, 0.99, 1])
+        (e.g. single share 0.95 --> 95 % of runs)
+    build : bool, optional
+        Use building instead of whole city (default: True)
+        True: Use building
+        False: Use city
+
+    Returns
+    -------
+    dict_cov_power_lists : dict (of lists)
+        Dictionary holding coverage power values as floats (dict values)
+        and city names as keys
+    """
+
+    dict_cov_power_lists = {}
+
+    #  Loop over all districts
+    for key in mc_res.dict_cities.keys():
+
+        print()
+        print('Key: ', key)
+
+        list_cov_power = []
+
+        for share in list_shares:
+
+            print('Share: ', share)
+            cov_power = \
+                calc_sh_power_to_cov_spec_share_runs(mc_res=mc_res,
+                                                     share=share,
+                                                     key=key, build=build)
+
+            list_cov_power.append(cov_power)
+
+        dict_cov_power_lists[key] = list_cov_power
+
+    return dict_cov_power_lists
+
+
+def get_ref_sh_nom_powers(mc_res, build=True):
+    """
+    Extract reference space heating nomimal power values and mean power values
+
+    Parameters
+    ----------
+    mc_res : object
+        MC results object
+    build : bool, optional
+        Use building instead of whole city (default: True)
+        True: Use building
+        False: Use city
+
+    Returns
+    -------
+    res_tuple : tuple (of dicts)
+        Results tuple with (dict_ref_sh, dict_mean_sh)
+        First dict holding reference space heating power values per district.
+        Second dict holding mean space heating power values per district.
+    """
+
+    dict_ref_sh = {}
+    dict_mean_sh = {}
+
+    for key in mc_res.dict_cities.keys():
+
+        print('Key: ', key)
+
+        # Extract reference space heating power
+        #  ##################################################################
+        city = mc_res.get_city(key=key)
+
+        if build:
+            node_id = mc_res.dict_build_ids[key]
+
+            curr_build = city.node[node_id]['entity']
+
+            #  Get reference space heating nominal power
+            q_sh_ref = dimfunc.get_max_power_of_building(building=curr_build,
+                                                         get_therm=True,
+                                                         with_dhw=False)
+        else:
+            q_sh_ref = dimfunc.get_max_p_of_city(city_object=city,
+                                                 get_thermal=True,
+                                                 with_dhw=False)
+
+        print('Ref. space heating power in W: ')
+        print(q_sh_ref)
+
+        dict_ref_sh[key] = q_sh_ref
+
+        #  Extract list of space heating power arrays
+        if build:
+            list_powers = mc_res.get_results_mc_build(key=key)[1]
+        else:
+            list_powers = mc_res.get_results_mc_city(key=key)[1]
+
+        list_max_sh_p = []
+        for power in list_powers:
+            list_max_sh_p.append(max(power))
+
+        mean = np.mean(list_max_sh_p)
+
+        print('Mean power value in W:')
+        print(mean)
+        print('Median power value in W:')
+        print(np.median(list_max_sh_p))
+
+        list_max_sh_p.sort()
+
+        count_cov_val = 0
+        for pow in list_max_sh_p:
+            if pow <= q_sh_ref:
+                count_cov_val += 1
+            else:
+                break
+
+        print('Share of covered power values based on reference space heating'
+              ' power value: ')
+        print(count_cov_val/len(list_max_sh_p))
+        print()
+
+        dict_mean_sh[key] = mean
+
+    return (dict_ref_sh, dict_mean_sh)
 
 
 def do_sh_load_analysis(mc_res, key, output_path, output_filename, dpi=300,
@@ -2068,7 +2189,7 @@ if __name__ == '__main__':
     #  User input
     #  ###############################################
 
-    mc_city = True
+    mc_city = False
     all_cities = True  # all cities / all buildings or only specific key
 
     with_outliners = True
@@ -2108,10 +2229,8 @@ if __name__ == '__main__':
     gen_path(output_path)
     #############################
 
-
-    share = 0.95
-    calc_sh_power_to_cov_spec_share_runs(mc_res=mc_res, share=share, key=key,
-                                         build=not mc_city)
+    # # calc_sh_coverage_cities(mc_res=mc_res, build=not mc_city)
+    # get_ref_sh_nom_powers(mc_res=mc_res, build=not mc_city)
 
     if all_cities is False:
 
