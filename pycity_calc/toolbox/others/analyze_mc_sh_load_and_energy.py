@@ -2101,8 +2101,10 @@ if __name__ == '__main__':
     dict_files_city[key] = filename_city
     dict_files_build[key] = filename_b
 
-    filename_city = 'aachen_tuerme_mod_7_mc_city_samples_10000.pkl'
-    filename_b = 'aachen_tuerme_mod_6_single_b_100001010.pkl'
+    #filename_city = 'aachen_tuerme_mod_7_mc_city_samples_10000.pkl'
+    filename_city = 'aachen_tuerme_mod_7_mc_city_samples_10000_with_retro_person_data.pkl'
+    #filename_b = 'aachen_tuerme_mod_6_single_b_100001010.pkl'
+    filename_b = 'aachen_tuerme_mod_7_single_b_10000_fix_year_occ_1010.pkl'
     output_city = filename_city[:-4]
     output_b = filename_b[:-4]
     key = u'Türme'
@@ -2124,6 +2126,7 @@ if __name__ == '__main__':
         file_build = dict_files_build[key]
 
         load_path_city = os.path.join(this_path, 'input', 'mc_cities',
+                                      '4_with_10000_samples',
                                       file_city)
         load_path_build = os.path.join(this_path, 'input', 'mc_buildings',
                                        file_build)
@@ -2299,3 +2302,5 @@ if __name__ == '__main__':
         #                               with_outliners=with_outliners,
         #                               list_order=list_order, mode='dhw',
         #                               mc_city=mc_city)
+
+    print('Saved results to ' + str(output_path))
