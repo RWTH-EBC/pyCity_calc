@@ -54,6 +54,7 @@ class GermanMarket(market.Market):
             True - Set all default values to None
             False - Keep pycity default market values
         """
+        #  TODO: Add gas tax return for CHP
 
         super(GermanMarket, self).__init__(reset_pycity_default_values=
                                            reset_pycity_default_values)
@@ -64,11 +65,13 @@ class GermanMarket(market.Market):
         #  List of CHP subsidies for self-consumed electric energy
         self._sub_chp_self = [0.04, 0.03, 0]
 
+        #  List of PV subsidies
+        self._sub_pv = [0.123, 0.1196, 0.1069, 0.0851]
+
         # self.EEG_Umlage_tax=[0.05,0.04]
         # self.EEX_baseload_price=1
         # self.avoid_grid_usage=0.07
         # self.gas_disc_chp=0.0055
-        # self.sub_pv=[0.123,0.1196,0.1069]
 
     def get_sub_chp(self, p_nom):
         """
@@ -139,37 +142,62 @@ class GermanMarket(market.Market):
 
         return sub_chp
 
-        # def get_sub_pv(self, peakload):
-        #     """
-        #     return the subsidy payment for sold pv electritiy
-        #
-        #     -----------
-        #     Parameters:
-        #     peakload: 'float', installed PV Peakload in W
-        #     --------
-        #     Returns:
-        #     sub_pv: 'float', subsidiy payments for sold pv electricity according to EEG2017.
-        #     """
-        #     if peakload <= 10000:
-        #         # max 10kWp
-        #         sub_pv = self.sub_pv[0]
-        #     elif 10000 < peakload and peakload <= 40000:
-        #         # from 10 to 40kWp
-        #         sub_pv = self.sub_pv[1]
-        #     elif peakload <= 100000:
-        #         # maximum 100kWp
-        #         sub_pv = self.sub_pv[2]
-        #     else:
-        #         # TODO: there are some exception from the 100kWp maximum in the EEG
-        #         # TODO: implement a case for more than 100kWp
-        #         warnings.warn(
-        #             'PV System hast more than 100kWp. The implemented EEG subsidy payments \n'
-        #             'method is not valid for this case. sub_pv set to 0.1109')
-        #         sub_pv = self.sub_pv[2]
-        #     return sub_pv
+    def get_sub_pv(self, pv_peak_load, is_res=True):
+        """
+        Returns the subsidy payment for sold pv electricity
+
+        Parameters
+        ----------
+        pv_peak_load : float
+            PV peak load in Watt
+        is_res : bool, optional
+            Defines, if PV is installed on residential building (default: True)
+            If True, PV is installed on residential building.
+            If False, PV is installed on non-residential building with
+            lower subsidies.
+
+        Returns
+        -------
+        sub_pv : float
+            Subsidy payment for sold PV el. energy in Euro/kWh
+        """
+
+        if is_res:
+
+            if pv_peak_load <= 10000:
+                # max 10kWp
+                sub_pv = self._sub_pv[0]
+            elif pv_peak_load <= 40000:
+                # from 10 to 40kWp
+                sub_pv = self._sub_pv[1]
+            elif pv_peak_load <= 100000:
+                # maximum 100kWp
+                sub_pv = self._sub_pv[2]
+            else:
+                msg = 'PV System hast more than 100kWp.\nThe implemented EEG' \
+                      ' subsidy payments method is not valid for this case.\n' \
+                      ' sub_pv set to ' + str(self._sub_pv[3] * 0.7) + '.\n ' \
+                      'Consider adding own PV subsidy value!'
+                warnings.warn(msg)
+                sub_pv = self._sub_pv[2] * 0.7
+
+        else:
+            if pv_peak_load <= 100000:
+                sub_pv = self._sub_pv[3]
+            else:
+                msg = 'PV System hast more than 100kWp.\nThe implemented EEG' \
+                      ' subsidy payments method is not valid for this case.\n' \
+                      ' sub_pv set to ' + str(self._sub_pv[3] * 0.7) + '.\n ' \
+                      'Consider adding own PV subsidy value!'
+                warnings.warn(msg)
+                sub_pv = self._sub_pv[3] * 0.7
+
+        return sub_pv
+
 
 if __name__ == '__main__':
 
+    #  Initialize GermanMarket object instance
     germanmarket = GermanMarket()
 
     chp_nom_el_p = 30000  # El. CHP power in Watt
@@ -181,7 +209,7 @@ if __name__ == '__main__':
     #  Get CHP subsidies of CHP for self consumed el. energy
     chp_sub_self = germanmarket.get_sub_chp_self(p_nom=chp_nom_el_p)
 
-    print('Get CHP subsidies for CHP of size ' + str(chp_nom_el_p/1000) +
+    print('Get CHP subsidies for CHP of size ' + str(chp_nom_el_p / 1000) +
           ' kW:')
     print('CHP subsidy for fed-in el. energy in Euro/kWh:')
     print(chp_sub)
@@ -201,3 +229,22 @@ if __name__ == '__main__':
     print(chp_sub2)
     print('CHP subsidy for self consumed el. energy in Euro/kWh:')
     print(chp_sub_self2)
+    print()
+
+    #  PV subsidies
+    #  ###################################################################
+    pv_peak_power = 30000  # in Watt
+
+    pv_sub_res = germanmarket.get_sub_pv(pv_peak_load=pv_peak_power,
+                                         is_res=True)
+
+    pv_sub_nonres = germanmarket.get_sub_pv(pv_peak_load=pv_peak_power,
+                                            is_res=False)
+
+    print('PV subsidy payment in Euro/kWh for PV module with peak load '
+          + str(pv_peak_power / 1000) + ' kW on residential building:')
+    print(pv_sub_res)
+
+    print('PV subsidy payment in Euro/kWh for PV module with peak load '
+          + str(pv_peak_power / 1000) + ' kW on non-residential building:')
+    print(pv_sub_nonres)
