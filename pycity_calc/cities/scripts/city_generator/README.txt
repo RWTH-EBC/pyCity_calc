@@ -1,5 +1,3 @@
-Input folder for city generator.
-
 Important: Generator assumes that input within field "Annual thermal e demand in kWh" 
 is final thermal energy demand value (e.g. gas or oil) for space heating.
 (Domestic hot water profile can be generated, seperately) 
@@ -8,7 +6,7 @@ city generator to net thermal demand value (via eff_factor=0.85). If net thermal
 energy demand should be used as input, set eff_factor = 1!
 
 
-Explanations about input parameters:
+Explanations about input parameters for city_generator.py:
 
     Columns:
     1:  id (int)
