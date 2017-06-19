@@ -21,7 +21,7 @@ class GermanMarket(market.Market):
     def __init__(self, reset_pycity_default_values=True,
                  chp_tax_return=0.0055, eeg_pay=0.0688,
                  eex_baseload=[0.02479 ,0.02826 ,0.0376 ,0.04132],
-                 grid_av_fee=0.0055):
+                 grid_av_fee=0.0055, hp_day_tarif=0.2, hp_night_tarif=0.18):
         """
         Constructor of GermanMarket object instance
 
@@ -42,6 +42,12 @@ class GermanMarket(market.Market):
         grid_av_fee : float, optional
             Grid usage avoidance fee in Euro/kWh
             (default: 0.0055)
+        hp_day_tarif : float, optional
+            Heat pump day tarif in Euro/kWh
+            (default: 0.2)
+        hp_night_tarif : float, optional
+            Heat pump night tarif in Euro/kWh
+            (default: 0.18)
         """
 
         super(GermanMarket, self).__init__(reset_pycity_default_values=
@@ -58,6 +64,10 @@ class GermanMarket(market.Market):
 
         #  CHP tax return on gas
         self.chp_tax_return = chp_tax_return
+
+        #  HP tarifs
+        self.hp_day_tarif = hp_day_tarif
+        self.hp_night_tarif = hp_night_tarif
 
         #  EEX baseload prices
         self.eex_baseload = eex_baseload
