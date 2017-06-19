@@ -14,35 +14,14 @@ class GermanMarket(market.Market):
     GermanMarket class of pycity_calculator.
     Extends pycity_calc market class with specific regulations for German
     market, such as CHP subsidies (German CHP law / KWK Gesetz) and renewable
-    energy regulations (Renewable energy law / EEG)
-
-    Attributes:
-    -----------
-    EEG_Umlage_tax
-        #  TODO
-    EEX_baseload_price
-        #  TODO
-    avoid_grid_usage: 'float', payment for avoided grid usage for sold chp
-    electricity according to KWKG2016.
-        in €/kWh
-    sub_chp: 'list', subsidiy payments for sold chp electricity according to
-    KWKG2016.
-        sub_chp[0] - pNom < 50kW in €/kWh
-        sub_chp[1] - 50kW < pNom < 100kW  in €/kWh
-    self_demand_usage_chp: 'list', subsidiy payments for self used chp
-    electricity according to KWKG2016.
-        sub_chp[0] - pNom < 50kW  in €/kWh
-        sub_chp[1] - 50kW < pNom < 100kW  in €/kWh
-    gas_disc_chp: 'float', discount on used gas with highly efficient
-    Energysystems according to german Energy tax law.
-    sub_pv: 'list', subsidiy payments for sold pv electricity according to
-    EEG2017.
-        sub_pv[0] - kWpeak < 10kW  in €/kWh
-        sub_pv[1] - 10kW < kWpeak < 40kW  in €/kWh
-        sub_pv[2] - 40kW < kWpeak < 100kW  in €/kWh
+    energy regulations (Renewable energy law / EEG), EEX baseload prices,
+    grid avoidance fee.
     """
 
-    def __init__(self, reset_pycity_default_values=True):
+    def __init__(self, reset_pycity_default_values=True,
+                 chp_tax_return=0.0055, eeg_pay=0.0688,
+                 eex_baseload=[0.02479 ,0.02826 ,0.0376 ,0.04132],
+                 grid_av_fee=0.0055):
         """
         Constructor of GermanMarket object instance
 
@@ -53,8 +32,17 @@ class GermanMarket(market.Market):
             (default: True)
             True - Set all default values to None
             False - Keep pycity default market values
+        chp_tax_return : float, optional
+            CHP tax return on gas usage in Euro/kWh (default: 0.0055)
+        eeg_pay : float, optional
+            EEG payment in Euro/kWh (default: 0.0688)
+        eex_baseload : list (of floats), optional
+            List with quarterly EEX baseload prices in Euro/kWh
+            (default: [0.02479 ,0.02826 ,0.0376 ,0.04132])
+        grid_av_fee : float, optional
+            Grid usage avoidance fee in Euro/kWh
+            (default: 0.0055)
         """
-        #  TODO: Add gas tax return for CHP
 
         super(GermanMarket, self).__init__(reset_pycity_default_values=
                                            reset_pycity_default_values)
@@ -68,10 +56,20 @@ class GermanMarket(market.Market):
         #  List of PV subsidies
         self._sub_pv = [0.123, 0.1196, 0.1069, 0.0851]
 
-        # self.EEG_Umlage_tax=[0.05,0.04]
-        # self.EEX_baseload_price=1
-        # self.avoid_grid_usage=0.07
-        # self.gas_disc_chp=0.0055
+        #  CHP tax return on gas
+        self.chp_tax_return = chp_tax_return
+
+        #  EEX baseload prices
+        self.eex_baseload = eex_baseload
+
+        #  Grid usage avoidance fee
+        self.grid_av_fee = grid_av_fee
+
+        #  EEG payment
+        self.eeg_pay = eeg_pay
+
+        #  Dict with EEG payment on self consumed energy (status quo: 2017)
+        self._dict_eeg_self = {'PV': 0.4 * eeg_pay, 'CHP': 0.4 * eeg_pay}
 
     def get_sub_chp(self, p_nom):
         """
