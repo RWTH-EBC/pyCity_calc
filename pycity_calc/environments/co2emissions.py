@@ -1,6 +1,6 @@
 # coding=utf-8
 """
-Script with CO2 emission class
+Script with emission class holding CO2 and primary energy (PE) factors
 """
 
 import os
@@ -10,7 +10,8 @@ import warnings
 
 class Emissions(object):
     """
-    Emissions class of pycity_calculator
+    Emissions class of pycity_calculator, holding CO2 and primary energy (PE)
+    factors
     """
 
     def __init__(self, year=None, co2_factor_oil=0.313,
@@ -18,7 +19,13 @@ class Emissions(object):
                  co2_factor_hard_coal=0.427, co2_factor_soft_coal=0.449,
                  co2_factor_woodchip=0.014, co2_factors_wood=0.011,
                  co2_factor_pellets=0.018, co2_factor_el_mix=0.617,
-                 co2_factor_pv_multi=0.062, co2_factor_el_feed_in=0.84):
+                 co2_factor_pv_multi=0.062, co2_factor_el_feed_in=0.84,
+                 pe_oil=1.1, pe_gas=1.1, pe_liquid_gas=1.1, pe_hard_coal=1.2,
+                 pe_soft_coal=1.2, pe_total_biogas=1.5, pe_non_ren_biogas=0.5,
+                 pe_total_wood=1.2, pe_non_ren_wood=0.2, pe_total_el_mix=2.8,
+                 pe_non_ren_el_mix=2.4, pe_total_feed_in_el=2.8,
+                 pe_non_ren_feed_in_el=2.8, pe_total_env_energy=1,
+                 pe_non_ren_env_energy=0):
         """
         Constructor of emissions object in pycity_calc. Holds emission factors
         for Germany, currently for the years:
@@ -75,17 +82,55 @@ class Emissions(object):
         co2_factor_el_feed_in : float, optional
             CO2 factor feed in (Verdrängungsstrommix) in kg/kWh
             (default: 0.84); see [3]
+        pe_oil : float, optional
+            Primary energy factor for oil (default: 1.1)
+        pe_gas : float, optional
+            Primary energy factor for gas (default: 1.1)
+        pe_liquid_gas : float, optional
+            Primary energy factor for liquid gas (default: 1.1)
+        pe_hard_coal : float, optional
+            Primary energy factor for hard coal (default: 1.1)
+        pe_soft_coal : float, optional
+            Primary energy factor for soft coal (default: 1.2)
+        pe_total_biogas : float, optional
+            Primary energy factor (total) for biogas (default: 1.5)
+        pe_non_ren_biogas : float, optional
+            Primary energy factor (non-renewable) for biogas (default: 0.5)
+        pe_total_wood : float, optional
+            Primary energy factor (total) for wood (default: 1.2)
+        pe_non_ren_wood : float, optional
+            Primary energy factor (non_renewable) for wood (default: 0.2)
+        pe_total_el_mix : float, optional
+            Primary energy factor (total) for electricity mix (default: 2.8)
+        pe_non_ren_el_mix : float, optional
+            Primary energy factor (non-renewable) for electricity mix
+            (default: 2.4)
+        pe_total_feed_in_el : float, optional
+            Primary energy factor (total) for feed in electricity
+             (Verdraengungstrom)(default: 2.8)
+        pe_non_ren_feed_in_el : float, optional
+            Primary energy factor (non-ren) for feed in electricity
+             (Verdraengungstrom)(default: 2.8)
+        pe_total_env_energy : float, optional
+            Primary energy factor (total) for environmental energy, such as
+            solarenergy, geothermal energy or environmental heat
+            (default: 1)
+        pe_non_ren_env_energy : float, optional
+            Primary energy factor (non-renewable) for environmental energy,
+            such as solarenergy, geothermal energy or environmental heat
+            (default: 0)
 
         References
         ----------
         [1] Institut für Wohnen und Umwelt - IWU, Kumulierter Energieaufwand
-        verschiedener Energieträgern und –versorgungen (2009).
+        verschiedener Energietraegern und –versorgungen (2009).
         [2] Internationales Institut für Nachhaltigkeitsanalysen und
         -strategien, GEMIS - Globales Emissions-Modell integrierter Systeme,
          available at http://www.iinas.org/gemis-de.html (
          accessed on January 13, 2015).
         [3] IFEU:
         https://www.ifeu.de/energie/pdf/ifeu_Endbericht_Weiterentwicklung_PEF.pdf
+        [4] DIN 18599-1 - Primaerenergiefaktoren
         """
 
         #  List with years, which have gemis co2 emission factors
@@ -145,6 +190,21 @@ class Emissions(object):
         self.co2_factor_el_mix = co2_factor_el_mix
         self.co2_factor_pv_multi = co2_factor_pv_multi
         self.co2_factor_el_feed_in = co2_factor_el_feed_in
+        self.pe_oil = pe_oil
+        self.pe_gas = pe_gas
+        self.pe_liquid_gas = pe_liquid_gas
+        self.pe_hard_coal = pe_hard_coal
+        self.pe_soft_coal = pe_soft_coal
+        self.pe_total_biogas = pe_total_biogas
+        self.pe_non_ren_biogas = pe_non_ren_biogas
+        self.pe_total_wood = pe_total_wood
+        self.pe_non_ren_wood = pe_non_ren_wood
+        self.pe_total_el_mix = pe_total_el_mix
+        self.pe_non_ren_el_mix = pe_non_ren_el_mix
+        self.pe_total_feed_in_el = pe_total_feed_in_el
+        self.pe_non_ren_feed_in_el = pe_non_ren_feed_in_el
+        self.pe_total_env_energy = pe_total_env_energy
+        self.pe_non_ren_env_energy = pe_non_ren_env_energy
 
     def get_co2_emission_factors(self, type):
         """
@@ -185,3 +245,79 @@ class Emissions(object):
 
         co2_factor = co2_dict[type]
         return co2_factor
+
+    def get_primary_energy_factor(self, non_ren, type):
+        """
+        Returns primary energy factor depending on chosen type and kind
+        of primary energy factor (total or non-renewable)
+
+        Parameters
+        ----------
+        non_ren : bool
+            Defines, if non-renewable part should be returned
+            Options:
+            - True : Returns non-renewable part of PE
+            - False : Returns total PE
+        type : str
+            Type of energy / combustible.
+            Options:
+            - 'oil'
+            - 'gas'
+            - 'liquid_gas'
+            - 'hard_coal'
+            - 'soft_coal'
+            - 'biogas'
+            - 'wood'
+            - 'el_mix' (Electricity mix)
+            - 'el_feed_in' (Feed in electricity / Verdraengungsstrom)
+            - 'env_en' (environmental energy, such as solar energy, waste heat)
+
+        Returns
+        -------
+        pe_factor : float
+            Primary energy factor
+        """
+        if non_ren:
+            #  Return non-renewable part of PE
+            pe_dict = {'oil': self.pe_oil,
+                       'gas': self.pe_gas,
+                       'liquid_gas': self.pe_liquid_gas,
+                       'hard_coal': self.pe_hard_coal,
+                       'soft_coal': self.pe_soft_coal,
+                       'biogas': self.pe_non_ren_biogas,
+                       'wood': self.pe_non_ren_wood,
+                       'el_mix': self.pe_non_ren_el_mix,
+                       'el_feed_in': self.pe_non_ren_feed_in_el,
+                       'env_en': self.pe_non_ren_env_energy}
+
+        else:
+            #  Return total PE factors
+            pe_dict = {'oil': self.pe_oil,
+                       'gas': self.pe_gas,
+                       'liquid_gas': self.pe_liquid_gas,
+                       'hard_coal': self.pe_hard_coal,
+                       'soft_coal': self.pe_soft_coal,
+                       'biogas': self.pe_total_biogas,
+                       'wood': self.pe_total_wood,
+                       'el_mix': self.pe_total_el_mix,
+                       'el_feed_in': self.pe_total_feed_in_el,
+                       'env_en': self.pe_total_env_energy}
+
+        return pe_dict[type]
+
+
+if __name__ == '__main__':
+    emission = Emissions()
+
+    #  Get CO2 factor for natural gas
+    co2_gas = emission.get_co2_emission_factors(type='gas')
+
+    print('CO2 factor for natural gas in kg/kWh: ')
+    print(co2_gas)
+
+    #  Get primary energy factor for electricity mix (total)
+    pe_total_el_mix = emission.get_primary_energy_factor(non_ren=False,
+                                                         type='el_mix')
+
+    print('Total primary energy factor of electricity mix: ')
+    print(pe_total_el_mix)

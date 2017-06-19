@@ -51,7 +51,7 @@ def mod_el_city_dem(city, el_dem, list_nodes=None, makecopy=False):
         list_nodes = city.get_list_build_entity_node_ids()
 
     #  Calculate conversion factor
-    curr_city_el_dem = city.get_annual_el_demand()
+    curr_city_el_dem = city.get_annual_el_demand(nodelist=list_nodes)
     con_factor = el_dem / curr_city_el_dem
 
     for n in list_nodes:
@@ -68,11 +68,11 @@ if __name__ == '__main__':
 
     #  User input
     #  ###################################################################
-    el_dem = 590000  # El. energy demand for rescaling in kWh/a
+    el_dem = 525000  # El. energy demand for rescaling in kWh/a
 
-    city_f_name = 'aachen_frankenberg_mod_8.pkl'
+    city_f_name = 'aachen_tuerme_mod_7.pkl'
 
-    save_f_name = city_f_name[:-4] + '_el_resc.pkl'
+    save_f_name = city_f_name[:-4] + '_el_resc_2.pkl'
 
     #  ###################################################################
 
@@ -91,8 +91,8 @@ if __name__ == '__main__':
     print(city.get_annual_el_demand())
 
     #  #########################################################
-    air_vent_mode = 2
-    vent_factor = 0.3
+    air_vent_mode = 0
+    vent_factor = 0.5
 
     print('City space heating net energy demand in kWh/a before conversion:')
     print(city.get_annual_space_heating_demand())
