@@ -157,6 +157,7 @@ if __name__ == '__main__':
     #city_f_name = 'rheinbaben_nord_mod_jsc.p'
     #city_f_name = 'rheinbaben_sued_mod_jsc_20.p'
     city_f_name = 'rheinbaben_nord_mod_jsc_extract_alex.p'
+    #city_f_name = 'city_Rheinbaben_sued_mod_jsc_20_extr_alex.p'
 
     #city_f_name = 'aachen_forsterlinde_mod_6.pkl'
     #city_f_name = 'aachen_frankenberg_mod_6.pkl'
@@ -165,7 +166,7 @@ if __name__ == '__main__':
     #city_f_name = 'aachen_preusweg_mod_6.pkl'
     #city_f_name = 'aachen_tuerme_mod_6.pkl'
 
-    save_f_name = city_f_name[:-4] + '_mc_city_samples_' + str(nb_samples) + '_equal_persons.pkl'
+    save_f_name = city_f_name[:-4] + '_mc_city_samples_' + str(nb_samples) + '.pkl'
 
     #  Define, if older years of construction should be set to enable a larger
     #  variation of modernization years
