@@ -242,12 +242,12 @@ def new_city_evaluation_monte_carlo(City, dict_sample):
 
         print(GHG_Emission, 'kg/year')
 
-        Gas_results[loop] = gas_dem
-        El_results[loop] = el_dem
-        Sph_results [loop] = annual_sph_dem
-        Annuity_results[loop] = total_annuity
-        GHG_results[loop] = GHG_Emission
-        GHG_spe_results[loop] = GHG_Emission / (annual_sph_dem + annual_dhw_dem + annual_el_dem)
+        Gas_results[loop] = round(gas_dem,4)
+        El_results[loop] = round(el_dem,4)
+        Sph_results [loop] = round(annual_sph_dem, 4)
+        Annuity_results[loop] = round(total_annuity, 4)
+        GHG_results[loop] = round(GHG_Emission,4)
+        GHG_spe_results[loop] = round(GHG_Emission / (annual_sph_dem + annual_dhw_dem + annual_el_dem),4)
 
 
     return Sph_results, Gas_results, El_results, Annuity_results, GHG_results, GHG_spe_results

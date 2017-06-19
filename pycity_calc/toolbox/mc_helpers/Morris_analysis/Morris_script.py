@@ -32,7 +32,7 @@ def run_Morris():
     # #############################################################################################################
 
     # number of samples
-    Nsample = 10
+    Nsample = 1
     print(Nsample)
     Morris_name = 'Morris_values.txt' # filename of the parameters definition variation space for the Morris analysis
 
@@ -43,7 +43,7 @@ def run_Morris():
 
     # results
     save_result = True  # if set to false: no generation of results txt file
-    results_name = 'Morris_results.txt'
+    results_name = 'Morris_results2.txt'
 
 
     print('***********************************************************************************************************')
@@ -350,7 +350,7 @@ def run_Morris():
     el_dem_ref = 0
     gas_dem_ref = 0
     for n in City.nodes():
-        
+
         if 'node_type' in City.node[n]:
             #  If node_type is building
             if City.node[n]['node_type'] == 'building':
@@ -499,11 +499,14 @@ def run_Morris():
         results_path = os.path.join(this_path, 'output', results_name)
 
         write_results = open(results_path, mode='w')
-        write_results.write(' Morris analysis -Test Modernisation year 1995-2015 \n ')
+        write_results.write(' Morris analysis -Test Modernisation year 1970-2015 \n ')
 
         write_results.write(' Number of sampling :' + str(Nsample))
+
         write_results.write('\n##############Parameters for the sensibility##############\n')
-        write_results.write(str(np.genfromtxt(load_path_pam)))
+        for j in list(range(len(problem['names']))):
+            write_results.write(" {} {} \n".format(problem['names'][j],problem['bounds'][j]))
+
         write_results.write('\n############## City reference ##############\n')
         if load_city == True:
             generation_mode = 'load City from pickle file'
@@ -584,8 +587,7 @@ def run_Morris():
         write_results.write('\n------------------------------------------------------------------\n')
         write_results.write('\n  Number of City generated {}\n'.format(Nsample*(Nparameters+1)))
         write_results.write('\n Number of City with boiler rescaled {} \n'.format(Nboiler_rescaled))
-
-
+        write_results.close()
 
     print('***********************************************************************************************************')
     print('Visualisation')
@@ -615,9 +617,12 @@ def run_Morris():
     covariance_plot(ax10, Si_ghg_spe, {}, unit=r"GHG [kg]/kWh*year")
     fig6.suptitle('Specific GHG analysis for {} samples'.format(Nsample))
 
-    fig4, (ax7, ax8) = plt.subplots(1, 2)
-    horizontal_bar_plot(ax7, Si_a, {}, sortby='mu_star', unit=r"Annuity[Euro]/year")
-    covariance_plot(ax8, Si_a, {}, unit=r"Annuity [Euro]/year")
+    fig4, ((ax7, ax8), (ax11, ax12)) = plt.subplots(2, 2)
+    horizontal_bar_plot(ax11, Si_a, {}, sortby='mu_star', unit=r"Annuity[Euro]/year")
+    horizontal_bar_plot(ax12, Si_ghg_spe, {}, sortby='mu_star', unit=r"GHG[kg]/kWh*year")
+    horizontal_bar_plot(ax7, Si_el, {}, sortby='mu_star', unit=r"el_dem[kWh]/year")
+    horizontal_bar_plot(ax8, Si_gas, {}, sortby='mu_star', unit=r"gas_dem[kWh]/year")
+
     fig4.suptitle('Annuity analysis for {} samples'.format(Nsample))
 
     # visualisation demand curves

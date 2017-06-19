@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
 
-def do_uncertainty_analysis(Nsample=100):
+def do_uncertainty_analysis(Nsample=10):
 
     # Define Uncertainty analysis parameters
     # #############################################################################################################
@@ -31,8 +31,6 @@ def do_uncertainty_analysis(Nsample=100):
     load_city = True  # load a pickle City file
     # if set to False: generation of a City with city_generator
     city_pickle_name = 'aachen_kronenberg_3_mfh_ref_1.pkl'
-
-    Confident_intervall_pourcentage = 90
 
 
     # ## Uncertainty
@@ -48,6 +46,14 @@ def do_uncertainty_analysis(Nsample=100):
 
     # user parameters are uncertain (user_ventilations_rate, Tset_heat, number of occupants)
     Is_unc_user_parameters = True
+
+    # ## Analyse
+    Confident_intervall_pourcentage = 90
+    GHG_specific = 'user energy demand'
+
+    # ## Save results
+    save_result = True  # if set to false: no generation of results txt file
+    results_name = 'mc_results.txt'
 
     print('***********************************************************************************************************')
     print('Initialisation: Reference City Generation')
@@ -447,78 +453,306 @@ def do_uncertainty_analysis(Nsample=100):
 
     # ## Results analysis - Standard deviation, mean and 90 confident interval
 
-    # Gas demand
     print ()
     print ('Gas demand analysis')
+    print ('-------------------')
+    print ('unit: kWh/year')
     mean_gas_demand = sum(Gas_results)/ len(Gas_results)
     sigma_gas_demand = np.std(a=Gas_results)
+    median_gas_demand = np.median(a=Gas_results)
     confident_inter_gas = stats.norm.interval(Confident_intervall_pourcentage/100, loc=mean_gas_demand, scale=sigma_gas_demand)
+    first_quantil_gas = stats.scoreatpercentile(Gas_results, per=25 )
+    second_quantil_gas = stats.scoreatpercentile(Gas_results, per=50)
+    third_quantil_gas = stats.scoreatpercentile(Gas_results, per=75 )
 
-    print ('mean :', mean_gas_demand)
-    print ('sigma :', sigma_gas_demand)
-    print ('confident interval {}'.format(Confident_intervall_pourcentage), confident_inter_gas)
+    print('mean :', mean_gas_demand)
+    print('sigma :', sigma_gas_demand)
+    print('confident interval {}'.format(Confident_intervall_pourcentage), confident_inter_gas)
     print('{:0.2%} of the means are in confident interval'.format(((Gas_results >= confident_inter_gas[0]) & (Gas_results < confident_inter_gas[1])).sum() / float(Nsample)))
-    print ()
+    print ('median : ', median_gas_demand)
+    print ('first quantil : ', first_quantil_gas)
+    print ('second quantil :', second_quantil_gas)
+    print ('third quantil : ', third_quantil_gas)
+    print()
 
     # Electrical demand
-    print ('Electrical demand analysis')
+    print('Electrical demand analysis')
+    print('--------------------------')
+    print('unit: kWh/year')
+
     mean_el_demand = sum (El_results)/len(El_results)
     sigma_el_demand = np.std(a=El_results)
     confident_inter_el = stats.norm.interval(Confident_intervall_pourcentage / 100, loc=mean_el_demand,
                                               scale=sigma_el_demand)
+    median_el_demand = np.median(a=El_results)
+    first_quantil_el = stats.scoreatpercentile(El_results, per=25)
+    second_quantil_el = stats.scoreatpercentile(El_results, per=50)
+    third_quantil_el = stats.scoreatpercentile(El_results, per=75)
+
     print('mean :', mean_el_demand)
     print('sigma :', sigma_el_demand)
-    print ('confident interval {}'.format(Confident_intervall_pourcentage), confident_inter_el)
-    print('{:0.2%} of the means are in confident interval'.format(
-        ((El_results >= confident_inter_el[0]) & (El_results < confident_inter_el[1])).sum() / float(Nsample)))
+    print('confident interval {}'.format(Confident_intervall_pourcentage), confident_inter_el)
+    print('{:0.2%} of the means are in confident interval'.format(((El_results >= confident_inter_el[0]) & (El_results < confident_inter_el[1])).sum() / float(Nsample)))
+    print('median : ', median_el_demand)
+    print('first quantil : ', first_quantil_el)
+    print('second quantil :', second_quantil_el)
+    print('third quantil : ', third_quantil_el)
     print()
 
     # Annuity
     print('Annuity analysis')
+    print('----------------')
+    print('unit: Euro/year')
+
     mean_annuity = sum(Annuity_results)/len(Annuity_results)
     sigma_annuity = np.std(a=Annuity_results)
-    confident_inter_a = stats.norm.interval(Confident_intervall_pourcentage / 100, loc=mean_annuity,
-                                             scale=sigma_annuity)
+    confident_inter_a = stats.norm.interval(Confident_intervall_pourcentage / 100, loc=mean_annuity, scale=sigma_annuity)
+
+    median_a = np.median(a=Annuity_results)
+    first_quantil_a = stats.scoreatpercentile(Annuity_results, per=25)
+    second_quantil_a = stats.scoreatpercentile(Annuity_results, per=50)
+    third_quantil_a = stats.scoreatpercentile(Annuity_results, per=75)
+
     print('mean :', mean_annuity)
     print('sigma :', sigma_annuity)
     print('confident interval {}'.format(Confident_intervall_pourcentage), confident_inter_a)
-    int('{:0.2%} of the means are in confident interval'.format(
-        ((Annuity_results >= confident_inter_a[0]) & (Annuity_results < confident_inter_a[1])).sum() / float(Nsample)))
+    print('{:0.2%} of the means are in confident interval'.format(((Annuity_results >= confident_inter_a[0]) & (Annuity_results < confident_inter_a[1])).sum() / float(Nsample)))
+    print('median : ', median_a)
+    print('first quantil : ', first_quantil_a)
+    print('second quantil :', second_quantil_a)
+    print('third quantil : ', third_quantil_a)
     print()
 
     # GHG
     print('GHG_analysis')
+    print('------------')
+    print('unit: kg/year')
+
     mean_GHG = sum(GHG_results)/len(GHG_results)
     sigma_GHG = np.std(GHG_results)
-    mean_spe_GHG = sum(GHG_spe_results)/len(GHG_spe_results)
-    sigma_spe_GHG = np.std(a=GHG_spe_results)
+    confident_inter_GHG = stats.norm.interval(Confident_intervall_pourcentage / 100, loc=mean_GHG,
+                                            scale=sigma_GHG)
+
+    median_GHG = np.median(a=GHG_results)
+    first_quantil_GHG = stats.scoreatpercentile(GHG_results, per=25)
+    second_quantil_GHG = stats.scoreatpercentile(GHG_results, per=50)
+    third_quantil_GHG = stats.scoreatpercentile(GHG_results, per=75)
+
     print('mean:', mean_GHG)
     print('sigma :', sigma_GHG)
+    print('confident interval {}'.format(Confident_intervall_pourcentage), confident_inter_GHG)
+    print('{:0.2%} of the means are in confident interval'.format(
+        ((GHG_results >= confident_inter_GHG[0]) & (GHG_results < confident_inter_GHG[1])).sum() / float(Nsample)))
+    print('median : ', median_GHG)
+    print('first quantil : ', first_quantil_GHG)
+    print('second quantil :', second_quantil_GHG)
+    print('third quantil : ', third_quantil_GHG)
+    print()
+
+    # Specific GHG
+    print('Specific GHG_analysis')
+    print('---------------------')
+    print('unit: kg/kWh/year')
+    print ('specific reference: ', GHG_specific)
+
+    mean_spe_GHG = sum(GHG_spe_results) / len(GHG_spe_results)
+    sigma_spe_GHG = np.std(a=GHG_spe_results)
+    confident_inter_spe_GHG = stats.norm.interval(Confident_intervall_pourcentage / 100, loc=mean_GHG,
+                                                  scale=sigma_spe_GHG)
+    median_spe_GHG = np.median(a=GHG_spe_results)
+    first_quantil_spe_GHG = stats.scoreatpercentile(GHG_spe_results, per=25)
+    second_quantil_spe_GHG = stats.scoreatpercentile(GHG_spe_results, per=50)
+    third_quantil_spe_GHG = stats.scoreatpercentile(GHG_spe_results, per=75)
+
     print('mean specific GHG :', mean_spe_GHG)
     print('sigma specific GHG :', sigma_spe_GHG)
+    print('confident interval {}'.format(Confident_intervall_pourcentage), confident_inter_spe_GHG)
+    print('{:0.2%} of the means are in confident interval'.format(
+        ((GHG_spe_results >= confident_inter_spe_GHG[0]) & (GHG_spe_results < confident_inter_spe_GHG[1])).sum() / float(Nsample)))
+    print('median : ', median_spe_GHG)
+    print('first quantil : ', first_quantil_spe_GHG)
+    print('second quantil :', second_quantil_spe_GHG)
+    print('third quantil : ', third_quantil_spe_GHG)
     print ()
 
+    print('***********************************************************************************************************')
+    print('Save results')
+    print('***********************************************************************************************************')
+
+    if save_result:
+        #  Write results file
+
+        #  Log file path
+        this_path = os.path.dirname(os.path.abspath(__file__))
+        results_path = os.path.join(this_path, 'output', results_name)
+        write_results = open(results_path, mode='w')
+
+        write_results.write(' ---------- Monte Carlo Analysis ---------- \n ')
+
+        write_results.write(' Number of sampling :' + str(Nsample)+ '\n')
+
+        write_results.write('\n############## Uncertain parameters ##############\n')
+        write_results.write('weather: ' + str(Is_unc_weather)+ '\n')
+        write_results.write('user behaviour: ' + str(Is_unc_user_parameters)+ '\n')
+        write_results.write('energy systems parameters: ' + str(Is_unc_esys_parameters)+ '\n')
+        write_results.write('buildings parameters: ' + str(Is_unc_building_parameters)+ '\n')
+
+        write_results.write('\n############## City reference ##############\n')
+        if load_city == True:
+            generation_mode = 'load City from pickle file'
+            write_results.write('Generation mode: ' + generation_mode+ '\n')
+            write_results.write('pickle file path :  ' + str(load_path)+ '\n')
+        else:
+            generation_mode = 'generation of a city with City_generator'
+            write_results.write('Generation mode: ' + generation_mode)
+            write_results.write('*-*- City ref parameters: ')
+            write_results.write('generation_mode: ' + str(generation_mode) + '\n')
+            write_results.write('timestep in seconds: ' + str(timestep) + '\n')
+            write_results.write('Year: ' + str(year) + '\n')
+            write_results.write('Location: ' + str(location) + '\n')
+            write_results.write('District data: ' + district_data + '\n')
+            write_results.write('t_set_heat: ' + str(t_set_heat) + '\n')
+            write_results.write('t_set_night: ' + str(t_set_night) + '\n')
+            write_results.write('t_set_cool: ' + str(t_set_cool) + '\n')
+            write_results.write('air_vent_mode: ' + str(air_vent_mode) + '\n')
+            write_results.write('vent_factor: ' + str(vent_factor) + '\n')
+            write_results.write('el_gen_method: ' + str(el_gen_method) + '\n')
+            write_results.write(
+                'Normalize el. profile: ' + str(do_normalization) + '\n')
+            write_results.write(
+                'Do random el. normalization: ' + str(el_random) + '\n')
+            write_results.write(
+                'Prevent el. heating devices for el load generation: '
+                '' + str(prev_heat_dev) + '\n')
+            write_results.write(
+                'Rescaling factor lighting power curve to implement seasonal '
+                'influence: ' + str(season_mod) + '\n')
+
+            write_results.write('use_dhw: ' + str(use_dhw) + '\n')
+            write_results.write('dhw_method: ' + str(dhw_method) + '\n')
+            write_results.write('dhw_volumen: ' + str(dhw_volumen) + '\n')
+            write_results.write(
+                'Do random dhw. normalization: ' + str(dhw_random) + '\n')
+
+        write_results.write('+++++++++++++++++++ \n')
+        write_results.write('energy systems type: ' + str(list_esys)+ '\n')
+        write_results.write('+++++++++++++++++++ \n')
+
+        write_results.write('\n############################Results #########################\n')
+        write_results.write('\n gas demand\n')
+        write_results.write('\n ----------\n')
+        write_results.write('unit : kWh/year \n')
+        write_results.write('median : '+ str(median_gas_demand)+ '\n' )
+        write_results.write('first quantil : '+ str(first_quantil_gas) + '\n')
+        write_results.write('second quantil :'+ str(second_quantil_gas)+ '\n')
+        write_results.write('third quantil :'+ str(third_quantil_gas) + '\n')
+        write_results.write('mean : '+ str(mean_gas_demand) + '\n')
+        write_results.write('sigma : '+ str(sigma_gas_demand) + '\n')
+        write_results.write('confident interval {}'.format(Confident_intervall_pourcentage)+ str(confident_inter_gas) + '\n')
+        write_results.write('{:0.2%} of the means are in confident interval'.format(((Gas_results >= confident_inter_gas[0]) & (Gas_results < confident_inter_gas[1])).sum() / float(Nsample))+ '\n')
+
+        write_results.write('\n electrical demand\n')
+        write_results.write('\n -----------------\n')
+        write_results.write('unit : kWh/year \n')
+        write_results.write('median : '+ str(median_el_demand) + '\n')
+        write_results.write('first quantil : '+ str(first_quantil_el) + '\n')
+        write_results.write('second quantil :'+ str(second_quantil_el) + '\n')
+        write_results.write('third quantil :'+ str(third_quantil_el) + '\n')
+        write_results.write('mean : '+ str(mean_el_demand) + '\n')
+        write_results.write('sigma : '+ str(sigma_el_demand) + '\n')
+        write_results.write('confident interval {}'.format(Confident_intervall_pourcentage)+ str(confident_inter_el) + '\n')
+        write_results.write('{:0.2%} of the means are in confident interval'.format(
+            ((El_results >= confident_inter_el[0]) & (El_results < confident_inter_el[1])).sum() / float(
+                Nsample)) + '\n')
+
+        write_results.write('\n Annuity\n')
+        write_results.write('\n -------\n')
+        write_results.write('unit : Euro/year \n')
+        write_results.write('median : '+ str(median_a) + '\n')
+        write_results.write('first quantil : '+ str(first_quantil_a) + '\n')
+        write_results.write('second quantil :'+ str(second_quantil_a) + '\n')
+        write_results.write('third quantil :'+ str(third_quantil_a) + '\n')
+        write_results.write('mean : '+ str(mean_annuity) + '\n')
+        write_results.write('sigma : '+ str(sigma_annuity) + '\n')
+        write_results.write('confident interval {}'.format(Confident_intervall_pourcentage)+ str(confident_inter_a) + '\n')
+        write_results.write('{:0.2%} of the means are in confident interval'.format(
+            ((Annuity_results >= confident_inter_a[0]) & (Annuity_results < confident_inter_a[1])).sum() / float(
+                Nsample)) + '\n')
+
+        write_results.write('\n GHG Emissions\n')
+        write_results.write('\n -------------\n')
+        write_results.write('unit : kg/year \n')
+        write_results.write('median : '+ str(median_GHG) + '\n')
+        write_results.write('first quantil : '+ str(first_quantil_GHG) + '\n')
+        write_results.write('second quantil :'+ str(second_quantil_GHG) + '\n')
+        write_results.write('third quantil :'+ str(third_quantil_GHG) + '\n')
+        write_results.write('mean : '+ str(mean_GHG) + '\n')
+        write_results.write('sigma : '+ str(sigma_GHG) + '\n')
+        write_results.write('confident interval {}'.format(Confident_intervall_pourcentage)+ str(confident_inter_GHG) + '\n')
+        write_results.write('{:0.2%} of the means are in confident interval'.format(
+            ((GHG_results >= confident_inter_GHG[0]) & (GHG_results < confident_inter_GHG[1])).sum() / float(
+                Nsample)) + '\n')
+
+        write_results.write('\n Specific GHG Emissions\n')
+        write_results.write('\n ----------------------\n')
+        write_results.write('unit : kg/kWh/year \n')
+        write_results.write('reference: ' + str(GHG_specific) +'\n')
+        write_results.write('median : '+ str(median_spe_GHG) + '\n')
+        write_results.write('first quantil : '+ str(first_quantil_spe_GHG) + '\n')
+        write_results.write('second quantil :'+ str(second_quantil_spe_GHG) + '\n')
+        write_results.write('third quantil :'+ str(third_quantil_spe_GHG) + '\n')
+        write_results.write('mean : '+ str(mean_spe_GHG) + '\n')
+        write_results.write('sigma : '+ str(sigma_spe_GHG) + '\n')
+        write_results.write('confident interval {}'.format(Confident_intervall_pourcentage)+ str(confident_inter_spe_GHG) + '\n')
+        write_results.write('{:0.2%} of the means are in confident interval'.format(
+            ((GHG_spe_results >= confident_inter_spe_GHG[0]) & (GHG_spe_results < confident_inter_spe_GHG[1])).sum() / float(
+                Nsample)) + '\n')
+        write_results.close()
+
+    print('***********************************************************************************************************')
+    print('Visualisation')
+    print('***********************************************************************************************************')
+    print()
     # ## Visualisation
 
     # Histogram figure
     fig, ((ax1,ax2), (ax3,ax4)) = plt.subplots(2, 2)
 
-    ax1.hist(El_results,20, normed=1)
+    ax1.hist(El_results,100, normed=1)
     ax1.set_title('Electrical demand in kWh')
 
-    ax2.hist(Gas_results,20 , normed=1)
+    ax2.hist(Gas_results,100 , normed=1)
     ax2.set_title('Gas demand in kWh')
 
     #ax3.hist(Sph_results,100, normed=1)
     #ax3.set_title('Space heating demand in kWh')
 
-    ax3.hist(Annuity_results, 20, normed=1)
+    ax3.hist(Annuity_results, 100, normed=1)
     ax3.set_title('Annuity in  Euro/year')
 
-    ax4.hist(GHG_spe_results, 20, normed=1)
+    ax4.hist(GHG_spe_results, 100, normed=1)
     ax4.set_title('GHG specific emission in kg/kWh/year')
 
     fig.suptitle('Histogram energy demand in kWh/year for {} simulations '.format(Nsample))
+
+
+    # Box plot:
+
+    fig2, ((ax5,ax6),(ax7,ax8)) = plt.subplots(2,2)
+
+    ax5.boxplot(El_results, showmeans=True, whis=99)
+    ax5.set_title('Electrical demand in kWh')
+    ax5.grid(color='b', alpha=0.5, linestyle='dashed', linewidth=0.5)
+    ax6.boxplot(Gas_results, showmeans=True, whis=99)
+    ax6.set_title('Gas demand in kWh')
+    ax6.grid(color='b', alpha=0.5, linestyle='dashed', linewidth=0.5)
+    ax7.boxplot(Annuity_results, showmeans=True, whis=99)
+    ax7.set_title('Annuity in  Euro/year')
+    ax7.grid(color='b', alpha=0.5, linestyle='dashed', linewidth=0.5)
+    ax8.boxplot(GHG_spe_results, showmeans=True, whis=99)
+    ax8.set_title('GHG specific emission in kg/kWh/year')
+    ax8.grid(color='b', alpha=0.5, linestyle='dashed', linewidth=0.5)
+
     plt.show()
 
 if __name__ == '__main__':
