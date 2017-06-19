@@ -113,8 +113,8 @@ def building_unc_sampling(exbuilding, nb_samples, max_retro_year=2014,
 
             #  Sampling for occupants per apartment
             list_nb_occ = \
-                usunc.calc_sampling_occ_per_app(nb_samples=nb_samples,
-                                                method='equal')
+                usunc.calc_sampling_occ_per_app(nb_samples=nb_samples)#,
+                                                #method='equal')
             list_of_lists_of_nb_of_occ_per_app.append(list_nb_occ)
 
             list_el_dem = []

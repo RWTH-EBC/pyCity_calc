@@ -155,7 +155,8 @@ if __name__ == '__main__':
     nb_occ_unc = True
 
     #city_f_name = 'rheinbaben_nord_mod_jsc.p'
-    city_f_name = 'rheinbaben_sued_mod_jsc_20.p'
+    #city_f_name = 'rheinbaben_sued_mod_jsc_20.p'
+    city_f_name = 'rheinbaben_nord_mod_jsc_extract_alex.p'
 
     #city_f_name = 'aachen_forsterlinde_mod_6.pkl'
     #city_f_name = 'aachen_frankenberg_mod_6.pkl'
