@@ -19,6 +19,7 @@ class EconomicCalculation(object):
                  method='vdi2067',
                  run_init_calc=True, price_ch_cap=1.03,
                  price_ch_dem_gas=1.02, price_ch_dem_el=1.02,
+                 price_ch_dem_cool=1.02,
                  price_ch_op=1.017, price_ch_proc_chp=1.01,
                  price_ch_proc_pv=0.975,
                  price_ch_eeg_chp=1,
@@ -58,6 +59,9 @@ class EconomicCalculation(object):
             Only used, if method == 'vdi2068'
         price_ch_dem_el : float, optional
             Price change factor demand (el.) (default: 1.02)
+            Only used, if method == 'vdi2068'
+        price_ch_dem_cool : float, optional
+            Price change factor for (district) cooling (default: 1.02)
             Only used, if method == 'vdi2068'
         price_ch_op : float, optional
             Price change factor operations (default: 1.017)
@@ -135,6 +139,7 @@ class EconomicCalculation(object):
         self.price_ch_cap = None  # Price change factor of capital (e.g. 1.05)
         self.price_ch_dem_gas = None  # Price change factor demand (gas)
         self.price_ch_dem_el = None  # Price change factor demand (el.)
+        self.price_ch_dem_cool = None  # Price change factor (cooling)
         self.price_ch_op = None  # Price change factor operations
         self.price_ch_proc_chp = None  # Price change factor proceedings (CHP)
         self.price_ch_proc_pv = None  # Price change factor proceedings (PV)
@@ -152,6 +157,7 @@ class EconomicCalculation(object):
         self.price_dyn_cap = None
         self.price_dyn_dem_gas = None
         self.price_dyn_dem_el = None
+        self.price_dyn_dem_cool = None
         self.price_dyn_op = None
         self.price_dyn_proc_chp = None
         self.price_dyn_proc_pv = None
@@ -231,6 +237,8 @@ class EconomicCalculation(object):
                 # Price change factor demand (gas)
                 self.price_ch_dem_el = price_ch_dem_el
                 # Price change factor demand (el.)
+                self.price_ch_dem_cool = price_ch_dem_cool
+                #  Price change factor cooling
                 self.price_ch_op = price_ch_op
                 # Price change factor operations
                 self.price_ch_proc_chp = price_ch_proc_chp
@@ -254,6 +262,8 @@ class EconomicCalculation(object):
                     self.calc_price_dyn_factor(self.price_ch_dem_gas)
                 self.price_dyn_dem_el = \
                     self.calc_price_dyn_factor(self.price_ch_dem_el)
+                self.price_dyn_dem_cool = \
+                    self.calc_price_dyn_factor(self.price_ch_dem_cool)
                 self.price_dyn_op = self.calc_price_dyn_factor(
                     self.price_ch_op)
                 self.price_dyn_proc_chp = \
@@ -727,13 +737,12 @@ class EconomicCalculation(object):
         # Define simple named pointers
         b_el = self.price_dyn_dem_el  # Price dynamic factor el.
         b_gas = self.price_dyn_dem_gas  # Price dynamic factor gas
-
-        #  Fixme: Add b_cool
+        b_cool = self.price_dyn_dem_cool
 
         #  Calculate demand-related cost per year
         dem_rel_cost = b_el * sum_el_e * price_el + \
                        b_gas * sum_gas_e * price_gas + \
-                       sum_cool_e * price_cool
+                       b_cool * sum_cool_e * price_cool
 
         return dem_rel_cost * self.ann_factor
 
@@ -759,9 +768,15 @@ class EconomicCalculation(object):
             msg = 'Requires GermanMarket object (currently None!)'
             raise AssertionError(msg)
 
-        self.germanmarket.
+        #  Pointers to price dynamic factors
+        b_eeg_chp = self.price_dyn_eeg_chp
+        b_eeg_pv = self.price_dyn_eeg_pv
 
-        eeg_payment = en_chp_self *  + en_chp_pv *
+        eeg_chp = self.germanmarket.get_eeg_payment(type='chp')
+        eeg_pv = self.germanmarket.get_eeg_payment(type='pv')
+
+        eeg_payment = b_eeg_chp * en_chp_self * eeg_chp  + \
+                      b_eeg_pv * en_chp_pv * eeg_pv
 
         return eeg_payment
 
