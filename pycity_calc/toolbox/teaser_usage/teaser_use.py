@@ -814,7 +814,13 @@ def calc_th_load_build_vdi6007_ex_build(exbuild, add_th_load=False,
                                          newResolution=timestep)
 
     #  Convert array_vent_rate
-    array_vent_rate_res = array_vent_rate[:]
+    if array_vent_rate is None:
+        array_vent_rate_res = np.zeros(len(el_load)) + \
+                              (type_b.thermal_zones[
+                                   0].volume * vent_factor / 3600)
+    else:
+        array_vent_rate_res = array_vent_rate[:]
+
     if timestep != timestep_org:
         array_vent_rate_res = chres.changeResolution(array_vent_rate_res,
                                                  oldResolution=timestep_org,
