@@ -43,7 +43,8 @@ def gen_city_with_street_network_from_csvfile(timestep, year, location,
                                               el_random=False,
                                               dhw_random=False,
                                               prev_heat_dev=True,
-                                              season_mod=None):
+                                              season_mod=None,
+                                              merge_windows=False):
     """
     Run city generator and street generator to generate PyCity_Calc
     city object
@@ -173,6 +174,10 @@ def gen_city_with_street_network_from_csvfile(timestep, year, location,
         with cosine wave to increase winter usage and decrease summer usage.
         Reference is maximum lighting power (default: None). If set to None,
         do NOT perform rescaling with cosine wave
+    merge_windows : bool, optional
+        Defines TEASER project setting for merge_windows_calc
+        (default: False). If set to False, merge_windows_calc is set to False.
+        If True, Windows are merged into wall resistances.
 
     Returns
     -------
@@ -248,7 +253,8 @@ def gen_city_with_street_network_from_csvfile(timestep, year, location,
                                              el_random=el_random,
                                              dhw_random=dhw_random,
                                              prev_heat_dev=prev_heat_dev,
-                                             season_mod=season_mod)
+                                             season_mod=season_mod,
+                                             merge_windows=merge_windows)
 
     #  Get street network data
     name_list, pos_list, edge_list = \
@@ -432,6 +438,12 @@ if __name__ == '__main__':
     call_teaser = False
     teaser_proj_name = filename[:-4]
 
+    merge_windows = False
+    #  merge_windows : bool, optional
+    #  Defines TEASER project setting for merge_windows_calc
+    #  (default: False). If set to False, merge_windows_calc is set to False.
+    #   If True, Windows are merged into wall resistances.
+
     #  Names of street node and edge files
     str_node_filename = 'street_nodes_cluster_simple.csv'
     str_edge_filename = 'street_edges_cluster_simple.csv'
@@ -494,7 +506,8 @@ if __name__ == '__main__':
                                                   el_random=el_random,
                                                   dhw_random=dhw_random,
                                                   prev_heat_dev=prev_heat_dev,
-                                                  season_mod=season_mod)
+                                                  season_mod=season_mod,
+                                                  merge_windows=merge_windows)
 
     if save_city:  # Load pickle city file
         this_path = os.path.dirname(os.path.abspath(__file__))
