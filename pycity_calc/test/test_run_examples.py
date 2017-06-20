@@ -65,8 +65,8 @@ class Test_RunExamples():
     def test_example_environment(self):
         example_environment.run_example()
 
-    # def test_example_estimate_retrofit_state(self):
-    #     example_estimate_retrofit_state.run_example_retro_estimate()
+    def test_example_estimate_retrofit_state(self):
+        example_estimate_retrofit_state.run_example_retro_estimate()
 
     # def test_example_extern_el_grid(self):
     #     example_extern_el_grid.run_example_1()
