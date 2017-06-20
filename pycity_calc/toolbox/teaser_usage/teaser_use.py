@@ -217,6 +217,8 @@ def create_teaser_typebld(project, BuildingExtended, name="example",
             window_layout=win_lay,
             construction_type=construction_type)
 
+    type_bldg.calc_building_parameter(merge_windows=True)
+
     # Do retrofiting (if year of modernization is defined)
     if year_mod is not None:
         assert year_mod > 0
