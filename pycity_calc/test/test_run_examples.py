@@ -44,8 +44,8 @@ class Test_RunExamples():
     def test_example_chp(self):
         example_chp.run_test()
 
-    # def test_example_city(self):
-    #     example_city.run_example()
+    def test_example_city(self):
+        example_city.run_example()
 
     def test_example_city_street(self):
         example_city_street.run_example()
