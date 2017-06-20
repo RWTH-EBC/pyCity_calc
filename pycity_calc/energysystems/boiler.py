@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# coding=utf-8
 """
 Extended boiler class (based on Boiler object of pycity)
 """
