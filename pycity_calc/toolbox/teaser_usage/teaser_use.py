@@ -1163,7 +1163,12 @@ def calc_and_add_vdi_6007_loads_to_city(city,
         #  ##################################################################
 
         #  Get overall occupancy profile of building
-        occupancy_profile = curr_build.get_occupancy_profile()[:]
+        if requ_profiles:
+            #  Extract occupancy profile
+            occupancy_profile = curr_build.get_occupancy_profile()[:]
+        else:
+            #  Create dummy occupancy profile with single
+            occupancy_profile = np.ones(len(t_out))
         org_res = 365 * 24 * 3600 / len(occupancy_profile)
 
         occupancy_profile = chres.changeResolution(occupancy_profile,
