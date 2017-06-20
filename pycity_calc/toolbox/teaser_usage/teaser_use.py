@@ -44,7 +44,7 @@ except:
           ' branch. Look for issue297_vdi_core branch.'
     raise ImportError(msg)
 
-def create_teaser_project(load_data=True, name=None, merge_windows=True):
+def create_teaser_project(load_data=True, name=None, merge_windows=False):
     """
     Creates a new teaser Project and sets the calculation method to "vdi"
 
@@ -72,6 +72,8 @@ def create_teaser_project(load_data=True, name=None, merge_windows=True):
 
     if merge_windows is True:
         project.merge_windows_calc = True
+    else:
+        project.merge_windows_calc = False
 
     return project
 
@@ -479,6 +481,14 @@ def calc_th_load__build_vdi6007(type_build, temp_out, rad,
             Heat flow through outer wall in W
     """
 
+    #  Make copy of typebuilding and merge windows (see issue #56)
+    #  Necessary to call VDI 6007 TEASER core, but prevent merging of windows
+    #  into walls on typebuilding object, as it might be used for Modelica or
+    #  FMU simulations
+    type_build = copy.deepcopy(type_build)
+
+    type_build.calc_building_parameter(merge_windows=True)
+
     if timestep != 3600:
         msg = 'Currently, VDI 6007 Python simulation core only supports ' \
               'timestep of 3600 seconds.'
@@ -631,7 +641,8 @@ def calc_th_load_build_vdi6007_ex_build(exbuild, add_th_load=False,
                                         project_name='project',
                                         build_name='build_name',
                                         heat_lim_val=10000000,
-                                        cool_lim_val=10000000):
+                                        cool_lim_val=10000000,
+                                        merge_windows=False):
     """
     Calculates thermal space heating load of building object of PyCity_Calc
     according to VDI 6007 within TEASER.
@@ -677,6 +688,10 @@ def calc_th_load_build_vdi6007_ex_build(exbuild, add_th_load=False,
     cool_lim_val : float, optional
         Upper limit for cooler power (default: 10.000.000 W). Here, positive
         value is used. Within VDI 6007 core in TEASER, values is negated.
+    merge_windows : bool, optional
+        Defines TEASER project setting for merge_windows_calc
+        (default: False). If set to False, merge_windows_calc is set to False.
+        If True, Windows are merged into wall resistances.
 
     Returns
     -------
@@ -766,7 +781,8 @@ def calc_th_load_build_vdi6007_ex_build(exbuild, add_th_load=False,
     #  #####################################################################
 
     #  Create TEASER project
-    teas_proj = create_teaser_project(name=project_name)
+    teas_proj = create_teaser_project(name=project_name,
+                                      merge_windows=merge_windows)
 
     #  Create TEASER typebuilding
     (teas_proj, type_b) = \
@@ -1147,7 +1163,12 @@ def calc_and_add_vdi_6007_loads_to_city(city,
         #  ##################################################################
 
         #  Get overall occupancy profile of building
-        occupancy_profile = curr_build.get_occupancy_profile()[:]
+        if requ_profiles:
+            #  Extract occupancy profile
+            occupancy_profile = curr_build.get_occupancy_profile()[:]
+        else:
+            #  Create dummy occupancy profile with single
+            occupancy_profile = np.ones(len(t_out))
         org_res = 365 * 24 * 3600 / len(occupancy_profile)
 
         occupancy_profile = chres.changeResolution(occupancy_profile,
