@@ -29,6 +29,7 @@ import pycity_calc.examples.example_thermalEnergyStorage \
 import pycity_calc.examples.example_timer as example_timer
 import pycity_calc.examples.example_vdi_6007 as example_vdi_6007
 import pycity_calc.examples.example_vdi_6007_city as example_vdi_6007_city
+import pycity_calc.examples.example_osm as example_osm
 
 
 class Test_RunExamples():
@@ -97,3 +98,6 @@ class Test_RunExamples():
     #
     # def test_example_vdi_6007_city(self):
     #     example_vdi_6007_city.run_example_vdi_city()
+
+    def test_example_osm(self):
+        example_osm.run_osm_example()
