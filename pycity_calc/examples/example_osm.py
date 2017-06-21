@@ -18,7 +18,7 @@ import pycity_calc.cities.scripts.city_generator.city_generator as citgen
 import pycity_calc.visualization.city_visual as citvis
 
 
-def run_osm_example():
+def run_osm_example(plot_res=False):
 
     this_path = os.path.dirname(os.path.abspath(__file__))
 
@@ -68,10 +68,11 @@ def run_osm_example():
     if add_entities:
         osm_call.add_build_entities(city=city, add_ap=add_ap)
 
-    #  Plot city district
-    citvis.plot_city_district(city=city, node_size=10,
-                              plot_build_labels=False)
+    if plot_res:
+        #  Plot city district
+        citvis.plot_city_district(city=city, node_size=10,
+                                  plot_build_labels=False)
 
 
 if __name__ == '__main__':
-    run_osm_example()
+    run_osm_example(plot_res=True)
