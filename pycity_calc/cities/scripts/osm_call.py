@@ -4,10 +4,12 @@
 Script to generate city object with building and street topology based on
 openstreetmap (osm) file input
 
-- Download file through http://www.overpass-api.de/api/xapi_meta?*[bbox=7.1450,50.6813,7.1614,50.6906]
---> change to the new coordinates
+- Download file through
+http://www.overpass-api.de/api/xapi_meta?*[bbox=7.1450,50.6813,7.1614,50.6906]
 - Save in your input_osm as .../pycity_calc/cities/scripts/input_osm/name.osm
 
+Coordinates are directly changed within uesgraphs form lat/long to pseudo
+mercator coordinates in m
 """
 
 import os
