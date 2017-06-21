@@ -20,7 +20,7 @@ install:
   - pip install shapely
   - pip install pyproj
 #  - pip install -e uesgraphs
-  - pip install git+git@github.com:RWTH-EBC/pyCity.git
+  - pip install -e git+git@github.com:RWTH-EBC/pyCity.git#egg=pyCity
   - pip install -e .
   - pip install pytest-cov
   - pip install coveralls
