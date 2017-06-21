@@ -15,7 +15,7 @@ import pickle
 import utm
 import shapely.geometry.point as point
 
-import uesgraphs.examples.example_projects_ues as exues
+import uesgraphs.examples.example_osm as example_osm
 
 import pycity.classes.demand.Apartment as apart
 
@@ -73,10 +73,10 @@ def gen_osm_city_topology(osm_path, environment, name=None,
                          check_boundary=check_boundary, add_str_info=True)
 
     if min_area is not None:
-        exues.remove_small_buildings(city, min_area=min_area)
+        example_osm.remove_small_buildings(city, min_area=min_area)
 
     if show_graph_stats:
-        exues.graph_stats(city)
+        example_osm.graph_stats(city)
 
     return city
 
