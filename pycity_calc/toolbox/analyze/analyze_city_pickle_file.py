@@ -809,7 +809,7 @@ def run_c_file_an(city_object):
 
 if __name__ == '__main__':
     #  City pickle filename
-    city_file = 'rheinbaben_nord_mod_jsc_extract_alex.p'
+    city_file = 'city_clust_simple.p'
 
     print('Analyse city file: ', city_file)
 
