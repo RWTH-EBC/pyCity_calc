@@ -1330,7 +1330,7 @@ def run_city_generator(generation_mode, timestep, year, location,
                        t_night=16,
                        vdi_sh_manipulate=False, city_osm=None,
                        el_random=False, dhw_random=False, prev_heat_dev=True,
-                       season_mod=None):
+                       season_mod=None, merge_windows=False):
     """
     Function generates city district for user defined input. Generated
     buildings consist of only one single zone!
@@ -1463,6 +1463,10 @@ def run_city_generator(generation_mode, timestep, year, location,
         with cosine wave to increase winter usage and decrease summer usage.
         Reference is maximum lighting power (default: None). If set to None,
         do NOT perform rescaling with cosine wave
+    merge_windows : bool, optional
+        Defines TEASER project setting for merge_windows_calc
+        (default: False). If set to False, merge_windows_calc is set to False.
+        If True, Windows are merged into wall resistances.
 
     Returns
     -------
@@ -2332,7 +2336,8 @@ def run_city_generator(generation_mode, timestep, year, location,
         # Create and add TEASER type_buildings to every building node
         if call_teaser:
             #  Create TEASER project
-            project = tusage.create_teaser_project(name=teaser_proj_name)
+            project = tusage.create_teaser_project(name=teaser_proj_name,
+                                                   merge_windows=merge_windows)
 
             #  Generate typeBuildings and add to city
             tusage.create_teaser_typecity(project=project,
@@ -2525,6 +2530,12 @@ if __name__ == '__main__':
     teaser_proj_name = filename[:-4]
     #  Requires additional attributes (such as nb_of_floors, net_floor_area..)
 
+    merge_windows = False
+    #  merge_windows : bool, optional
+    #  Defines TEASER project setting for merge_windows_calc
+    # (default: False). If set to False, merge_windows_calc is set to False.
+    #  If True, Windows are merged into wall resistances.
+
     txt_path = os.path.join(this_path, 'input', filename)
     if generation_mode == 1:
         path_city_osm_in = os.path.join(this_path, 'input', city_osm_input)
@@ -2584,7 +2595,8 @@ if __name__ == '__main__':
                               dhw_random=dhw_random,
                               prev_heat_dev=prev_heat_dev,
                               log_path=log_f_path,
-                              season_mod=season_mod)
+                              season_mod=season_mod,
+                              merge_windows=merge_windows)
 
     # if call_teaser:
     #     #  Search for residential building
