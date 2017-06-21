@@ -5,9 +5,9 @@ python:
   - 3.5
   - 3.6
 
-before_install:
-  - git clone git@github.com:RWTH-EBC/uesgraphs.git
-  - git clone git@github.com:RWTH-EBC/pyCity.git
+#before_install:
+#  - git clone git@github.com:RWTH-EBC/uesgraphs.git
+#  - git clone git@github.com:RWTH-EBC/pyCity.git
 
 install:
   - pip install --upgrade pip setuptools wheel
