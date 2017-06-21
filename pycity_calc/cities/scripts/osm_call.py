@@ -195,7 +195,8 @@ if __name__ == '__main__':
     city_filename = 'test_osm.pkl'
 
     #  Convert lat/long to utm coordinates in meters?
-    conv_utm = True
+    #  Only necessary, if no conversion is done within uesgraphs itself
+    conv_utm = False
     zone_number = 32
 
     check_boundary = False
@@ -246,9 +247,6 @@ if __name__ == '__main__':
     if add_entities:
         add_build_entities(city=city, add_ap=add_ap)
 
-    print('City utm zone: ' + str(city.graph['zone_str']) +
-          str(city.graph['zone_nb']))
-
     print()
     print('Nodelist_building:')
     print(city.nodelist_building)
@@ -257,17 +255,18 @@ if __name__ == '__main__':
     #  Plot city district
     citvis.plot_city_district(city=city, node_size=10, plot_build_labels=False)
 
-    print('Area of building 1001: ', city.node[1001]['area'])
-    print('OSM id of building 1001: ', city.node[1001]['osm_id'])
-    print('x-coordinate of building 1001: ', city.node[1001]['position'].x)
-    print('y-coordinate of building 1001: ', city.node[1001]['position'].y)
+    if 1001 in city.nodes():
+        print('Area of building 1001: ', city.node[1001]['area'])
+        print('OSM id of building 1001: ', city.node[1001]['osm_id'])
+        print('x-coordinate of building 1001: ', city.node[1001]['position'].x)
+        print('y-coordinate of building 1001: ', city.node[1001]['position'].y)
 
-    if 'addr:street' in city.node[1001]:
-        print('Street name at node 1001: ', city.node[1001]['addr:street'])
-    if 'addr:street' in city.node[1001]:
-        print('House number of node 1001: ',
-              city.node[1001]['addr:housenumber'])
-    print()
+        if 'addr:street' in city.node[1001]:
+            print('Street name at node 1001: ', city.node[1001]['addr:street'])
+        if 'addr:street' in city.node[1001]:
+            print('House number of node 1001: ',
+                  city.node[1001]['addr:housenumber'])
+        print()
 
     list_miss_area = get_list_b_nodes_without_area(city)
     print('List of building ids without area parameter: ', list_miss_area)

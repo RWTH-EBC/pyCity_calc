@@ -210,11 +210,17 @@ def run_example_vdi_6007():
         elif q_heat_cool[i] < 0:
             q_cool[i] = q_heat_cool[i]
 
-    print('Sum of heating energy in kWh:')
-    print(sum(q_heat) / 1000)
+    sh_energy = sum(q_heat) * (timestep / 3600) / 1000
 
-    print('Sum of cooling energy in kWh:')
-    print(-sum(q_cool) / 1000)
+    print('Sum of net space heating heating energy in kWh:')
+    print(sh_energy)
+
+    print('Specific net space heating energy demand in kWh/m2:')
+    print(sh_energy / extended_building.net_floor_area)
+
+    if sum(q_cool) < 0:
+        print('Sum of cooling energy in kWh:')
+        print(-sum(q_cool) * (timestep / 3600)  / 1000)
 
     import matplotlib.pyplot as plt
 
@@ -244,6 +250,7 @@ def run_example_vdi_6007():
         plt.plot(array_vent)
         plt.ylabel('Air\nexchange\nrate in 1/h')
         plt.xlabel('Time in hours')
+    plt.tight_layout()
     plt.show()
     plt.close()
 
