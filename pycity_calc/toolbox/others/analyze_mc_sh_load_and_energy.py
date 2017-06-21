@@ -1376,12 +1376,12 @@ def box_plot_analysis_triple_plot(mc_res, output_path, output_filename,
 
     #  Subplot 1
     #  #################################################################
-    fig.add_subplot(131)
+    fig.add_subplot(121)
 
     ax = fig.gca()
 
-    pb = ax.boxplot(data_coll[0:2], showfliers=with_outliners,
-                    widths=(0.8, 0.8))
+    pb = ax.boxplot(data_coll[0], showfliers=with_outliners)#,
+                    #widths=(0.8, 0.8))
     if mode == 'sh':
         plt.ylabel('Net space heating\ndemand in MWh')
     elif mode == 'el':
@@ -1389,14 +1389,14 @@ def box_plot_analysis_triple_plot(mc_res, output_path, output_filename,
     elif mode == 'dhw':
         plt.ylabel('Hot water\ndemand in MWh')
 
-    ax.set_xticklabels(list_xticks[0:2])
+    ax.set_xticklabels(list_xticks[0])
 
     ax.plot([0.6, 1.4], [list_ref_values[0], list_ref_values[0]],
             label='Reference', color='#1058B0',
             linewidth=1)
-    ax.plot([1.6, 2.4], [list_ref_values[1], list_ref_values[1]],
-            label='Reference', color='#1058B0',
-            linewidth=1)
+    # ax.plot([1.6, 2.4], [list_ref_values[1], list_ref_values[1]],
+    #         label='Reference', color='#1058B0',
+    #         linewidth=1)
 
     def get_start_stop_step(ax):
 
@@ -1442,49 +1442,49 @@ def box_plot_analysis_triple_plot(mc_res, output_path, output_filename,
     for flier in pb['fliers']:
         flier.set(marker='.', markersize=1)
 
-    #  Subplot 2
-    #  #################################################################
-    fig.add_subplot(132)
-
-    ax = fig.gca()
-
-    pb = ax.boxplot(data_coll[2:4], showfliers=with_outliners,
-                    widths=(0.8, 0.8))
-    ax.set_xticklabels(list_xticks[2:4])
-
-    ax.plot([0.6, 1.4], [list_ref_values[2], list_ref_values[2]],
-            label='Reference', color='#1058B0',
-            linewidth=1)
-    ax.plot([1.6, 2.4], [list_ref_values[3], list_ref_values[3]],
-            label='Reference', color='#1058B0',
-            linewidth=1)
-
-    (start, end, stepsize) = get_start_stop_step(ax)
-
-    ax.yaxis.set_ticks(np.arange(start, end, stepsize))
-
-    for median in pb['medians']:
-        median.set(color='#E53027')
-
-    for flier in pb['fliers']:
-        flier.set(marker='.', markersize=1)
+    # #  Subplot 2
+    # #  #################################################################
+    # fig.add_subplot(132)
+    #
+    # ax = fig.gca()
+    #
+    # pb = ax.boxplot(data_coll[2:4], showfliers=with_outliners,
+    #                 widths=(0.8, 0.8))
+    # ax.set_xticklabels(list_xticks[2:4])
+    #
+    # ax.plot([0.6, 1.4], [list_ref_values[2], list_ref_values[2]],
+    #         label='Reference', color='#1058B0',
+    #         linewidth=1)
+    # ax.plot([1.6, 2.4], [list_ref_values[3], list_ref_values[3]],
+    #         label='Reference', color='#1058B0',
+    #         linewidth=1)
+    #
+    # (start, end, stepsize) = get_start_stop_step(ax)
+    #
+    # ax.yaxis.set_ticks(np.arange(start, end, stepsize))
+    #
+    # for median in pb['medians']:
+    #     median.set(color='#E53027')
+    #
+    # for flier in pb['fliers']:
+    #     flier.set(marker='.', markersize=1)
 
     #  Subplot 3
     #  #################################################################
-    fig.add_subplot(133)
+    fig.add_subplot(122)
 
     ax = fig.gca()
 
-    pb = ax.boxplot(data_coll[4:6], showfliers=with_outliners,
-                    widths=(0.8, 0.8))
-    ax.set_xticklabels(list_xticks[4:6])
+    pb = ax.boxplot(data_coll[1], showfliers=with_outliners)#,
+                    # widths=(0.8, 0.8))
+    ax.set_xticklabels(list_xticks[1])
 
-    ax.plot([0.6, 1.4], [list_ref_values[4], list_ref_values[4]],
+    ax.plot([0.6, 1.4], [list_ref_values[1], list_ref_values[1]],
             label='Reference', color='#1058B0',
             linewidth=1)
-    ax.plot([1.6, 2.4], [list_ref_values[5], list_ref_values[5]],
-            label='Reference', color='#1058B0',
-            linewidth=1)
+    # ax.plot([1.6, 2.4], [list_ref_values[3], list_ref_values[3]],
+    #         label='Reference', color='#1058B0',
+    #         linewidth=1)
 
     (start, end, stepsize) = get_start_stop_step(ax)
 
@@ -2065,75 +2065,74 @@ if __name__ == '__main__':
     #  Add results of mc analyses
     #  ####################################################################
 
-    filename_city = 'aachen_forsterlinde_mod_7_mc_city_samples_10000.pkl'
-    filename_b = 'aachen_forsterlinde_mod_7_single_b_100001011.pkl'
+    filename_city = 'rheinbaben_nord_mod_jsc_estimate_retrofit_overwrite_corrected_mc_city_2000.pkl'
+    #filename_b = 'aachen_forsterlinde_mod_7_single_b_100001011.pkl'
     output_city = filename_city[:-4]
-    output_b = filename_b[:-4]
-    key = 'Forsterlinde'
+    #output_b = filename_b[:-4]
+    key = 'Rheinbaben Nord'
 
     dict_files_city[key] = filename_city
-    dict_files_build[key] = filename_b
+    #dict_files_build[key] = filename_b
 
-    filename_city = 'aachen_frankenberg_mod_6_mc_city_samples_10000.pkl'
-    filename_b = 'aachen_frankenberg_mod_6_single_b_100001020.pkl'
+    filename_city = 'city_Rheinbaben_sued_mod_jsc_estimate_retrofit_20_mc_city_2000.pkl'
+    #filename_b = 'aachen_frankenberg_mod_6_single_b_100001020.pkl'
     output_city = filename_city[:-4]
-    output_b = filename_b[:-4]
-    key = 'Frankenberg'
+    #output_b = filename_b[:-4]
+    key = u'Rheinbaben Süd'
 
     dict_files_city[key] = filename_city
-    dict_files_build[key] = filename_b
+    #dict_files_build[key] = filename_b
 
-    filename_city = 'aachen_kronenberg_mod_6_mc_city_samples_10000.pkl'
-    filename_b = 'aachen_kronenberg_mod_6_single_b_100001002.pkl'
-    output_city = filename_city[:-4]
-    output_b = filename_b[:-4]
-    key = 'Kronenberg'
-
-    dict_files_city[key] = filename_city
-    dict_files_build[key] = filename_b
-
-    filename_city = 'aachen_preusweg_mod_6_mc_city_samples_10000.pkl'
-    filename_b = 'aachen_preusweg_mod_6_single_b_100001092.pkl'
-    output_city = filename_city[:-4]
-    output_b = filename_b[:-4]
-    key = 'Preusweg'
-
-    dict_files_city[key] = filename_city
-    dict_files_build[key] = filename_b
-
-    #filename_city = 'aachen_tuerme_mod_7_mc_city_samples_10000.pkl'
-    filename_city = 'aachen_tuerme_mod_7_mc_city_samples_10000_with_retro_person_data.pkl'
-    #filename_b = 'aachen_tuerme_mod_6_single_b_100001010.pkl'
-    filename_b = 'aachen_tuerme_mod_7_single_b_10000_fix_year_occ_1010.pkl'
-    output_city = filename_city[:-4]
-    output_b = filename_b[:-4]
-    key = u'Türme'
-
-    dict_files_city[key] = filename_city
-    dict_files_build[key] = filename_b
-
-    filename_city = 'aachen_huenefeld_mod_6_mc_city_samples_10000.pkl'
-    filename_b = 'aachen_huenefeld_mod_6_single_b_100001003.pkl'
-    output_city = filename_city[:-4]
-    output_b = filename_b[:-4]
-    key = u'Hünefeld'
-
-    dict_files_city[key] = filename_city
-    dict_files_build[key] = filename_b
+    # filename_city = 'aachen_kronenberg_mod_6_mc_city_samples_10000.pkl'
+    # filename_b = 'aachen_kronenberg_mod_6_single_b_100001002.pkl'
+    # output_city = filename_city[:-4]
+    # output_b = filename_b[:-4]
+    # key = 'Kronenberg'
+    #
+    # dict_files_city[key] = filename_city
+    # dict_files_build[key] = filename_b
+    #
+    # filename_city = 'aachen_preusweg_mod_6_mc_city_samples_10000.pkl'
+    # filename_b = 'aachen_preusweg_mod_6_single_b_100001092.pkl'
+    # output_city = filename_city[:-4]
+    # output_b = filename_b[:-4]
+    # key = 'Preusweg'
+    #
+    # dict_files_city[key] = filename_city
+    # dict_files_build[key] = filename_b
+    #
+    # #filename_city = 'aachen_tuerme_mod_7_mc_city_samples_10000.pkl'
+    # filename_city = 'aachen_tuerme_mod_7_mc_city_samples_10000_with_retro_person_data.pkl'
+    # #filename_b = 'aachen_tuerme_mod_6_single_b_100001010.pkl'
+    # filename_b = 'aachen_tuerme_mod_7_single_b_10000_fix_year_occ_1010.pkl'
+    # output_city = filename_city[:-4]
+    # output_b = filename_b[:-4]
+    # key = u'Türme'
+    #
+    # dict_files_city[key] = filename_city
+    # dict_files_build[key] = filename_b
+    #
+    # filename_city = 'aachen_huenefeld_mod_6_mc_city_samples_10000.pkl'
+    # filename_b = 'aachen_huenefeld_mod_6_single_b_100001003.pkl'
+    # output_city = filename_city[:-4]
+    # output_b = filename_b[:-4]
+    # key = u'Hünefeld'
+    #
+    # dict_files_city[key] = filename_city
+    # dict_files_build[key] = filename_b
 
     for key in dict_files_city.keys():
         file_city = dict_files_city[key]
-        file_build = dict_files_build[key]
+        #file_build = dict_files_build[key]
 
-        load_path_city = os.path.join(this_path, 'input', 'mc_cities',
-                                      '4_with_10000_samples',
+        load_path_city = os.path.join(this_path, 'input', 'mc_sustain',
                                       file_city)
-        load_path_build = os.path.join(this_path, 'input', 'mc_buildings',
-                                       file_build)
+        # load_path_build = os.path.join(this_path, 'input', 'mc_buildings',
+        #                                file_build)
 
         #  Load results and add them to results object
         mc_res.add_res_mc_city_from_path(path=load_path_city, key=key)
-        mc_res.add_res_mc_build_from_path(path=load_path_build, key=key)
+        # mc_res.add_res_mc_build_from_path(path=load_path_build, key=key)
 
 
     # Add cities
@@ -2142,45 +2141,45 @@ if __name__ == '__main__':
     dict_b_node_nb = {}
 
     #  City object pickle file, which should be loaded
-    city_f_name = 'aachen_forsterlinde_mod_7.pkl'
-    key = 'Forsterlinde'
-    build_node_nb = 1011  # Forsterlinde
+    city_f_name = 'rheinbaben_nord_mod_jsc_estimate_retrofit_overwrite_corrected.p'
+    key = 'Rheinbaben Nord'
+    #build_node_nb = 1011  # Forsterlinde
     dict_city_f_names[key] = city_f_name
-    dict_b_node_nb[key] = build_node_nb
+    #dict_b_node_nb[key] = build_node_nb
 
-    city_f_name = 'aachen_frankenberg_mod_8_el_resc.pkl'
-    key = 'Frankenberg'
-    build_node_nb = 1020  # Frankenberg
+    city_f_name = 'city_Rheinbaben_sued_mod_jsc_estimate_retrofit_20.p'
+    key = u'Rheinbaben Süd'
+    #build_node_nb = 1020  # Frankenberg
     dict_city_f_names[key] = city_f_name
-    dict_b_node_nb[key] = build_node_nb
+    #dict_b_node_nb[key] = build_node_nb
 
-    city_f_name = 'aachen_kronenberg_mod_8.pkl'
-    key = 'Kronenberg'
-    build_node_nb = 1002  # Kronenberg
-    dict_city_f_names[key] = city_f_name
-    dict_b_node_nb[key] = build_node_nb
-
-    city_f_name = 'aachen_preusweg_mod_9.pkl'
-    key = 'Preusweg'
-    build_node_nb = 1092  # Preusweg
-    dict_city_f_names[key] = city_f_name
-    dict_b_node_nb[key] = build_node_nb
-
-    city_f_name = 'aachen_tuerme_mod_7_el_resc_2.pkl'
-    key = u'Türme'
-    build_node_nb = 1010  # Tuerme
-    dict_city_f_names[key] = city_f_name
-    dict_b_node_nb[key] = build_node_nb
-
-    city_f_name = 'aachen_huenefeld_mod_7.pkl'
-    key = u'Hünefeld'
-    build_node_nb = 1003  # Huenefeld
-    dict_city_f_names[key] = city_f_name
-    dict_b_node_nb[key] = build_node_nb
+    # city_f_name = 'aachen_kronenberg_mod_8.pkl'
+    # key = 'Kronenberg'
+    # build_node_nb = 1002  # Kronenberg
+    # dict_city_f_names[key] = city_f_name
+    # dict_b_node_nb[key] = build_node_nb
+    #
+    # city_f_name = 'aachen_preusweg_mod_9.pkl'
+    # key = 'Preusweg'
+    # build_node_nb = 1092  # Preusweg
+    # dict_city_f_names[key] = city_f_name
+    # dict_b_node_nb[key] = build_node_nb
+    #
+    # city_f_name = 'aachen_tuerme_mod_7_el_resc_2.pkl'
+    # key = u'Türme'
+    # build_node_nb = 1010  # Tuerme
+    # dict_city_f_names[key] = city_f_name
+    # dict_b_node_nb[key] = build_node_nb
+    #
+    # city_f_name = 'aachen_huenefeld_mod_7.pkl'
+    # key = u'Hünefeld'
+    # build_node_nb = 1003  # Huenefeld
+    # dict_city_f_names[key] = city_f_name
+    # dict_b_node_nb[key] = build_node_nb
 
     for key in dict_city_f_names.keys():
         city_f_name = dict_city_f_names[key]
-        load_path = os.path.join(this_path, 'input', 'ref_cities', city_f_name)
+        load_path = os.path.join(this_path, 'input', 'ref_sustain', city_f_name)
 
         city = pickle.load(open(load_path, mode='rb'))
 
@@ -2192,7 +2191,7 @@ if __name__ == '__main__':
     #  User input
     #  ###############################################
 
-    mc_city = False
+    mc_city = True
     all_cities = True  # all cities / all buildings or only specific key
 
     with_outliners = True
@@ -2205,8 +2204,7 @@ if __name__ == '__main__':
     else:
         output_filename = 'mc_single_build'
 
-    list_order = ['Preusweg', 'Forsterlinde', 'Kronenberg', 'Frankenberg',
-                  'Hünefeld', 'Türme']
+    list_order = ['Rheinbaben Nord', u'Rheinbaben Süd']
 
     #############################
     if all_cities:
@@ -2273,34 +2271,34 @@ if __name__ == '__main__':
 
         print('Analysis for all districts')
 
-        # # #  Perform space heating box plot analysis for all districts
-        # # #  Plot boxplots with three axes
-        # # #  #####################################################################
-        # output_path_curr = os.path.join(output_path, 'th_dem_three_axes')
-        # box_plot_analysis_triple_plot(mc_res=mc_res, output_path=output_path_curr,
-        #                               output_filename=output_filename, dpi=dpi,
-        #                               with_outliners=with_outliners,
-        #                               list_order=list_order, mode='sh',
-        #                               mc_city=mc_city)
-        #
-        # # #  Perform electric energy box plot analysis for all districts
-        # # #  Plot boxplots with three axes
-        # # #  #####################################################################
-        # output_path_curr = os.path.join(output_path, 'el_dem_three_axes')
-        # box_plot_analysis_triple_plot(mc_res=mc_res, output_path=output_path_curr,
-        #                               output_filename=output_filename, dpi=dpi,
-        #                               with_outliners=with_outliners,
-        #                               list_order=list_order, mode='el',
-        #                               mc_city=mc_city)
-        #
-        # # #  Perform hot water energy box plot analysis for all districts
-        # # #  Plot boxplots with three axes
-        # # #  #####################################################################
-        # output_path_curr = os.path.join(output_path, 'dhw_dem_three_axes')
-        # box_plot_analysis_triple_plot(mc_res=mc_res, output_path=output_path_curr,
-        #                               output_filename=output_filename, dpi=dpi,
-        #                               with_outliners=with_outliners,
-        #                               list_order=list_order, mode='dhw',
-        #                               mc_city=mc_city)
+        # #  Perform space heating box plot analysis for all districts
+        # #  Plot boxplots with three axes
+        # #  #####################################################################
+        output_path_curr = os.path.join(output_path, 'th_dem_three_axes')
+        box_plot_analysis_triple_plot(mc_res=mc_res, output_path=output_path_curr,
+                                      output_filename=output_filename, dpi=dpi,
+                                      with_outliners=with_outliners,
+                                      list_order=list_order, mode='sh',
+                                      mc_city=mc_city)
+
+        # #  Perform electric energy box plot analysis for all districts
+        # #  Plot boxplots with three axes
+        # #  #####################################################################
+        output_path_curr = os.path.join(output_path, 'el_dem_three_axes')
+        box_plot_analysis_triple_plot(mc_res=mc_res, output_path=output_path_curr,
+                                      output_filename=output_filename, dpi=dpi,
+                                      with_outliners=with_outliners,
+                                      list_order=list_order, mode='el',
+                                      mc_city=mc_city)
+
+        # #  Perform hot water energy box plot analysis for all districts
+        # #  Plot boxplots with three axes
+        # #  #####################################################################
+        output_path_curr = os.path.join(output_path, 'dhw_dem_three_axes')
+        box_plot_analysis_triple_plot(mc_res=mc_res, output_path=output_path_curr,
+                                      output_filename=output_filename, dpi=dpi,
+                                      with_outliners=with_outliners,
+                                      list_order=list_order, mode='dhw',
+                                      mc_city=mc_city)
 
     print('Saved results to ' + str(output_path))
