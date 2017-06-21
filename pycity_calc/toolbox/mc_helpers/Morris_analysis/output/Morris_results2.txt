@@ -1,22 +1,22 @@
  Morris analysis -Test Modernisation year 1970-2015 
-  Number of sampling :1
+  Number of sampling :10
 ##############Parameters for the sensibility##############
  longitude [50.775, 50.776] 
  latitude [6.083, 6.084] 
  Altitude [263.0, 269.0] 
  weather [-1.0, 1.0] 
- net_floor_area [-0.025, 0.025] 
- average_height_of_floors [2.4, 2.8] 
+ net_floor_area [-0.05, 0.05] 
+ average_height_of_floors [2.4, 2.9] 
  Usable_pv_roof_area [-0.05, 0.05] 
  year_of_modernization [1977.0, 2015.0] 
  total_number_occupants [1.0, 5.0] 
  Annual_el_e_dem [-0.4, 0.4] 
- dhw_Tflow [55.0, 65.0] 
- dhw_Tsupply [20.0, 30.0] 
+ dhw_Tflow [45.0, 75.0] 
+ dhw_Tsupply [10.0, 35.0] 
  vent_factor [0.1, 1.0] 
  tset_heat [18.0, 25.0] 
  tset_night [13.0, 18.0] 
- eta_battery_charge [0.9, 0.97] 
+ eta_battery_charge [0.8, 0.97] 
  eta_battery_discharge [0.9, 0.97] 
  self_discharge_battery [0.005, 0.015] 
  T_max_TES [75.0, 85.0] 
@@ -24,9 +24,9 @@
  T_surrounding [18.0, 22.0] 
  klosses_TES [0.25, 0.35] 
  T_init_TES [18.0, 22.0] 
- eta_boiler [0.75, 0.95] 
- LAL_boiler [0.1, 0.3] 
- T_max_boiler [80.0, 95.0] 
+ eta_boiler [0.4, 0.95] 
+ LAL_boiler [0.05, 0.4] 
+ T_max_boiler [70.0, 100.0] 
  eta_CHP [0.8, 0.95] 
  T_max_CHP [85.0, 95.0] 
  LAL_CHP [0.55, 0.65] 
@@ -41,10 +41,10 @@
  beta_PV [0.0, 180.0] 
  gamma_PV [-180.0, 180.0] 
  tau_alpha_PV  [0.8, 0.99] 
- price_ch_cap [1.005, 1.1] 
- price_ch_dem_gas [1.005, 1.1] 
- price_ch_dem_el [1.005, 1.1] 
- price_ch_op [1.01, 1.1] 
+ price_ch_cap [1.005, 1.15] 
+ price_ch_dem_gas [1.005, 1.15] 
+ price_ch_dem_el [1.005, 1.15] 
+ price_ch_op [1.01, 1.15] 
  price_ch_proc_chp [1.005, 1.02] 
  price_ch_proc_pv [0.95, 0.99] 
  price_ch_EEG_Umlage_tax_chp [1.0, 1.01] 
@@ -55,8 +55,8 @@
  price_ch_self_usage_chp [0.995, 1.005] 
  price_ch_gas_disc_chp [0.995, 1.005] 
  price_ch_sub_pv [0.95, 0.98] 
- life_factor [0.9, 1.1] 
- maintenance_factor [0.9, 1.1] 
+ life_factor [0.6, 1.4] 
+ maintenance_factor [0.6, 1.4] 
 
 ############## City reference ##############
 Generation mode: load City from pickle filepickle file path :  D:\jsc-les\pyCity_calc_github\pycity_calc\toolbox\mc_helpers\Morris_analysis\City_generation\output\aachen_kronenberg_3_mfh_ref_1.pkl
@@ -65,247 +65,247 @@ Generation mode: load City from pickle filepickle file path :  D:\jsc-les\pyCity
  gas demand
 
  Parameter                         Mu_Star         Mu    Mu_Star_Conf      Sigma 
- longitude                           0.152     -0.152           0.000        nan 
- latitude                            0.007     -0.007           0.000        nan 
- Altitude                            0.000      0.000           0.000        nan 
- weather                         15039.582 -15039.582           0.000        nan 
- net_floor_area                  11743.675 -11743.675           0.000        nan 
- average_height_of_floors         3968.782   3968.782           0.000        nan 
- Usable_pv_roof_area                 0.000      0.000           0.000        nan 
- year_of_modernization               0.000      0.000           0.000        nan 
- total_number_occupants           5270.718  -5270.718           0.000        nan 
- Annual_el_e_dem                  8730.007   8730.007           0.000        nan 
- dhw_Tflow                        3297.614   3297.614           0.000        nan 
- dhw_Tsupply                      3297.614  -3297.614           0.000        nan 
- vent_factor                    196524.698 196524.698           0.000        nan 
- tset_heat                      166903.891 166903.891           0.000        nan 
- tset_night                          0.000      0.000           0.000        nan 
- eta_battery_charge                  0.000      0.000           0.000        nan 
- eta_battery_discharge               0.000      0.000           0.000        nan 
- self_discharge_battery              0.000      0.000           0.000        nan 
- T_max_TES                           0.000      0.000           0.000        nan 
- T_min_TES                           0.000      0.000           0.000        nan 
- T_surrounding                       0.000      0.000           0.000        nan 
- klosses_TES                         0.000      0.000           0.000        nan 
- T_init_TES                          0.000      0.000           0.000        nan 
- eta_boiler                      74314.736 -74314.736           0.000        nan 
- LAL_boiler                          0.000      0.000           0.000        nan 
- T_max_boiler                        0.000      0.000           0.000        nan 
- eta_CHP                             0.000      0.000           0.000        nan 
- T_max_CHP                           0.000      0.000           0.000        nan 
- LAL_CHP                             0.000      0.000           0.000        nan 
- eta_EH                              0.000      0.000           0.000        nan 
- T_max_EH                            0.000      0.000           0.000        nan 
- LAL_HP                              0.000      0.000           0.000        nan 
- T_max_HP                            0.000      0.000           0.000        nan 
- T_sink_HP                           0.000      0.000           0.000        nan 
- eta_PV                              0.000      0.000           0.000        nan 
- Tnom_PV                             0.000      0.000           0.000        nan 
- alpha_PV                            0.000      0.000           0.000        nan 
- beta_PV                             0.000      0.000           0.000        nan 
- gamma_PV                            0.000      0.000           0.000        nan 
- tau_alpha_PV                        0.000      0.000           0.000        nan 
- price_ch_cap                        0.000      0.000           0.000        nan 
- price_ch_dem_gas                    0.000      0.000           0.000        nan 
- price_ch_dem_el                     0.000      0.000           0.000        nan 
- price_ch_op                         0.000      0.000           0.000        nan 
- price_ch_proc_chp                   0.000      0.000           0.000        nan 
- price_ch_proc_pv                    0.000      0.000           0.000        nan 
- price_ch_EEG_Umlage_tax_chp         0.000      0.000           0.000        nan 
- price_ch_EEG_Umlage_tax_pv          0.000      0.000           0.000        nan 
- price_EEX_baseload_price            0.000      0.000           0.000        nan 
- price_ch_avoid_grid_usage           0.000      0.000           0.000        nan 
- price_ch_sub_chp                    0.000      0.000           0.000        nan 
- price_ch_self_usage_chp             0.000      0.000           0.000        nan 
- price_ch_gas_disc_chp               0.000      0.000           0.000        nan 
- price_ch_sub_pv                     0.000      0.000           0.000        nan 
- life_factor                         0.000      0.000           0.000        nan 
- maintenance_factor                  0.000      0.000           0.000        nan 
+ longitude                           0.183     -0.183           0.025      0.039 
+ latitude                            0.008     -0.008           0.003      0.004 
+ Altitude                            0.000      0.000           0.000      0.000 
+ weather                         36228.565 -30836.939       15807.195  34367.057 
+ net_floor_area                  41520.052 -41520.052        8404.068  15188.645 
+ average_height_of_floors        19510.696  19510.696        4385.536   7695.536 
+ Usable_pv_roof_area                 0.000      0.000           0.000      0.000 
+ year_of_modernization          183044.154 -183044.154      133157.842 258630.034 
+ total_number_occupants          10369.528 -10369.528        2983.527   5088.201 
+ Annual_el_e_dem                  6488.883   6488.883         907.562   1460.380 
+ dhw_Tflow                       13442.201  13442.201        1774.550   3149.475 
+ dhw_Tsupply                     10262.049 -10262.049        1540.880   2509.695 
+ vent_factor                    267684.213 267684.213       43663.934  76262.775 
+ tset_heat                      227814.226 227814.226       28463.177  50178.393 
+ tset_night                          0.882      0.882           1.660      2.790 
+ eta_battery_charge                  0.000      0.000           0.000      0.000 
+ eta_battery_discharge               0.000      0.000           0.000      0.000 
+ self_discharge_battery              0.000      0.000           0.000      0.000 
+ T_max_TES                           0.000      0.000           0.000      0.000 
+ T_min_TES                           0.000      0.000           0.000      0.000 
+ T_surrounding                       0.000      0.000           0.000      0.000 
+ klosses_TES                         0.000      0.000           0.000      0.000 
+ T_init_TES                          0.000      0.000           0.000      0.000 
+ eta_boiler                     406513.227 -406513.227      112010.900 183417.909 
+ LAL_boiler                          0.000      0.000           0.000      0.000 
+ T_max_boiler                        0.000      0.000           0.000      0.000 
+ eta_CHP                             0.000      0.000           0.000      0.000 
+ T_max_CHP                           0.000      0.000           0.000      0.000 
+ LAL_CHP                             0.000      0.000           0.000      0.000 
+ eta_EH                              0.000      0.000           0.000      0.000 
+ T_max_EH                            0.000      0.000           0.000      0.000 
+ LAL_HP                              0.000      0.000           0.000      0.000 
+ T_max_HP                            0.000      0.000           0.000      0.000 
+ T_sink_HP                           0.000      0.000           0.000      0.000 
+ eta_PV                              0.000      0.000           0.000      0.000 
+ Tnom_PV                             0.000      0.000           0.000      0.000 
+ alpha_PV                            0.000      0.000           0.000      0.000 
+ beta_PV                             0.000      0.000           0.000      0.000 
+ gamma_PV                            0.000      0.000           0.000      0.000 
+ tau_alpha_PV                        0.000      0.000           0.000      0.000 
+ price_ch_cap                        0.000      0.000           0.000      0.000 
+ price_ch_dem_gas                    0.000      0.000           0.000      0.000 
+ price_ch_dem_el                     0.000      0.000           0.000      0.000 
+ price_ch_op                         0.000      0.000           0.000      0.000 
+ price_ch_proc_chp                   0.000      0.000           0.000      0.000 
+ price_ch_proc_pv                    0.000      0.000           0.000      0.000 
+ price_ch_EEG_Umlage_tax_chp         0.000      0.000           0.000      0.000 
+ price_ch_EEG_Umlage_tax_pv          0.000      0.000           0.000      0.000 
+ price_EEX_baseload_price            0.000      0.000           0.000      0.000 
+ price_ch_avoid_grid_usage           0.000      0.000           0.000      0.000 
+ price_ch_sub_chp                    0.000      0.000           0.000      0.000 
+ price_ch_self_usage_chp             0.000      0.000           0.000      0.000 
+ price_ch_gas_disc_chp               0.000      0.000           0.000      0.000 
+ price_ch_sub_pv                     0.000      0.000           0.000      0.000 
+ life_factor                         0.000      0.000           0.000      0.000 
+ maintenance_factor                  0.000      0.000           0.000      0.000 
 
 ------------------------------------------------------------------
 
 electrical demand
 
  Parameter                         Mu_Star         Mu    Mu_Star_Conf      Sigma
- longitude                           0.000      0.000           0.000        nan 
- latitude                            0.000      0.000           0.000        nan 
- Altitude                            0.000      0.000           0.000        nan 
- weather                             0.000      0.000           0.000        nan 
- net_floor_area                      0.000      0.000           0.000        nan 
- average_height_of_floors            0.000      0.000           0.000        nan 
- Usable_pv_roof_area                 0.000      0.000           0.000        nan 
- year_of_modernization               0.000      0.000           0.000        nan 
- total_number_occupants           4560.000   4560.000           0.000        nan 
- Annual_el_e_dem                  7600.000  -7600.000           0.000        nan 
- dhw_Tflow                           0.000      0.000           0.000        nan 
- dhw_Tsupply                         0.000      0.000           0.000        nan 
- vent_factor                         0.000      0.000           0.000        nan 
- tset_heat                           0.000      0.000           0.000        nan 
- tset_night                          0.000      0.000           0.000        nan 
- eta_battery_charge                  0.000      0.000           0.000        nan 
- eta_battery_discharge               0.000      0.000           0.000        nan 
- self_discharge_battery              0.000      0.000           0.000        nan 
- T_max_TES                           0.000      0.000           0.000        nan 
- T_min_TES                           0.000      0.000           0.000        nan 
- T_surrounding                       0.000      0.000           0.000        nan 
- klosses_TES                         0.000      0.000           0.000        nan 
- T_init_TES                          0.000      0.000           0.000        nan 
- eta_boiler                          0.000      0.000           0.000        nan 
- LAL_boiler                          0.000      0.000           0.000        nan 
- T_max_boiler                        0.000      0.000           0.000        nan 
- eta_CHP                             0.000      0.000           0.000        nan 
- T_max_CHP                           0.000      0.000           0.000        nan 
- LAL_CHP                             0.000      0.000           0.000        nan 
- eta_EH                              0.000      0.000           0.000        nan 
- T_max_EH                            0.000      0.000           0.000        nan 
- LAL_HP                              0.000      0.000           0.000        nan 
- T_max_HP                            0.000      0.000           0.000        nan 
- T_sink_HP                           0.000      0.000           0.000        nan 
- eta_PV                              0.000      0.000           0.000        nan 
- Tnom_PV                             0.000      0.000           0.000        nan 
- alpha_PV                            0.000      0.000           0.000        nan 
- beta_PV                             0.000      0.000           0.000        nan 
- gamma_PV                            0.000      0.000           0.000        nan 
- tau_alpha_PV                        0.000      0.000           0.000        nan 
- price_ch_cap                        0.000      0.000           0.000        nan 
- price_ch_dem_gas                    0.000      0.000           0.000        nan 
- price_ch_dem_el                     0.000      0.000           0.000        nan 
- price_ch_op                         0.000      0.000           0.000        nan 
- price_ch_proc_chp                   0.000      0.000           0.000        nan 
- price_ch_proc_pv                    0.000      0.000           0.000        nan 
- price_ch_EEG_Umlage_tax_chp         0.000      0.000           0.000        nan 
- price_ch_EEG_Umlage_tax_pv          0.000      0.000           0.000        nan 
- price_EEX_baseload_price            0.000      0.000           0.000        nan 
- price_ch_avoid_grid_usage           0.000      0.000           0.000        nan 
- price_ch_sub_chp                    0.000      0.000           0.000        nan 
- price_ch_self_usage_chp             0.000      0.000           0.000        nan 
- price_ch_gas_disc_chp               0.000      0.000           0.000        nan 
- price_ch_sub_pv                     0.000      0.000           0.000        nan 
- life_factor                         0.000      0.000           0.000        nan 
- maintenance_factor                  0.000      0.000           0.000        nan 
+ longitude                           0.000      0.000           0.000      0.000 
+ latitude                            0.000      0.000           0.000      0.000 
+ Altitude                            0.000      0.000           0.000      0.000 
+ weather                             0.000      0.000           0.000      0.000 
+ net_floor_area                      0.000      0.000           0.000      0.000 
+ average_height_of_floors            0.000      0.000           0.000      0.000 
+ Usable_pv_roof_area                 0.000      0.000           0.000      0.000 
+ year_of_modernization               0.000      0.000           0.000      0.000 
+ total_number_occupants           7144.000   7144.000        1633.601   2487.315 
+ Annual_el_e_dem                  4712.000  -4712.000         868.299   1330.904 
+ dhw_Tflow                           0.000      0.000           0.000      0.000 
+ dhw_Tsupply                         0.000      0.000           0.000      0.000 
+ vent_factor                         0.000      0.000           0.000      0.000 
+ tset_heat                           0.000      0.000           0.000      0.000 
+ tset_night                          0.000      0.000           0.000      0.000 
+ eta_battery_charge                  0.000      0.000           0.000      0.000 
+ eta_battery_discharge               0.000      0.000           0.000      0.000 
+ self_discharge_battery              0.000      0.000           0.000      0.000 
+ T_max_TES                           0.000      0.000           0.000      0.000 
+ T_min_TES                           0.000      0.000           0.000      0.000 
+ T_surrounding                       0.000      0.000           0.000      0.000 
+ klosses_TES                         0.000      0.000           0.000      0.000 
+ T_init_TES                          0.000      0.000           0.000      0.000 
+ eta_boiler                          0.000      0.000           0.000      0.000 
+ LAL_boiler                          0.000      0.000           0.000      0.000 
+ T_max_boiler                        0.000      0.000           0.000      0.000 
+ eta_CHP                             0.000      0.000           0.000      0.000 
+ T_max_CHP                           0.000      0.000           0.000      0.000 
+ LAL_CHP                             0.000      0.000           0.000      0.000 
+ eta_EH                              0.000      0.000           0.000      0.000 
+ T_max_EH                            0.000      0.000           0.000      0.000 
+ LAL_HP                              0.000      0.000           0.000      0.000 
+ T_max_HP                            0.000      0.000           0.000      0.000 
+ T_sink_HP                           0.000      0.000           0.000      0.000 
+ eta_PV                              0.000      0.000           0.000      0.000 
+ Tnom_PV                             0.000      0.000           0.000      0.000 
+ alpha_PV                            0.000      0.000           0.000      0.000 
+ beta_PV                             0.000      0.000           0.000      0.000 
+ gamma_PV                            0.000      0.000           0.000      0.000 
+ tau_alpha_PV                        0.000      0.000           0.000      0.000 
+ price_ch_cap                        0.000      0.000           0.000      0.000 
+ price_ch_dem_gas                    0.000      0.000           0.000      0.000 
+ price_ch_dem_el                     0.000      0.000           0.000      0.000 
+ price_ch_op                         0.000      0.000           0.000      0.000 
+ price_ch_proc_chp                   0.000      0.000           0.000      0.000 
+ price_ch_proc_pv                    0.000      0.000           0.000      0.000 
+ price_ch_EEG_Umlage_tax_chp         0.000      0.000           0.000      0.000 
+ price_ch_EEG_Umlage_tax_pv          0.000      0.000           0.000      0.000 
+ price_EEX_baseload_price            0.000      0.000           0.000      0.000 
+ price_ch_avoid_grid_usage           0.000      0.000           0.000      0.000 
+ price_ch_sub_chp                    0.000      0.000           0.000      0.000 
+ price_ch_self_usage_chp             0.000      0.000           0.000      0.000 
+ price_ch_gas_disc_chp               0.000      0.000           0.000      0.000 
+ price_ch_sub_pv                     0.000      0.000           0.000      0.000 
+ life_factor                         0.000      0.000           0.000      0.000 
+ maintenance_factor                  0.000      0.000           0.000      0.000 
 
 ------------------------------------------------------------------
 annuity Parameter                         Mu_Star         Mu    Mu_Star_Conf      Sigma 
- longitude                           0.010      0.010           0.000        nan 
- latitude                            0.000      0.000           0.000        nan 
- Altitude                            0.000      0.000           0.000        nan 
- weather                          1051.846   1051.846           0.000        nan 
- net_floor_area                    821.335    821.335           0.000        nan 
- average_height_of_floors          250.904   -250.904           0.000        nan 
- Usable_pv_roof_area                 0.000      0.000           0.000        nan 
- year_of_modernization               0.000      0.000           0.000        nan 
- total_number_occupants            417.935   -417.935           0.000        nan 
- Annual_el_e_dem                  2007.205   2007.205           0.000        nan 
- dhw_Tflow                         208.473   -208.473           0.000        nan 
- dhw_Tsupply                       230.630    230.630           0.000        nan 
- vent_factor                     12424.156 -12424.156           0.000        nan 
- tset_heat                       11673.011 -11673.011           0.000        nan 
- tset_night                          0.000      0.000           0.000        nan 
- eta_battery_charge                  0.000      0.000           0.000        nan 
- eta_battery_discharge               0.000      0.000           0.000        nan 
- self_discharge_battery              0.000      0.000           0.000        nan 
- T_max_TES                           0.000      0.000           0.000        nan 
- T_min_TES                           0.000      0.000           0.000        nan 
- T_surrounding                       0.000      0.000           0.000        nan 
- klosses_TES                         0.000      0.000           0.000        nan 
- T_init_TES                          0.000      0.000           0.000        nan 
- eta_boiler                       4698.126   4698.126           0.000        nan 
- LAL_boiler                          0.000      0.000           0.000        nan 
- T_max_boiler                        0.000      0.000           0.000        nan 
- eta_CHP                             0.000      0.000           0.000        nan 
- T_max_CHP                           0.000      0.000           0.000        nan 
- LAL_CHP                             0.000      0.000           0.000        nan 
- eta_EH                              0.000      0.000           0.000        nan 
- T_max_EH                            0.000      0.000           0.000        nan 
- LAL_HP                              0.000      0.000           0.000        nan 
- T_max_HP                            0.000      0.000           0.000        nan 
- T_sink_HP                           0.000      0.000           0.000        nan 
- eta_PV                              0.000      0.000           0.000        nan 
- Tnom_PV                             0.000      0.000           0.000        nan 
- alpha_PV                            0.000      0.000           0.000        nan 
- beta_PV                             0.000      0.000           0.000        nan 
- gamma_PV                            0.000      0.000           0.000        nan 
- tau_alpha_PV                        0.000      0.000           0.000        nan 
- price_ch_cap                        0.000      0.000           0.000        nan 
- price_ch_dem_gas                 6682.298  -6682.298           0.000        nan 
- price_ch_dem_el                  7596.862  -7596.862           0.000        nan 
- price_ch_op                       249.374   -249.374           0.000        nan 
- price_ch_proc_chp                   0.000      0.000           0.000        nan 
- price_ch_proc_pv                    0.000      0.000           0.000        nan 
- price_ch_EEG_Umlage_tax_chp         0.000      0.000           0.000        nan 
- price_ch_EEG_Umlage_tax_pv          0.000      0.000           0.000        nan 
- price_EEX_baseload_price            0.000      0.000           0.000        nan 
- price_ch_avoid_grid_usage           0.000      0.000           0.000        nan 
- price_ch_sub_chp                    0.000      0.000           0.000        nan 
- price_ch_self_usage_chp             0.000      0.000           0.000        nan 
- price_ch_gas_disc_chp               0.000      0.000           0.000        nan 
- price_ch_sub_pv                     0.000      0.000           0.000        nan 
- life_factor                       187.947    187.947           0.000        nan 
- maintenance_factor                126.372   -126.372           0.000        nan 
+ longitude                           0.015      0.015           0.002      0.004 
+ latitude                            0.001      0.001           0.000      0.000 
+ Altitude                            0.000      0.000           0.000      0.000 
+ weather                          3142.470   2595.415        1506.840   3055.923 
+ net_floor_area                   3561.771   3561.771         812.350   1533.681 
+ average_height_of_floors         1639.214  -1639.214         439.604    691.593 
+ Usable_pv_roof_area                 0.000      0.000           0.000      0.000 
+ year_of_modernization           17455.958  17455.958       15143.024  24239.180 
+ total_number_occupants           1489.891  -1489.891         409.548    762.133 
+ Annual_el_e_dem                   999.066    999.066         339.144    549.100 
+ dhw_Tflow                        1131.292  -1131.292         167.234    267.875 
+ dhw_Tsupply                       855.933    855.933         121.322    213.228 
+ vent_factor                     21885.597 -21885.597        4217.061   6542.969 
+ tset_heat                       19321.716 -19321.716        3855.317   5498.712 
+ tset_night                          0.095     -0.095           0.166      0.301 
+ eta_battery_charge                  0.000      0.000           0.000      0.000 
+ eta_battery_discharge               0.000      0.000           0.000      0.000 
+ self_discharge_battery              0.000      0.000           0.000      0.000 
+ T_max_TES                           0.000      0.000           0.000      0.000 
+ T_min_TES                           0.000      0.000           0.000      0.000 
+ T_surrounding                       0.000      0.000           0.000      0.000 
+ klosses_TES                         0.000      0.000           0.000      0.000 
+ T_init_TES                          0.000      0.000           0.000      0.000 
+ eta_boiler                      33106.643  33106.643        9807.111  17730.412 
+ LAL_boiler                          0.000      0.000           0.000      0.000 
+ T_max_boiler                        0.000      0.000           0.000      0.000 
+ eta_CHP                             0.000      0.000           0.000      0.000 
+ T_max_CHP                           0.000      0.000           0.000      0.000 
+ LAL_CHP                             0.000      0.000           0.000      0.000 
+ eta_EH                              0.000      0.000           0.000      0.000 
+ T_max_EH                            0.000      0.000           0.000      0.000 
+ LAL_HP                              0.000      0.000           0.000      0.000 
+ T_max_HP                            0.000      0.000           0.000      0.000 
+ T_sink_HP                           0.000      0.000           0.000      0.000 
+ eta_PV                              0.000      0.000           0.000      0.000 
+ Tnom_PV                             0.000      0.000           0.000      0.000 
+ alpha_PV                            0.000      0.000           0.000      0.000 
+ beta_PV                             0.000      0.000           0.000      0.000 
+ gamma_PV                            0.000      0.000           0.000      0.000 
+ tau_alpha_PV                        0.000      0.000           0.000      0.000 
+ price_ch_cap                        0.000      0.000           0.000      0.000 
+ price_ch_dem_gas                23267.515 -23267.515        4312.494   8126.441 
+ price_ch_dem_el                 12570.175 -12570.175        1325.808   2411.754 
+ price_ch_op                       517.714   -517.714          61.612    118.272 
+ price_ch_proc_chp                   0.000      0.000           0.000      0.000 
+ price_ch_proc_pv                    0.000      0.000           0.000      0.000 
+ price_ch_EEG_Umlage_tax_chp         0.000      0.000           0.000      0.000 
+ price_ch_EEG_Umlage_tax_pv          0.000      0.000           0.000      0.000 
+ price_EEX_baseload_price            0.000      0.000           0.000      0.000 
+ price_ch_avoid_grid_usage           0.000      0.000           0.000      0.000 
+ price_ch_sub_chp                    0.000      0.000           0.000      0.000 
+ price_ch_self_usage_chp             0.000      0.000           0.000      0.000 
+ price_ch_gas_disc_chp               0.000      0.000           0.000      0.000 
+ price_ch_sub_pv                     0.000      0.000           0.000      0.000 
+ life_factor                       743.331    743.331         205.493    350.484 
+ maintenance_factor                701.365   -701.365          39.648     77.718 
 
 ------------------------------------------------------------------
 
  Ghg
  Parameter                         Mu_Star         Mu    Mu_Star_Conf      Sigma 
- longitude                           0.037     -0.037           0.000        nan
- latitude                            0.002     -0.002           0.000        nan
- Altitude                            0.000      0.000           0.000        nan
- weather                          3669.658  -3669.658           0.000        nan
- net_floor_area                   2865.457  -2865.457           0.000        nan
- average_height_of_floors          968.383    968.383           0.000        nan
- Usable_pv_roof_area                 0.000      0.000           0.000        nan
- year_of_modernization               0.000      0.000           0.000        nan
- total_number_occupants           1600.425   1600.425           0.000        nan
- Annual_el_e_dem                  2680.678  -2680.678           0.000        nan
- dhw_Tflow                         804.618    804.618           0.000        nan
- dhw_Tsupply                       804.618   -804.618           0.000        nan
- vent_factor                     47952.026  47952.026           0.000        nan
- tset_heat                       40724.549  40724.549           0.000        nan
- tset_night                          0.000      0.000           0.000        nan
- eta_battery_charge                  0.000      0.000           0.000        nan
- eta_battery_discharge               0.000      0.000           0.000        nan
- self_discharge_battery              0.000      0.000           0.000        nan
- T_max_TES                           0.000      0.000           0.000        nan
- T_min_TES                           0.000      0.000           0.000        nan
- T_surrounding                       0.000      0.000           0.000        nan
- klosses_TES                         0.000      0.000           0.000        nan
- T_init_TES                          0.000      0.000           0.000        nan
- eta_boiler                      18132.795 -18132.795           0.000        nan
- LAL_boiler                          0.000      0.000           0.000        nan
- T_max_boiler                        0.000      0.000           0.000        nan
- eta_CHP                             0.000      0.000           0.000        nan
- T_max_CHP                           0.000      0.000           0.000        nan
- LAL_CHP                             0.000      0.000           0.000        nan
- eta_EH                              0.000      0.000           0.000        nan
- T_max_EH                            0.000      0.000           0.000        nan
- LAL_HP                              0.000      0.000           0.000        nan
- T_max_HP                            0.000      0.000           0.000        nan
- T_sink_HP                           0.000      0.000           0.000        nan
- eta_PV                              0.000      0.000           0.000        nan
- Tnom_PV                             0.000      0.000           0.000        nan
- alpha_PV                            0.000      0.000           0.000        nan
- beta_PV                             0.000      0.000           0.000        nan
- gamma_PV                            0.000      0.000           0.000        nan
- tau_alpha_PV                        0.000      0.000           0.000        nan
- price_ch_cap                        0.000      0.000           0.000        nan
- price_ch_dem_gas                    0.000      0.000           0.000        nan
- price_ch_dem_el                     0.000      0.000           0.000        nan
- price_ch_op                         0.000      0.000           0.000        nan
- price_ch_proc_chp                   0.000      0.000           0.000        nan
- price_ch_proc_pv                    0.000      0.000           0.000        nan
- price_ch_EEG_Umlage_tax_chp         0.000      0.000           0.000        nan
- price_ch_EEG_Umlage_tax_pv          0.000      0.000           0.000        nan
- price_EEX_baseload_price            0.000      0.000           0.000        nan
- price_ch_avoid_grid_usage           0.000      0.000           0.000        nan
- price_ch_sub_chp                    0.000      0.000           0.000        nan
- price_ch_self_usage_chp             0.000      0.000           0.000        nan
- price_ch_gas_disc_chp               0.000      0.000           0.000        nan
- price_ch_sub_pv                     0.000      0.000           0.000        nan
- life_factor                         0.000      0.000           0.000        nan
- maintenance_factor                  0.000      0.000           0.000        nan
+ longitude                           0.045     -0.045           0.006      0.010
+ latitude                            0.002     -0.002           0.001      0.001
+ Altitude                            0.000      0.000           0.000      0.000
+ weather                          8839.770  -7524.213        4027.549   8385.562
+ net_floor_area                  10130.893 -10130.893        2291.937   3706.029
+ average_height_of_floors         4760.610   4760.610        1063.895   1877.711
+ Usable_pv_roof_area                 0.000      0.000           0.000      0.000
+ year_of_modernization           44662.774 -44662.774       33465.821  63105.728
+ total_number_occupants           1991.987   1991.987         412.254    710.247
+ Annual_el_e_dem                  1399.409  -1399.409         347.682    649.833
+ dhw_Tflow                        3279.897   3279.897         461.877    768.472
+ dhw_Tsupply                      2503.940  -2503.940         387.727    612.366
+ vent_factor                     65314.948  65314.948       11165.098  18608.117
+ tset_heat                       55586.671  55586.671        7348.628  12243.528
+ tset_night                          0.215      0.215           0.481      0.681
+ eta_battery_charge                  0.000      0.000           0.000      0.000
+ eta_battery_discharge               0.000      0.000           0.000      0.000
+ self_discharge_battery              0.000      0.000           0.000      0.000
+ T_max_TES                           0.000      0.000           0.000      0.000
+ T_min_TES                           0.000      0.000           0.000      0.000
+ T_surrounding                       0.000      0.000           0.000      0.000
+ klosses_TES                         0.000      0.000           0.000      0.000
+ T_init_TES                          0.000      0.000           0.000      0.000
+ eta_boiler                      99189.227 -99189.227       28602.584  44753.970
+ LAL_boiler                          0.000      0.000           0.000      0.000
+ T_max_boiler                        0.000      0.000           0.000      0.000
+ eta_CHP                             0.000      0.000           0.000      0.000
+ T_max_CHP                           0.000      0.000           0.000      0.000
+ LAL_CHP                             0.000      0.000           0.000      0.000
+ eta_EH                              0.000      0.000           0.000      0.000
+ T_max_EH                            0.000      0.000           0.000      0.000
+ LAL_HP                              0.000      0.000           0.000      0.000
+ T_max_HP                            0.000      0.000           0.000      0.000
+ T_sink_HP                           0.000      0.000           0.000      0.000
+ eta_PV                              0.000      0.000           0.000      0.000
+ Tnom_PV                             0.000      0.000           0.000      0.000
+ alpha_PV                            0.000      0.000           0.000      0.000
+ beta_PV                             0.000      0.000           0.000      0.000
+ gamma_PV                            0.000      0.000           0.000      0.000
+ tau_alpha_PV                        0.000      0.000           0.000      0.000
+ price_ch_cap                        0.000      0.000           0.000      0.000
+ price_ch_dem_gas                    0.000      0.000           0.000      0.000
+ price_ch_dem_el                     0.000      0.000           0.000      0.000
+ price_ch_op                         0.000      0.000           0.000      0.000
+ price_ch_proc_chp                   0.000      0.000           0.000      0.000
+ price_ch_proc_pv                    0.000      0.000           0.000      0.000
+ price_ch_EEG_Umlage_tax_chp         0.000      0.000           0.000      0.000
+ price_ch_EEG_Umlage_tax_pv          0.000      0.000           0.000      0.000
+ price_EEX_baseload_price            0.000      0.000           0.000      0.000
+ price_ch_avoid_grid_usage           0.000      0.000           0.000      0.000
+ price_ch_sub_chp                    0.000      0.000           0.000      0.000
+ price_ch_self_usage_chp             0.000      0.000           0.000      0.000
+ price_ch_gas_disc_chp               0.000      0.000           0.000      0.000
+ price_ch_sub_pv                     0.000      0.000           0.000      0.000
+ life_factor                         0.000      0.000           0.000      0.000
+ maintenance_factor                  0.000      0.000           0.000      0.000
 
 ------------------------------------------------------------------
 
-  Number of City generated 57
+  Number of City generated 570
 
- Number of City with boiler rescaled 0 
+ Number of City with boiler rescaled 186 

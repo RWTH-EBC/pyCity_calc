@@ -5,8 +5,6 @@
 
 Script to do Monte Carlo simulations
 
-Return :
-
 '''
 
 import copy
@@ -21,17 +19,44 @@ import pycity_calc.economic.annuity_calculation as eco_calc
 import pycity_calc.economic.economic_ann as economic_ann
 import pycity_calc.environments.market as Mark
 import pycity_calc.economic.calc_CO2_emission as GHG_calc
+import pycity_calc.toolbox.mc_helpers.Uncertainties_analysis.MC_esys_new_evaluation as mc_esys
 
 
 
 
 def new_city_evaluation_monte_carlo(City, dict_sample):
+    """
+        Does simulations for Monte Carlo Analyse.
+        Evaluates new City and calculates gas and electrical demand, annuity and GHG emissions.
+
+        Parameters
+        ----------
+        City : object
+            City object from pycity_calc
+        dict_sample : dict
+            Dictionary holding uncertain parameters
+            Keys:
+            'Nsamples' : int: number of samples
+            'uncertain_inputs' : Holding list of uncertain inputs parameters
+            'weather' : Holding weather sample lists
+
+        Returns
+        -------
+        res_tuple : tuple (of Array)
+            Results tuple (Sph_results, Gas_results, El_results, Annuity_results, GHG_results, GHG_spe_results)
+            1. Array holding net space heating demands in kWh as float
+            2. Array holding Gas demands in kWh as float
+            3. Array holding Electrical demands in kWh as float
+            4. Array holding Annuity in Euro as float
+            5. Array holding GHG emissions in kg as float
+            6. Array holding specific GHG emissions in kg as float
+        """
 
     # Save the City
     City_ref = copy.deepcopy(City)
     list_building = City_ref.get_list_build_entity_node_ids()
 
-    Nloop = dict_sample['Nsample']
+    Nloop = dict_sample['Nsamples']
 
 
     Nboiler_rescaled = 0    # number of boiler rescaled (thermal demand to high)
@@ -131,7 +156,7 @@ def new_city_evaluation_monte_carlo(City, dict_sample):
         #  Generate new energy systems
 
         if 'esys' in dict_sample['uncertain_inputs']:
-            City, rescale_boiler = new_evaluation_esys(City)
+            City, rescale_boiler = mc_esys.MC_rescale_esys(City)
 
             if rescale_boiler == True:
                 Nboiler_rescaled += 1

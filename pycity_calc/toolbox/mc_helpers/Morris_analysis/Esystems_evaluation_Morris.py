@@ -63,12 +63,12 @@ def new_evaluation_esys(City, parameters):
             City.node[build]['entity'].bes.electricalHeater.eta = parameters [14]
             City.node[build]['entity'].bes.electricalHeater.t_max = parameters[15]
 
-        if City.node[build]['entity'].bes.hasHeatpump == True:
+        if Cityref.node[build]['entity'].bes.hasHeatpump == True:
             City.node[build]['entity'].bes.heatpump.lower_activation_limit = parameters[16]
             City.node[build]['entity'].bes.heatpump.t_max = parameters [17]
             City.node[build]['entity'].bes.heatpump.t_sink = parameters [18]
 
-        if City.node[build]['entity'].bes.hasPv == True:
+        if Cityref.node[build]['entity'].bes.hasPv == True:
             City.node[build]['entity'].bes.pv.eta = parameters[19]
             City.node[build]['entity'].bes.pv.temperature_nominal = parameters[20]
             City.node[build]['entity'].bes.pv.alpha = parameters[21]

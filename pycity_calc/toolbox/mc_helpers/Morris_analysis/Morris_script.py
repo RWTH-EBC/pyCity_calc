@@ -32,7 +32,7 @@ def run_Morris():
     # #############################################################################################################
 
     # number of samples
-    Nsample = 1
+    Nsample = 10
     print(Nsample)
     Morris_name = 'Morris_values.txt' # filename of the parameters definition variation space for the Morris analysis
 
@@ -431,7 +431,7 @@ def run_Morris():
     print('Do the Morris simulations')
     print('***********************************************************************************************************')
     # Run the "model" -- this will happen offline for external models
-    (Y, Z, H, A, F, liste_max_dhw, liste_max_el,liste_max_sph, liste_shp_curve,liste_el_curve, liste_dhw_curve,Nboiler_rescaled) =\
+    (Y, Z, H, A, F, liste_max_dhw, liste_max_el,liste_max_sph, liste_shp_curve, liste_el_curve, liste_dhw_curve,Nboiler_rescaled) =\
         model_evaluation.evaluate(City, param_values)
 
     #Y[0] = gas_dem_ref
@@ -617,10 +617,11 @@ def run_Morris():
     covariance_plot(ax10, Si_ghg_spe, {}, unit=r"GHG [kg]/kWh*year")
     fig6.suptitle('Specific GHG analysis for {} samples'.format(Nsample))
 
-    fig4, ((ax7, ax8), (ax11, ax12)) = plt.subplots(2, 2)
-    horizontal_bar_plot(ax11, Si_a, {}, sortby='mu_star', unit=r"Annuity[Euro]/year")
-    horizontal_bar_plot(ax12, Si_ghg_spe, {}, sortby='mu_star', unit=r"GHG[kg]/kWh*year")
-    horizontal_bar_plot(ax7, Si_el, {}, sortby='mu_star', unit=r"el_dem[kWh]/year")
+    #fig4, ((ax7, ax8), (ax11, ax12)) = plt.subplots(2, 2)
+    fig4, (ax7, ax8) = plt.subplots(1, 2)
+    horizontal_bar_plot(ax7, Si_a, {}, sortby='mu_star', unit=r"Annuity[Euro]/year")
+    #horizontal_bar_plot(ax12, Si_ghg_spe, {}, sortby='mu_star', unit=r"GHG[kg]/kWh*year")
+    #horizontal_bar_plot(ax7, Si_el, {}, sortby='mu_star', unit=r"el_dem[kWh]/year")
     horizontal_bar_plot(ax8, Si_gas, {}, sortby='mu_star', unit=r"gas_dem[kWh]/year")
 
     fig4.suptitle('Annuity analysis for {} samples'.format(Nsample))

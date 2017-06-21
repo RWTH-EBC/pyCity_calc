@@ -3,8 +3,35 @@
 
 '''
 
-Script to perform a Monte Cralo anlysis of a city object.
+Script to perform a Monte Carlo analysis of a city object.
 Output are uncertain gas and electrical final demand and uncertain annuity and GHG emissions
+Structure:
+1: Define parameter for the uncertainty analysis
+    City generation method: - from a pickle file
+                            - Generation with City_generator
+
+    Uncertainties:  weather is uncertain: True or False
+                    energy systems parameters: True or False (efficiency, maximum temperature...)
+                    buildings parameters: True or False (infiltration rate, net_floor_area, modernisation year)
+                    user parameters: True or False (user_ventilations_rate, Tset_heat, number of occupants)
+
+    Analyse: Confident interval definition
+             Reference for GHG specific calculation
+
+    Results: Save the results in a text file: True or False
+             Filename
+
+2: Reference City generation and add energy systems
+
+3: Dictionary for sampling
+
+4: Simulation generation
+
+5: Analyse of simulations
+
+6: Write results of the analyse
+
+7: Visualisation
 
 '''
 
@@ -23,7 +50,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
 
-def do_uncertainty_analysis(Nsample=10):
+def do_uncertainty_analysis(Nsamples=10):
 
     # Define Uncertainty analysis parameters
     # #############################################################################################################
@@ -32,20 +59,23 @@ def do_uncertainty_analysis(Nsample=10):
     # if set to False: generation of a City with city_generator
     city_pickle_name = 'aachen_kronenberg_3_mfh_ref_1.pkl'
 
-
     # ## Uncertainty
 
     # weather is uncertain
     Is_unc_weather = True
+    # Set to False: weather is fixed
 
-    # energy systems parameters are uncertain (efficiency, maximum temperature...)
-    Is_unc_esys_parameters = True
+    # energy systems parameters are unknown (efficiency, maximum temperature...)
+    Is_k_esys_parameters = True
+    # Set to false: energy systems are known: buildings characteristics uncertainties
 
-    # buildings parameters are uncertain (infiltration rate, net_floor_area, modernisation year)
-    Is_unc_building_parameters = True
+    # buildings parameters are unknown (infiltration rate, net_floor_area, modernisation year)
+    Is_k_building_parameters = True
+    # Set to False:  buildings parameters are known: buildings characteristics uncertainties
 
-    # user parameters are uncertain (user_ventilations_rate, Tset_heat, number of occupants)
-    Is_unc_user_parameters = True
+    # user parameters are unknown (user_ventilation_rate, Tset_heat, number of occupants)
+    Is_k_user_parameters = True
+    #Set to False: user parameters are fixed
 
     # ## Analyse
     Confident_intervall_pourcentage = 90
@@ -418,24 +448,34 @@ def do_uncertainty_analysis(Nsample=10):
     print('total emission reference City :', GHG_Emission_ref, ' kg/year ')
 
     print('***********************************************************************************************************')
-    print('Do the samples')
+    print('Samples Dictionnary')
     print('***********************************************************************************************************')
     # ## Do the dictionary for Monte Carlo uncertainty analysis sampling
 
-    dict_sample = {}
-    dict_sample['Nsample'] = Nsample
+    dict_par_unc = {}
+    dict_par_unc['Nsamples'] = Nsamples
 
     # ## Define which parameters are uncertain
-    dict_sample['uncertain_inputs'] = []
+    dict_par_unc['uncertain_inputs'] = []
     if Is_unc_weather:
-        dict_sample['uncertain_inputs'].append('weather')
-        dict_sample['weather'] = genweather.gen_set_of_weathers(Nsample)
-    if Is_unc_esys_parameters:
-        dict_sample['uncertain_inputs'].append('esys')
-    if Is_unc_building_parameters:
-        dict_sample['uncertain_inputs'].append('buildings_parameters')
-    if Is_unc_user_parameters:
-        dict_sample['uncertain_inputs'].append ('user')
+        print('Weather sampling')
+        dict_par_unc['uncertain_inputs'].append('weather')
+        dict_par_unc['weather'] = genweather.gen_set_of_weathers(Nsamples)
+        print('End of weather sampling')
+    if Is_k_esys_parameters:
+        # energy systems parameters are totally uncertain
+        print('Energy systems sampling')
+        dict_par_unc['uncertain_inputs'].append('esys')
+        #dict_par_unc ['esys'] = genesys.gen_set_of_esys(SaveCity, Nsamples)
+    #else: #
+        #dict_par_unc ['esys']= genesys.gen_set_of_esys(SaveCity, Nsamples)
+        #print('End of energy systems sampling')
+    if Is_k_building_parameters:
+        dict_par_unc['uncertain_inputs'].append('buildings_parameters')
+        # TODO rajouter le sample pour un equipement avec des proprietes totalement incertaines pour le batiments
+    if Is_k_user_parameters:
+        dict_par_unc['uncertain_inputs'].append ('user')
+        # TODO rajouter le sample pour un equipement avec des proprietes vraiment incertaines et dáutres moins
 
 
     print('***********************************************************************************************************')
@@ -443,14 +483,11 @@ def do_uncertainty_analysis(Nsample=10):
     print('***********************************************************************************************************')
 
     Sph_results, Gas_results , El_results, Annuity_results, GHG_results, GHG_spe_results = \
-        newcity.new_city_evaluation_monte_carlo(City, dict_sample)
+        newcity.new_city_evaluation_monte_carlo(City, dict_par_unc)
 
     print('***********************************************************************************************************')
     print('Do the Uncertainties analyse')
     print('***********************************************************************************************************')
-
-    #print (El_results, Gas_results)
-
     # ## Results analysis - Standard deviation, mean and 90 confident interval
 
     print ()
@@ -468,7 +505,7 @@ def do_uncertainty_analysis(Nsample=10):
     print('mean :', mean_gas_demand)
     print('sigma :', sigma_gas_demand)
     print('confident interval {}'.format(Confident_intervall_pourcentage), confident_inter_gas)
-    print('{:0.2%} of the means are in confident interval'.format(((Gas_results >= confident_inter_gas[0]) & (Gas_results < confident_inter_gas[1])).sum() / float(Nsample)))
+    print('{:0.2%} of the means are in confident interval'.format(((Gas_results >= confident_inter_gas[0]) & (Gas_results < confident_inter_gas[1])).sum() / float(Nsamples)))
     print ('median : ', median_gas_demand)
     print ('first quantil : ', first_quantil_gas)
     print ('second quantil :', second_quantil_gas)
@@ -492,7 +529,7 @@ def do_uncertainty_analysis(Nsample=10):
     print('mean :', mean_el_demand)
     print('sigma :', sigma_el_demand)
     print('confident interval {}'.format(Confident_intervall_pourcentage), confident_inter_el)
-    print('{:0.2%} of the means are in confident interval'.format(((El_results >= confident_inter_el[0]) & (El_results < confident_inter_el[1])).sum() / float(Nsample)))
+    print('{:0.2%} of the means are in confident interval'.format(((El_results >= confident_inter_el[0]) & (El_results < confident_inter_el[1])).sum() / float(Nsamples)))
     print('median : ', median_el_demand)
     print('first quantil : ', first_quantil_el)
     print('second quantil :', second_quantil_el)
@@ -516,7 +553,7 @@ def do_uncertainty_analysis(Nsample=10):
     print('mean :', mean_annuity)
     print('sigma :', sigma_annuity)
     print('confident interval {}'.format(Confident_intervall_pourcentage), confident_inter_a)
-    print('{:0.2%} of the means are in confident interval'.format(((Annuity_results >= confident_inter_a[0]) & (Annuity_results < confident_inter_a[1])).sum() / float(Nsample)))
+    print('{:0.2%} of the means are in confident interval'.format(((Annuity_results >= confident_inter_a[0]) & (Annuity_results < confident_inter_a[1])).sum() / float(Nsamples)))
     print('median : ', median_a)
     print('first quantil : ', first_quantil_a)
     print('second quantil :', second_quantil_a)
@@ -542,7 +579,7 @@ def do_uncertainty_analysis(Nsample=10):
     print('sigma :', sigma_GHG)
     print('confident interval {}'.format(Confident_intervall_pourcentage), confident_inter_GHG)
     print('{:0.2%} of the means are in confident interval'.format(
-        ((GHG_results >= confident_inter_GHG[0]) & (GHG_results < confident_inter_GHG[1])).sum() / float(Nsample)))
+        ((GHG_results >= confident_inter_GHG[0]) & (GHG_results < confident_inter_GHG[1])).sum() / float(Nsamples)))
     print('median : ', median_GHG)
     print('first quantil : ', first_quantil_GHG)
     print('second quantil :', second_quantil_GHG)
@@ -568,7 +605,7 @@ def do_uncertainty_analysis(Nsample=10):
     print('sigma specific GHG :', sigma_spe_GHG)
     print('confident interval {}'.format(Confident_intervall_pourcentage), confident_inter_spe_GHG)
     print('{:0.2%} of the means are in confident interval'.format(
-        ((GHG_spe_results >= confident_inter_spe_GHG[0]) & (GHG_spe_results < confident_inter_spe_GHG[1])).sum() / float(Nsample)))
+        ((GHG_spe_results >= confident_inter_spe_GHG[0]) & (GHG_spe_results < confident_inter_spe_GHG[1])).sum() / float(Nsamples)))
     print('median : ', median_spe_GHG)
     print('first quantil : ', first_quantil_spe_GHG)
     print('second quantil :', second_quantil_spe_GHG)
@@ -589,13 +626,13 @@ def do_uncertainty_analysis(Nsample=10):
 
         write_results.write(' ---------- Monte Carlo Analysis ---------- \n ')
 
-        write_results.write(' Number of sampling :' + str(Nsample)+ '\n')
+        write_results.write(' Number of sampling :' + str(Nsamples)+ '\n')
 
         write_results.write('\n############## Uncertain parameters ##############\n')
         write_results.write('weather: ' + str(Is_unc_weather)+ '\n')
-        write_results.write('user behaviour: ' + str(Is_unc_user_parameters)+ '\n')
-        write_results.write('energy systems parameters: ' + str(Is_unc_esys_parameters)+ '\n')
-        write_results.write('buildings parameters: ' + str(Is_unc_building_parameters)+ '\n')
+        write_results.write('user behaviour: ' + str(Is_k_user_parameters)+ '\n')
+        write_results.write('energy systems parameters: ' + str(Is_k_esys_parameters)+ '\n')
+        write_results.write('buildings parameters: ' + str(Is_k_building_parameters)+ '\n')
 
         write_results.write('\n############## City reference ##############\n')
         if load_city == True:
@@ -649,7 +686,7 @@ def do_uncertainty_analysis(Nsample=10):
         write_results.write('mean : '+ str(mean_gas_demand) + '\n')
         write_results.write('sigma : '+ str(sigma_gas_demand) + '\n')
         write_results.write('confident interval {}'.format(Confident_intervall_pourcentage)+ str(confident_inter_gas) + '\n')
-        write_results.write('{:0.2%} of the means are in confident interval'.format(((Gas_results >= confident_inter_gas[0]) & (Gas_results < confident_inter_gas[1])).sum() / float(Nsample))+ '\n')
+        write_results.write('{:0.2%} of the means are in confident interval'.format(((Gas_results >= confident_inter_gas[0]) & (Gas_results < confident_inter_gas[1])).sum() / float(Nsamples))+ '\n')
 
         write_results.write('\n electrical demand\n')
         write_results.write('\n -----------------\n')
@@ -663,7 +700,7 @@ def do_uncertainty_analysis(Nsample=10):
         write_results.write('confident interval {}'.format(Confident_intervall_pourcentage)+ str(confident_inter_el) + '\n')
         write_results.write('{:0.2%} of the means are in confident interval'.format(
             ((El_results >= confident_inter_el[0]) & (El_results < confident_inter_el[1])).sum() / float(
-                Nsample)) + '\n')
+                Nsamples)) + '\n')
 
         write_results.write('\n Annuity\n')
         write_results.write('\n -------\n')
@@ -677,7 +714,7 @@ def do_uncertainty_analysis(Nsample=10):
         write_results.write('confident interval {}'.format(Confident_intervall_pourcentage)+ str(confident_inter_a) + '\n')
         write_results.write('{:0.2%} of the means are in confident interval'.format(
             ((Annuity_results >= confident_inter_a[0]) & (Annuity_results < confident_inter_a[1])).sum() / float(
-                Nsample)) + '\n')
+                Nsamples)) + '\n')
 
         write_results.write('\n GHG Emissions\n')
         write_results.write('\n -------------\n')
@@ -691,7 +728,7 @@ def do_uncertainty_analysis(Nsample=10):
         write_results.write('confident interval {}'.format(Confident_intervall_pourcentage)+ str(confident_inter_GHG) + '\n')
         write_results.write('{:0.2%} of the means are in confident interval'.format(
             ((GHG_results >= confident_inter_GHG[0]) & (GHG_results < confident_inter_GHG[1])).sum() / float(
-                Nsample)) + '\n')
+                Nsamples)) + '\n')
 
         write_results.write('\n Specific GHG Emissions\n')
         write_results.write('\n ----------------------\n')
@@ -706,7 +743,7 @@ def do_uncertainty_analysis(Nsample=10):
         write_results.write('confident interval {}'.format(Confident_intervall_pourcentage)+ str(confident_inter_spe_GHG) + '\n')
         write_results.write('{:0.2%} of the means are in confident interval'.format(
             ((GHG_spe_results >= confident_inter_spe_GHG[0]) & (GHG_spe_results < confident_inter_spe_GHG[1])).sum() / float(
-                Nsample)) + '\n')
+                Nsamples)) + '\n')
         write_results.close()
 
     print('***********************************************************************************************************')
@@ -714,8 +751,8 @@ def do_uncertainty_analysis(Nsample=10):
     print('***********************************************************************************************************')
     print()
     # ## Visualisation
-
     # Histogram figure
+
     fig, ((ax1,ax2), (ax3,ax4)) = plt.subplots(2, 2)
 
     ax1.hist(El_results,100, normed=1)
@@ -724,17 +761,13 @@ def do_uncertainty_analysis(Nsample=10):
     ax2.hist(Gas_results,100 , normed=1)
     ax2.set_title('Gas demand in kWh')
 
-    #ax3.hist(Sph_results,100, normed=1)
-    #ax3.set_title('Space heating demand in kWh')
-
     ax3.hist(Annuity_results, 100, normed=1)
     ax3.set_title('Annuity in  Euro/year')
 
     ax4.hist(GHG_spe_results, 100, normed=1)
     ax4.set_title('GHG specific emission in kg/kWh/year')
 
-    fig.suptitle('Histogram energy demand in kWh/year for {} simulations '.format(Nsample))
-
+    fig.suptitle('Histogram energy demand in kWh/year for {} simulations '.format(Nsamples))
 
     # Box plot:
 

@@ -20,64 +20,64 @@ energy systems type: [(1001, 0, 1.0), (1002, 0, 1.0), (1003, 0, 1.0)]
 
  ----------
 unit : kWh/year 
-median : 242620.06385
-first quantil : 225252.662625
-second quantil :242620.06385
-third quantil :249567.987325
-mean : 239649.78558
-sigma : 16505.4716458
-confident interval 90(212500.70067884025, 266798.87048115977)
+median : 353873.25285
+first quantil : 321537.97315
+second quantil :353873.25285
+third quantil :364396.264
+mean : 340894.01804
+sigma : 53953.0159224
+confident interval 90(252149.20411513065, 429638.83196486929)
 90.00% of the means are in confident interval
 
  electrical demand
 
  -----------------
 unit : kWh/year 
-median : 59444.0
-first quantil : 56884.25
-second quantil :59444.0
-third quantil :61962.75
-mean : 59669.1
-sigma : 3754.61200259
-confident interval 90(53493.312829742747, 65844.887170257251)
-80.00% of the means are in confident interval
+median : 58669.5
+first quantil : 55902.75
+second quantil :58669.5
+third quantil :61835.25
+mean : 58625.4
+sigma : 3984.1286927
+confident interval 90(52072.091469570027, 65178.708530429969)
+90.00% of the means are in confident interval
 
  Annuity
 
  -------
 unit : Euro/year 
-median : -31594.64185
-first quantil : -32134.881825
-second quantil :-31594.64185
-third quantil :-30975.522
-mean : -31653.95937
-sigma : 1004.70425667
-confident interval 90(-33306.550810596411, -30001.367929403601)
-80.00% of the means are in confident interval
+median : -38297.09365
+first quantil : -39221.362575
+second quantil :-38297.09365
+third quantil :-36496.4281
+mean : -37539.58367
+sigma : 3610.11328035
+confident interval 90(-43477.691592885094, -31601.475747114928)
+90.00% of the means are in confident interval
 
  GHG Emissions
 
  -------------
 unit : kg/year 
-median : 96031.2591
-first quantil : 94455.569525
-second quantil :96031.2591
-third quantil :96903.395925
-mean : 96245.08799
-sigma : 3588.27445558
-confident interval 90(90342.901737235297, 102147.2742427647)
-80.00% of the means are in confident interval
+median : 123379.40295
+first quantil : 115777.99215
+second quantil :123379.40295
+third quantil :126579.896675
+mean : 120288.01861
+sigma : 13883.16073
+confident interval 90(97452.251329749575, 143123.78589025041)
+90.00% of the means are in confident interval
 
  Specific GHG Emissions
 
  ----------------------
 unit : kg/kWh/year 
 reference: user energy demand
-median : 0.3551
-first quantil : 0.354025
-second quantil :0.3551
-third quantil :0.3645
-mean : 0.35729
-sigma : 0.00893984899201
-confident interval 90(96245.073285256964, 96245.102694743036)
+median : 0.45725
+first quantil : 0.434875
+second quantil :0.45725
+third quantil :0.472575
+mean : 0.44747
+sigma : 0.0451890263228
+confident interval 90(120287.94428066615, 120288.09293933384)
 0.00% of the means are in confident interval
