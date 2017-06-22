@@ -32,7 +32,7 @@ def run_Morris():
     # #############################################################################################################
 
     # number of samples
-    Nsample = 10
+    Nsample = 100
     print(Nsample)
     Morris_name = 'Morris_values.txt' # filename of the parameters definition variation space for the Morris analysis
 
@@ -45,6 +45,9 @@ def run_Morris():
     save_result = True  # if set to false: no generation of results txt file
     results_name = 'Morris_results2.txt'
 
+    # Ecomomic
+    time = 10  # Years
+    interest = 0.05  # Interest rate
 
     print('***********************************************************************************************************')
     print('Initialisation: Reference City Generation')
@@ -366,9 +369,6 @@ def run_Morris():
     # #----------------------------------------------------------------------
 
     # # Economic and GHG calculations
-
-    time = 10  # Years
-    interest = 0.05  # Interest rate
     Market_instance = Mark.Market()
 
     #  Generate economic calculator object
@@ -478,14 +478,6 @@ def run_Morris():
     # Returns a dictionary with keys 'mu', 'mu_star', 'sigma', and 'mu_star_conf'
     # e.g. Si['mu_star'] contains the mu* value for each parameter, in the
     # same order as the parameter file
-
-    #print('Savecity: Annual electricity demand : ', SaveCity.get_annual_el_demand(), 'kWh/year')
-
-    #print('Y', Y)
-
-    #print('Savecity: Annual thermal demand : ', SaveCity.get_total_annual_th_demand(), 'kWh/year')
-
-    #print('Z', Z)
 
     print('***********************************************************************************************************')
     print('Save results')
@@ -617,12 +609,9 @@ def run_Morris():
     covariance_plot(ax10, Si_ghg_spe, {}, unit=r"GHG [kg]/kWh*year")
     fig6.suptitle('Specific GHG analysis for {} samples'.format(Nsample))
 
-    #fig4, ((ax7, ax8), (ax11, ax12)) = plt.subplots(2, 2)
     fig4, (ax7, ax8) = plt.subplots(1, 2)
     horizontal_bar_plot(ax7, Si_a, {}, sortby='mu_star', unit=r"Annuity[Euro]/year")
-    #horizontal_bar_plot(ax12, Si_ghg_spe, {}, sortby='mu_star', unit=r"GHG[kg]/kWh*year")
-    #horizontal_bar_plot(ax7, Si_el, {}, sortby='mu_star', unit=r"el_dem[kWh]/year")
-    horizontal_bar_plot(ax8, Si_gas, {}, sortby='mu_star', unit=r"gas_dem[kWh]/year")
+    covariance_plot(ax8, Si_a, {}, unit=r"Annuity[Euro]/year")
 
     fig4.suptitle('Annuity analysis for {} samples'.format(Nsample))
 

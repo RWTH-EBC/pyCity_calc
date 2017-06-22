@@ -1,14 +1,17 @@
-longitude	50.775	50.776
-latitude	6.083	6.084
-Altitude	263	269
+longitude	50.775	50.777
+latitude	6.083	6.085
+Altitude	260	270
 weather	-1	1
-net_floor_area	-0.05	0.05
-average_height_of_floors	2.4	2.9
-Usable_pv_roof_area	-0.05	0.05
+net_floor_area	-0.1	0.1
+average_height_of_floors	2.4	3
 year_of_modernization	1977	2015
+dormer	0	2
+attic	0	4
+cellar	0	4
+construction type	-1	1
 total_number_occupants	1	5
 Annual_el_e_dem	-0.4	0.4
-dhw_Tflow	45	75
+dhw_Tflow	55	75
 dhw_Tsupply	10	35
 vent_factor	0.1	1
 tset_heat	18	25
@@ -53,4 +56,5 @@ price_ch_self_usage_chp	0.995	1.005
 price_ch_gas_disc_chp	0.995	1.005
 price_ch_sub_pv	0.95	0.98
 life_factor	0.6	1.4
-maintenance_factor	0.6	1.4
+maintenance_factor	0.5	1.5
+interest	0.001	0.2

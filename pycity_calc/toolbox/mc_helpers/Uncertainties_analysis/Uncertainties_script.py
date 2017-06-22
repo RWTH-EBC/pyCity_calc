@@ -50,7 +50,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
 
-def do_uncertainty_analysis(Nsamples=10):
+def do_uncertainty_analysis(Nsamples=1000):
 
     # Define Uncertainty analysis parameters
     # #############################################################################################################
