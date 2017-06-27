@@ -1,7 +1,10 @@
 """
 1. If __name__ == ‚__main__‘: Durchlauf des Programms
 2. Beispielstadt laden
-3. Passende Szenarien anhand der Randbedingungen auswählen und in qual_scenarios speichern: select_szenarios()
+3.
+
+
+Passende Szenarien anhand der Randbedingungen auswählen und in qual_scenarios speichern: select_szenarios()
 4. Alle qual_scenarios durchlaufen und abhängig ob zentral/dezentral dimensionieren:
         dim_centralized(city, scenario)
         dim_decentralized(city, scenario) 
@@ -9,10 +12,6 @@
         Dimensionierung der Anlagen in allen möglichen Szenarien nach gesetzlichen Bedingungen.
         Für centralized: Alle Lastgänge addieren -> daraus maximale Last errechnen
         Für decentralized: Einzelne Lastgänge nutzen
-
-5.	Ausgabe aller Szenarien in Variablen/Dictionary/Datei
-
-
 
 """
 
@@ -24,34 +23,155 @@ import pycity.classes.supply.BES as BES
 import pycity_calc.energysystems.boiler as Boiler
 import pycity_calc.energysystems.chp as CHP
 
-scen1 = {'supply':'centralized','base':['boiler'],'peak':[]}
-scen2 = {'supply':'centralized','base':['chp'],'peak':['boiler']}
-#scen3 = {'supply':'decentralized','base':['heatPump','PV','geo_flat'],'peak':['boiler']}
+import pycity_calc.cities.city as City
 
-all_scenarios = [scen1, scen2]
+#centralized
+sc1 = {'type':['centralized','decentralized'],'base':['chp'],'peak':['boiler']} #kann zentral/semizentral/dezentral genutzt werden
+sc2 = {'type':['centralized','decentralized'],'base':['solar'],'peak':['boiler']}
+#sc3 = {'type':['centralized'],'base':['boiler_bio'],'peak':['boiler']}
+#sc4 = {'type':['centralized'],'base':['boiler_bio','chp'],'peak':['boiler']}
+
+#decentralized
+sc5 = {'type':['decentralized'],'base':[],'peak':['boiler']}
+sc6 = {'type':['decentralized'],'base':['heatPump'],'peak':['boiler']}
+sc7 = {'type':['decentralized'],'base':['heatPump','PV'],'peak':['boiler']}
+
+all_scenarios = [sc1, sc2, sc5, sc6, sc7]
+
+
 
 def run_approach(city):
 
-    # select qualified scenarios for this district and environment
-    print('Selection of scenarios...')
-    qual_scenarios = select_scenarios(city)
+    solutions = [] #Liste aller möglichen dimensionierten Szenarien (inklusive Kosten und Emissionen)
+
+#----------------------- Abschätzung ob zentral/dezentral versorgt werden sollte ----------------------------------
+
+    # Energiekennwert des Quartiers (Keine Unterscheidung der Gebäude - nur Betrachtung als Gesamtes zur Abschätzung)
+    th_total = city.get_annual_space_heating_demand() + city.get_annual_dhw_demand()
+    area_total = 0
+    for house in city.node.values():
+        area_total += house['entity'].get_net_floor_area_of_building()
+    ekw = th_total/area_total #in kWh/(m2*a)
+
+    # Art des Quartiers bestimmen (großes/mittleres/kleines Versorgungsgebiet)
+    # Anzahl Personen in Gebiet? Höhe Gesamtverbrauch?
+    # Aufteilung nach BBSR - Handlungsleitfaden zur energetischen Stadterneuerung (Infos über Grundstücksfläche benötigt um GFZ berechnen zu können)
+    district_type = 'small' # -> kleines Versorgungsgebiet (Siedlung/Dorf mit überwiegend 1-/2-Familienhäusern)
+
+    # Check ob Nahwärmenetz vorhanden oder Bau notwendig - gibt es die Info in city_object?
+    heating_net = True
+    # Falls vorhanden Check ob Anschluss an Gebäude vorhanden - gibt es die Info in city_object?
+    building_con = True
+
+    dhn_elig = get_eligibility_dhn(district_type, ekw, heating_net, building_con)
+
+    print('Eligibility: ', dhn_elig)
+    print('Ekw = ', ekw)
+
+#------------------------------------ Dimensionierung der Anlagen -------------------------------------------------
+
+    if dhn_elig > 3:
+        print('District Heating eligible!')
+        for scenario in all_scenarios:
+            if 'centralized' in scenario['type']:
+                print('dim_centralized mit', scenario)
+                solutions.append(dim_centralized(city,scenario))
+
+    elif dhn_elig < 3:
+        print('District Heating not eligible!')
+        for scenario in all_scenarios:
+            if 'decentralized' in scenario['type']:
+                print('dim_decentralized mit', scenario)
+                solutions.append(dim_decentralized(city,scenario))
+
+    else:
+        print('District Heating solutions might be eligible...')
+        for scenario in all_scenarios:
+            if 'centralized' in scenario['type']:
+                print('dim_centralized mit', scenario)
+                solutions.append(dim_centralized(city,scenario))
+#           if 'decentralized' in scenario['type']:
+#               solutions.append(dim_decentralized(city,scenario))
 
 
-    # dimensioning of centralized and decentralized scenarios
-    final_scen = []
 
-    for scenario in qual_scenarios:
-        print('\nDimensioning of scenario: ', scenario)
-        if scenario['supply'] == 'centralized':
-            # final_scen wird das dimensionierte scenario angefügt
-            final_scen.append(dim_centralized(city, scenario))
 
-        elif scenario['supply'] == 'decentralized':
-            # die einzelnen Häuser müssen individuell ausgelegt werden. Wie kann das in dieser Struktur realisiert werden?
-            # -> Abhängig von genereller Endstruktur der Anlagendaten (liste mit dictionaries o.ä.)
-            dim_decentralized(city, scenario)
 
-    return final_scen
+
+
+
+def get_eligibility_dhn(district_type, ekw, heating_net=False, building_con=False):
+    '''
+
+    :param district_type: big/medium/small
+    :param ekw: Energiekennwert in kWh/m²a
+    :param heating_net: District heating network already in place (True/False)
+    :param building_con: Building connection to dhn already installed (True/False)
+    :return: elig_val = value of eligibility for usage of district heating: 1(very bad) - 5(very good)
+    '''
+    if district_type == 'big':
+        if heating_net:
+            if building_con:
+                if ekw > 120:
+                    elig_val = 5
+                else:
+                    elig_val = 4
+            else:
+                if ekw > 120:
+                    elig_val = 4
+                else:
+                    elig_val = 3
+        else:
+            elig_val = 3
+
+    elif district_type == 'medium':
+        if heating_net:
+            if building_con:
+                if ekw > 180:
+                    elig_val = 5
+                elif ekw > 120:
+                    elig_val = 4
+                else:
+                    elig_val = 3
+            else:
+                if ekw > 180:
+                    elig_val = 4
+                elif ekw > 120:
+                    elig_val = 3
+                else:
+                    elig_val = 2
+        else:
+            if ekw > 180:
+                elig_val = 3
+            elif ekw > 120:
+                elig_val = 2
+            else:
+                elig_val = 1
+
+    elif district_type == 'small':
+        if heating_net:
+            if building_con:
+                if ekw > 120:
+                    elig_val = 4
+                elif ekw > 80:
+                    elig_val = 3
+                else:
+                    elig_val = 2
+            else:
+                if ekw > 180:
+                    elig_val = 3
+                elif ekw > 120:
+                    elig_val = 2
+                else:
+                    elig_val = 1
+        else:
+            if ekw > 120:
+                elig_val = 2
+            else:
+                elig_val = 1
+
+    return elig_val
+
 
 def get_LDC(curve):
     '''
@@ -70,76 +190,66 @@ def dim_centralized(city, scenario):
     :return: scenario with sizes of devices - in welcher form? city_object
     '''
 
-    # correction factor for timesteps
-    #timesteps_factor = 3600/city.environment.timer.timeDiscretization
-
-    # get thermal and electrical demand curves
+    # get thermal and electrical demand curves (only available for sanitation)
     [el_curve, th_curve] = city.get_power_curves(current_values=False)
 
     # Load duration curve (Jahresdauerlinie)
     th_LDC = get_LDC(th_curve)
 
-    op_times = []
-
-    # Bestimmung eines Gebäudes als Wärmezentrale - evtl. neues Gebäude erstellen, das Zentrale beinhaltet
-    h_central = city.node[1001]['entity']
-
-    # Add BES if necessary
-    if not h_central.hasBes:
-        bes = BES.BES(city.environment)
-        h_central.addEntity(bes)
-        print('* Added BES')
-
-    for dev in scenario['base']:
-
-        if dev == 'boiler':
-            # Add Boiler
-
-            lower_activation_limit = 0  # bei welchem Bedarf wird der Boiler angeschmissen?
-            q_nominal = max(th_curve)  # Höchster Wert des thermischen Bedarfs
-            t_max = 90   # prüfen, wieso 90°C?
-            eta = 0.9    # kann so bleiben
-            boiler = Boiler.BoilerExtended(city.environment, q_nominal, eta, t_max, lower_activation_limit)
-            h_central.bes.addDevice(boiler)
-
-            # Boiler übernimmt komplette Wärmeversorgung
-            boiler._setQOutput(th_curve)
-
-            # Macht es Sinn den Output in einer anderen Methode einzutragen?
-            results_boiler = boiler._getQOutput() #currentValues True/False?
-            op_times.append(results_boiler/q_nominal)
-
-        elif dev == 'chp':
-            # Auslegung nach Volllaststunden -> 5000h/a
-            vlh = 5000 #Volllaststunden
-
-            # Add CHP
-            lower_activation_limit = 0.9
-            #q_nominal = th_curve[vlh*timesteps_factor]
-            q_nominal = th_curve[vlh]
-            t_max = 90
-            p_nominal = 0.4*q_nominal
-            eta_total = 0.87
-            chp = CHP.ChpExtended(environment=city.environment,
-                                  p_nominal=p_nominal,
-                                  q_nominal=q_nominal,
-                                  eta_total=eta_total,
-                                  t_max=t_max,
-                                  lower_activation_limit=lower_activation_limit,
-                                  thermal_operation_mode=True)
-            h_central.bes.addDevice(chp)
-
-            # wie lege ich den Output fest, zu jeder Zeit, zu der q_nominal überstiegen wird?
-            #chp._setQOutput()
+    for device in scenario['base']:
+        if device == 'chp':
+            #Dimensionierung nach Krimmling "Energieeffiziente Nahwärmesysteme", S.127 - Faustformel: BHKW-Leistung zwischen 10% und 20% der Maximallast
+            q_borders = [min(th_LDC, key=lambda x:abs(x-0.1*max(th_LDC))), min(th_LDC, key=lambda x:abs(x-0.2*max(th_LDC)))] #gibt die Leistungsgrenzen nach Faustformel aus
+            t_borders = [th_LDC.index(q_borders[0]), th_LDC.index(q_borders[1])] #gibt die Volllaststunden für die errechneten Leistungen aus
+            print('BHKW mit Leistung zwischen ', q_borders)
+            print('Betriebszeiten zwischen ', t_borders)
 
 
-        print('* Added', dev)
 
-    #plot operational times of all devices
-    #for op in op_times: plt.plot(op)
-    #plt.show()
 
-    return None
+
+if __name__ == '__main__':
+    #  Run program
+    city = pickle.load(open('D:/jsc-jun/Beispielquartier/3_mfh_kronenberg/aachen_kronenberg_3_mfh_ref_1.pkl', mode='rb'))
+    #city = pickle.load(open('/Users/jules/PycharmProjects/Masterarbeit/Beispielquartier/aachen_kronenberg_3_mfh_ref_1.pkl', mode='rb'))
+    print('District: Aachen Kronenberg')
+
+    run_approach(city)
+
+
+
+
+
+#---------------------------------------- Alt -------------------------------------------------------
+
+"""
+    # select qualified scenarios for this district and environment
+    print('Selection of scenarios...')
+    qual_scenarios = select_scenarios(city)
+
+    # dimensioning of centralized and decentralized scenarios
+    final_scen = []
+
+
+
+    for scenario in qual_scenarios:
+        print('\nDimensioning of scenario: ', scenario)
+        if scenario['supply'] == 'centralized':
+            # final_scen wird das dimensionierte scenario angefügt
+            final_scen.append(dim_centralized(city, scenario))
+
+        elif scenario['supply'] == 'decentralized':
+            # die einzelnen Häuser müssen individuell ausgelegt werden. Wie kann das in dieser Struktur realisiert werden?
+            # -> Abhängig von genereller Endstruktur der Anlagendaten (liste mit dictionaries o.ä.)
+            dim_decentralized(city, scenario)
+
+    return final_scen
+
+
+
+
+
+
 
 def dim_decentralized(city, scenario):
     # Lastgänge jedes Hauses wird betrachtet und muss gedeckt werden
@@ -150,12 +260,12 @@ def dim_decentralized(city, scenario):
 
 
 def select_scenarios(city):
-    """
+    '''
     Select qualified scenarios bc of
 
     :param city: city district which should be served
     :return: list of qualified scenarios
-    """
+    '''
 
     qual_scenarios = all_scenarios[:]
 
@@ -176,19 +286,10 @@ def select_scenarios(city):
     return qual_scenarios
 
 
+"""
 
 
 
-
-
-
-if __name__ == '__main__':
-    #  Run program
-    city = pickle.load(open('D:/jsc-jun/Beispielquartier/3_mfh_kronenberg/aachen_kronenberg_3_mfh_ref_1.pkl', mode='rb'))
-    #city = pickle.load(open('/Users/jules/PycharmProjects/Masterarbeit/Beispielquartier/aachen_kronenberg_3_mfh_ref_1.pkl', mode='rb'))
-    print('District: Aachen Kronenberg')
-
-    run_approach(city)
 
 
 
