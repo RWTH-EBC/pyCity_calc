@@ -2065,7 +2065,7 @@ if __name__ == '__main__':
     #  Add results of mc analyses
     #  ####################################################################
 
-    filename_city = 'rheinbaben_nord_mod_jsc_estimate_retrofit_overwrite_corrected_mc_city_2000.pkl'
+    filename_city = 'rheinbaben_nord_mod_jsc_extract_al_mc_city_samples_10000.pkl'
     #filename_b = 'aachen_forsterlinde_mod_7_single_b_100001011.pkl'
     output_city = filename_city[:-4]
     #output_b = filename_b[:-4]
@@ -2074,7 +2074,7 @@ if __name__ == '__main__':
     dict_files_city[key] = filename_city
     #dict_files_build[key] = filename_b
 
-    filename_city = 'city_Rheinbaben_sued_mod_jsc_estimate_retrofit_20_mc_city_2000.pkl'
+    filename_city = 'city_Rheinbaben_sued_mod_jsc_20_extr_al_mc_city_samples_10000.pkl'
     #filename_b = 'aachen_frankenberg_mod_6_single_b_100001020.pkl'
     output_city = filename_city[:-4]
     #output_b = filename_b[:-4]
@@ -2141,13 +2141,13 @@ if __name__ == '__main__':
     dict_b_node_nb = {}
 
     #  City object pickle file, which should be loaded
-    city_f_name = 'rheinbaben_nord_mod_jsc_estimate_retrofit_overwrite_corrected.p'
+    city_f_name = 'rheinbaben_nord_mod_jsc_extract_alex.p'
     key = 'Rheinbaben Nord'
     #build_node_nb = 1011  # Forsterlinde
     dict_city_f_names[key] = city_f_name
     #dict_b_node_nb[key] = build_node_nb
 
-    city_f_name = 'city_Rheinbaben_sued_mod_jsc_estimate_retrofit_20.p'
+    city_f_name = 'city_Rheinbaben_sued_mod_jsc_20_extr_alex.p'
     key = u'Rheinbaben Süd'
     #build_node_nb = 1020  # Frankenberg
     dict_city_f_names[key] = city_f_name
