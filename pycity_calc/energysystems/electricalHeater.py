@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# coding=utf-8
 """
 Extended electricalHeater class (based on electricalHeater object of pycity)
 """

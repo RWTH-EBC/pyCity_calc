@@ -13,6 +13,8 @@ import pycity.classes.Prices as Price
 class Market(Price.Prices):
     """
     Market class of pycity_calculator. Extends prices object of pycity.
+    Holds specific price data for gas and electricity for different reference
+    years and residential as well as non-residential buildings
     """
 
     def __init__(self, reset_pycity_default_values=True):
@@ -60,9 +62,6 @@ class Market(Price.Prices):
 
         #  4. Non-residential (gas)
         self.gas_price_data_ind = gas_price_data_ind
-
-        #  Subsidies
-        #  TODO: Add subsidies
 
     def load_pricing_data(self):
         """
@@ -189,14 +188,14 @@ class Market(Price.Prices):
                 gas_price_data = self.gas_price_data_res
             elif type == 'ind':  # Industrial
                 gas_price_data = self.gas_price_data_ind
-            #  Find row index according to demand
+            # Find row index according to demand
             max_demand_column = gas_price_data[:, [1]]
             for i in range(len(max_demand_column)):
                 #  If annual_demand is smaller than max demand value in data
                 if annual_demand < max_demand_column[i]:
                     row = i  # Return row index
                     break
-                else:  #  index of last row
+                else:  # index of last row
                     row = len(max_demand_column) - 1
 
             spec_cost_gas = gas_price_data[row][column]
@@ -240,14 +239,14 @@ class Market(Price.Prices):
                 el_price_data = self.el_price_data_res
             elif type == 'ind':  # Industrial
                 el_price_data = self.el_price_data_ind
-            #  Find row index according to demand
+            # Find row index according to demand
             max_demand_column = el_price_data[:, [1]]
             for i in range(len(max_demand_column)):
                 #  If annual_demand is smaller than max demand value in data
                 if annual_demand < max_demand_column[i]:
                     row = i  # Return row index
                     break
-                else:  #  index of last row
+                else:  # index of last row
                     row = len(max_demand_column) - 1
 
             spec_cost_gas = el_price_data[row][column]
@@ -257,19 +256,20 @@ class Market(Price.Prices):
 
         return spec_cost_gas
 
+
 if __name__ == '__main__':
     market = Market()
 
     print('Gas price data residential buildings for 2010 (by demands):')
     print(market.gas_price_data_res[:, [2]])
 
-    spec_cost_gas =market.get_spec_gas_cost(type='res', year=2015,
-                                            annual_demand=15000)
+    spec_cost_gas = market.get_spec_gas_cost(type='res', year=2015,
+                                             annual_demand=15000)
     print('Specific cost of gas for chosen type, year and demand in Euro/kWh:')
     print(spec_cost_gas)
 
-    spec_cost_el =market.get_spec_el_cost(type='ind', year=2012,
-                                            annual_demand=600*1000)
+    spec_cost_el = market.get_spec_el_cost(type='ind', year=2012,
+                                           annual_demand=600 * 1000)
     print('Specific cost of electricity for chosen type, year and demand in ' +
           'Euro/kWh:')
     print(spec_cost_el)
