@@ -6,6 +6,34 @@ Script to perform Morris sensitivity analysis using SaLib Library
 
 Returns standard deviation and mean of the elementary effects absolute value for each parameter
 
+
+Structure:
+1: Define parameter for Morris analysis
+    City generation method: - from a pickle file
+                            - Generation with City_generator
+
+    Morris_name:  text file with uncertain inputs for city model and associated boundaries
+
+    Number of Samples
+
+
+    Results: Save the results in a text file: True or False
+             Filename
+
+    Economic:   time (years)
+
+2: Reference City generation and add energy systems
+
+3: Sampling with Salib library
+
+4: City simulations
+
+5: Analyse of simulations
+
+6: Save of analysis results
+
+7: Visualisation
+
 """
 
 import os
@@ -47,7 +75,6 @@ def run_Morris():
 
     # Ecomomic
     time = 10  # Years
-    interest = 0.05  # Interest rate
 
     print('***********************************************************************************************************')
     print('Initialisation: Reference City Generation')
@@ -337,8 +364,8 @@ def run_Morris():
     # #----------------------------------------------------------------------
     # Save reference city
     SaveCity = copy.deepcopy(City)
-    annual_electrical_demand_for_EBB = SaveCity.get_annual_el_demand()
-    annual_thermal_demand = SaveCity.get_total_annual_th_demand()
+    ref_annual_electrical_demand_for_EBB = SaveCity.get_annual_el_demand()
+    ref_annual_thermal_demand = SaveCity.get_total_annual_th_demand()
 
     # # Energy balance calculations
 
@@ -370,6 +397,7 @@ def run_Morris():
 
     # # Economic and GHG calculations
     Market_instance = Mark.Market()
+    interest = 0.05  # Interest rate
 
     #  Generate economic calculator object
     print("Economic object generation")
@@ -399,11 +427,9 @@ def run_Morris():
     print('***********************************************************************************************************')
     print('Save the city')
     print('***********************************************************************************************************')
-    # Save reference city
-    #SaveCity = copy.deepcopy(City)
 
-    print('Annual electricity demand : ', annual_electrical_demand_for_EBB, 'kWh/year')
-    print('Annual thermal demand : ',annual_thermal_demand , 'kWh/year')
+    print('Annual electricity demand : ', ref_annual_electrical_demand_for_EBB, 'kWh/year')
+    print('Annual thermal demand : ', ref_annual_thermal_demand , 'kWh/year')
     print('Annual electricity demand reference City after EBB : ', el_dem_ref, 'kWh/year')
     print('Annual gas demand reference City after EBB: ', gas_dem_ref, 'kWh/year')
     print('total reference annuity:', round(total_annuity_ref, 2), ' Euro/year')
@@ -431,46 +457,34 @@ def run_Morris():
     print('Do the Morris simulations')
     print('***********************************************************************************************************')
     # Run the "model" -- this will happen offline for external models
-    (Y, Z, H, A, F, liste_max_dhw, liste_max_el,liste_max_sph, liste_shp_curve, liste_el_curve, liste_dhw_curve,Nboiler_rescaled) =\
+    (Gas_results, El_results, Emissions_results, Annuity_results, Spe_Emission_results, liste_max_dhw, liste_max_el,
+     liste_max_sph, liste_shp_curve, liste_el_curve, liste_dhw_curve,Nboiler_rescaled) =\
         model_evaluation.evaluate(City, param_values)
-
-    #Y[0] = gas_dem_ref
-    #Z[0] = el_dem_ref
-    #H[0] = GHG_Emission_ref
-    #A[0] = total_annuity_ref
-
-    #print('Y: gas_dem after energy balance', Y)
-    #print('Z: el_dem after energy balance', Z)
-    #print('H: GHG emissions', H)
-    #print('A : annuity ', A)
-
 
     print('***********************************************************************************************************')
     print('Do the Morris analyse')
     print('***********************************************************************************************************')
     print('Analysis regarding gas_dem')
-    Si_gas = morris.analyze(problem, param_values, Y, conf_level=0.95,
+    Si_gas = morris.analyze(problem, param_values, Gas_results, conf_level=0.95,
                     print_to_console=True,
                     num_levels=5, grid_jump=1, num_resamples=100)
-    #print (Si_gas)
-    #print (Si_gas.keys())
 
     print('Analysis regarding el_dem')
-    Si_el = morris.analyze(problem, param_values, Z, conf_level=0.95,
+    Si_el = morris.analyze(problem, param_values, El_results, conf_level=0.95,
                             print_to_console=True,
                             num_levels=5, grid_jump=1, num_resamples=100)
 
     print('Analysis regarding GHG')
-    Si_ghg = morris.analyze(problem, param_values, H, conf_level=0.95,
+    Si_ghg = morris.analyze(problem, param_values, Emissions_results, conf_level=0.95,
                            print_to_console=True,
                            num_levels=5, grid_jump=1, num_resamples=100)
 
-    Si_ghg_spe = morris.analyze(problem, param_values, F, conf_level=0.95,
+    Si_ghg_spe = morris.analyze(problem, param_values, Spe_Emission_results, conf_level=0.95,
                             print_to_console=True,
                             num_levels=5, grid_jump=1, num_resamples=100)
 
     print('Analysis regarding Annuity')
-    Si_a = morris.analyze(problem, param_values, A, conf_level=0.95,
+    Si_a = morris.analyze(problem, param_values,Annuity_results, conf_level=0.95,
                             print_to_console=True,
                             num_levels=5, grid_jump=1, num_resamples=100)
 
@@ -535,6 +549,14 @@ def run_Morris():
             write_results.write('dhw_volumen: ' + str(dhw_volumen) + '\n')
             write_results.write(
                 'Do random dhw. normalization: ' + str(dhw_random) + '\n')
+
+        write_results.write('\n Annual electricity demand : ' + str(ref_annual_electrical_demand_for_EBB) + 'kWh/year')
+        write_results.write('Annual thermal demand : ' + str(ref_annual_thermal_demand) + 'kWh/year')
+        write_results.write('Annual electricity demand reference City after EBB : ' + str(el_dem_ref) + 'kWh/year')
+        write_results.write('Annual gas demand reference City after EBB: ' + str(gas_dem_ref) + 'kWh/year')
+        write_results.write('total reference annuity:' + str(round(total_annuity_ref, 2))+ ' Euro/year')
+        write_results.write('total emission reference City :' + str(GHG_Emission_ref) + ' kg/year \n')
+
         write_results.write('\n############################Results #########################\n')
         write_results.write('\n gas demand\n')
         write_results.write("\n {0:<30} {1:>10} {2:>10} {3:>15} {4:>10} \n".format("Parameter", "Mu_Star",

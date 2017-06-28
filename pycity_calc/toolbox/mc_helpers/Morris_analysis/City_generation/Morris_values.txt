@@ -11,11 +11,11 @@ cellar	0	4
 construction type	-1	1
 total_number_occupants	1	5
 Annual_el_e_dem	-0.4	0.4
-dhw_Tflow	55	75
+dhw_Tflow	45	75
 dhw_Tsupply	10	35
 vent_factor	0.1	1
-tset_heat	18	25
-tset_night	13	18
+tset_heat	19	25
+tset_night	15	19
 eta_battery_charge	0.8	0.97
 eta_battery_discharge	0.9	0.97
 self_discharge_battery	0.005	0.015

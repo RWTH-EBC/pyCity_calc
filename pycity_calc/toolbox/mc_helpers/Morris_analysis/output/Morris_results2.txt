@@ -1,11 +1,11 @@
  Morris analysis -Test Modernisation year 1970-2015 
-  Number of sampling :10
+  Number of sampling :100
 ##############Parameters for the sensibility##############
- longitude [50.775, 50.776] 
- latitude [6.083, 6.084] 
- Altitude [263.0, 269.0] 
+ longitude [50.775, 50.777] 
+ latitude [6.083, 6.085] 
+ Altitude [260.0, 270.0] 
  weather [-1.0, 1.0] 
- net_floor_area [-0.05, 0.05] 
+ net_floor_area [-0.1, 0.1] 
  average_height_of_floors [2.4, 3.0] 
  year_of_modernization [1977.0, 2015.0] 
  dormer [0.0, 2.0] 
@@ -17,8 +17,8 @@
  dhw_Tflow [45.0, 75.0] 
  dhw_Tsupply [10.0, 35.0] 
  vent_factor [0.1, 1.0] 
- tset_heat [18.0, 25.0] 
- tset_night [13.0, 18.0] 
+ tset_heat [19.0, 25.0] 
+ tset_night [15.0, 19.0] 
  eta_battery_charge [0.8, 0.97] 
  eta_battery_discharge [0.9, 0.97] 
  self_discharge_battery [0.005, 0.015] 
@@ -59,34 +59,36 @@
  price_ch_gas_disc_chp [0.995, 1.005] 
  price_ch_sub_pv [0.95, 0.98] 
  life_factor [0.6, 1.4] 
- maintenance_factor [0.6, 1.4] 
+ maintenance_factor [0.5, 1.5] 
  interest [0.001, 0.2] 
 
 ############## City reference ##############
 Generation mode: load City from pickle filepickle file path :  D:\jsc-les\pyCity_calc_github\pycity_calc\toolbox\mc_helpers\Morris_analysis\City_generation\output\aachen_kronenberg_3_mfh_ref_1.pkl
+ Annual electricity demand : 56000.0kWh/yearAnnual thermal demand : 214827.748362kWh/yearAnnual electricity demand reference City after EBB : 56000.0kWh/yearAnnual gas demand reference City after EBB: 252738.527484kWh/yeartotal reference annuity:-31518.8 Euro/yeartotal emission reference City :97116.2007062 kg/year 
+
 ############################Results #########################
 
  gas demand
 
  Parameter                         Mu_Star         Mu    Mu_Star_Conf      Sigma 
- longitude                           0.006     -0.006           0.001      0.001 
- latitude                            0.000     -0.000           0.000      0.000 
+ longitude                           0.347     -0.347           0.022      0.114 
+ latitude                            0.013     -0.012           0.002      0.010 
  Altitude                            0.000      0.000           0.000      0.000 
- weather                          1111.410   -850.483         568.108   1215.690 
- net_floor_area                   1427.140  -1427.140         239.763    413.947 
- average_height_of_floors         1102.304   1102.304         241.734    382.794 
- year_of_modernization           10679.354 -10679.354        4400.063   7983.957 
- dormer                            245.482    245.482         278.169    517.797 
- attic                            1627.959    891.014         765.829   1911.191 
- cellar                            973.025   -973.025         544.957    940.428 
- construction type                 896.355    896.355        1598.495   2834.522 
- total_number_occupants            312.056   -312.056          66.184    108.591 
- Annual_el_e_dem                   206.243    206.243          58.661     87.427 
- dhw_Tflow                         378.159    378.159           3.746      6.116 
- dhw_Tsupply                       315.956   -315.956           3.384      5.705 
- vent_factor                      8843.742   8843.742         977.580   1780.568 
- tset_heat                        8251.305   8251.305         909.182   1665.399 
- tset_night                        121.539    121.539         187.289    277.386 
+ weather                         40286.849 -33047.806        5536.744  38762.692 
+ net_floor_area                  86738.881 -86738.881        7619.518  37402.165 
+ average_height_of_floors        40026.932  40026.932        4448.971  23692.499 
+ year_of_modernization          188508.932 -188508.932       44992.254 216478.917 
+ dormer                           5477.787   5477.787        2127.894  11994.801 
+ attic                           34987.122   -892.952        8096.025  54179.815 
+ cellar                          21016.183 -21016.183        4934.199  24292.299 
+ construction type               46397.986  46397.986       20986.959 102218.905 
+ total_number_occupants         141444.140 -141444.140        8489.324  45032.627 
+ Annual_el_e_dem                 85000.831  85000.831        9139.247  44486.534 
+ dhw_Tflow                       81271.435  81271.435        4019.259  20963.007 
+ dhw_Tsupply                     66595.217 -66595.217        2962.532  14797.109 
+ vent_factor                    245629.353 245629.353       16045.943  80799.108 
+ tset_heat                      215364.061 215364.061       20022.151  96007.911 
+ tset_night                       4317.316   4317.316        1670.813   8699.044 
  eta_battery_charge                  0.000      0.000           0.000      0.000 
  eta_battery_discharge               0.000      0.000           0.000      0.000 
  self_discharge_battery              0.000      0.000           0.000      0.000 
@@ -94,8 +96,8 @@ Generation mode: load City from pickle filepickle file path :  D:\jsc-les\pyCity
  T_min_TES                           0.000      0.000           0.000      0.000 
  T_surrounding                       0.000      0.000           0.000      0.000 
  klosses_TES                         0.000      0.000           0.000      0.000 
- T_init_TES                        740.884   -740.884          87.995    137.443 
- eta_boiler                          0.000      0.000           0.000      0.000 
+ T_init_TES                          0.000      0.000           0.000      0.000 
+ eta_boiler                     385210.066 -385210.066       44371.971 226038.235 
  LAL_boiler                          0.000      0.000           0.000      0.000 
  T_max_boiler                        0.000      0.000           0.000      0.000 
  eta_CHP                             0.000      0.000           0.000      0.000 
@@ -146,8 +148,8 @@ electrical demand
  attic                               0.000      0.000           0.000      0.000 
  cellar                              0.000      0.000           0.000      0.000 
  construction type                   0.000      0.000           0.000      0.000 
- total_number_occupants           6992.000   6992.000        1152.166   2173.358 
- Annual_el_e_dem                  4560.000  -4560.000        1217.921   2026.667 
+ total_number_occupants         113512.778 113512.778        5240.062  26417.970 
+ Annual_el_e_dem                 68332.444 -68332.444        6328.335  29092.458 
  dhw_Tflow                           0.000      0.000           0.000      0.000 
  dhw_Tsupply                         0.000      0.000           0.000      0.000 
  vent_factor                         0.000      0.000           0.000      0.000 
@@ -198,24 +200,24 @@ electrical demand
 
 ------------------------------------------------------------------
 annuity Parameter                         Mu_Star         Mu    Mu_Star_Conf      Sigma 
- longitude                           0.001      0.001           0.000      0.000 
- latitude                            0.000      0.000           0.000      0.000 
+ longitude                           0.026      0.026           0.002      0.010 
+ latitude                            0.001      0.001           0.000      0.001 
  Altitude                            0.000      0.000           0.000      0.000 
- weather                           482.479    246.376         379.866    806.867 
- net_floor_area                    407.780    242.859         106.496    388.502 
- average_height_of_floors          343.614   -343.614          99.326    152.213 
- year_of_modernization            1815.812   1677.477         897.062   1743.924 
- dormer                             71.867    -71.867          85.310    154.100 
- attic                             504.878    211.362         452.232    906.770 
- cellar                            252.514    252.514         119.217    239.919 
- construction type                  34.493    -34.493          60.452    109.075 
- total_number_occupants           2105.870  -2105.870         476.912    930.983 
- Annual_el_e_dem                  1373.764   1373.764         363.785    700.133 
- dhw_Tflow                          89.505    -89.505          22.318     37.001 
- dhw_Tsupply                        67.329     67.329          19.973     32.357 
- vent_factor                      1667.120  -1667.120         508.972    872.285 
- tset_heat                        1652.607  -1564.734         911.801   1748.676 
- tset_night                        579.035    579.035         464.823    816.791 
+ weather                          3360.040   2681.735         439.267   3300.233 
+ net_floor_area                   7017.059   7017.059         665.219   3160.750 
+ average_height_of_floors         3262.477  -3262.477         383.816   2045.578 
+ year_of_modernization           14510.099  14510.099        3519.808  16772.616 
+ dormer                            446.092   -446.092         180.600   1011.045 
+ attic                            2823.289    150.289         594.671   4262.411 
+ cellar                           1671.339   1671.339         331.347   1894.984 
+ construction type                3186.170  -3186.170        1098.625   6623.978 
+ total_number_occupants          22336.042 -22336.042        1963.649   9577.037 
+ Annual_el_e_dem                 13860.151  13860.151        1432.726   8573.629 
+ dhw_Tflow                        6571.061  -6571.061         354.855   2086.933 
+ dhw_Tsupply                      5384.430   5384.430         311.025   1554.240 
+ vent_factor                     19446.897 -19446.897        1671.553   7499.661 
+ tset_heat                       17393.207 -17393.207        1604.147   8041.382 
+ tset_night                        437.119     50.929         129.928    776.635 
  eta_battery_charge                  0.000      0.000           0.000      0.000 
  eta_battery_discharge               0.000      0.000           0.000      0.000 
  self_discharge_battery              0.000      0.000           0.000      0.000 
@@ -223,8 +225,8 @@ annuity Parameter                         Mu_Star         Mu    Mu_Star_Conf    
  T_min_TES                           0.000      0.000           0.000      0.000 
  T_surrounding                       0.000      0.000           0.000      0.000 
  klosses_TES                         0.000      0.000           0.000      0.000 
- T_init_TES                        525.395   -391.723         395.452    803.672 
- eta_boiler                          0.000      0.000           0.000      0.000 
+ T_init_TES                          0.000      0.000           0.000      0.000 
+ eta_boiler                      30109.169  30109.169        3360.415  19151.201 
  LAL_boiler                          0.000      0.000           0.000      0.000 
  T_max_boiler                        0.000      0.000           0.000      0.000 
  eta_CHP                             0.000      0.000           0.000      0.000 
@@ -242,9 +244,9 @@ annuity Parameter                         Mu_Star         Mu    Mu_Star_Conf    
  gamma_PV                            0.000      0.000           0.000      0.000 
  tau_alpha_PV                        0.000      0.000           0.000      0.000 
  price_ch_cap                        0.000      0.000           0.000      0.000 
- price_ch_dem_gas                 1156.610  -1156.610         215.214    355.942 
- price_ch_dem_el                 11929.878 -11929.878        1943.250   2865.390 
- price_ch_op                       669.970   -669.970         184.922    321.886 
+ price_ch_dem_gas                19263.469 -19263.469        2180.711   9861.026 
+ price_ch_dem_el                 15166.311 -15166.311        1886.964   8692.206 
+ price_ch_op                       570.569   -570.569          45.694    225.265 
  price_ch_proc_chp                   0.000      0.000           0.000      0.000 
  price_ch_proc_pv                    0.000      0.000           0.000      0.000 
  price_ch_EEG_Umlage_tax_chp         0.000      0.000           0.000      0.000 
@@ -255,32 +257,32 @@ annuity Parameter                         Mu_Star         Mu    Mu_Star_Conf    
  price_ch_self_usage_chp             0.000      0.000           0.000      0.000 
  price_ch_gas_disc_chp               0.000      0.000           0.000      0.000 
  price_ch_sub_pv                     0.000      0.000           0.000      0.000 
- life_factor                       927.469    927.469         405.193    579.430 
- maintenance_factor                915.143   -915.143         179.454    268.752 
- interest                         2010.926   -203.643         639.183   2318.736 
+ life_factor                       803.919    803.919          80.669    444.891 
+ maintenance_factor               1001.258  -1001.258          45.151    253.768 
+ interest                         3683.078   2692.990         687.170   4116.563 
 
 ------------------------------------------------------------------
 
  Ghg
  Parameter                         Mu_Star         Mu    Mu_Star_Conf      Sigma 
- longitude                           0.002     -0.002           0.000      0.000
- latitude                            0.000     -0.000           0.000      0.000
+ longitude                           0.085     -0.085           0.006      0.028
+ latitude                            0.003     -0.003           0.000      0.002
  Altitude                            0.000      0.000           0.000      0.000
- weather                           271.184   -207.518         133.048    296.628
- net_floor_area                    348.222   -348.222          57.708    101.003
- average_height_of_floors          268.962    268.962          51.056     93.402
- year_of_modernization            2605.762  -2605.762        1134.182   1948.086
- dormer                             59.898     59.898          71.093    126.342
- attic                             397.222    217.407         171.085    466.330
- cellar                            237.418   -237.418         137.830    229.465
- construction type                 218.711    218.711         418.122    691.623
- total_number_occupants           4349.794   4349.794         778.524   1349.821
- Annual_el_e_dem                  2836.157  -2836.157         707.532   1261.664
- dhw_Tflow                          92.271     92.271           0.852      1.492
- dhw_Tsupply                        77.093    -77.093           0.950      1.392
- vent_factor                      2157.873   2157.873         250.436    434.459
- tset_heat                        2013.318   2013.318         265.664    406.357
- tset_night                         29.655     29.655          43.153     67.682
+ weather                          9829.991  -8063.665        1520.767   9458.097
+ net_floor_area                  21164.287 -21164.287        1867.334   9126.128
+ average_height_of_floors         9766.571   9766.571        1022.984   5780.970
+ year_of_modernization           45996.179 -45996.179       10474.435  52820.856
+ dormer                           1336.580   1336.580         592.224   2926.731
+ attic                            8536.858   -217.880        1790.207  13219.875
+ cellar                           5127.949  -5127.949         921.121   5927.321
+ construction type               11321.109  11321.109        4876.697  24941.413
+ total_number_occupants          37341.218  37341.218        3105.676  15118.205
+ Annual_el_e_dem                 22514.235 -22514.235        2617.666  12943.823
+ dhw_Tflow                       19830.230  19830.230         957.826   5114.974
+ dhw_Tsupply                     16249.233 -16249.233         714.783   3610.495
+ vent_factor                     59933.562  59933.562        3646.955  19714.982
+ tset_heat                       52548.831  52548.831        5011.584  23425.930
+ tset_night                       1053.425   1053.425         369.196   2122.567
  eta_battery_charge                  0.000      0.000           0.000      0.000
  eta_battery_discharge               0.000      0.000           0.000      0.000
  self_discharge_battery              0.000      0.000           0.000      0.000
@@ -288,8 +290,8 @@ annuity Parameter                         Mu_Star         Mu    Mu_Star_Conf    
  T_min_TES                           0.000      0.000           0.000      0.000
  T_surrounding                       0.000      0.000           0.000      0.000
  klosses_TES                         0.000      0.000           0.000      0.000
- T_init_TES                        180.776   -180.776          17.214     33.536
- eta_boiler                          0.000      0.000           0.000      0.000
+ T_init_TES                          0.000      0.000           0.000      0.000
+ eta_boiler                      93991.256 -93991.256       11436.203  55153.329
  LAL_boiler                          0.000      0.000           0.000      0.000
  T_max_boiler                        0.000      0.000           0.000      0.000
  eta_CHP                             0.000      0.000           0.000      0.000
@@ -326,6 +328,6 @@ annuity Parameter                         Mu_Star         Mu    Mu_Star_Conf    
 
 ------------------------------------------------------------------
 
-  Number of City generated 610
+  Number of City generated 6100
 
- Number of City with boiler rescaled 514 
+ Number of City with boiler rescaled 4721 

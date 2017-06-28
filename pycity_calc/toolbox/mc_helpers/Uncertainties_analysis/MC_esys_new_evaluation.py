@@ -48,25 +48,7 @@ def MC_rescale_esys(City, esys_unknown=True):
 
         building = MC_new_esys_evaluation(building)  # rescale it to take into account real conditions of use
 
-        # Get boiler nominal power
-        boiler_qNominal = building.bes.boiler.qNominal
-
-        # get nominal demand for building
-        demand_building = dimfunc.get_max_power_of_building(building, with_dhw=True)
-
-        rescale_boiler = False  # boolean to keep track of the number of rescaled boiler
-
-        if building.bes.hasBoiler == True:
-
-            if demand_building > boiler_qNominal:
-                building.bes.boiler.qNominal = dimfunc.round_esys_size(demand_building, round_up=True)
-                rescale_boiler = True
-
-                print()
-                print('new boiler capacity kW: ', building.bes.boiler.qNominal / 1000)
-                print()
-
-    return City,rescale_boiler
+    return City
 
 def gen_esys_unknown (building, recent_systems=True):
 
@@ -218,7 +200,7 @@ if __name__ == '__main__':
 
     import matplotlib.pyplot as plt
 
-    Nsamples = 1000
+    Nsamples = 100000
     city_pickle_name = 'aachen_kronenberg_3_mfh_ref_1.pkl'
 
     this_path = os.path.dirname(os.path.abspath(__file__))

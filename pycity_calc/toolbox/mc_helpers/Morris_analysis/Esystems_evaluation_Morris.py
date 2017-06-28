@@ -19,13 +19,38 @@ def new_evaluation_esys(City, parameters):
             City object of pycity_calc
         parameters: np array
             new parameters for energy systems
+            Columns:    0: eta_battery_charge
+                        1: eta_battery_discharge
+                        2: self_discharge_battery
+                        3: T_max_TES
+                        4: T_min_TES
+                        5: T_surrounding
+                        6: klosses_TES
+                        7: T_init_TES
+                        8: eta_boiler
+                        9: LAL_boiler
+                        10: T_max_boiler
+                        11: eta_CHP
+                        12: T_max_CHP
+                        13: LAL_CHP
+                        14: eta_EH
+                        15: T_max_EH
+                        16: LAL_HP
+                        17: T_max_HP
+                        18: T_sink_HP
+                        19: eta_PV
+                        20: Tnom_PV
+                        21: alpha_PV
+                        22: beta_PV
+                        23: gamma_PV
+                        24: tau_alpha_PV
 
-        Return :  City : City modified with the new energy systems
+        Return :  City : City modified with the new energy systems parameters
                   rescale_boiler : boolean : True if the boiler of the building was rescaled
         -------
 
         """
-
+    print('----------------------------- ')
     print('New energy systems generation ')
 
     #  Save copy
@@ -43,6 +68,11 @@ def new_evaluation_esys(City, parameters):
             City.node[build]['entity'].bes.battery.self_discharge = parameters[2]
 
         if Cityref.node[build]['entity'].bes.hasTes == True:
+            print ('new t_max', parameters[3])
+            print ('new tmin', parameters[4])
+            print ('new tinit: ', parameters[7] )
+            print ('new t surrounding', parameters[5])
+            print ('new klosses', parameters[6])
             City.node[build]['entity'].bes.tes.t_max = parameters[3]
             City.node[build]['entity'].bes.tes.t_min = parameters[4]
             City.node[build]['entity'].bes.tes.t_surroundings = parameters[5]
@@ -94,5 +124,8 @@ def new_evaluation_esys(City, parameters):
                 print()
                 print('new boiler capacity kW: ', City.node[build]['entity'].bes.boiler.qNominal/1000)
                 print()
+
+    print ('End of energy systems reevaluation')
+    print('----------------------------- ')
 
     return City, rescale_boiler

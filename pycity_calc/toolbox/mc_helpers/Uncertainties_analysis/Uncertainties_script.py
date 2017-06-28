@@ -4,15 +4,18 @@
 '''
 
 Script to perform a Monte Carlo analysis of a city object.
-Output are uncertain gas and electrical final demand and uncertain annuity and GHG emissions
+Output are gas, electrical final demand, uncertain annuity and GHG emissions
+
 Structure:
+---------
 1: Define parameter for the uncertainty analysis
     City generation method: - from a pickle file
                             - Generation with City_generator
 
-    Uncertainties:  weather is uncertain: True or False
-                    energy systems parameters: True or False (efficiency, maximum temperature...)
+    Uncertainties:  weather is always uncertain
+                    energy systems parameters unknown: True or False (efficiency, maximum temperature...)
                     buildings parameters: True or False (infiltration rate, net_floor_area, modernisation year)
+
                     user parameters: True or False (user_ventilations_rate, Tset_heat, number of occupants)
 
     Analyse: Confident interval definition
@@ -44,7 +47,7 @@ import pycity_calc.simulation.energy_balance_optimization.energy_balance_buildin
 import pycity_calc.economic.economic_ann as economic_ann
 import pycity_calc.economic.annuity_calculation as eco_calc
 import pycity_calc.economic.calc_CO2_emission as GHG_calc
-import pycity_calc.toolbox.mc_helpers.Uncertainties_analysis.MC_new_city as newcity
+import pycity_calc.toolbox.mc_helpers.Uncertainties_analysis.MC_new_cities_evaluation as newcity
 import pycity_calc.toolbox.mc_helpers.weather.gen_weather_set as genweather
 import matplotlib.pyplot as plt
 import numpy as np
@@ -61,21 +64,21 @@ def do_uncertainty_analysis(Nsamples=1000):
 
     # ## Uncertainty
 
-    # weather is uncertain
-    Is_unc_weather = True
-    # Set to False: weather is fixed
-
     # energy systems parameters are unknown (efficiency, maximum temperature...)
     Is_k_esys_parameters = True
     # Set to false: energy systems are known: buildings characteristics uncertainties
 
     # buildings parameters are unknown (infiltration rate, net_floor_area, modernisation year)
     Is_k_building_parameters = True
-    # Set to False:  buildings parameters are known: buildings characteristics uncertainties
+    # Set to False:  buildings parameters are known: building uncertainties (infiltration rate and net_floor_area)
+    time_sp_force_retro = 40
+    max_retro_year = 2014
 
     # user parameters are unknown (user_ventilation_rate, Tset_heat, number of occupants)
     Is_k_user_parameters = True
     #Set to False: user parameters are fixed
+
+    MC_analyse_total = True
 
     # ## Analyse
     Confident_intervall_pourcentage = 90
@@ -375,7 +378,7 @@ def do_uncertainty_analysis(Nsamples=1000):
 
     # # Energy balance calculations
 
-    print("Energy balance calculations")
+    print("Energy balance calculations for city reference")
     Calculator = EBB.calculator(City)
     dict_bes_data = Calculator.assembler()
 
@@ -455,34 +458,45 @@ def do_uncertainty_analysis(Nsamples=1000):
     dict_par_unc = {}
     dict_par_unc['Nsamples'] = Nsamples
 
+    dict_par_unc['weather'] = genweather.gen_set_of_weathers(Nsamples)
+    print('End of weather sampling')
+
     # ## Define which parameters are uncertain
-    dict_par_unc['uncertain_inputs'] = []
-    if Is_unc_weather:
-        print('Weather sampling')
-        dict_par_unc['uncertain_inputs'].append('weather')
-        dict_par_unc['weather'] = genweather.gen_set_of_weathers(Nsamples)
-        print('End of weather sampling')
     if Is_k_esys_parameters:
         # energy systems parameters are totally uncertain
-        print('Energy systems sampling')
-        dict_par_unc['uncertain_inputs'].append('esys')
-        #dict_par_unc ['esys'] = genesys.gen_set_of_esys(SaveCity, Nsamples)
-    #else: #
-        #dict_par_unc ['esys']= genesys.gen_set_of_esys(SaveCity, Nsamples)
-        #print('End of energy systems sampling')
+        dict_par_unc['esys'] = True
+
     if Is_k_building_parameters:
-        dict_par_unc['uncertain_inputs'].append('buildings_parameters')
+        dict_par_unc['build_physic_unc'] = True
+    else:
+        dict_par_unc['build_physic_unc'] = False
         # TODO rajouter le sample pour un equipement avec des proprietes totalement incertaines pour le batiments
+
+    dict_par_unc['time_sp_force_retro'] = time_sp_force_retro
+    dict_par_unc['max_retro_year'] = max_retro_year
     if Is_k_user_parameters:
-        dict_par_unc['uncertain_inputs'].append ('user')
-        # TODO rajouter le sample pour un equipement avec des proprietes vraiment incertaines et dáutres moins
+        dict_par_unc['nb_occ_unc'] = True
+        dict_par_unc['user'] = True
+    else:
+        dict_par_unc['nb_occ_unc'] =False
+        dict_par_unc['user'] = False
+
+    if MC_analyse_total:
+        dict_par_unc['MC_analysis'] = True
+    else:
+        dict_par_unc['MC_analysis'] = False
+
+
+
+        # TODO rajouter le sample pour un equipement avec des proprietes vraiment incertaines et d'autres moins
 
 
     print('***********************************************************************************************************')
     print('Do the simulations')
     print('***********************************************************************************************************')
 
-    Sph_results, Gas_results , El_results, Annuity_results, GHG_results, GHG_spe_results = \
+    Th_results, Gas_results, El_results, Annuity_results, GHG_results, \
+    GHG_spe_results, el_results2, Th_results2, dict_city_pb, Nboiler_rescaled = \
         newcity.new_city_evaluation_monte_carlo(City, dict_par_unc)
 
     print('***********************************************************************************************************')
@@ -629,7 +643,6 @@ def do_uncertainty_analysis(Nsamples=1000):
         write_results.write(' Number of sampling :' + str(Nsamples)+ '\n')
 
         write_results.write('\n############## Uncertain parameters ##############\n')
-        write_results.write('weather: ' + str(Is_unc_weather)+ '\n')
         write_results.write('user behaviour: ' + str(Is_k_user_parameters)+ '\n')
         write_results.write('energy systems parameters: ' + str(Is_k_esys_parameters)+ '\n')
         write_results.write('buildings parameters: ' + str(Is_k_building_parameters)+ '\n')
@@ -756,7 +769,6 @@ def do_uncertainty_analysis(Nsamples=1000):
     fig, ((ax1,ax2), (ax3,ax4)) = plt.subplots(2, 2)
 
     ax1.hist(El_results,100, normed=1)
-    ax1.set_title('Electrical demand in kWh')
 
     ax2.hist(Gas_results,100 , normed=1)
     ax2.set_title('Gas demand in kWh')
@@ -786,7 +798,20 @@ def do_uncertainty_analysis(Nsamples=1000):
     ax8.set_title('GHG specific emission in kg/kWh/year')
     ax8.grid(color='b', alpha=0.5, linestyle='dashed', linewidth=0.5)
 
+    fig3,((ax11,ax12), (ax13,ax14)) = plt.subplots(2, 2)
+    ax11.hist(Th_results, 100)
+    ax11.set_title('Thermal demand normal')
+    ax12.hist(Th_results2, 100)
+    ax12.set_title('Thermal demand sum buildings')
+    ax13.hist(El_results, 100)
+    ax13.set_title('Electrical demand normal')
+    ax14.hist(el_results2, 100)
+    ax14.set_title('electrical demand sum buildings')
+
     plt.show()
+
+    for keys in dict_city_pb:
+        print(str(keys), dict_city_pb[keys])
 
 if __name__ == '__main__':
     do_uncertainty_analysis()

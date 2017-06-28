@@ -179,13 +179,18 @@ def evaluate(City, values):
 
         ############################################
 
+        print ('\nStart loop over buildings')
         for n in list_building:
+            print ('\nBuilding n°: {}'.format(n))
+            print ('-----------------')
             if City.node[n]['entity']._kind == 'building':
 
                 # function to recalculate building electrical_curve DHW and Space Heating Curve
 
                 City.node[n]['entity'] = buildmod.new_evaluation_building(City.node[n]['entity'], parameters=row[4: 15])
 
+        print ('End of loop over buildings')
+        print('###################################')
 
         ############################################
 
@@ -218,7 +223,7 @@ def evaluate(City, values):
 
         #  Generate energy systems
 
-        City, rescale_boiler = esysmod.new_evaluation_esys(City, parameters=row[17: 43])
+        City, rescale_boiler = esysmod.new_evaluation_esys(City, parameters=row[18: 43])
 
         if rescale_boiler == True:
             Nboiler_rescaled += 1
@@ -284,8 +289,7 @@ def evaluate(City, values):
                     #  If entity is kind building
                     if City.node[n]['entity']._kind == 'building':
                         if 'electrical demand' in City.node[n]:
-                            el_dem += sum(City.node[n][
-                                                 'electrical demand']) *\
+                            el_dem += sum(City.node[n]['electrical demand']) *\
                                          City.environment.timer.timeDiscretization / 1000 / 3600
 
                         if 'fuel demand' in City.node[n]:
@@ -309,7 +313,8 @@ def evaluate(City, values):
         ############################################
 
         time = 10  # Years
-        interest = row [59]  # Interest rate
+        interest = row[59]  # Interest rate
+        print ('\n New interest: {}'.format(interest))
 
         price_ch_cap = row[43]
         price_ch_dem_gas = row[44]
