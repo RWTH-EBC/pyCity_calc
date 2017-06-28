@@ -16,18 +16,11 @@ Passende Szenarien anhand der Randbedingungen auswählen und in qual_scenarios s
 """
 
 import pickle
-import matplotlib.pyplot as plt
-import numpy as np
-
-import pycity.classes.supply.BES as BES
-import pycity_calc.energysystems.boiler as Boiler
-import pycity_calc.energysystems.chp as CHP
-
 import pycity_calc.cities.city as City
 
 #centralized
 sc1 = {'type':['centralized','decentralized'],'base':['chp'],'peak':['boiler']} #kann zentral/semizentral/dezentral genutzt werden
-sc2 = {'type':['centralized','decentralized'],'base':['solar'],'peak':['boiler']}
+sc2 = {'type':['centralized','decentralized'],'base':['chp', 'solar'],'peak':['boiler']}
 #sc3 = {'type':['centralized'],'base':['boiler_bio'],'peak':['boiler']}
 #sc4 = {'type':['centralized'],'base':['boiler_bio','chp'],'peak':['boiler']}
 
@@ -87,16 +80,41 @@ def run_approach(city):
     else:
         print('District Heating solutions might be eligible...')
         for scenario in all_scenarios:
-            if 'centralized' in scenario['type']:
-                print('dim_centralized mit', scenario)
-                solutions.append(dim_centralized(city,scenario))
-#           if 'decentralized' in scenario['type']:
-#               solutions.append(dim_decentralized(city,scenario))
+            if approve_scenario(city, scenario):
+                if 'centralized' in scenario['type']:
+                    print('dim_centralized mit', scenario)
+                    solutions.append(dim_centralized(city,scenario))
+#               if 'decentralized' in scenario['type']:
+#                   solutions.append(dim_decentralized(city,scenario))
+            else:
+                print('Scenario not suitable: ', scenario)
 
 
 
 
 
+
+
+def approve_scenario(city, scenario):
+    '''
+    Check if scenario is suitable for city
+    :param city: standard city_object
+    :param scenario:
+    :return: True/False
+    '''
+    if 'solar' in scenario['base']:
+        pv_area = 0
+        for building in city.node.values():
+            pv_area += building['entity'].roof_usabl_pv_area
+        if pv_area == 0:
+            print('No usable area for solar available.')
+            return False
+
+    if 'geothermal' in scenario['base']:
+        print('Geothermal usage required. Not implemented yet.')
+        return False
+
+    return True
 
 
 
@@ -190,19 +208,48 @@ def dim_centralized(city, scenario):
     :return: scenario with sizes of devices - in welcher form? city_object
     '''
 
+    result = {}
     # get thermal and electrical demand curves (only available for sanitation)
     [el_curve, th_curve] = city.get_power_curves(current_values=False)
 
     # Load duration curve (Jahresdauerlinie)
     th_LDC = get_LDC(th_curve)
 
+    q_base_max = []
     for device in scenario['base']:
         if device == 'chp':
+            # Dimensionierungspremissen:
+            # möglichst unter 50kW pro BHKW, da Förderung dann höher?! - überprüfen
+            # Möglichkeiten mit mehreren BHKWs überprüfen - Wie wird da in der Praxis entschieden
+            # Kleinstes BHKW mindestens 6000 h/a Volllast
+            # BHKW immer mit Speicher
+
+            # Dimensionierungsstrategie: 1.Anlage bei 5000h/a mit 1/2 mehr installierter Leistung als nötig für Speicher
+            q_base_max.append(3/2*th_LDC[5000])
+            print('* Add CHP:', round(q_base_max[-1]/1000), 'kW')
+
             #Dimensionierung nach Krimmling "Energieeffiziente Nahwärmesysteme", S.127 - Faustformel: BHKW-Leistung zwischen 10% und 20% der Maximallast
-            q_borders = [min(th_LDC, key=lambda x:abs(x-0.1*max(th_LDC))), min(th_LDC, key=lambda x:abs(x-0.2*max(th_LDC)))] #gibt die Leistungsgrenzen nach Faustformel aus
-            t_borders = [th_LDC.index(q_borders[0]), th_LDC.index(q_borders[1])] #gibt die Volllaststunden für die errechneten Leistungen aus
-            print('BHKW mit Leistung zwischen ', q_borders)
-            print('Betriebszeiten zwischen ', t_borders)
+            # q_borders = [min(th_LDC, key=lambda x:abs(x-0.1*max(th_LDC))), min(th_LDC, key=lambda x:abs(x-0.2*max(th_LDC)))] #gibt die Leistungsgrenzen nach Faustformel aus
+            # t_borders = [th_LDC.index(q_borders[0]), th_LDC.index(q_borders[1])] #gibt die Volllaststunden für die errechneten Leistungen aus
+            # print('BHKW mit Leistung zwischen ', q_borders)
+            # print('Betriebszeiten zwischen ', t_borders)
+
+        elif device == 'solar': # Regeln für Dimensionierung einführen!
+            pv_area = 0
+            for building in city.node.values():
+                pv_area += building['entity'].roof_usabl_pv_area
+            print('* Add Solarthermal device:', round(pv_area), 'm²')
+
+
+
+
+    q_peak_max = []
+    for device in scenario['peak']:
+        if device == 'boiler':
+            q_peak_max.append(max(th_LDC) - sum(q_base_max))
+            print('* Add Boiler:', round(q_peak_max[-1]/1000), 'kW')
+
+
 
 
 
