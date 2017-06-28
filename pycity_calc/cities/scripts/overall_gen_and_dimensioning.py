@@ -48,7 +48,8 @@ def run_overall_gen_and_dim(timestep, year, location, th_gen_method,
                             t_night=16,
                             vdi_sh_manipulate=False,
                             el_random=False, dhw_random=False,
-                            prev_heat_dev=True, season_mod=None):
+                            prev_heat_dev=True, season_mod=None,
+                            merge_windows=False):
     """
     Peform overall generation and dimensioning of city object with
     street networks, energy networks and energy systems.
@@ -193,6 +194,10 @@ def run_overall_gen_and_dim(timestep, year, location, th_gen_method,
         with cosine wave to increase winter usage and decrease summer usage.
         Reference is maximum lighting power (default: None). If set to None,
         do NOT perform rescaling with cosine wave
+    merge_windows : bool, optional
+        Defines TEASER project setting for merge_windows_calc
+        (default: False). If set to False, merge_windows_calc is set to False.
+        If True, Windows are merged into wall resistances.
 
     Returns
     -------
@@ -230,7 +235,8 @@ def run_overall_gen_and_dim(timestep, year, location, th_gen_method,
                                              el_random=el_random,
                                              dhw_random=dhw_random,
                                              prev_heat_dev=prev_heat_dev,
-                                             season_mod=season_mod)
+                                             season_mod=season_mod,
+                                             merge_windows=merge_windows)
 
     #  Generate street networks
     if gen_str:
@@ -413,6 +419,12 @@ if __name__ == '__main__':
     call_teaser = False
     teaser_proj_name = filename[:-4]
 
+    merge_windows = False
+    # merge_windows : bool, optional
+    # Defines TEASER project setting for merge_windows_calc
+    # (default: False). If set to False, merge_windows_calc is set to False.
+    # If True, Windows are merged into wall resistances.
+
     #  Log file for city_generator
     do_log = True  # True, generate log file
     log_path = os.path.join(this_path, 'output_overall',
@@ -488,4 +500,5 @@ if __name__ == '__main__':
                             el_random=el_random,
                             dhw_random=dhw_random,
                             prev_heat_dev=prev_heat_dev,
-                            season_mod=season_mod)
+                            season_mod=season_mod,
+                            merge_windows=merge_windows)
