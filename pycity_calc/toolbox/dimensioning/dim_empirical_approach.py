@@ -15,6 +15,7 @@ Passende Szenarien anhand der Randbedingungen auswählen und in qual_scenarios s
 
 """
 
+import os
 import pickle
 import pycity_calc.cities.city as City
 
@@ -256,8 +257,15 @@ def dim_centralized(city, scenario):
 
 
 if __name__ == '__main__':
+
+    this_path = os.path.dirname(os.path.abspath(__file__))
+
+    city_f_name = 'aachen_kronenberg_3_mfh_ref_1.pkl'
+
+    city_path = os.path.join(this_path, 'input', city_f_name)
+
     #  Run program
-    city = pickle.load(open('D:/jsc-jun/Beispielquartier/3_mfh_kronenberg/aachen_kronenberg_3_mfh_ref_1.pkl', mode='rb'))
+    city = pickle.load(open(city_path, mode='rb'))
     #city = pickle.load(open('/Users/jules/PycharmProjects/Masterarbeit/Beispielquartier/aachen_kronenberg_3_mfh_ref_1.pkl', mode='rb'))
     print('District: Aachen Kronenberg')
 

@@ -1,0 +1,6 @@
+#  Ignore everything
+*
+
+#  Exceptions
+!.gitignore
+!aachen_kronenberg_3_mfh_ref_1.pkl
