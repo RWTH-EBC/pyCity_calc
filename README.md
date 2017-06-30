@@ -1,3 +1,5 @@
+![E.ON EBC RWTH Aachen University](./doc/_static/EBC_Logo.png)
+
 #  pyCity_calc
 
 pyCity addon to perform energy balance and economic calculations for city 
