@@ -29,7 +29,7 @@ except:
                       'https://github.com/RWTH-EBC/TEASER. '
                       'Installation is possible via pip.')
 
-def run_example_vdi_city():
+def run_example_vdi_city(plot_res=False):
 
     requ_profiles = True
     # requ_profiles : bool, optional
@@ -80,20 +80,21 @@ def run_example_vdi_city():
     print('Total net thermal space heating energy demand in kWh/a:')
     print(city.get_annual_space_heating_demand())
 
-    plt.plot(city_th_load)
-    plt.xlabel('Time in hours')
-    plt.ylabel('City district space heating load in W')
-    plt.show()
+    if plot_res:
+        plt.plot(city_th_load)
+        plt.xlabel('Time in hours')
+        plt.ylabel('City district space heating load in W')
+        plt.show()
 
-    build_1 = city.node[1001]['entity']
+        build_1 = city.node[1001]['entity']
 
-    sp_heat_load = build_1.get_space_heating_power_curve()
+        sp_heat_load = build_1.get_space_heating_power_curve()
 
-    plt.plot(sp_heat_load)
-    plt.xlabel('Time in hours')
-    plt.ylabel('Space heating load of building 1001')
-    plt.show()
+        plt.plot(sp_heat_load)
+        plt.xlabel('Time in hours')
+        plt.ylabel('Space heating load of building 1001')
+        plt.show()
 
 if __name__ == '__main__':
 
-    run_example_vdi_city()
+    run_example_vdi_city(True)
