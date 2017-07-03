@@ -5,7 +5,7 @@ Script to estimate cost of electric batteries
 """
 
 
-def calc_spec_cost_bat(cap, method='carmen'):
+def calc_spec_cost_bat(cap, method='sma'):
     """
     Calculate specific battery cost in Euro / kWh.
 
@@ -14,12 +14,16 @@ def calc_spec_cost_bat(cap, method='carmen'):
     cap : float
         Capacity of battery in kWh
     method : str, optional
-        Method for calculation (default: 'carmen')
+        Method for calculation (default: 'sma')
         Options:
         - 'carmen'
         based on:
         Centrales Agrar-Rohstoff Marketing- und Energie-Netzwerk,
         Marktübersicht Batteriespeicher, 2015.
+        - 'sma' (#81)
+        based on:
+        http://www.photovoltaik4all.de/pv-strompeicher-kaufen-als-komplettset
+        Discrete values have been fitted into potential function
 
     Returns
     -------
@@ -28,9 +32,12 @@ def calc_spec_cost_bat(cap, method='carmen'):
     """
 
     assert cap > 0, 'Capacity has to be larger than zero.'
-    assert method in ['carmen'], 'Unknown method'
+    assert method in ['carmen', 'sma'], 'Unknown method'
 
-    spec_bat = (5000 + 1225 * cap) / cap
+    if method == 'carmen':
+        spec_bat = (5000 + 1225 * cap) / cap
+    elif method == 'sma':
+        spec_bat = 2094.9 * (cap ** -0.521)
 
     return spec_bat
 
@@ -43,12 +50,16 @@ def calc_invest_cost_bat(cap, method='carmen'):
     cap : float
         Capacity of battery in kWh
     method : str, optional
-        Method for calculation (default: 'carmen')
+        Method for calculation (default: 'sma')
         Options:
         - 'carmen'
         based on:
         Centrales Agrar-Rohstoff Marketing- und Energie-Netzwerk,
         Marktübersicht Batteriespeicher, 2015.
+        - 'sma' (#81)
+        based on:
+        http://www.photovoltaik4all.de/pv-strompeicher-kaufen-als-komplettset
+        Discrete values have been fitted into potential function
 
     Returns
     -------
@@ -65,14 +76,21 @@ def calc_invest_cost_bat(cap, method='carmen'):
 if __name__ == '__main__':
 
     bat_cap = 5  # kWh
+    list_methods = ['sma', 'carmen']
 
-    #  Calculate specific cost for battery
-    spec_cost = calc_spec_cost_bat(cap=bat_cap)
-    print('Specific cost for battery in Euro/kWh:')
-    print(round(spec_cost, 2))
-    print()
+    for method in list_methods:
+        #  Calculate specific cost for battery
+        spec_cost = calc_spec_cost_bat(cap=bat_cap, method=method)
+        print('Specific cost for battery in Euro/kWh (method ' +
+              str(method) +'):')
+        print(round(spec_cost, 2))
+        print()
 
-    #  Calculate investment cost for battery
-    inv_cost = calc_invest_cost_bat(cap=bat_cap)
-    print('Investment cost for battery in Euro:')
-    print(round(inv_cost, 2))
+    print('##################################')
+    for method in list_methods:
+        #  Calculate investment cost for battery
+        inv_cost = calc_invest_cost_bat(cap=bat_cap, method=method)
+        print('Investment cost for battery in Euro (method '
+              + str(method) +'):')
+        print(round(inv_cost, 2))
+        print()

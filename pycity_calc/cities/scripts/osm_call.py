@@ -4,10 +4,12 @@
 Script to generate city object with building and street topology based on
 openstreetmap (osm) file input
 
-- Download file through http://www.overpass-api.de/api/xapi_meta?*[bbox=7.1450,50.6813,7.1614,50.6906]
---> change to the new coordinates
+- Download file through
+http://www.overpass-api.de/api/xapi_meta?*[bbox=7.1450,50.6813,7.1614,50.6906]
 - Save in your input_osm as .../pycity_calc/cities/scripts/input_osm/name.osm
 
+Coordinates are directly changed within uesgraphs form lat/long to pseudo
+mercator coordinates in m
 """
 
 import os
@@ -15,7 +17,7 @@ import pickle
 import utm
 import shapely.geometry.point as point
 
-import uesgraphs.examples.example_projects_ues as exues
+import uesgraphs.examples.example_osm as example_osm
 
 import pycity.classes.demand.Apartment as apart
 
@@ -73,10 +75,10 @@ def gen_osm_city_topology(osm_path, environment, name=None,
                          check_boundary=check_boundary, add_str_info=True)
 
     if min_area is not None:
-        exues.remove_small_buildings(city, min_area=min_area)
+        example_osm.remove_small_buildings(city, min_area=min_area)
 
     if show_graph_stats:
-        exues.graph_stats(city)
+        example_osm.graph_stats(city)
 
     return city
 

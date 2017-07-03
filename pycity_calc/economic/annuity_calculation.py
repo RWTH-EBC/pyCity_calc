@@ -15,25 +15,29 @@ class EconomicCalculation(object):
     Class to perform economic calculations
     """
 
-    def __init__(self, time=10, interest=0.05, method='vdi2067',
+    def __init__(self, germanmarket=None, time=10, interest=0.05,
+                 method='vdi2067',
                  run_init_calc=True, price_ch_cap=1.03,
                  price_ch_dem_gas=1.02, price_ch_dem_el=1.02,
+                 price_ch_dem_cool=1.02,
                  price_ch_op=1.017, price_ch_proc_chp=1.01,
                  price_ch_proc_pv=0.975,
-                 price_ch_EEG_Umlage_tax_chp=1,
-                 price_ch_EEG_Umlage_tax_pv=1,
-                 price_EEX_baseload_price=0.99,
-                 price_ch_avoid_grid_usage=1,
-                 price_ch_sub_chp=1,
-                 price_ch_self_usage_chp=1,
-                 price_ch_gas_disc_chp=1,
-                 price_ch_sub_pv=0.97):
+                 price_ch_eeg_chp=1,
+                 price_ch_eeg_pv=1,
+                 price_ch_eex=0.99,
+                 price_ch_grid_use=1,
+                 price_ch_chp_sub=1,
+                 price_ch_chp_self=1,
+                 price_ch_chp_tax_return=1,
+                 price_ch_pv_sub=0.97):
 
         """
         Constructor of Economic calculator instance.
 
         Parameters
         ----------
+        germanmarket : object, optional
+            GermanMarket object of pyCity_calc (default: None)
         time : int, optional
             Time for economic calculation in years (default: 10)
         interest : float, optional
@@ -56,6 +60,9 @@ class EconomicCalculation(object):
         price_ch_dem_el : float, optional
             Price change factor demand (el.) (default: 1.02)
             Only used, if method == 'vdi2068'
+        price_ch_dem_cool : float, optional
+            Price change factor for (district) cooling (default: 1.02)
+            Only used, if method == 'vdi2068'
         price_ch_op : float, optional
             Price change factor operations (default: 1.017)
             Only used, if method == 'vdi2068'
@@ -65,24 +72,27 @@ class EconomicCalculation(object):
         price_ch_proc_pv : float, optional
             Price change factor proceedings (PV) (default: 0.975)
             Only used, if method == 'vdi2068'
-
-        #TODO added by Simon Wilbertz, add description and default value
-        price_ch_EEG_Umlage_tax_chp : float, optional
-            Only used, if method == 'vdi2068'
-        price_ch_EEG_Umlage_tax_pv : float, optional
-            Only used, if method == 'vdi2068'
-        price_EEX_baseload_price : float, optional
-            Only used, if method == 'vdi2068'
-        price_ch_avoid_grid_usage : float, optional
-            Only used, if method == 'vdi2068'
-        price_ch_sub_chp : float, optional
-            Only used, if method == 'vdi2068'
-        price_ch_self_usage_chp : float, optional
-            Only used, if method == 'vdi2068'
-        price_ch_gas_disc_chp : float, optional
-            Only used, if method == 'vdi2068'
-        price_ch_sub_pv : float, optional
-            Only used, if method == 'vdi2068'
+        price_ch_eeg_chp : float, optional
+            Price change factor of EEG payment for self consumed CHP el.
+            energy (default: 1)
+        price_ch_eeg_pv : float, optional
+            Price change factor of EEG payment for self consumed PV el.
+            energy (default: 1)
+        price_ch_eex : float, optional
+            Price change factor of EEX baseload price (default: 0.99)
+        price_ch_grid_use : float, optional
+            Price change factor of grid usage fee (default: 1)
+        price_ch_chp_sub : float, optional
+            Price change factor of CHP subsidies for fed-in electricity
+            (default: 1)
+        price_ch_chp_self : float, optional
+            Price change factor for CHP subsidies for self consumed el. CHP
+            energy (default: 1)
+        price_ch_chp_tax_return : float, optional
+            Price change factor of CHP tax return on gas usage (default: 1)
+        price_ch_pv_sub : float, optional
+            Price change factor on PV subsidies for fed-in electricity
+            (default: 0.97)
         """
 
         #  Assert statements
@@ -110,9 +120,10 @@ class EconomicCalculation(object):
             if (factor < 0.9 or factor > 1.1):  # limits of -/+ 10 % per year
                 warnings.warn(msg)
 
-        # Genereal attributes
+        # General attributes
         # ################################################################
 
+        self.germanmarket = germanmarket  # GermanMarket object pointer
         self.time = time  # Time in years
         self.interest = interest  # Internal interest rate i (e.g. 0.05)
         self.interest_factor = 1 + interest  # Interest factor q  (e.g. 1.05)
@@ -128,38 +139,38 @@ class EconomicCalculation(object):
         self.price_ch_cap = None  # Price change factor of capital (e.g. 1.05)
         self.price_ch_dem_gas = None  # Price change factor demand (gas)
         self.price_ch_dem_el = None  # Price change factor demand (el.)
+        self.price_ch_dem_cool = None  # Price change factor (cooling)
         self.price_ch_op = None  # Price change factor operations
         self.price_ch_proc_chp = None  # Price change factor proceedings (CHP)
         self.price_ch_proc_pv = None  # Price change factor proceedings (PV)
 
-        # TODO: added by Simon Wilbertz
-        self.price_ch_EEG_Umlage_tax_chp = None
-        self.price_ch_EEG_Umlage_tax_pv = None
-        self.price_EEX_baseload_price = None
-        self.price_ch_avoid_grid_usage = None
-        self.price_ch_sub_chp = None
-        self.price_ch_self_usage_chp = None
-        self.price_ch_gas_disc_chp = None
-        self.price_ch_sub_pv = None
+        self.price_ch_eeg_chp = None
+        self.price_ch_eeg_pv = None
+        self.price_ch_eex = None
+        self.price_ch_grid_use = None
+        self.price_ch_chp_sub = None
+        self.price_ch_chp_self = None
+        self.price_ch_chp_tax_return = None
+        self.price_ch_pv_sub = None
 
         #  Price dynamic value factors
         self.price_dyn_cap = None
         self.price_dyn_dem_gas = None
         self.price_dyn_dem_el = None
+        self.price_dyn_dem_cool = None
         self.price_dyn_op = None
         self.price_dyn_proc_chp = None
         self.price_dyn_proc_pv = None
 
         # Subsidy dynamic factors
-        # TODO: calculate the price changes, added by Simon Wilbertz
-        self.price_dyn_EEG_Umlage_tax_chp = None
-        self.price_dyn_EEG_Umlage_tax_pv = None
-        self.price_dyn_EEX_baseload_price = None
-        self.price_dyn_avoid_grid_usage = None
-        self.price_dyn_sub_chp = None
-        self.price_dyn_self_usage_chp = None
-        self.price_dyn_gas_disc_chp = None
-        self.price_dyn_sub_pv = None
+        self.price_dyn_eeg_chp = None
+        self.price_dyn_eeg_pv = None
+        self.price_dyn_eex = None
+        self.price_dyn_grid_use = None
+        self.price_dyn_chp_sub = None
+        self.price_dyn_chp_self = None
+        self.price_dyn_chp_tax_return = None
+        self.price_dyn_pv_sub = None
 
         #  Dictionaries withe lifetimes and maintenance factors
         ###################################################################
@@ -226,6 +237,8 @@ class EconomicCalculation(object):
                 # Price change factor demand (gas)
                 self.price_ch_dem_el = price_ch_dem_el
                 # Price change factor demand (el.)
+                self.price_ch_dem_cool = price_ch_dem_cool
+                #  Price change factor cooling
                 self.price_ch_op = price_ch_op
                 # Price change factor operations
                 self.price_ch_proc_chp = price_ch_proc_chp
@@ -233,15 +246,14 @@ class EconomicCalculation(object):
                 self.price_ch_proc_pv = price_ch_proc_pv
                 # Price change factor proceedings (PV)
 
-                # TODO: added by Simon Wilbertz
-                self.price_ch_EEG_Umlage_tax_chp = price_ch_EEG_Umlage_tax_chp
-                self.price_ch_EEG_Umlage_tax_pv = price_ch_EEG_Umlage_tax_pv
-                self.price_EEX_baseload_price = price_EEX_baseload_price
-                self.price_ch_avoid_grid_usage = price_ch_avoid_grid_usage
-                self.price_ch_sub_chp = price_ch_sub_chp
-                self.price_ch_self_usage_chp = price_ch_self_usage_chp
-                self.price_ch_gas_disc_chp = price_ch_gas_disc_chp
-                self.price_ch_sub_pv = price_ch_sub_pv
+                self.price_ch_eeg_chp = price_ch_eeg_chp
+                self.price_ch_eeg_pv = price_ch_eeg_pv
+                self.price_ch_eex = price_ch_eex
+                self.price_ch_grid_use = price_ch_grid_use
+                self.price_ch_chp_sub = price_ch_chp_sub
+                self.price_ch_chp_self = price_ch_chp_self
+                self.price_ch_chp_tax_return = price_ch_chp_tax_return
+                self.price_ch_pv_sub = price_ch_pv_sub
 
                 #  Calculate dynamic value factors (b)
                 self.price_dyn_cap = self.calc_price_dyn_factor(
@@ -250,6 +262,8 @@ class EconomicCalculation(object):
                     self.calc_price_dyn_factor(self.price_ch_dem_gas)
                 self.price_dyn_dem_el = \
                     self.calc_price_dyn_factor(self.price_ch_dem_el)
+                self.price_dyn_dem_cool = \
+                    self.calc_price_dyn_factor(self.price_ch_dem_cool)
                 self.price_dyn_op = self.calc_price_dyn_factor(
                     self.price_ch_op)
                 self.price_dyn_proc_chp = \
@@ -257,24 +271,23 @@ class EconomicCalculation(object):
                 self.price_dyn_proc_pv = \
                     self.calc_price_dyn_factor(self.price_ch_proc_pv)
 
-                # TODO: added by Simon Wilbertz
-                self.price_dyn_EEG_Umlage_tax_chp = \
+                self.price_dyn_eeg_chp = \
                     self.calc_price_dyn_factor(
-                        self.price_ch_EEG_Umlage_tax_chp)
-                self.price_dyn_EEG_Umlage_tax_pv = \
-                    self.calc_price_dyn_factor(self.price_ch_EEG_Umlage_tax_pv)
-                self.price_dyn_EEX_baseload_price = \
-                    self.calc_price_dyn_factor(self.price_EEX_baseload_price)
-                self.price_dyn_avoid_grid_usage = \
-                    self.calc_price_dyn_factor(self.price_ch_avoid_grid_usage)
-                self.price_dyn_sub_chp = \
-                    self.calc_price_dyn_factor(self.price_ch_sub_chp)
-                self.price_dyn_self_usage_chp = \
-                    self.calc_price_dyn_factor(self.price_ch_self_usage_chp)
-                self.price_dyn_gas_disc_chp = \
-                    self.calc_price_dyn_factor(self.price_ch_gas_disc_chp)
-                self.price_dyn_sub_pv = \
-                    self.calc_price_dyn_factor(self.price_ch_sub_pv)
+                        self.price_ch_eeg_chp)
+                self.price_dyn_eeg_pv = \
+                    self.calc_price_dyn_factor(self.price_ch_eeg_pv)
+                self.price_dyn_eex = \
+                    self.calc_price_dyn_factor(self.price_ch_eex)
+                self.price_dyn_grid_use = \
+                    self.calc_price_dyn_factor(self.price_ch_grid_use)
+                self.price_dyn_chp_sub = \
+                    self.calc_price_dyn_factor(self.price_ch_chp_sub)
+                self.price_dyn_chp_self = \
+                    self.calc_price_dyn_factor(self.price_ch_chp_self)
+                self.price_dyn_chp_tax_return = \
+                    self.calc_price_dyn_factor(self.price_ch_chp_tax_return)
+                self.price_dyn_pv_sub = \
+                    self.calc_price_dyn_factor(self.price_ch_pv_sub)
 
     def __str__(self):
         return str('<EconomicCalculator object of PyCity_Calc with ' +
@@ -724,15 +737,48 @@ class EconomicCalculation(object):
         # Define simple named pointers
         b_el = self.price_dyn_dem_el  # Price dynamic factor el.
         b_gas = self.price_dyn_dem_gas  # Price dynamic factor gas
-
-        #  Fixme: Add b_cool
+        b_cool = self.price_dyn_dem_cool
 
         #  Calculate demand-related cost per year
         dem_rel_cost = b_el * sum_el_e * price_el + \
                        b_gas * sum_gas_e * price_gas + \
-                       sum_cool_e * price_cool
+                       b_cool * sum_cool_e * price_cool
 
         return dem_rel_cost * self.ann_factor
+
+    def calc_eeg_self_con(self, en_chp_self=None, en_chp_pv=None):
+        """
+        Calculate EEG payment on self-produced and consumed electric energy of
+        PV and CHP systems
+
+        Parameters
+        ----------
+        en_chp_self : float
+            Amount of self-produced and consumed el. energy of CHP in kWh/a
+        en_chp_pv : float
+            Amount of self-produced and consumed el. energy of PV in kWh/a
+
+        Returns
+        -------
+        eeg_payment : float
+            Annualized EEG payment in Euro/a
+        """
+
+        if self.germanmarket is None:
+            msg = 'Requires GermanMarket object (currently None!)'
+            raise AssertionError(msg)
+
+        #  Pointers to price dynamic factors
+        b_eeg_chp = self.price_dyn_eeg_chp
+        b_eeg_pv = self.price_dyn_eeg_pv
+
+        eeg_chp = self.germanmarket.get_eeg_payment(type='chp')
+        eeg_pv = self.germanmarket.get_eeg_payment(type='pv')
+
+        eeg_payment = b_eeg_chp * en_chp_self * eeg_chp  + \
+                      b_eeg_pv * en_chp_pv * eeg_pv
+
+        return eeg_payment
 
     #  Operation-related costs
     #################################################################

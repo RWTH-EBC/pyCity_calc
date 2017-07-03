@@ -49,15 +49,15 @@ def calc_list_mod_years_single_build(nb_samples, year_of_constr, max_year,
 
     list_mod_years = []
 
+
     #  Calc min_year
     if time_sp_force_retro is not None:
         if max_year - year_of_constr > time_sp_force_retro:
             min_year = int(max_year - time_sp_force_retro)
         else:
-            min_year = int(year_of_constr + 1)
-           #min_year = max(int(year_of_constr + 1), 1995)
+            min_year = int(2008 + 1)
     else:
-        min_year = max( int(year_of_constr + 1), 1995)
+        min_year = int (2008 + 1)
 
     #  Do sampling
     for i in range(nb_samples):

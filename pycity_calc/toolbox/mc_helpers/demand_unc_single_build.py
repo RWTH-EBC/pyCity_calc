@@ -357,8 +357,7 @@ def mod_single_build_w_samples(exbuilding, dict_samples, list_wea, i , MC_analys
         print('Sampled dhw. volume in liters per apartment and day: ',
               dhw_vol_app_n_day)
 
-        volume = sum(building.apartments[
-                         j].demandDomesticHotWater.water) * timestep / 3600
+        volume = sum(building.apartments[j].demandDomesticHotWater.water) * timestep / 3600
         print('Original annual volume in liters: ', volume)
         volume_per_day = volume / 365
         print('Original volume in liters per day and apartment; ',
@@ -781,7 +780,7 @@ if __name__ == '__main__':
     elif use_build_mode == 2:
         #  Define simulation settings
         build_year = 1990  # Year of construction
-        mod_year = None  # Year of retrofit
+        mod_year = 2000  # Year of retrofit
         net_floor_area = 200  # m2
         height_of_floors = 2.8  # m
         nb_of_floors = 2  # m
@@ -792,7 +791,7 @@ if __name__ == '__main__':
         #  ###############################################################
 
         #  Create extended environment of pycity_calc
-        year = 1962
+        year = 2010
         timestep = 3600  # Timestep in seconds
         location = (51.529086, 6.944689)  # (latitude, longitute) of Bottrop
         altitude = 55  # Altitude of Bottrop

@@ -85,7 +85,7 @@ def do_uncertainty_analysis(Nsamples=1000):
     GHG_specific = 'user energy demand'
 
     # ## Save results
-    save_result = True  # if set to false: no generation of results txt file
+    save_result = False  # if set to false: no generation of results txt file
     results_name = 'mc_results.txt'
 
     print('***********************************************************************************************************')
@@ -113,6 +113,7 @@ def do_uncertainty_analysis(Nsamples=1000):
 
         #  Add energy systems to city
         gen_esys = True  # True - Generate energy networks
+        gen_e_net = True
         dhw_dim_esys = True  # Use dhw profiles for esys dimensioning
 
         #  Path to energy system input file (csv/txt; tab separated)
@@ -128,6 +129,21 @@ def do_uncertainty_analysis(Nsamples=1000):
             #  Generate energy systems
             City_gen.esysgen.gen_esys_for_city(city=City, list_data=list_esys,
                                                dhw_scale=dhw_dim_esys)
+
+        #  Add energy networks to city
+        if gen_e_net:  # True - Generate energy networks
+
+            #  Path to energy network input file (csv/txt; tab separated)
+            network_filename = 'test_lolo_networks.txt'
+
+            network_path = os.path.join(this_path, 'City_generation', 'input', 'input_en_network_generator',
+                                            network_filename)
+            #  Load energy networks planing data
+            dict_e_net_data = City_gen.enetgen.load_en_network_input_data(network_path)
+
+            City_gen.enetgen.add_energy_networks_to_city(city=City, dict_data=dict_e_net_data)
+
+
 
     else:
         # Generate City with City_generator
@@ -320,6 +336,14 @@ def do_uncertainty_analysis(Nsamples=1000):
         esys_filename = 'test_lolo_esys.txt'
         esys_path = os.path.join(this_path, 'City_generation', 'input', 'input_esys_generator',
                                  esys_filename)
+
+        #  Add energy networks to city
+        gen_e_net = False  # True - Generate energy networks
+
+        #  Path to energy network input file (csv/txt; tab separated)
+        network_filename = 'test_lolo_networks.txt'
+        network_path = os.path.join(this_path, 'City_generation', 'input', 'input_en_network_generator',
+                                    network_filename)
 
 
 

@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# coding=utf-8
 """
 Extended electric chp class (based on CHP object of pycity)
 """

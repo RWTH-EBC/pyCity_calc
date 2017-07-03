@@ -20,6 +20,7 @@ import pycity_calc.environments.co2emissions as co2
 import pycity_calc.environments.market as mark
 import pycity_calc.environments.timer as time
 import matplotlib.pyplot as plt
+import pycity.functions.changeResolution as chgr
 
 
 def new_building_evaluation_mc(building, new_weather, max_retro_year=2014, time_sp_force_retro=40,
@@ -125,7 +126,7 @@ def new_building_evaluation_mc(building, new_weather, max_retro_year=2014, time_
     #  Perform VDI 6007 simulation
     #  ##################################################################
     (temp_in, q_heat_cool, q_in_wall, q_out_wall) = tus.calc_th_load_build_vdi6007_ex_build(exbuild=new_building,
-                                                                                            add_th_load=False,
+                                                                                            add_th_load=True,
                                                                                             vent_factor=None,
                                                                                             array_vent_rate=vent_array,
                                                                                             t_set_heat=tset_heat,
@@ -178,6 +179,29 @@ def new_building_evaluation_mc(building, new_weather, max_retro_year=2014, time_
     print('############################################################')
     print()
 
+    #for j in range(len(new_building.apartments)):
+        #elcurve = chgr.changeResolution(new_building.apartments[j].power_el.loadcurve,
+                                        #oldResolution = len(new_building.apartments[j].power_el.loadcurve),
+                                        #newResolution=8760 )
+
+        #new_building.apartments[j].power_el.loadcurve = elcurve
+
+        #print(len(new_building.apartments[j].power_el.loadcurve))
+
+        #space_heating = chgr.changeResolution(values = new_building.apartments[j].demandSpaceheating.loadcurve,
+                                                                 #oldResolution = len(new_building.apartments[j].demandSpaceheating.loadcurve),
+                                                                 #newResolution=8760 )
+        #new_building.apartments[j].demandSpaceheating.loadcurve = space_heating
+        #dhwapp = chgr.changeResolution(values = new_building.apartments[j].demandDomesticHotWater.loadcurve,
+                                                                 #oldResolution=len(new_building.apartments[j].demandDomesticHotWater.loadcurve),
+                                                                 #newResolution=8760)
+
+        #new_building.apartments[j].demandDomesticHotWater.loadcurve = dhwapp
+
+    #print(len(new_building.get_electric_power_curve()))
+    #print(len(new_building.get_space_heating_power_curve()))
+    #print(len(new_building.get_dhw_power_curve()))
+
     return new_building,  dict_problem, el_demand, dhw_energy, sum_heat
 
 if __name__ == '__main__':
@@ -186,8 +210,8 @@ if __name__ == '__main__':
     # ######################
 
     #  Define simulation settings
-    build_year = 1962  # Year of construction
-    mod_year = None  # Year of retrofit
+    build_year = 1993  # Year of construction
+    mod_year = 2000  # Year of retrofit
     net_floor_area = 200  # m2
     height_of_floors = 2.8  # m
     nb_of_floors = 2  # m
@@ -307,7 +331,8 @@ if __name__ == '__main__':
         sh_demand_list.append(sum_heat)
         el_demand_list.append(el_demand)
         dhw_demand_list.append(dhw_energy)
-        dict_sp_zero[str(i)]=dict_problem
+        if sum_heat==0:
+            dict_sp_zero[str(i)] = dict_problem
 
     print('End simulations')
 
@@ -335,4 +360,6 @@ if __name__ == '__main__':
     plt.show()
     plt.close()
 
-    print (dict_sp_zero)
+    for keys in dict_problem:
+
+        print(dict_problem[keys])
