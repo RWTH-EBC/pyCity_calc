@@ -7,6 +7,7 @@ import os
 import pickle
 import pycity_calc.cities.scripts.overall_gen_and_dimensioning as City_gen
 import pycity_calc.toolbox.dimensioning.dim_functions as dimfunc
+import numpy as np
 
 
 def MC_rescale_esys(City, esys_unknown=True):
@@ -81,11 +82,20 @@ def gen_esys_unknown (building, recent_systems=True):
         building.bes.battery.self_discharge = rd.uniform(0.8,0.9)
 
     if ex_building.bes.hasTes == True:
-        building.bes.tes.t_max = rd.uniform(30,55)
-        building.bes.tes.t_min = rd.uniform(18,22)
+        building.bes.tes.t_max = rd.uniform(50,75)
+        #print (building.bes.tes.t_max)
+        building.bes.tes.t_min = rd.uniform(15,20)
+        #print (building.bes.tes.t_min )
         building.bes.tes.t_surroundings = rd.uniform(20,25)
         building.bes.tes.k_loss = rd.uniform(0.25,0.5)
-        building.bes.tes.t_init = rd.uniform(18,25)
+        building.bes.tes.t_init = rd.uniform(20,50)
+        #building.bes.tes.array_temp_storage = np.zeros(building.environment.timer.timeDiscretization)
+        #building.bes.tes.array_q_charge = np.zeros(building.environment.timer.timeDiscretization)
+        #building.bes.tes.array_q_discharge = np.zeros(building.environment.timer.timeDiscretization)
+        building.bes.tes.t_current = building.bes.tes.t_init
+        #building.bes.tes.totalTSto = np.zeros(building.environment.timer.timestepsTotal)
+        #building.bes.tes.currentTSto = np.zeros(building.environment.timer.timeDiscretization)
+        building.bes.tes.capacity = 10000000000
 
     if building.bes.hasBoiler == True:
         building.bes.boiler.eta = rd.uniform(0.6,0.9)
@@ -144,8 +154,8 @@ def MC_new_esys_evaluation (building):
                                                                                   sigma = 0.1)
 
     if ex_building.bes.hasTes == True:
-        building.bes.tes.t_max = rd.normalvariate(mu= ex_building.bes.tes.t_max,sigma = 0.1)
-        building.bes.tes.t_min = rd.normalvariate(mu= ex_building.bes.tes.t_min,sigma = 0.1)
+        #building.bes.tes.t_max = rd.normalvariate(mu= ex_building.bes.tes.t_max,sigma = 0.1)
+        #building.bes.tes.t_min = rd.normalvariate(mu= ex_building.bes.tes.t_min,sigma = 0.1)
         building.bes.tes.t_surroundings = rd.normalvariate(mu= ex_building.bes.tes.t_surroundings ,sigma = 0.1)
         building.bes.tes.k_loss = rd.normalvariate(mu= ex_building.bes.tes.k_loss,sigma = 0.1)
         building.bes.tes.t_init = rd.normalvariate(mu= ex_building.bes.tes.t_init,sigma = 0.1)

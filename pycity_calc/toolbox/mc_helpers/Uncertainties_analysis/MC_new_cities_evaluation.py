@@ -22,7 +22,8 @@ import pycity_calc.toolbox.mc_helpers.weather.gen_weather_set as wea
 import os
 import pickle
 import matplotlib.pyplot as plt
-
+import pycity_calc.cities.scripts.street_generator.street_generator as street_gen
+import uesgraphs.visuals as uesvis
 
 def new_city_evaluation_monte_carlo(City, dict_sample):
     """
@@ -36,7 +37,8 @@ def new_city_evaluation_monte_carlo(City, dict_sample):
         dict_sample : dict
             Dictionary holding uncertain parameters
             Keys:
-            'Nsamples' : int: number of samples
+            Nsamples :  int
+                        Number of samples
             nb_occ_unc : bool
                         Defines, if number of occupants per apartment is unknown
             MC_analysis: boolean
@@ -44,7 +46,7 @@ def new_city_evaluation_monte_carlo(City, dict_sample):
                         (dormer,attic,cellar, construction_type, net_floor_area)
             buil_physic_unc: bool
                         Defines,if building physics unknown or not (default: True)
-            'weather' : Holding weather sample lists
+            weather : Holding weather sample lists
 
         Returns
         -------
@@ -264,6 +266,7 @@ def MC_new_city_generation (City, new_weather, max_retro_year=2014, time_sp_forc
 
         dict_build_pb[str(build)] = dict_problem
 
+
     print()
     print('*****************************************************************************************************')
     print('For EBB: Intermediate results for city')
@@ -372,6 +375,12 @@ def MC_EBB_calc (City):
     # Get dictionary of energy systems
     Calculator = EBB.calculator(City)
     dict_bes_data = Calculator.assembler()
+    #tnext = 25
+    #delta= 0
+    #t_prior = 20
+    #t_u = 0
+    #ii = 0
+    #t_tes = 25
 
     # Loop over energy systems
     try:
@@ -440,15 +449,58 @@ if __name__ == '__main__':
 
     city = pickle.load(open(city_path, mode='rb'))
 
+    #  Add energy systems to city
+    gen_esys = True  # True - Generate energy networks
+    gen_e_net = True
+    dhw_dim_esys = True  # Use dhw profiles for esys dimensioning
+
+    #  Path to energy system input file (csv/txt; tab separated)
+    #esys_filename = 'test_lolo_esys.txt'
     esys_path = os.path.join(this_path, 'City_generation', 'input', 'input_esys_generator', esys_filename)
 
+    # Generate energy systems for city district
+    if gen_esys:
+        #  Load energy networks planing data
+        list_esys = City_gen.esysgen.load_enersys_input_data(esys_path)
+        print('Add energy systems')
 
-    #  Load energy networks planing data
-    list_esys = City_gen.esysgen.load_enersys_input_data(esys_path)
-    print('Add energy systems')
+        #  Generate energy systems
+        City_gen.esysgen.gen_esys_for_city(city=city, list_data=list_esys,dhw_scale=dhw_dim_esys)
 
-    #  Generate energy systems
-    City_gen.esysgen.gen_esys_for_city(city=city, list_data=list_esys, dhw_scale=True)
+    # Add energy networks to city
+    if gen_e_net:  # True - Generate energy networks
+
+        #  Path to energy network input file (csv/txt; tab separated)
+        network_filename = 'test_lolo_networks.txt'
+
+        network_path = os.path.join(this_path, 'City_generation', 'input', 'input_en_network_generator',
+                                        network_filename)
+        #  Load energy networks planing data
+        dict_e_net_data = City_gen.enetgen.load_en_network_input_data(network_path)
+
+        City_gen.enetgen.add_energy_networks_to_city(city=city, dict_data=dict_e_net_data)
+
+    # Add street generator:
+    street_g = True
+    path_street = os.path.join(this_path, 'City_generation', 'input', 'street_generator', 'street_edges_cluster_simple.csv')
+    path_edges = os.path.join(this_path, 'City_generation', 'input', 'street_generator', 'street_nodes_cluster_simple.csv')
+    if street_g:
+        name_list, pos_list, edge_list = street_gen.load_street_data_from_csv( path_str_nodes=path_edges ,path_str_edges=path_street)
+
+
+        street_gen.add_street_network_to_city(city_object=city, name_list=name_list, pos_list=pos_list, edge_list=edge_list)
+
+    print (name_list )
+    print (pos_list)
+    print (edge_list)
+
+    for key in city.node:
+        for key2 in city.node[key]:
+            print(key2, '--', city.node[key][key2])
+
+    for key in city.edge:
+        for key2 in city.edge[key]:
+            print(key2, '--', city.edge[key][key2])
 
     dict_pam = {}
     dict_pam['Nsamples'] = nb_samples
