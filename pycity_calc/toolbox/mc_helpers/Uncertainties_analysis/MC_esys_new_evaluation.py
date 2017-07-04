@@ -10,7 +10,7 @@ import pycity_calc.toolbox.dimensioning.dim_functions as dimfunc
 import numpy as np
 
 
-def MC_rescale_esys(City, esys_unknown=True):
+def MC_rescale_esys(City, esys_unknown=True, recent_systems=False):
 
     '''
     Performs uncertainty rescaling for energy systems.
@@ -24,6 +24,9 @@ def MC_rescale_esys(City, esys_unknown=True):
                 market products and then rescale it to take into account uncertainties due to real conditions of use.
         False : energy systems are known. Rescale energy systems characteristics to simulate
                 uncertainties due to real conditions of use
+    recent_systems: Boolean
+        True: energy systems generated with quite good performance
+        False: energy generated with no performance preferences
 
     Returns
     -------
@@ -32,7 +35,6 @@ def MC_rescale_esys(City, esys_unknown=True):
     rescale_boiler : boolean : True if the boiler of the building was rescaled
     '''
 
-    #TODO rajouter le suivi des sampling
     #TODO rajouter dictionnaire pour choisir quelle energie systeme va etre utilise ou pas dans le MC
 
     # Get list of building
@@ -45,7 +47,7 @@ def MC_rescale_esys(City, esys_unknown=True):
         building = City.node[id_building]['entity']
 
         if esys_unknown:  # generate aleatory energy systems
-            building = gen_esys_unknown(building)
+            building = gen_esys_unknown(building, recent_systems=recent_systems)
 
         building = MC_new_esys_evaluation(building)  # rescale it to take into account real conditions of use
 
@@ -70,59 +72,104 @@ def gen_esys_unknown (building, recent_systems=True):
                 Building Extended object modified for Monte Carlo analysis
     '''
 
-    #TODO rajouter la fonction ancien ou nouveau enegie systems
-
-
     # Save copy
     ex_building = copy.deepcopy(building)
 
+    # Battery
     if ex_building.bes.hasBattery == True:
-        building.bes.battery.eta_charge = rd.uniform(0.8,0.9)
-        building.bes.battery.eta_discharge = rd.uniform(0.8,0.9)
-        building.bes.battery.self_discharge = rd.uniform(0.8,0.9)
+        if recent_systems:
+            building.bes.battery.eta_charge = rd.uniform(0.8,0.9)
+            building.bes.battery.eta_discharge = rd.uniform(0.8,0.9)
+            building.bes.battery.self_discharge = rd.uniform(0.8,0.9)
+        else:
+            building.bes.battery.eta_charge = rd.uniform(0.8, 0.9)
+            building.bes.battery.eta_discharge = rd.uniform(0.8, 0.9)
+            building.bes.battery.self_discharge = rd.uniform(0.8, 0.9)
 
+    # Thermal storage
     if ex_building.bes.hasTes == True:
-        building.bes.tes.t_max = rd.uniform(50,75)
-        #print (building.bes.tes.t_max)
-        building.bes.tes.t_min = rd.uniform(15,20)
-        #print (building.bes.tes.t_min )
-        building.bes.tes.t_surroundings = rd.uniform(20,25)
-        building.bes.tes.k_loss = rd.uniform(0.25,0.5)
-        building.bes.tes.t_init = rd.uniform(20,50)
-        #building.bes.tes.array_temp_storage = np.zeros(building.environment.timer.timeDiscretization)
-        #building.bes.tes.array_q_charge = np.zeros(building.environment.timer.timeDiscretization)
-        #building.bes.tes.array_q_discharge = np.zeros(building.environment.timer.timeDiscretization)
-        building.bes.tes.t_current = building.bes.tes.t_init
-        #building.bes.tes.totalTSto = np.zeros(building.environment.timer.timestepsTotal)
-        #building.bes.tes.currentTSto = np.zeros(building.environment.timer.timeDiscretization)
-        building.bes.tes.capacity = 10000000000
+        if recent_systems:
+            building.bes.tes.t_max = rd.uniform(50,75)
+            #print (building.bes.tes.t_max)
+            building.bes.tes.t_min = rd.uniform(15,20)
+            #print (building.bes.tes.t_min )
+            building.bes.tes.t_surroundings = rd.uniform(20,25)
+            building.bes.tes.k_loss = rd.uniform(0.25,0.5)
+            building.bes.tes.t_init = rd.uniform(20,50)
+            #building.bes.tes.array_temp_storage = np.zeros(building.environment.timer.timeDiscretization)
+            #building.bes.tes.array_q_charge = np.zeros(building.environment.timer.timeDiscretization)
+            #building.bes.tes.array_q_discharge = np.zeros(building.environment.timer.timeDiscretization)
+            building.bes.tes.t_current = building.bes.tes.t_init
+            #building.bes.tes.totalTSto = np.zeros(building.environment.timer.timestepsTotal)
+            #building.bes.tes.currentTSto = np.zeros(building.environment.timer.timeDiscretization)
+            building.bes.tes.capacity = 10000000000
+        else:
+            building.bes.tes.t_max = rd.uniform(50, 75)
+            building.bes.tes.t_min = rd.uniform(15, 20)
+            building.bes.tes.t_surroundings = rd.uniform(20, 25)
+            building.bes.tes.k_loss = rd.uniform(0.25, 0.5)
+            building.bes.tes.t_init = rd.uniform(20, 50)
+            building.bes.tes.t_current = building.bes.tes.t_init
+            building.bes.tes.capacity = 10000000000
 
+    # Boiler
     if building.bes.hasBoiler == True:
-        building.bes.boiler.eta = rd.uniform(0.6,0.9)
-        #City.node[build]['entity'].bes.boiler.lower_activation_limit = rd.uniform(0.1,0.3)
-        #City.node[build]['entity'].bes.boiler.t_max = rd.uniform(80,100)
+        if recent_systems:
+            building.bes.boiler.eta = rd.uniform(0.6,0.9)
+            #City.node[build]['entity'].bes.boiler.lower_activation_limit = rd.uniform(0.1,0.3)
+            #City.node[build]['entity'].bes.boiler.t_max = rd.uniform(80,100)
+        else:
+            building.bes.boiler.eta = rd.uniform(0.6, 0.9)
+            # City.node[build]['entity'].bes.boiler.lower_activation_limit = rd.uniform(0.1,0.3)
+            # City.node[build]['entity'].bes.boiler.t_max = rd.uniform(80,100)
 
+    # Combined heat pump
     if building.bes.hasChp == True:
-        building.bes.chp.eta = rd.uniform(0.8,0.9)
-        building.bes.chp.t_max = rd.uniform(80,100)
-        building.bes.chp.lower_activation_limit = rd.uniform(0.1,0.3)
+        if recent_systems:
+            building.bes.chp.eta = rd.uniform(0.8,0.9)
+            building.bes.chp.t_max = rd.uniform(80,100)
+            building.bes.chp.lower_activation_limit = rd.uniform(0.1,0.3)
+        else:
+            building.bes.chp.eta = rd.uniform(0.8,0.9)
+            building.bes.chp.t_max = rd.uniform(80,100)
+            building.bes.chp.lower_activation_limit = rd.uniform(0.1,0.3)
 
+    # Electrical heater
     if ex_building.bes.hasElectricalHeater == True:
-        building.bes.electricalHeater.eta = rd.uniform(0.8,0.95)
-        building.bes.electricalHeater.t_max = rd.uniform(80,100)
+        if recent_systems:
+            building.bes.electricalHeater.eta = rd.uniform(0.8,0.95)
+            building.bes.electricalHeater.t_max = rd.uniform(80,100)
+        else:
+            building.bes.electricalHeater.eta = rd.uniform(0.8, 0.95)
+            building.bes.electricalHeater.t_max = rd.uniform(80, 100)
 
+    # Heat pump
     if ex_building.bes.hasHeatpump == True:
-        building.bes.heatpump.lower_activation_limit = rd.uniform(0.1,0.3)
-        building.bes.heatpump.t_max = rd.uniform(80,100)
-        building.bes.heatpump.t_sink = rd.uniform(20,25)
+        if recent_systems:
+            building.bes.heatpump.lower_activation_limit = rd.uniform(0.1,0.3)
+            building.bes.heatpump.t_max = rd.uniform(80,100)
+            building.bes.heatpump.t_sink = rd.uniform(20,25)
+        else:
+            building.bes.heatpump.lower_activation_limit = rd.uniform(0.1, 0.3)
+            building.bes.heatpump.t_max = rd.uniform(80, 100)
+            building.bes.heatpump.t_sink = rd.uniform(20, 25)
 
+    # photovoltaic
     if ex_building.bes.hasPv == True:
-        building.bes.pv.eta = rd.uniform(0.8,0.9)
-        building.bes.pv.temperature_nominal = rd.uniform(18,25)
-        building.bes.pv.alpha = rd.uniform(0.8,0.9)
-        building.bes.pv.beta = rd.uniform(0.8,0.9)
-        building.bes.pv.gamma = rd.uniform(0.8,0.9)
-        building.bes.pv.tau_alpha = rd.uniform(0.8,0.9)
+        if recent_systems:
+            building.bes.pv.eta = rd.uniform(0.8,0.9)
+            building.bes.pv.temperature_nominal = rd.uniform(18,25)
+            building.bes.pv.alpha = rd.uniform(0.8,0.9)
+            building.bes.pv.beta = rd.uniform(0.8,0.9)
+            building.bes.pv.gamma = rd.uniform(0.8,0.9)
+            building.bes.pv.tau_alpha = rd.uniform(0.8,0.9)
+        else:
+            building.bes.pv.eta = rd.uniform(0.8, 0.9)
+            building.bes.pv.temperature_nominal = rd.uniform(18, 25)
+            building.bes.pv.alpha = rd.uniform(0.8, 0.9)
+            building.bes.pv.beta = rd.uniform(0.8, 0.9)
+            building.bes.pv.gamma = rd.uniform(0.8, 0.9)
+            building.bes.pv.tau_alpha = rd.uniform(0.8, 0.9)
 
     return building
 

@@ -78,6 +78,7 @@ def new_evaluation_esys(City, parameters):
             City.node[build]['entity'].bes.tes.t_surroundings = parameters[5]
             City.node[build]['entity'].bes.tes.k_loss = parameters[6]
             City.node[build]['entity'].bes.tes.t_init = parameters[7]
+            City.node[build]['entity'].bes.tes.capacity = 999999999999999
 
         if Cityref.node[build]['entity'].bes.hasBoiler == True:
             City.node[build]['entity'].bes.boiler.eta = parameters [8]

@@ -746,7 +746,7 @@ class EconomicCalculation(object):
 
         return dem_rel_cost * self.ann_factor
 
-    def calc_eeg_self_con(self, en_chp_self=None, en_chp_pv=None):
+    def calc_eeg_self_con(self, en_chp_self=None, en_pv_self=None):
         """
         Calculate EEG payment on self-produced and consumed electric energy of
         PV and CHP systems
@@ -755,7 +755,7 @@ class EconomicCalculation(object):
         ----------
         en_chp_self : float
             Amount of self-produced and consumed el. energy of CHP in kWh/a
-        en_chp_pv : float
+        en_pv_self : float
             Amount of self-produced and consumed el. energy of PV in kWh/a
 
         Returns
@@ -775,10 +775,10 @@ class EconomicCalculation(object):
         eeg_chp = self.germanmarket.get_eeg_payment(type='chp')
         eeg_pv = self.germanmarket.get_eeg_payment(type='pv')
 
-        eeg_payment = b_eeg_chp * en_chp_self * eeg_chp  + \
-                      b_eeg_pv * en_chp_pv * eeg_pv
+        eeg_payment = b_eeg_chp * en_chp_self * eeg_chp + \
+                      b_eeg_pv * en_pv_self * eeg_pv
 
-        return eeg_payment
+        return eeg_payment * self.ann_factor
 
     #  Operation-related costs
     #################################################################

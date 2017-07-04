@@ -60,7 +60,7 @@ def run_Morris():
     # #############################################################################################################
 
     # number of samples
-    Nsample = 100
+    Nsample = 10
     print(Nsample)
     Morris_name = 'Morris_values.txt' # filename of the parameters definition variation space for the Morris analysis
 

@@ -52,6 +52,7 @@ import pycity_calc.toolbox.mc_helpers.weather.gen_weather_set as genweather
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
+import random as rd
 
 def do_uncertainty_analysis(Nsamples=1000):
 
@@ -77,6 +78,15 @@ def do_uncertainty_analysis(Nsamples=1000):
     # user parameters are unknown (user_ventilation_rate, Tset_heat, number of occupants)
     Is_k_user_parameters = True
     #Set to False: user parameters are fixed
+
+    # ## Economic calculations:
+    # Interest rate is uncertain: Set to False: interest_rate is fixed
+    interest_unc = True
+    interest_rate_variation = 'low' #0-0.05
+    #interest_rate_variation = 'medium' #0.05-0.1
+    #interest_rate_variation = 'high' #0.1-0.2
+    # if interest is fixed
+    interest_fix = 0.05
 
     MC_analyse_total = True
 
@@ -510,7 +520,30 @@ def do_uncertainty_analysis(Nsamples=1000):
     else:
         dict_par_unc['MC_analysis'] = False
 
+    if interest_unc:
+        if interest_rate_variation == 'low':
+            max =  0.05
+            min = 0
+        elif interest_rate_variation== 'medium':
+            max = 0.1
+            min = 0.05
+        elif interest_rate_variation=='high':
+            max = 0.2
+            min = 0.1
+        else:
+            print('Error: interest_rate_variation not valid: default value: low')
+            max = 0.05
+            min = 0
 
+        interest_list = []
+        for i in range(Nsamples):
+            temp = rd.uniform(min, max)
+            interest_list.append(temp)
+    else:
+        interest_list=[]
+        for i in range (Nsamples):
+            interest_list.append(interest_fix)
+    dict_par_unc['interest'] = interest_list
 
         # TODO rajouter le sample pour un equipement avec des proprietes vraiment incertaines et d'autres moins
 
@@ -670,6 +703,9 @@ def do_uncertainty_analysis(Nsamples=1000):
         write_results.write('user behaviour: ' + str(Is_k_user_parameters)+ '\n')
         write_results.write('energy systems parameters: ' + str(Is_k_esys_parameters)+ '\n')
         write_results.write('buildings parameters: ' + str(Is_k_building_parameters)+ '\n')
+        write_results.write('interest_unc: ' + str(interest_unc) + '\n')
+        write_results.write('interest_rate_variation: ' + str(interest_rate_variation) + '\n')
+        write_results.write('interest_fix: ' + str(interest_fix) + '\n')
 
         write_results.write('\n############## City reference ##############\n')
         if load_city == True:

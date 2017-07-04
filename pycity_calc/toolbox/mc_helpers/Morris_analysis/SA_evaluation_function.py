@@ -339,14 +339,14 @@ def evaluate(City, values):
                                                 price_ch_dem_gas=price_ch_dem_gas, price_ch_dem_el=price_ch_dem_el,
                                                 price_ch_op=price_ch_op, price_ch_proc_chp=price_ch_proc_chp,
                                                 price_ch_proc_pv=price_ch_proc_pv,
-                                                price_ch_EEG_Umlage_tax_chp=price_ch_EEG_Umlage_tax_chp,
-                                                price_ch_EEG_Umlage_tax_pv=price_ch_EEG_Umlage_tax_pv,
-                                                price_EEX_baseload_price=price_EEX_baseload_price,
-                                                price_ch_avoid_grid_usage=price_ch_avoid_grid_usage,
-                                                price_ch_sub_chp=price_ch_sub_chp,
-                                                price_ch_self_usage_chp=price_ch_self_usage_chp,
-                                                price_ch_gas_disc_chp=price_ch_gas_disc_chp,
-                                                price_ch_sub_pv=price_ch_sub_pv)
+                                                price_ch_eeg_chp=price_ch_EEG_Umlage_tax_chp,
+                                                price_ch_eeg_pv=price_ch_EEG_Umlage_tax_pv,
+                                                price_ch_eex=price_EEX_baseload_price,
+                                                price_ch_grid_use=price_ch_avoid_grid_usage,
+                                                price_ch_chp_sub=price_ch_sub_chp,
+                                                price_ch_chp_self=price_ch_self_usage_chp,
+                                                price_ch_chp_tax_return=price_ch_gas_disc_chp,
+                                                price_ch_pv_sub=price_ch_sub_pv)
 
         # Modification lifetime and maintenance
         for key1 in eco_inst.dict_lifetimes.keys():

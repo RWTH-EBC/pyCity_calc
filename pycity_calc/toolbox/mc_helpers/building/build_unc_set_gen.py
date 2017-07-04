@@ -147,8 +147,6 @@ def calc_list_dormer_samples(nb_samples):
     # 2: Partially heated basement
     # 3: Fully heated cellar
 
-
-
     list_const = np.random.random_integers(0, 1, size=nb_samples) - 1
     # -1: heavy construction
     # 1: light construction

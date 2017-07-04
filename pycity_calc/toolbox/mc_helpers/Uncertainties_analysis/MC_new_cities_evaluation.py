@@ -15,7 +15,7 @@ import numpy as np
 import pycity_calc.simulation.energy_balance_optimization.energy_balance_building as EBB
 import pycity_calc.economic.annuity_calculation as eco_calc
 import pycity_calc.economic.economic_ann as economic_ann
-import pycity_calc.environments.market as Mark
+import pycity_calc.environments.germanmarket as Mark
 import pycity_calc.economic.calc_CO2_emission as GHG_calc
 import pycity_calc.toolbox.mc_helpers.Uncertainties_analysis.MC_esys_new_evaluation as mc_esys
 import pycity_calc.toolbox.mc_helpers.weather.gen_weather_set as wea
@@ -47,6 +47,8 @@ def new_city_evaluation_monte_carlo(City, dict_sample):
             buil_physic_unc: bool
                         Defines,if building physics unknown or not (default: True)
             weather : Holding weather sample lists
+            interest:   list
+                        Holding interest rate sampling for economic calculation
 
         Returns
         -------
@@ -89,6 +91,7 @@ def new_city_evaluation_monte_carlo(City, dict_sample):
     build_physic_unc = dict_sample['build_physic_unc']
     time_sp_force_retro = dict_sample['time_sp_force_retro']
     max_retro_year = dict_sample['max_retro_year']
+    interest = dict_sample['interest']
 
     for loop in range (Nloop):
 
@@ -172,7 +175,7 @@ def new_city_evaluation_monte_carlo(City, dict_sample):
 
         ############################################
 
-        City, GHG_Emission, total_annuity = MC_new_economic_evaluation(City, time=10, interest=0.05)
+        City, GHG_Emission, total_annuity = MC_new_economic_evaluation(City, time=10, interest=interest[loop])
 
         # Add results to result_arrays
 
@@ -312,11 +315,11 @@ def MC_new_economic_evaluation(City, time=10, interest=0.05):
 
     #  Generate economic calculator object
     print("Start Economic evaluation /n")
-    eco_inst = eco_calc.EconomicCalculation(time=time, interest=interest, )
+    eco_inst = eco_calc.EconomicCalculation(time=time, interest=interest)
 
     ## Annuity Calculation
     # Get Market object
-    Market_instance = Mark.Market()
+    Market_instance = Mark.GermanMarket()
 
     # Annuity
     dem_rel_annuity = economic_ann.calc_dem_rel_annuity_city(City, eco_inst, Market_instance)
@@ -436,7 +439,7 @@ if __name__ == '__main__':
     MC_analysis = True
     build_physic_unc = True
     esys_unc = True
-
+    Interest = 0.05
     esys_filename = 'test_lolo_esys.txt'
     city_f_name = 'aachen_kronenberg_3_mfh_ref_1.pkl'
 
@@ -510,6 +513,9 @@ if __name__ == '__main__':
     dict_pam['esys'] = esys_unc
     dict_pam['time_sp_force_retro'] = time_sp_force_retro
     dict_pam['max_retro_year'] = max_retro_year
+    dict_pam['interest']=[]
+    for i in range (nb_samples):
+        dict_pam['interest'].append(Interest)
 
     dict_pam['weather'] = wea.gen_set_of_weathers(nb_samples)
 
