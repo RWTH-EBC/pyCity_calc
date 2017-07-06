@@ -457,7 +457,7 @@ if __name__ == '__main__':
 
     #  Add energy systems to city
     gen_esys = True  # True - Generate energy networks
-    gen_e_net = False # True - Generate energy networks
+    gen_e_net = True # True - Generate energy networks
     dhw_dim_esys = True  # Use dhw profiles for esys dimensioning
 
     #  Path to energy system input file (csv/txt; tab separated)

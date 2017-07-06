@@ -1028,7 +1028,6 @@ class EconomicCalculation(object):
             Distinction between electricity for heating pump and electricity for daily life: different tariff
 
         """
-        el_dem = 0
         gas_dem = 0
         dem_rel_annuity = 0
         el_price = 0
@@ -1044,31 +1043,17 @@ class EconomicCalculation(object):
                     #  If entity is kind building
                     if city_object.node[n]['entity']._kind == 'building':
 
-                        if 'electrical demand' in city_object.node[n]:
-                            el_dem = city_object.node[n]['electrical demand']
+                        if 'electrical demand normal usage' in city_object.node[n]:
+                            el_dem_normal = city_object.node[n]['electrical demand normal usage']
 
                         if 'fuel demand' in city_object.node[n]:
                             gas_dem = sum(city_object.node[n]['fuel demand'])\
                                       *city_object.environment.timer.timeDiscretization /1000 /3600
 
-                        # get electricity demand to feed in the heat pump
-                        if 'electrical_dem_heatpump' in city_object.node[n]:
-                            heatpump_demand = city_object.node[n]['electrical_dem_heatpump']
+                        if 'electrical demand hp' in city_object.node[n]:
+                            el_dem_normal = city_object.node[n]['electrical demand hp']
 
-                        # Loop over timestep
-                        for tps in range(len(el_dem)):
-                            # total electrical demand higher than heat_pump demand:
-                            if el_dem[tps] > heatpump_demand[tps]:
-                                # electrical demand with normal tariff
-                                el_dem_normal[tps] = el_dem[tps]-heatpump_demand[tps]
-                                # electrical demand with heat_pump tariff
-                                el_dem_hp[tps] = heatpump_demand[tps]
-                                # total electrical demand lower than heat_pump demand:
-                            else:
-                                # electrical demand with normal tariff
-                                el_dem_normal[tps] = 0
-                                # electrical demand with heat_pump tariff
-                                el_dem_hp[tps] = heatpump_demand [tps]
+
 
                         # Sum power curve to obtain total energy demand in kWh
                         curr_el_dem_normal = sum(el_dem_normal)\

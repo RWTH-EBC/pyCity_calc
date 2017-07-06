@@ -1627,11 +1627,11 @@ class calculator(object):
 
                     # Calculation of heat pump electricity demand
                     if Bes.hasHeatpump:
-                        demand_heatpump = Bes.electricalHeater.totalPConsumption + Bes.heatpump.array_el_power_in
-                        Node['electrical_dem_heatpump'] = demand_heatpump
+                        demand_heatpump = Node['electricity_heatpump']
+                        #Node['electrical_dem_heatpump'] = demand_heatpump
                     else:
                         demand_heatpump = np.zeros(len(time_vector.time_vector()))
-                        Node['electrical_dem_heatpump'] = demand_heatpump
+                        #Node['electrical_dem_heatpump'] = demand_heatpump
 
                     # Initialisation
                     Node['electrical demand'] = (Node['entity'].get_electric_power_curve()) + (demand_heatpump)
@@ -1731,8 +1731,6 @@ class calculator(object):
                             Node['pv_sold'] = pv_sold
                             Node['batt_unload'] = unload
                             Node['batt_load'] = load
-
-
 
                             # fig = plt.figure()
                             # plt.title('')
@@ -2106,6 +2104,36 @@ class calculator(object):
                             # To make it complete and comparable to the entities of the other nodes
                             Node['electrical demand_with_deg'] = final_electrical_demand  # useless because there is no DEG here but consequent!
                             Node['electrical demand'] = final_electrical_demand
+
+            # ## Difference beetween electrical demand for daily use or for HP/EH
+            # Assume that pv/chp cover preferentially normal daily electrical needs
+            # Initialisation
+            # electrical demand for daily use
+            el_dem_normal = np.zeros(len(time_vector.time_vector()))
+            # electrical demand for heatpump
+            el_dem_hp = np.zeros(len(time_vector.time_vector()))
+
+            # Loop over timestep
+            for tps in range(len(demand_heatpump)):
+                # Total electrical demand after electrical balance:
+                el_dem = Node['electrical demand']
+
+                # total electrical demand higher than heat_pump demand:
+                if el_dem[tps] > demand_heatpump[tps]:
+                    # electrical demand with normal tariff
+                    el_dem_normal[tps] = el_dem[tps]-demand_heatpump[tps]
+                    # electrical demand with heat_pump tariff
+                    el_dem_hp[tps] = demand_heatpump[tps]
+                    # total electrical demand lower than heat_pump demand:
+                else:
+                    # electrical demand with normal tariff
+                    el_dem_normal[tps] = 0
+                    # electrical demand with heat_pump tariff
+                    el_dem_hp[tps] = demand_heatpump [tps]
+            # electrical demand for daily use
+            Node ['electrical demand normal usage'] = el_dem_normal
+            # electrical demand for heatpump
+            Node ['electrical demand hp'] = el_dem_hp
 
 
                             ######################################################
