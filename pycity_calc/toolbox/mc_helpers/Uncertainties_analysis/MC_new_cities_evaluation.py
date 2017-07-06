@@ -314,17 +314,20 @@ def MC_new_economic_evaluation(City, time=10, interest=0.05):
     """
 
     #  Generate economic calculator object
-    print("Start Economic evaluation /n")
-    eco_inst = eco_calc.EconomicCalculation(time=time, interest=interest)
+    #print("Start Economic evaluation /n")
+    #eco_inst = eco_calc.EconomicCalculation(time=time, interest=interest)
 
     ## Annuity Calculation
     # Get Market object
     Market_instance = Mark.GermanMarket()
+    #  Generate economic calculator object
+    print("Start Economic evaluation /n")
+    eco_inst = eco_calc.EconomicCalculation(germanmarket=Market_instance, time=time, interest=interest)
 
     # Annuity
-    dem_rel_annuity = economic_ann.calc_dem_rel_annuity_city(City, eco_inst, Market_instance)
-    total_proc_annuity = economic_ann.calc_proc_annuity_multi_comp_city(City, eco_inst)
-    cap_rel_ann, op_rel_ann = economic_ann.calc_cap_and_op_rel_annuity_city(City, eco_inst)
+    dem_rel_annuity = eco_inst.calc_dem_rel_annuity_city(City)
+    total_proc_annuity = eco_inst.calc_proc_annuity_multi_comp_city(City)
+    cap_rel_ann, op_rel_ann = eco_inst.calc_cap_and_op_rel_annuity_city(City)
 
     # Get total annuity
     total_annuity = eco_inst.calc_total_annuity(ann_capital=cap_rel_ann,
@@ -454,7 +457,7 @@ if __name__ == '__main__':
 
     #  Add energy systems to city
     gen_esys = True  # True - Generate energy networks
-    gen_e_net = True
+    gen_e_net = False # True - Generate energy networks
     dhw_dim_esys = True  # Use dhw profiles for esys dimensioning
 
     #  Path to energy system input file (csv/txt; tab separated)
