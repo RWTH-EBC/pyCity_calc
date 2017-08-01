@@ -174,7 +174,7 @@ class Test_NetworkOperations(object):
 
         subcity = netop.get_build_str_subgraph(city, nodelist=[node_4])
 
-        assert subcity.nodes() == [node_1, node_2, node_3, node_4]
+        assert sorted(subcity.nodes()) == [node_1, node_2, node_3, node_4]
         assert subcity.edges() == [(node_1, node_2), (node_2, node_3)]
 
     def test_get_list_with_energy_net_con_node_ids_1(self, fixture_building):
@@ -484,12 +484,20 @@ class Test_NetworkOperations(object):
 
         #  Should include all existing nodes
         assert len(min_span_graph.nodes()) == 4
-        assert min_span_graph.nodes() == [node_1, node_2, node_3, node_4]
+        assert sorted(min_span_graph.nodes()) == [node_1, node_2, node_3, node_4]
 
-        list_edges = min_span_graph.edges()
+        list_edges = sorted(min_span_graph.edges())
         #  Should only hold minimum spanning tree edges
-        assert list_edges == [(node_1, node_2), (node_2, node_3),
-                              (node_2, node_4)]
+
+        # assert list_edges == [(node_1, node_2), (node_2, node_3),
+        #                       (node_2, node_4)]
+
+        assert list_edges[0] == (node_1, node_2) or list_edges[0] == (
+            node_2, node_1)
+        assert list_edges[1] == (node_2, node_3) or list_edges[1] == (
+            node_3, node_2)
+        assert list_edges[2] == (node_2, node_4) or list_edges[2] == (
+            node_4, node_2)
 
     def test_gen_min_span_tree_along_street(self, fixture_building):
 
