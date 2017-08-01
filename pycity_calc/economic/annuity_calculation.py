@@ -530,7 +530,7 @@ class EconomicCalculation(object):
         #  for every relacement and sum these values up
         cash_val_repl_sum = 0
 
-        for rep in range(1, total_nb_repl + 1):
+        for rep in range(1, int(total_nb_repl + 1)):
             repl_cash = \
                 self.calc_cash_value_for_single_replacement(invest=invest,
                                                             price_change=r_cash,

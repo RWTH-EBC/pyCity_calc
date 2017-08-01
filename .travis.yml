@@ -1,7 +1,6 @@
 language: python
 
 python:
-  - 2.7
   - 3.5
   - 3.6
 
@@ -12,6 +11,7 @@ install:
   - pip install xlrd
   - pip install utm
   - pip install pypower
+  - pip install sklearn
   - pip install shapely
   - pip install pyproj
   - pip install -e git+git@github.com:RWTH-EBC/TEASER.git@issue297_vdi_core_dev_jsc#egg=teaser
@@ -23,7 +23,7 @@ install:
   - pip install flake8
 
 script:
-  - py.test
+  - py.test --ignore=test_simulation_energy_balances.py
 
 after_success:
   - coveralls
