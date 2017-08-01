@@ -306,7 +306,8 @@ def redistribute_occ(occ_list):
 
 
 def generate_environment(timestep=3600, year=2010, try_path=None,
-                         location=(51.529086, 6.944689), altitude=55):
+                         location=(51.529086, 6.944689), altitude=55,
+                         new_try=False):
     """
     Returns environment object. Total number of timesteps is automatically
     generated for one year.
@@ -328,6 +329,12 @@ def generate_environment(timestep=3600, year=2010, try_path=None,
         (default: (51.529086, 6.944689) for Bottrop, Germany.
     altitude : float, optional
         Altitute of location in m (default: 55 - City of Bottrop)
+    new_try : bool, optional
+        Defines, if TRY dataset have been generated after 2017 (default: False)
+        If False, assumes that TRY dataset has been generated before 2017.
+        If True, assumes that TRY dataset has been generated after 2017 and
+        belongs to the new TRY classes. This is important for extracting
+        the correct values from the TRY dataset!
 
     Returns
     -------
@@ -339,7 +346,8 @@ def generate_environment(timestep=3600, year=2010, try_path=None,
     timer = time.TimerExtended(timestep=timestep, year=year)
 
     weather = weath.Weather(timer, useTRY=True, pathTRY=try_path,
-                            location=location, altitude=altitude)
+                            location=location, altitude=altitude,
+                            new_try=new_try)
 
     prices = price.Market()
     co2em = co2.Emissions(year=year)
