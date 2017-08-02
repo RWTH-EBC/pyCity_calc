@@ -1,0 +1,4 @@
+node_id	type	method
+1001	2	1
+1002	2	1
+1003	2	1

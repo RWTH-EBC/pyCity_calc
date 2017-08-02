@@ -1,0 +1,82 @@
+ ---------- Monte Carlo Analysis ---------- 
+  Number of sampling :1000
+
+############## Uncertain parameters ##############
+user behaviour: True
+energy systems parameters: True
+buildings parameters: True
+
+############## City reference ##############
+Generation mode: load City from pickle file
+pickle file path :  D:\jsc-les\pyCity_calc_github\pycity_calc\toolbox\mc_helpers\Uncertainties_analysis\City_generation\output\aachen_kronenberg_3_mfh_ref_1.pkl
++++++++++++++++++++ 
+energy systems type: [(1001, 0, 1.0), (1002, 0, 1.0), (1003, 0, 1.0)]
++++++++++++++++++++ 
+
+############################Results #########################
+
+ gas demand
+
+ ----------
+unit : kWh/year 
+median : 778627.4288
+first quantil : 646108.47735
+second quantil :778627.4288
+third quantil :937733.245125
+mean : 809796.723158
+sigma : 222286.056211
+confident interval 90(444168.6973774042, 1175424.7489375968)
+92.10% of the means are in confident interval
+
+ electrical demand
+
+ -----------------
+unit : kWh/year 
+median : 59901.5
+first quantil : 56868.25
+second quantil :59901.5
+third quantil :63130.0
+mean : 60073.817
+sigma : 4636.38193245
+confident interval 90(52447.647362484044, 67699.986637515962)
+91.20% of the means are in confident interval
+
+ Annuity
+
+ -------
+unit : Euro/year 
+median : -64267.79585
+first quantil : -73890.18465
+second quantil :-64267.79585
+third quantil :-56157.274325
+mean : -66145.8251268
+sigma : 13666.1481044
+confident interval 90(-88624.63840274926, -43667.011850850613)
+92.00% of the means are in confident interval
+
+ GHG Emissions
+
+ -------------
+unit : kg/year 
+median : 228347.04035
+first quantil : 196069.20465
+second quantil :228347.04035
+third quantil :266975.582175
+mean : 235617.126612
+sigma : 54412.6222821
+confident interval 90(146116.32749969844, 325117.92572510126)
+92.10% of the means are in confident interval
+
+ Specific GHG Emissions
+
+ ----------------------
+unit : kg/kWh/year 
+reference: user energy demand
+median : 0.87155
+first quantil : 0.7497
+second quantil :0.87155
+third quantil :1.0062
+mean : 0.8974396
+sigma : 0.204488452564
+confident interval 90(235616.79025882701, 235617.46296597275)
+0.00% of the means are in confident interval
