@@ -14,7 +14,6 @@ import pycity_calc.toolbox.dimensioning.dim_functions as dimfunc
 import numpy as np
 import pycity_calc.simulation.energy_balance_optimization.energy_balance_building as EBB
 import pycity_calc.economic.annuity_calculation as eco_calc
-import pycity_calc.economic.economic_ann as economic_ann
 import pycity_calc.environments.germanmarket as Mark
 import pycity_calc.economic.calc_CO2_emission as GHG_calc
 import pycity_calc.toolbox.mc_helpers.Uncertainties_analysis.MC_esys_new_evaluation as mc_esys
@@ -443,7 +442,7 @@ if __name__ == '__main__':
     build_physic_unc = True
     esys_unc = True
     Interest = 0.05
-    esys_filename = 'test_lolo_esys.txt'
+    esys_filename = 'lolo_esys.txt'
     city_f_name = 'aachen_kronenberg_3_mfh_ref_1.pkl'
 
     #  End of user Inputs
@@ -461,7 +460,7 @@ if __name__ == '__main__':
     dhw_dim_esys = True  # Use dhw profiles for esys dimensioning
 
     #  Path to energy system input file (csv/txt; tab separated)
-    #esys_filename = 'test_lolo_esys.txt'
+    #esys_filename = 'lolo_esys.txt'
     esys_path = os.path.join(this_path, 'City_generation', 'input', 'input_esys_generator', esys_filename)
 
     # Generate energy systems for city district
@@ -477,7 +476,7 @@ if __name__ == '__main__':
     if gen_e_net:  # True - Generate energy networks
 
         #  Path to energy network input file (csv/txt; tab separated)
-        network_filename = 'test_lolo_networks.txt'
+        network_filename = 'lolo_networks.txt'
 
         network_path = os.path.join(this_path, 'City_generation', 'input', 'input_en_network_generator',
                                         network_filename)

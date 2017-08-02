@@ -304,8 +304,7 @@ class calculator(object):
 
                     #  Loop over thermal demand of building
                     for ii in range(len(thermal_demand_building)):
-                        ####print('#######node: ', str(dict_city_data[index]['Buildings in subcity'][i]), '\n',
-                             # '#######timestep: ', ii)
+                        #print('#######node: ', str(dict_city_data[index]['Buildings in subcity'][i]), '\n','#######timestep: ', ii)
 
                         ####print('case0')
 
@@ -354,7 +353,7 @@ class calculator(object):
                                     set_new_temperature=True,
                                     save_res=True,
                                     time_index=ii)
-
+                            print ('timestep' , ii,'-----',t_tes)
                             #  Calculate power of heat pump (max.)
                             power_hp, power_hp_in = \
                                 Bes.heatpump.calc_hp_all_results(
@@ -1611,6 +1610,9 @@ class calculator(object):
                     Node['chp_sold'] = np.zeros(len(time_vector.time_vector()))
                     Node['batt_unload'] = np.zeros(len(time_vector.time_vector()))
                     Node['batt_load'] = np.zeros(len(time_vector.time_vector()))
+                    Node['electrical demand normal usage'] = np.zeros(len(time_vector.time_vector()))
+                    Node['electrical demand hp'] = np.zeros(len(time_vector.time_vector()))
+
                     #Node['pv_used_with_batt'] = 0
                     #Node['pv_not_used'] = 0
                     #Node['chp_used_with_batt'] = 0
@@ -1643,6 +1645,8 @@ class calculator(object):
                     Node['batt_unload'] = np.zeros(len(time_vector.time_vector()))
                     Node['batt_load'] = np.zeros(len(time_vector.time_vector()))
                     general_demand = Node['entity'].get_electric_power_curve() + demand_heatpump
+                    Node['electrical demand normal usage'] = np.zeros(len(time_vector.time_vector()))
+                    Node['electrical demand hp'] = np.zeros(len(time_vector.time_vector()))
 
                     # Building has a battery
                     if (Node['entity'].bes.hasBattery):
@@ -2108,6 +2112,8 @@ class calculator(object):
             # ## Difference beetween electrical demand for daily use or for HP/EH
             # Assume that pv/chp cover preferentially normal daily electrical needs
             # Initialisation
+            Node['electrical demand normal usage'] = np.zeros(len(time_vector.time_vector()))
+            Node['electrical demand hp'] = np.zeros(len(time_vector.time_vector()))
             # electrical demand for daily use
             el_dem_normal = np.zeros(len(time_vector.time_vector()))
             # electrical demand for heatpump

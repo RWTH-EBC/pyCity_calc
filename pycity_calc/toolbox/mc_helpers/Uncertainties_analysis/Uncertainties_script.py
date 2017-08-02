@@ -54,7 +54,7 @@ import numpy as np
 from scipy import stats
 import random as rd
 
-def do_uncertainty_analysis(Nsamples=1000):
+def do_uncertainty_analysis(Nsamples=10):
 
     # Define Uncertainty analysis parameters
     # #############################################################################################################
@@ -127,7 +127,7 @@ def do_uncertainty_analysis(Nsamples=1000):
         dhw_dim_esys = True  # Use dhw profiles for esys dimensioning
 
         #  Path to energy system input file (csv/txt; tab separated)
-        esys_filename = 'test_lolo_esys.txt'
+        esys_filename = 'lolo_esys.txt'
         esys_path = os.path.join(this_path, 'City_generation', 'input', 'input_esys_generator', esys_filename)
 
         # Generate energy systems for city district
@@ -144,10 +144,10 @@ def do_uncertainty_analysis(Nsamples=1000):
         if gen_e_net:  # True - Generate energy networks
 
             #  Path to energy network input file (csv/txt; tab separated)
-            network_filename = 'test_lolo_networks.txt'
+            network_filename = 'lolo_networks.txt'
 
             network_path = os.path.join(this_path, 'City_generation', 'input', 'input_en_network_generator',
-                                            network_filename)
+                                             network_filename)
             #  Load energy networks planing data
             dict_e_net_data = City_gen.enetgen.load_en_network_input_data(network_path)
 
@@ -335,7 +335,7 @@ def do_uncertainty_analysis(Nsamples=1000):
         gen_e_net = False  # True - Generate energy networks
 
         #  Path to energy network input file (csv/txt; tab separated)
-        network_filename = 'test_lolo_networks.txt'
+        network_filename = 'lolo_networks.txt'
         network_path = os.path.join(this_path, 'City_generation', 'input', 'input_en_network_generator',
                                     network_filename)
 
@@ -343,7 +343,7 @@ def do_uncertainty_analysis(Nsamples=1000):
         gen_esys = True  # True - Generate energy networks
 
         #  Path to energy system input file (csv/txt; tab separated)
-        esys_filename = 'test_lolo_esys.txt'
+        esys_filename = 'lolo_esys.txt'
         esys_path = os.path.join(this_path, 'City_generation', 'input', 'input_esys_generator',
                                  esys_filename)
 
@@ -351,7 +351,7 @@ def do_uncertainty_analysis(Nsamples=1000):
         gen_e_net = False  # True - Generate energy networks
 
         #  Path to energy network input file (csv/txt; tab separated)
-        network_filename = 'test_lolo_networks.txt'
+        network_filename = 'lolo_networks.txt'
         network_path = os.path.join(this_path, 'City_generation', 'input', 'input_en_network_generator',
                                     network_filename)
 

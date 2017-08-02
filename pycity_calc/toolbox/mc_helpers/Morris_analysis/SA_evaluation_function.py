@@ -37,7 +37,7 @@ import pycity_calc.cities.scripts.city_generator.city_generator as City_generato
 import pycity_calc.simulation.energy_balance_optimization.energy_balance_building as EBB
 import pycity_calc.economic.annuity_calculation as eco_calc
 import pycity_calc.economic.economic_ann as economic_ann
-import pycity_calc.environments.market as Mark
+import pycity_calc.environments.germanmarket as Mark
 import pycity_calc.economic.calc_CO2_emission as GHG_calc
 import numpy as np
 import pycity_calc.toolbox.mc_helpers.weather.gen_weather_set as mc_weather
@@ -333,12 +333,15 @@ def evaluate(City, values):
         life_factor = row[57]
         maintenance_factor = row[58]
 
+        print("Annuity calculation")
+        Market_instance = Mark.GermanMarket()
+
         #  Generate economic calculator object
         print("Economic object generation")
-        eco_inst = eco_calc.EconomicCalculation(time=time, interest=interest, price_ch_cap=price_ch_cap,
+        eco_inst = eco_calc.EconomicCalculation(time=time, germanmarket=Market_instance,  interest=interest, price_ch_cap=price_ch_cap,
                                                 price_ch_dem_gas=price_ch_dem_gas, price_ch_dem_el=price_ch_dem_el,
                                                 price_ch_op=price_ch_op, price_ch_proc_chp=price_ch_proc_chp,
-                                                price_ch_proc_pv=price_ch_proc_pv,
+                                                 price_ch_proc_pv=price_ch_proc_pv,
                                                 price_ch_eeg_chp=price_ch_EEG_Umlage_tax_chp,
                                                 price_ch_eeg_pv=price_ch_EEG_Umlage_tax_pv,
                                                 price_ch_eex=price_EEX_baseload_price,
@@ -358,13 +361,12 @@ def evaluate(City, values):
             eco_inst.dict_maintenance[key2] = tempp
 
         ## Annuity Calculation
-        print("Annuity calculation")
-        Market_instance = Mark.Market()
+
 
         # Annuity
-        dem_rel_annuity = economic_ann.calc_dem_rel_annuity_city(City, eco_inst, Market_instance)
-        total_proc_annuity = economic_ann.calc_proc_annuity_multi_comp_city(City, eco_inst)
-        cap_rel_ann, op_rel_ann = economic_ann.calc_cap_and_op_rel_annuity_city(City, eco_inst)
+        dem_rel_annuity = eco_inst.calc_dem_rel_annuity_city(City)
+        total_proc_annuity = eco_inst.calc_proc_annuity_multi_comp_city(City)
+        cap_rel_ann, op_rel_ann = eco_inst.calc_cap_and_op_rel_annuity_city(City)
 
         total_annuity = eco_inst.calc_total_annuity(ann_capital=cap_rel_ann,
                                                          ann_demand=dem_rel_annuity,

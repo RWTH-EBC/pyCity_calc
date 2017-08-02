@@ -1032,8 +1032,8 @@ class EconomicCalculation(object):
         dem_rel_annuity = 0
         el_price = 0
         gas_price = 0
-        el_dem_normal = np.zeros(len(city_object.environment.timer.time_vector()))
-        el_dem_hp = np.zeros(len(city_object.environment.timer.time_vector()))
+        curr_el_dem_normal = np.zeros(len(city_object.environment.timer.time_vector()))
+        curr_el_dem_hp = np.zeros(len(city_object.environment.timer.time_vector()))
 
 
         for n in city_object.nodes():
@@ -1045,27 +1045,24 @@ class EconomicCalculation(object):
 
                         if 'electrical demand normal usage' in city_object.node[n]:
                             el_dem_normal = city_object.node[n]['electrical demand normal usage']
+                            # Sum power curve to obtain total energy demand in kWh
+                            curr_el_dem_normal = sum(el_dem_normal)\
+                                                 * city_object.environment.timer.timeDiscretization / 1000 / 3600
 
                         if 'fuel demand' in city_object.node[n]:
                             gas_dem = sum(city_object.node[n]['fuel demand'])\
                                       *city_object.environment.timer.timeDiscretization /1000 /3600
 
                         if 'electrical demand hp' in city_object.node[n]:
-                            el_dem_normal = city_object.node[n]['electrical demand hp']
-
-
-
-                        # Sum power curve to obtain total energy demand in kWh
-                        curr_el_dem_normal = sum(el_dem_normal)\
-                                             *city_object.environment.timer.timeDiscretization /1000 /3600
-                        curr_el_dem_hp = sum(el_dem_hp)*city_object.environment.timer.timeDiscretization /1000 /3600
+                            el_dem_hp = city_object.node[n]['electrical demand hp']
+                            curr_el_dem_hp = sum(el_dem_hp) * city_object.environment.timer.timeDiscretization / 1000 / 3600
 
                         # residential building
                         if city_object.node[n]['entity'].build_type == 0:
                             el_price = self.germanmarket.get_spec_el_cost('res', city_object.environment.timer.year,
-                                                                        curr_el_dem_normal)
+                                                                          curr_el_dem_normal)
                             gas_price = self.germanmarket.get_spec_gas_cost('res', city_object.environment.timer.year,
-                                                                          gas_dem)
+                                                                            gas_dem)
 
                         # industrial building
                         elif city_object.node[n]['entity'].build_type != 0:

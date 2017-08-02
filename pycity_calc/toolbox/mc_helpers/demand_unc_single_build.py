@@ -393,7 +393,7 @@ def mod_single_build_w_samples(exbuilding, dict_samples, list_wea, i , MC_analys
                 building.construction_type = "light"
             print('construction type: ', building.construction_type)
 
-            building.net_floor_area = dict_samples['net_floor_area'][i]
+        building.net_floor_area = dict_samples['net_floor_area'][i]
 
     print('Finished modification of building copy with sample data')
     print()

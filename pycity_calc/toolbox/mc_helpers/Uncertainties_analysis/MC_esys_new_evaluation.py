@@ -273,7 +273,7 @@ if __name__ == '__main__':
     dhw_dim_esys = True  # Use dhw profiles for esys dimensioning
 
     #  Path to energy system input file (csv/txt; tab separated)
-    esys_filename = 'test_lolo_esys.txt'
+    esys_filename = 'lolo_esys.txt'
     esys_path = os.path.join(this_path, 'City_generation', 'input', 'input_esys_generator', esys_filename)
 
     #initialisation list boiler sampling
