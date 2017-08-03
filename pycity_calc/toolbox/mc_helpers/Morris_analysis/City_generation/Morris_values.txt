@@ -10,7 +10,7 @@ attic	0	4
 cellar	0	4
 construction type	-1	1
 total_number_occupants	1	5
-Annual_el_e_dem	-0.4	0.4
+Annual_el_e_dem	-0.5	0.5
 dhw_Tflow	45	75
 dhw_Tsupply	10	35
 vent_factor	0.1	1

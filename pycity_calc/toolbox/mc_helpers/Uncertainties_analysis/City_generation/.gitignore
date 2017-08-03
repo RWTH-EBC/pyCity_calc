@@ -1,1 +1,8 @@
-*/City_generation
+# Ignore everything
+*
+
+# But not these files...
+!.gitignore
+
+# ...even if they are in subdirectories
+!*/

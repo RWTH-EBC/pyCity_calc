@@ -78,7 +78,7 @@ def new_evaluation_esys(City, parameters):
             City.node[build]['entity'].bes.tes.t_surroundings = parameters[5]
             City.node[build]['entity'].bes.tes.k_loss = parameters[6]
             City.node[build]['entity'].bes.tes.t_init = parameters[7]
-            City.node[build]['entity'].bes.tes.capacity = 999999999999999
+            #City.node[build]['entity'].bes.tes.capacity = 999999999999999
 
         if Cityref.node[build]['entity'].bes.hasBoiler == True:
             City.node[build]['entity'].bes.boiler.eta = parameters [8]
@@ -107,15 +107,14 @@ def new_evaluation_esys(City, parameters):
             City.node[build]['entity'].bes.pv.gamma = parameters[23]
             City.node[build]['entity'].bes.pv.tau_alpha = parameters[24]
 
-        #Rescale boiler qNominal to cover all the thermal demand
-
-        boiler_qNominal = City.node[build]['entity'].bes.boiler.qNominal
-
-        demand_building = dimfunc.get_max_power_of_building(City.node[build]['entity'], with_dhw=True)
-
-        rescale_boiler = False # boolean to keep track of the number of rescaled boiler
+    '''rescale_boiler = False  # boolean to keep track of the number of rescaled boiler
 
         if Cityref.node[build]['entity'].bes.hasBoiler == True:
+            # Rescale boiler qNominal to cover all the thermal demand
+
+            boiler_qNominal = City.node[build]['entity'].bes.boiler.qNominal
+
+            demand_building = dimfunc.get_max_power_of_building(City.node[build]['entity'], with_dhw=True)
 
             if demand_building > boiler_qNominal:
                 City.node[build]['entity'].bes.boiler.qNominal = \
@@ -125,8 +124,10 @@ def new_evaluation_esys(City, parameters):
                 print()
                 print('new boiler capacity kW: ', City.node[build]['entity'].bes.boiler.qNominal/1000)
                 print()
+    '''
 
     print ('End of energy systems reevaluation')
     print('----------------------------- ')
+    rescale_boiler=False
 
     return City, rescale_boiler

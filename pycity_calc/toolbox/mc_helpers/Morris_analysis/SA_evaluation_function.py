@@ -36,8 +36,7 @@ Return: Y: array of gas demand values after energy balance
 import pycity_calc.cities.scripts.city_generator.city_generator as City_generator
 import pycity_calc.simulation.energy_balance_optimization.energy_balance_building as EBB
 import pycity_calc.economic.annuity_calculation as eco_calc
-import pycity_calc.economic.economic_ann as economic_ann
-import pycity_calc.environments.market as Mark
+import pycity_calc.environments.germanmarket as Mark
 import pycity_calc.economic.calc_CO2_emission as GHG_calc
 import numpy as np
 import pycity_calc.toolbox.mc_helpers.weather.gen_weather_set as mc_weather
@@ -46,6 +45,7 @@ import pycity_calc.toolbox.teaser_usage.teaser_use as teaserusage
 import pycity_calc.toolbox.mc_helpers.Morris_analysis.Building_evaluation_Morris as buildmod
 import pycity_calc.toolbox.mc_helpers.Morris_analysis.Esystems_evaluation_Morris as esysmod
 import pycity_calc.toolbox.dimensioning.dim_functions as dimfunc
+import pycity_calc.simulation.energy_balance_optimization.Energy_balance_lhn as EB
 
 def evaluate(City, values):
 
@@ -274,10 +274,44 @@ def evaluate(City, values):
         Calculator = EBB.calculator(City)
         dict_bes_data = Calculator.assembler()
 
-        #print('Dict city data', dict_bes_data)
-        for i in range(len(dict_bes_data)):
-            City, dict_Qlhn, dict_supply = Calculator.eb_balances(dict_bes_data, i)
+        invalidind = EBB.invalidind
+        rescale_boiler = False
+        invalidind2 = EB.invalidind2
 
+
+        # Loop over energy systems
+        try:
+            for i in range(len(dict_bes_data)):
+                City, dict_Qlhn, dict_supply = Calculator.eb_balances(dict_bes_data, i)
+        except invalidind:
+            # Get list of building and rescale boiler
+            list_of_building = City.get_list_build_entity_node_ids()
+            for build in list_of_building:
+                demand_building = dimfunc.get_max_power_of_building(City.node[build]['entity'], with_dhw=True)
+                if City.node[build]['entity'].bes.hasBoiler == True:
+                    City.node[build]['entity'].bes.boiler.qNominal = dimfunc.round_esys_size(demand_building,
+                                                                                             round_up=True)
+            rescale_boiler = True
+
+            print()
+            print('Rescale boiler 0')
+            print('new boiler capacity kW: ', City.node[build]['entity'].bes.boiler.qNominal / 1000)
+            print()
+
+        except invalidind2:
+            # Get list of building and rescale boiler
+            list_of_building = City.get_list_build_entity_node_ids()
+            for build in list_of_building:
+                demand_building = dimfunc.get_max_power_of_building(City.node[build]['entity'], with_dhw=True)
+                if City.node[build]['entity'].bes.hasBoiler == True:
+                    City.node[build]['entity'].bes.boiler.qNominal = dimfunc.round_esys_size(demand_building,
+                                                                                             round_up=True)
+            rescale_boiler = True
+
+            print()
+            print('Rescale boiler 1')
+            print('new boiler capacity kW: ', City.node[build]['entity'].bes.boiler.qNominal / 1000)
+            print()
 
         #Gas and electrical demand
         el_dem = 0
@@ -333,9 +367,12 @@ def evaluate(City, values):
         life_factor = row[57]
         maintenance_factor = row[58]
 
+        print("Annuity calculation")
+        Market_instance = Mark.GermanMarket()
+
         #  Generate economic calculator object
         print("Economic object generation")
-        eco_inst = eco_calc.EconomicCalculation(time=time, interest=interest, price_ch_cap=price_ch_cap,
+        eco_inst = eco_calc.EconomicCalculation(time=time, germanmarket=Market_instance,  interest=interest, price_ch_cap=price_ch_cap,
                                                 price_ch_dem_gas=price_ch_dem_gas, price_ch_dem_el=price_ch_dem_el,
                                                 price_ch_op=price_ch_op, price_ch_proc_chp=price_ch_proc_chp,
                                                 price_ch_proc_pv=price_ch_proc_pv,
@@ -358,13 +395,12 @@ def evaluate(City, values):
             eco_inst.dict_maintenance[key2] = tempp
 
         ## Annuity Calculation
-        print("Annuity calculation")
-        Market_instance = Mark.Market()
+
 
         # Annuity
-        dem_rel_annuity = economic_ann.calc_dem_rel_annuity_city(City, eco_inst, Market_instance)
-        total_proc_annuity = economic_ann.calc_proc_annuity_multi_comp_city(City, eco_inst)
-        cap_rel_ann, op_rel_ann = economic_ann.calc_cap_and_op_rel_annuity_city(City, eco_inst)
+        dem_rel_annuity = eco_inst.calc_dem_rel_annuity_city(City)
+        total_proc_annuity = eco_inst.calc_proc_annuity_multi_comp_city(City)
+        cap_rel_ann, op_rel_ann = eco_inst.calc_cap_and_op_rel_annuity_city(City)
 
         total_annuity = eco_inst.calc_total_annuity(ann_capital=cap_rel_ann,
                                                          ann_demand=dem_rel_annuity,

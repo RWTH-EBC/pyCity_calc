@@ -42,9 +42,8 @@ import os
 import pickle
 import copy
 import pycity_calc.cities.scripts.overall_gen_and_dimensioning as City_gen
-import pycity_calc.environments.market as Mark
+import pycity_calc.environments.germanmarket as Mark
 import pycity_calc.simulation.energy_balance_optimization.energy_balance_building as EBB
-import pycity_calc.economic.economic_ann as economic_ann
 import pycity_calc.economic.annuity_calculation as eco_calc
 import pycity_calc.economic.calc_CO2_emission as GHG_calc
 import pycity_calc.toolbox.mc_helpers.Uncertainties_analysis.MC_new_cities_evaluation as newcity
@@ -54,7 +53,7 @@ import numpy as np
 from scipy import stats
 import random as rd
 
-def do_uncertainty_analysis(Nsamples=1000):
+def do_uncertainty_analysis(Nsamples=10):
 
     # Define Uncertainty analysis parameters
     # #############################################################################################################
@@ -87,6 +86,9 @@ def do_uncertainty_analysis(Nsamples=1000):
     #interest_rate_variation = 'high' #0.1-0.2
     # if interest is fixed
     interest_fix = 0.05
+
+    # Time for economic calculation in years (default: 10)
+    time = 10  # Years
 
     MC_analyse_total = True
 
@@ -122,12 +124,12 @@ def do_uncertainty_analysis(Nsamples=1000):
         print()
 
         #  Add energy systems to city
-        gen_esys = True  # True - Generate energy networks
-        gen_e_net = True
+        gen_esys = True  # True - Generate energy systems
+        gen_e_net = True# True - Generate energy networks
         dhw_dim_esys = True  # Use dhw profiles for esys dimensioning
 
         #  Path to energy system input file (csv/txt; tab separated)
-        esys_filename = 'test_lolo_esys.txt'
+        esys_filename = 'lolo_esys.txt'
         esys_path = os.path.join(this_path, 'City_generation', 'input', 'input_esys_generator', esys_filename)
 
         # Generate energy systems for city district
@@ -144,10 +146,10 @@ def do_uncertainty_analysis(Nsamples=1000):
         if gen_e_net:  # True - Generate energy networks
 
             #  Path to energy network input file (csv/txt; tab separated)
-            network_filename = 'test_lolo_networks.txt'
+            network_filename = 'lolo_networks.txt'
 
             network_path = os.path.join(this_path, 'City_generation', 'input', 'input_en_network_generator',
-                                            network_filename)
+                                             network_filename)
             #  Load energy networks planing data
             dict_e_net_data = City_gen.enetgen.load_en_network_input_data(network_path)
 
@@ -335,7 +337,7 @@ def do_uncertainty_analysis(Nsamples=1000):
         gen_e_net = False  # True - Generate energy networks
 
         #  Path to energy network input file (csv/txt; tab separated)
-        network_filename = 'test_lolo_networks.txt'
+        network_filename = 'lolo_networks.txt'
         network_path = os.path.join(this_path, 'City_generation', 'input', 'input_en_network_generator',
                                     network_filename)
 
@@ -343,7 +345,7 @@ def do_uncertainty_analysis(Nsamples=1000):
         gen_esys = True  # True - Generate energy networks
 
         #  Path to energy system input file (csv/txt; tab separated)
-        esys_filename = 'test_lolo_esys.txt'
+        esys_filename = 'lolo_esys.txt'
         esys_path = os.path.join(this_path, 'City_generation', 'input', 'input_esys_generator',
                                  esys_filename)
 
@@ -351,7 +353,7 @@ def do_uncertainty_analysis(Nsamples=1000):
         gen_e_net = False  # True - Generate energy networks
 
         #  Path to energy network input file (csv/txt; tab separated)
-        network_filename = 'test_lolo_networks.txt'
+        network_filename = 'lolo_networks.txt'
         network_path = os.path.join(this_path, 'City_generation', 'input', 'input_en_network_generator',
                                     network_filename)
 
@@ -442,19 +444,18 @@ def do_uncertainty_analysis(Nsamples=1000):
 
     # # Economic and GHG calculations
 
-    time = 10  # Years
     interest = 0.05  # Interest rate
-    Market_instance = Mark.Market()
+    Market_instance = Mark.GermanMarket()
 
     #  Generate economic calculator object
     print("Economic object generation")
-    eco_inst = eco_calc.EconomicCalculation(time=time, interest=interest)
+    eco_inst = eco_calc.EconomicCalculation(time=time, interest=interest, germanmarket=Market_instance)
 
     # Annuity Calculation
     print("Annuity calculations")
-    dem_rel_annuity = economic_ann.calc_dem_rel_annuity_city(City, eco_inst, Market_instance)
-    total_proc_annuity = economic_ann.calc_proc_annuity_multi_comp_city(City, eco_inst)
-    cap_rel_ann, op_rel_ann = economic_ann.calc_cap_and_op_rel_annuity_city(City, eco_inst)
+    dem_rel_annuity = eco_inst.calc_dem_rel_annuity_city(City,)
+    total_proc_annuity = eco_inst.calc_proc_annuity_multi_comp_city(City)
+    cap_rel_ann, op_rel_ann = eco_inst.calc_cap_and_op_rel_annuity_city(City)
 
     total_annuity_ref = eco_inst.calc_total_annuity(ann_capital=cap_rel_ann,
                                                     ann_demand=dem_rel_annuity,
@@ -545,8 +546,9 @@ def do_uncertainty_analysis(Nsamples=1000):
             interest_list.append(interest_fix)
     dict_par_unc['interest'] = interest_list
 
-        # TODO rajouter le sample pour un equipement avec des proprietes vraiment incertaines et d'autres moins
+    dict_par_unc['time'] = time
 
+        # TODO rajouter le sample pour un equipement avec des proprietes vraiment incertaines et d'autres moins
 
     print('***********************************************************************************************************')
     print('Do the simulations')
@@ -828,15 +830,15 @@ def do_uncertainty_analysis(Nsamples=1000):
 
     fig, ((ax1,ax2), (ax3,ax4)) = plt.subplots(2, 2)
 
-    ax1.hist(El_results,100, normed=1)
+    ax1.hist(El_results,50, normed=1)
 
-    ax2.hist(Gas_results,100 , normed=1)
+    ax2.hist(Gas_results,50 , normed=1)
     ax2.set_title('Gas demand in kWh')
 
-    ax3.hist(Annuity_results, 100, normed=1)
+    ax3.hist(Annuity_results, 50, normed=1)
     ax3.set_title('Annuity in  Euro/year')
 
-    ax4.hist(GHG_spe_results, 100, normed=1)
+    ax4.hist(GHG_spe_results, 50 , normed=1)
     ax4.set_title('GHG specific emission in kg/kWh/year')
 
     fig.suptitle('Histogram energy demand in kWh/year for {} simulations '.format(Nsamples))
@@ -859,13 +861,13 @@ def do_uncertainty_analysis(Nsamples=1000):
     ax8.grid(color='b', alpha=0.5, linestyle='dashed', linewidth=0.5)
 
     fig3,((ax11,ax12), (ax13,ax14)) = plt.subplots(2, 2)
-    ax11.hist(Th_results, 100)
+    ax11.hist(Th_results, 50)
     ax11.set_title('Thermal demand normal')
-    ax12.hist(Th_results2, 100)
+    ax12.hist(Th_results2, 50)
     ax12.set_title('Thermal demand sum buildings')
-    ax13.hist(El_results, 100)
+    ax13.hist(El_results, 50)
     ax13.set_title('Electrical demand normal')
-    ax14.hist(el_results2, 100)
+    ax14.hist(el_results2, 50)
     ax14.set_title('electrical demand sum buildings')
 
     plt.show()

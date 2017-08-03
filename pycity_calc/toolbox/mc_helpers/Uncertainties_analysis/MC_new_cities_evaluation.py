@@ -14,7 +14,6 @@ import pycity_calc.toolbox.dimensioning.dim_functions as dimfunc
 import numpy as np
 import pycity_calc.simulation.energy_balance_optimization.energy_balance_building as EBB
 import pycity_calc.economic.annuity_calculation as eco_calc
-import pycity_calc.economic.economic_ann as economic_ann
 import pycity_calc.environments.germanmarket as Mark
 import pycity_calc.economic.calc_CO2_emission as GHG_calc
 import pycity_calc.toolbox.mc_helpers.Uncertainties_analysis.MC_esys_new_evaluation as mc_esys
@@ -23,7 +22,8 @@ import os
 import pickle
 import matplotlib.pyplot as plt
 import pycity_calc.cities.scripts.street_generator.street_generator as street_gen
-import uesgraphs.visuals as uesvis
+import random as rd
+import pycity_calc.simulation.energy_balance_optimization.Energy_balance_lhn as EB
 
 def new_city_evaluation_monte_carlo(City, dict_sample):
     """
@@ -43,13 +43,14 @@ def new_city_evaluation_monte_carlo(City, dict_sample):
                         Defines, if number of occupants per apartment is unknown
             MC_analysis: boolean
                         Defines extra modifications for monte carlo analysis
-                        (dormer,attic,cellar, construction_type, net_floor_area)
+                        (dormer,attic,cellar, net_floor_area)
             buil_physic_unc: bool
                         Defines,if building physics unknown or not (default: True)
             weather : Holding weather sample lists
             interest:   list
                         Holding interest rate sampling for economic calculation
-
+            time:   int
+                    Time for economic calculation in years (default: 10)
         Returns
         -------
         res_tuple : tuple (of Array)
@@ -92,6 +93,7 @@ def new_city_evaluation_monte_carlo(City, dict_sample):
     time_sp_force_retro = dict_sample['time_sp_force_retro']
     max_retro_year = dict_sample['max_retro_year']
     interest = dict_sample['interest']
+    time = dict_sample['time']
 
     for loop in range (Nloop):
 
@@ -175,7 +177,7 @@ def new_city_evaluation_monte_carlo(City, dict_sample):
 
         ############################################
 
-        City, GHG_Emission, total_annuity = MC_new_economic_evaluation(City, time=10, interest=interest[loop])
+        City, GHG_Emission, total_annuity = MC_new_economic_evaluation(City, time=time, interest=interest[loop])
 
         # Add results to result_arrays
 
@@ -220,11 +222,11 @@ def MC_new_city_generation (City, new_weather, max_retro_year=2014, time_sp_forc
            as known values.
        MC_analysis: boolean, optional
                Defines extra modifications for monte carlo analysis
-               (dormer,attic,cellar, construction_type, net_floor_area)
+               (dormer,attic,cellar, net_floor_area)
        buil_physic_unc: bool, optional
            Defines,if building physics unknown or not (default: True)
            True - Building physics is unknown
-           False - Building physics is known (year of modernisation, dormer, cellar , construction type
+           False - Building physics is known (year of modernisation, dormer, cellar
                    and attic are fixed, net floor area variation is smaller)
 
        Returns
@@ -314,17 +316,65 @@ def MC_new_economic_evaluation(City, time=10, interest=0.05):
     """
 
     #  Generate economic calculator object
-    print("Start Economic evaluation /n")
-    eco_inst = eco_calc.EconomicCalculation(time=time, interest=interest)
+    #print("Start Economic evaluation /n")
+    #eco_inst = eco_calc.EconomicCalculation(time=time, interest=interest)
 
     ## Annuity Calculation
     # Get Market object
     Market_instance = Mark.GermanMarket()
 
+    print("Start Economic evaluation /n")
+
+    # New_price change factor
+    price_ch_cap = rd.uniform(0.8, 1.2)
+    price_ch_dem_gas = rd.uniform(0.8, 1.2)
+    price_ch_dem_el = rd.uniform(0.8, 1.2)
+    price_ch_op = rd.uniform(0.8, 1.2)
+    price_ch_proc_chp = rd.uniform(0.8, 1.2)
+    price_ch_proc_pv = rd.uniform(0.8, 1.2)
+    price_ch_EEG_Umlage_tax_chp = rd.uniform(0.8, 1.2)
+    price_ch_EEG_Umlage_tax_pv = rd.uniform(0.8, 1.2)
+    price_EEX_baseload_price = rd.uniform(0.8, 1.2)
+    price_ch_avoid_grid_usage = rd.uniform(0.8, 1.2)
+    price_ch_sub_chp = rd.uniform(0.8, 1.2)
+    price_ch_self_usage_chp = rd.uniform(0.8, 1.2)
+    price_ch_gas_disc_chp = rd.uniform(0.8, 1.2)
+    price_ch_sub_pv = rd.uniform(0.8, 1.2)
+    price_ch_dem_el_hp = rd.uniform(0.8, 1.2)
+
+    #  Generate economic calculator object
+    eco_inst = eco_calc.EconomicCalculation(germanmarket=Market_instance, time=time, interest=interest,
+                                                price_ch_cap=price_ch_cap,
+                                                price_ch_dem_gas=price_ch_dem_gas, price_ch_dem_el=price_ch_dem_el,
+                                                price_ch_op=price_ch_op, price_ch_proc_chp=price_ch_proc_chp,
+                                                price_ch_proc_pv=price_ch_proc_pv,
+                                                price_ch_eeg_chp=price_ch_EEG_Umlage_tax_chp,
+                                                price_ch_eeg_pv=price_ch_EEG_Umlage_tax_pv,
+                                                price_ch_eex=price_EEX_baseload_price,
+                                                price_ch_grid_use=price_ch_avoid_grid_usage,
+                                                price_ch_chp_sub=price_ch_sub_chp,
+                                                price_ch_chp_self=price_ch_self_usage_chp,
+                                                price_ch_chp_tax_return=price_ch_gas_disc_chp,
+                                                price_ch_pv_sub=price_ch_sub_pv, price_ch_dem_el_hp=price_ch_dem_el_hp)
+
+    # New lifetime and maintenance of energy systems
+    for key1 in eco_inst.dict_lifetimes.keys():
+        #Generation of a life_factor:
+        life_factor = rd.uniform(0.8, 1.2)
+        #reevaluation
+        tempp = eco_inst.dict_lifetimes[key1] * life_factor
+        eco_inst.dict_lifetimes[key1] = tempp
+
+    for key2 in eco_inst.dict_maintenance.keys():
+        # Generation of a maintenance_factor:
+        maintenance_factor = rd.uniform(0.8, 1.2)
+        tempp = eco_inst.dict_maintenance[key2] * maintenance_factor
+        eco_inst.dict_maintenance[key2] = tempp
+
     # Annuity
-    dem_rel_annuity = economic_ann.calc_dem_rel_annuity_city(City, eco_inst, Market_instance)
-    total_proc_annuity = economic_ann.calc_proc_annuity_multi_comp_city(City, eco_inst)
-    cap_rel_ann, op_rel_ann = economic_ann.calc_cap_and_op_rel_annuity_city(City, eco_inst)
+    dem_rel_annuity = eco_inst.calc_dem_rel_annuity_city(City)
+    total_proc_annuity = eco_inst.calc_proc_annuity_multi_comp_city(City)
+    cap_rel_ann, op_rel_ann = eco_inst.calc_cap_and_op_rel_annuity_city(City)
 
     # Get total annuity
     total_annuity = eco_inst.calc_total_annuity(ann_capital=cap_rel_ann,
@@ -371,7 +421,7 @@ def MC_EBB_calc (City):
     """
     invalidind = EBB.invalidind
     rescale_boiler = False
-
+    invalidind2 = EB.invalidind2
     print("Start energy balance")
     print()
 
@@ -384,6 +434,8 @@ def MC_EBB_calc (City):
     #t_u = 0
     #ii = 0
     #t_tes = 25
+
+
 
     # Loop over energy systems
     try:
@@ -403,10 +455,19 @@ def MC_EBB_calc (City):
         print('new boiler capacity kW: ', City.node[build]['entity'].bes.boiler.qNominal / 1000)
         print()
 
-        # and then do energy balance with new boiler
-        for i in range(len(dict_bes_data)):
-            City, dict_Qlhn, dict_supply = Calculator.eb_balances(dict_bes_data, i)
+    except invalidind2:
+        # Get list of building and rescale boiler
+        list_of_building = City.get_list_build_entity_node_ids()
+        for build in list_of_building:
+            demand_building = dimfunc.get_max_power_of_building(City.node[build]['entity'], with_dhw=True)
+            if City.node[build]['entity'].bes.hasBoiler == True:
+                City.node[build]['entity'].bes.boiler.qNominal = dimfunc.round_esys_size(demand_building, round_up=True)
+        rescale_boiler = True
 
+        print()
+        print('Rescale boiler')
+        print('new boiler capacity kW: ', City.node[build]['entity'].bes.boiler.qNominal / 1000)
+        print()
 
     # ## Gas and electrical demand
     el_dem = 0
@@ -432,7 +493,7 @@ if __name__ == '__main__':
 
     #  User Inputs
     #  ##############################
-    nb_samples = 10
+    nb_samples = 1000
     time_sp_force_retro = 50
     max_retro_year = 2014
     nb_occ_unc = True
@@ -440,8 +501,9 @@ if __name__ == '__main__':
     build_physic_unc = True
     esys_unc = True
     Interest = 0.05
-    esys_filename = 'test_lolo_esys.txt'
+    esys_filename = 'lolo_esys.txt'
     city_f_name = 'aachen_kronenberg_3_mfh_ref_1.pkl'
+    time = 10 #years
 
     #  End of user Inputs
     #  ##############################
@@ -454,11 +516,11 @@ if __name__ == '__main__':
 
     #  Add energy systems to city
     gen_esys = True  # True - Generate energy networks
-    gen_e_net = True
+    gen_e_net = False # True - Generate energy networks
     dhw_dim_esys = True  # Use dhw profiles for esys dimensioning
 
     #  Path to energy system input file (csv/txt; tab separated)
-    #esys_filename = 'test_lolo_esys.txt'
+    #esys_filename = 'lolo_esys.txt'
     esys_path = os.path.join(this_path, 'City_generation', 'input', 'input_esys_generator', esys_filename)
 
     # Generate energy systems for city district
@@ -474,7 +536,7 @@ if __name__ == '__main__':
     if gen_e_net:  # True - Generate energy networks
 
         #  Path to energy network input file (csv/txt; tab separated)
-        network_filename = 'test_lolo_networks.txt'
+        network_filename = 'lolo_networks.txt'
 
         network_path = os.path.join(this_path, 'City_generation', 'input', 'input_en_network_generator',
                                         network_filename)
@@ -518,7 +580,7 @@ if __name__ == '__main__':
         dict_pam['interest'].append(Interest)
 
     dict_pam['weather'] = wea.gen_set_of_weathers(nb_samples)
-
+    dict_pam['time']=time
     #  Perform MC analysis for whole city
     (Th_results, Gas_results, El_results, Annuity_results, GHG_results, \
            GHG_spe_results, el_results2, Th_results2, dict_city_pb, Nboiler_rescaled) = \
