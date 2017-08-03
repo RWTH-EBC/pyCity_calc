@@ -1329,7 +1329,8 @@ def run_city_generator(generation_mode, timestep, year, location,
                        th_gen_method,
                        el_gen_method, district_data, use_dhw=False,
                        dhw_method=1, try_path=None,
-                       pickle_city_filename=None, eff_factor=0.85,
+                       pickle_city_filename=None, do_save=True,
+                       path_save_city=None, eff_factor=0.85,
                        show_city=False, altitude=55, dhw_volumen=64,
                        do_normalization=True, slp_manipulate=True,
                        call_teaser=False, teaser_proj_name='pycity',
@@ -1384,8 +1385,15 @@ def run_city_generator(generation_mode, timestep, year, location,
     try_path : str, optional
         Path to TRY weather file (default: None)
         If set to None, uses default weather TRY file (2010, region 5)
-    pickle_city_filename : str (optional)
-        Name for file, which should be pickled and saved (default: None)
+    pickle_city_filename : str, optional
+        Name for file, which should be pickled and saved, if no path is
+        handed over to save object to(default: None)
+    do_save : bool, optional
+        Defines, if city object instance should be saved as pickle file
+        (default: True)
+    path_save_city : str, optional
+        Path to save (pickle and dump) city object instance to (default: None)
+        If None is used, saves file to .../output/...
     eff_factor : float, optional
          Efficiency factor of thermal boiler system (default: 0.85)
     show_city : bool, optional
@@ -2362,20 +2370,32 @@ def run_city_generator(generation_mode, timestep, year, location,
                                           city=city_object,
                                           generate_Output=False)
 
-        # Pickle and dump city object
-        if pickle_city_filename is not None:
+        if do_save:
+
+            if path_save_city is None:
+                if pickle_city_filename is None:
+                    msg = 'If path_save_city is None, pickle_city_filename' \
+                          'cannot be None! Instead, filename has to be ' \
+                          'defined to be able to save city object.'
+                    raise AssertionError
+                this_path = os.path.dirname(os.path.abspath(__file__))
+                path_save_city = os.path.join(this_path, 'output',
+                                               pickle_city_filename)
+
             try:
                 #  Pickle and dump city objects
-                this_path = os.path.dirname(os.path.abspath(__file__))
-                path_to_save_to = os.path.join(this_path, 'output',
-                                               pickle_city_filename)
-                pickle.dump(city_object, open(path_to_save_to, 'wb'))
+                pickle.dump(city_object, open(path_save_city, 'wb'))
                 print('Pickled and dumped city object')
             except:
                 warnings.warn('Could not pickle and save city object')
 
-            log_file.write('pickle_city_filename: ' + str(pickle_city_filename)
-                           + '\n')
+        if do_log:
+
+            if pickle_city_filename is not None:
+                log_file.write('pickle_city_filename: ' +
+                               str(pickle_city_filename)
+                               + '\n')
+            print('Wrote log file to: ' + str(log_path))
             #  Close log file
             log_file.close()
 
@@ -2522,6 +2542,13 @@ if __name__ == '__main__':
     #city_osm_input = 'aachen_preusweg_mod_7.pkl'
     #city_osm_input = 'aachen_tuerme_mod_7.pkl'
 
+    #  Pickle and dump city object instance?
+    do_save = True
+
+    #  Path to save city object instance to
+    path_save_city = None
+    #  If None, uses .../output/...
+
     #  Efficiency factor of thermal energy systems
     #  Used to convert input values (final energy demand) to net energy demand
     eff_factor = 1
@@ -2619,7 +2646,9 @@ if __name__ == '__main__':
                               log_path=log_f_path,
                               season_mod=season_mod,
                               merge_windows=merge_windows,
-                              new_try=new_try)
+                              new_try=new_try,
+                              path_save_city=path_save_city,
+                              do_save=do_save)
 
     # if call_teaser:
     #     #  Search for residential building

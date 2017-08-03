@@ -70,7 +70,8 @@ class Test_City_Generators():
                                           show_city=False,
                                           try_path=None, altitude=altitude,
                                           dhw_volumen=dhw_volumen,
-                                          do_normalization=do_normalization)
+                                          do_normalization=do_normalization,
+                                          do_save=False)
 
         assert city.get_nb_of_building_entities() == 12
         assert len(city.nodes()) == 12
@@ -210,7 +211,8 @@ class Test_City_Generators():
                                           show_city=False,
                                           try_path=None, altitude=altitude,
                                           dhw_volumen=dhw_volumen,
-                                          do_normalization=do_normalization)
+                                          do_normalization=do_normalization,
+                                          do_save=False)
 
         assert city.get_nb_of_building_entities() == 12
         assert len(city.nodes()) == 12
