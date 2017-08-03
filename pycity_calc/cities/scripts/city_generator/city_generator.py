@@ -362,6 +362,7 @@ def generate_res_building_single_zone(environment, net_floor_area,
                                       th_gen_method,
                                       el_gen_method,
                                       annual_el_demand=None,
+                                      el_random=False,
                                       use_dhw=False,
                                       dhw_method=1, number_occupants=None,
                                       build_year=None, mod_year=None,
@@ -401,6 +402,10 @@ def generate_res_building_single_zone(environment, net_floor_area,
         building)
     annual_el_demand : float, optional
         Annual electrical energy demand in kWh/a (default: None)
+    el_random : bool, optional
+        Defines, if random value should be chosen from statistics
+        or if average value should be chosen. el_random == True means,
+        use random value. (default: False)
     use_dhw : bool, optional
         Boolean to define, if domestic hot water profile should be generated
         (default: False)
@@ -504,7 +509,7 @@ def generate_res_building_single_zone(environment, net_floor_area,
         assert number_occupants is not None
         assert number_occupants > 0
 
-    #  Define SLP profiles for residential building with single zone
+    # Define SLP profiles for residential building with single zone
     th_slp_type = 'HEF'
     el_slp_type = 'H0'
 
@@ -579,13 +584,13 @@ def generate_res_building_single_zone(environment, net_floor_area,
     if annual_el_demand is None:
         #  Generate annual_el_demand_ap
         annual_el_demand = calc_el_dem_ap(nb_occ=number_occupants,
-                                             el_random=el_random,
-                                             type='sfh')
+                                          el_random=el_random,
+                                          type='sfh')
 
     print('Annual electrical demand in kWh: ', annual_el_demand)
     if number_occupants is not None:
         print('El. demand per person in kWh: ')
-        print(annual_el_demand/number_occupants)
+        print(annual_el_demand / number_occupants)
     print()
 
     # Create electrical power curve
@@ -619,8 +624,8 @@ def generate_res_building_single_zone(environment, net_floor_area,
 
         if dhw_volumen is None or dhw_random:
             dhw_kwh = calc_dhw_dem_ap(nb_occ=number_occupants,
-                                         dhw_random=dhw_random,
-                                         type='sfh')
+                                      dhw_random=dhw_random,
+                                      type='sfh')
 
             #  Reconvert kWh/a to Liters per day
             dhw_vol_ap = dhw_kwh * 1000 * 3600 * 1000 / (955 * 4182 * 35 * 365)
@@ -720,6 +725,7 @@ def generate_res_building_multi_zone(environment,
                                      el_gen_method,
                                      nb_of_apartments,
                                      annual_el_demand=None,
+                                     el_random=False,
                                      use_dhw=False,
                                      dhw_method=1,
                                      total_number_occupants=None,
@@ -748,8 +754,12 @@ def generate_res_building_multi_zone(environment,
         Net floor area of building in m2
     spec_th_demand : float
         Specific thermal energy demand in kWh/m2*a
-    annual_el_demand : float
-        Annual electrical energy demand in kWh/a
+    annual_el_demand : float, optional
+        Annual electrical energy demand in kWh/a (default: None)
+    el_random : bool, optional
+        Defines, if random value should be chosen from statistics
+        or if average value should be chosen. el_random == True means,
+        use random value. (default: False)
     th_gen_method : int
         Thermal load profile generation method
         1 - Use SLP
@@ -1053,12 +1063,12 @@ def generate_res_building_multi_zone(environment,
 
             if dhw_volumen is None or dhw_random:
                 dhw_kwh = calc_dhw_dem_ap(nb_occ=curr_number_occupants,
-                                             dhw_random=dhw_random,
-                                             type='mfh')
+                                          dhw_random=dhw_random,
+                                          type='mfh')
 
                 #  Reconvert kWh/a to Liters per day
                 dhw_vol_ap = dhw_kwh * 1000 * 3600 * 1000 / (
-                955 * 4182 * 35 * 365)
+                    955 * 4182 * 35 * 365)
 
                 #  DHW volume per person and day
                 dhw_volumen = dhw_vol_ap / curr_number_occupants
