@@ -43,7 +43,7 @@ class EconomicCalculation(object):
                  price_ch_chp_sub=1,
                  price_ch_chp_self=1,
                  price_ch_chp_tax_return=1,
-                 price_ch_pv_sub=0.97):
+                 price_ch_pv_sub=0.97, price_ch_dem_el_hp=1):
 
         """
         Constructor of Economic calculator instance.
@@ -107,6 +107,9 @@ class EconomicCalculation(object):
         price_ch_pv_sub : float, optional
             Price change factor on PV subsidies for fed-in electricity
             (default: 0.97)
+        price_ch_dem_el_hp : float, optional
+            Price change factor on special tariff for heat pump electricity need
+            (default: 1)
         """
 
         #  Assert statements
@@ -166,11 +169,13 @@ class EconomicCalculation(object):
         self.price_ch_chp_self = None
         self.price_ch_chp_tax_return = None
         self.price_ch_pv_sub = None
+        self.price_ch_dem_el_hp = None
 
         #  Price dynamic value factors
         self.price_dyn_cap = None
         self.price_dyn_dem_gas = None
         self.price_dyn_dem_el = None
+        self.price_dyn_dem_el_hp = None
         self.price_dyn_dem_cool = None
         self.price_dyn_op = None
         self.price_dyn_proc_chp = None
@@ -259,6 +264,8 @@ class EconomicCalculation(object):
                 # Price change factor proceedings (CHP)
                 self.price_ch_proc_pv = price_ch_proc_pv
                 # Price change factor proceedings (PV)
+                self.price_ch_dem_el_hp = price_ch_dem_el_hp
+                # price change factor electrcity special tariff for hp
 
                 self.price_ch_eeg_chp = price_ch_eeg_chp
                 self.price_ch_eeg_pv = price_ch_eeg_pv
@@ -302,6 +309,7 @@ class EconomicCalculation(object):
                     self.calc_price_dyn_factor(self.price_ch_chp_tax_return)
                 self.price_dyn_pv_sub = \
                     self.calc_price_dyn_factor(self.price_ch_pv_sub)
+                self.price_ch_dem_el_hp = self.calc_price_dyn_factor(self.price_ch_dem_el_hp)
 
     def __str__(self):
         return str('<EconomicCalculator object of PyCity_Calc with ' +
@@ -938,8 +946,8 @@ class EconomicCalculation(object):
 
     #  #  Demand-related costs
     #  #################################################################
-    def calc_dem_rel_annuity(self, sum_el_e=0, sum_gas_e=0, sum_cool_e=0,
-                             price_el=0, price_gas=0, price_cool=0):
+    def calc_dem_rel_annuity(self, sum_el_e=0, sum_gas_e=0, sum_cool_e=0, sum_el_hp_e=0,
+                             price_el=0, price_gas=0, price_cool=0, price_el_hp=0):
         """
         Calculate and return annuity of demand-related cost in Euro.
         (only valid for VDI2067 calculation method)
@@ -955,6 +963,9 @@ class EconomicCalculation(object):
         sum_cool_e : float, optional
             Sum of cooling energy demand, which has to be payed (in kWh)
             (default: 0)
+        sum_el_hp_e:  float, optional
+            Sum of electrical energy demand for heat pump, which has to be payed (in kWh)
+            (default: 0)
         price_el : float, optional
             Specific price of electricity (in Euro/kWh)
             (default: 0)
@@ -963,6 +974,9 @@ class EconomicCalculation(object):
             (default: 0)
         price_cool : float, optional
             Specific price of electricity (in Euro/kWh)
+            (default: 0)
+        price_el_hp: float, optional
+            Specific price of electricity for heat pump (in Euro/kWh)
             (default: 0)
 
         Returns
@@ -985,16 +999,19 @@ class EconomicCalculation(object):
             assert price_gas > 0, 'Specific price has to be larger than zero!'
         if sum_cool_e > 0:
             assert price_cool > 0, 'Specific price has to be larger than zero!'
+        if sum_el_hp_e > 0:
+            assert price_el_hp> 0, 'Specific price has to be larger than zero!'
 
         # Define simple named pointers
         b_el = self.price_dyn_dem_el  # Price dynamic factor el.
         b_gas = self.price_dyn_dem_gas  # Price dynamic factor gas
         b_cool = self.price_dyn_dem_cool
+        b_el_hp = self.price_ch_dem_el_hp # Price dynamic factor el. hp
 
         #  Calculate demand-related cost per year
         dem_rel_cost = b_el * sum_el_e * price_el + \
                        b_gas * sum_gas_e * price_gas + \
-                       b_cool * sum_cool_e * price_cool
+                       b_cool * sum_cool_e * price_cool+ b_el_hp*sum_el_hp_e*price_el_hp
 
         return dem_rel_cost * self.ann_factor
 
@@ -1075,10 +1092,11 @@ class EconomicCalculation(object):
                         # TODO: hp_price night and hp_price_day difference
 
                         # Add to final demand counter
-                        dem_rel_annuity += price_el_hp*curr_el_dem_hp
+                        #dem_rel_annuity += price_el_hp*curr_el_dem_hp
 
                         dem_rel_annuity += self.calc_dem_rel_annuity(sum_el_e=curr_el_dem_normal, sum_gas_e=gas_dem,
-                                                                   price_el=el_price, price_gas=gas_price)
+                                                                    price_el=el_price, price_gas=gas_price,
+                                                                    price_el_hp=price_el_hp, sum_el_hp_e=curr_el_dem_hp)
 
         return dem_rel_annuity
 

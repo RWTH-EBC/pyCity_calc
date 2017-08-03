@@ -260,8 +260,8 @@ class thermalEnergyStorageExtended(TES.ThermalEnergyStorage):
                   * self.environment.timer.timeDiscretization
 
         #  Calculate next temperature with temperature difference
-        t_next = t_prior + delta_t  # in °C
-
+        t_next = round(t_prior + delta_t) # in °C
+        print ('tnext', t_next)
         #  Check if t_next is within temperature limits
         assert t_next >= self.t_min, ('Temperature should not go below ' +
                                       'minimum temperature. Check your ' +
@@ -333,8 +333,7 @@ class thermalEnergyStorageExtended(TES.ThermalEnergyStorage):
         # Calculate currently stored amount of energy (in kWh)
         tes_energy = self.calc_storage_curr_amount_of_energy()
 
-        q_out_max = q_in - self.k_loss * area * (
-            self.t_current - t_u) + unitcon.con_kwh_to_joule(tes_energy) \
+        q_out_max = q_in - self.k_loss * area * (self.t_current - t_u) + unitcon.con_kwh_to_joule(tes_energy) \
                                     / self.environment.timer.timeDiscretization
 
         return q_out_max
@@ -373,13 +372,11 @@ class thermalEnergyStorageExtended(TES.ThermalEnergyStorage):
 
         # Calculate currently stored amount of energy (in kWh)
         tes_energy = self.calc_storage_curr_amount_of_energy()
-
+        print ('storage energy kWh', tes_energy)
         q_in_max = q_out + self.k_loss * area * (self.t_current - t_u) + \
-                   (self.capacity * self.c_p * (
-                       self.tMax - self.t_min) - unitcon.con_kwh_to_joule(
-                       tes_energy)) \
+                   (self.capacity * self.c_p * (self.tMax - self.t_min) - unitcon.con_kwh_to_joule( tes_energy)) \
                    / self.environment.timer.timeDiscretization
-
+        print('qin max W',q_in_max)
         return q_in_max
 
     def storage_q_out_possible(self, control_signal, t_ambient, q_in=0):

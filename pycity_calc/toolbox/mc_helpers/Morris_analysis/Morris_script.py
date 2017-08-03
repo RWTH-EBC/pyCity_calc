@@ -59,10 +59,10 @@ def run_Morris():
     # #############################################################################################################
 
     # number of samples
-    Nsample = 1
+    Nsample = 5
     print(Nsample)
     Morris_name = 'Morris_values.txt' # filename of the parameters definition variation space for the Morris analysis
-    Scenario = 2
+    Scenario = 1
 
     # City generation mode
     load_city = True  # load a pickle City file
@@ -71,7 +71,7 @@ def run_Morris():
 
     # results
     save_result = True  # if set to false: no generation of results txt file
-    results_name = 'Morris_results2.txt'
+    results_name = 'Morris_results.txt'
 
     # Ecomomic
     time = 10  # Years

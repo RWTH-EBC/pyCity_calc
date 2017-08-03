@@ -264,7 +264,6 @@ class calculator(object):
 
 
             Node['electricity_heatpump'] = np.zeros(len(time_vector.time_vector()))
-            Node['fuel demand'] = np.zeros(len(time_vector.time_vector()))
             Node['power_el_chp'] = np.zeros(len(time_vector.time_vector()))
             Node['fuel demand'] = np.zeros(len(time_vector.time_vector()))
             Node['heat_demand_for_boiler'] = np.zeros(len(time_vector.time_vector()))
@@ -809,6 +808,7 @@ class calculator(object):
                 #  Loop over every timestep
                 #  #-----------------------------------------------------
                 for ii in range(len(thermal_demand_building)):
+                    print('timestep', ii)
                     #print('#######node: ', str(dict_city_data[index]['Buildings in subcity'][i]), '\n',
                     #          '#######timestep: ', ii)
 

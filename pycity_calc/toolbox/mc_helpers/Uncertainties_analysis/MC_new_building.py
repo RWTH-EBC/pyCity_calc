@@ -64,7 +64,6 @@ def new_building_evaluation_mc(building, new_weather, max_retro_year=2014, time_
             'dormer' : Holding dormer samples list
             'cellar' : Holding cellar samples list
             'attic' : Holding attic samples list
-            'const_type' : Holding construction type samples list
             'user_air' : Holding user air ventilation factor sampling
         el_demand : float
                     Electrical demand for this building per year (kWh)
@@ -82,7 +81,6 @@ def new_building_evaluation_mc(building, new_weather, max_retro_year=2014, time_
 
     dict_problem = {}
     dict_problem['infiltration'] = []
-    dict_problem['const_type'] = []
     dict_problem['dormer'] = []
     dict_problem['attic'] = []
     dict_problem['cellar'] = []
@@ -156,7 +154,6 @@ def new_building_evaluation_mc(building, new_weather, max_retro_year=2014, time_
         warnings.warn(msg)
 
         dict_problem['infiltration'].append(dict_samples['inf'][0])
-        dict_problem['const_type'].append(dict_samples['const_type'][0])
         dict_problem['dormer'].append(dict_samples['dormer'][0])
         dict_problem['attic'].append(dict_samples['attic'][0])
         dict_problem['cellar'].append(dict_samples['cellar'][0])

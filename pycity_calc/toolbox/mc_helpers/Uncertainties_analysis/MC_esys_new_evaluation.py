@@ -102,7 +102,7 @@ def gen_esys_unknown (building, recent_systems=True):
             building.bes.tes.t_current = building.bes.tes.t_init
             #building.bes.tes.totalTSto = np.zeros(building.environment.timer.timestepsTotal)
             #building.bes.tes.currentTSto = np.zeros(building.environment.timer.timeDiscretization)
-            building.bes.tes.capacity = 100000
+            #building.bes.tes.capacity = 100000
         else:
             building.bes.tes.t_max = rd.uniform(50, 75)
             building.bes.tes.t_min = rd.uniform(15, 20)
@@ -110,7 +110,7 @@ def gen_esys_unknown (building, recent_systems=True):
             building.bes.tes.k_loss = rd.uniform(0.25, 0.5)
             building.bes.tes.t_init = rd.uniform(20, 50)
             building.bes.tes.t_current = building.bes.tes.t_init
-            building.bes.tes.capacity = 100000
+            #building.bes.tes.capacity = 100000
 
     # Boiler
     if building.bes.hasBoiler == True:
@@ -294,7 +294,7 @@ if __name__ == '__main__':
 
     for i in range(Nsamples):
         print(i)
-        City,rescaled_boiler = MC_rescale_esys(ref_city)
+        City = MC_rescale_esys(ref_city)
         list_boiler_sampling.append(City.node[1001]['entity'].bes.boiler.eta)
 
     plt.hist(list_boiler_sampling, 100, normed=1)
