@@ -334,6 +334,10 @@ if __name__ == '__main__':
     try_path = None
     #  If None, used default TRY (region 5, 2010)
 
+    new_try = False
+    #  new_try has to be set to True, if you want to use TRY data of 2017
+    #  or newer! Else: new_try = False
+
     #  Space heating load generation
     #  ######################################################
     #  Thermal generation method
@@ -420,10 +424,10 @@ if __name__ == '__main__':
     eff_factor = 0.85
 
     #  Define city district input data filename
-    filename = 'aachen_tuerme_osm_4.txt'
+    filename = 'city_clust_simple.txt'
 
     #  Define ouput data filename (pickled city object)
-    save_city = 'aachen_tuerme_5.pkl'
+    save_city = 'city_clust_simple.pkl'
 
     #  #####################################
     t_set_heat = 20  # Heating set temperature in degree Celsius
@@ -515,7 +519,8 @@ if __name__ == '__main__':
                                                   dhw_random=dhw_random,
                                                   prev_heat_dev=prev_heat_dev,
                                                   season_mod=season_mod,
-                                                  merge_windows=merge_windows)
+                                                  merge_windows=merge_windows,
+                                                  new_try=new_try)
 
     if save_city:  # Load pickle city file
         this_path = os.path.dirname(os.path.abspath(__file__))

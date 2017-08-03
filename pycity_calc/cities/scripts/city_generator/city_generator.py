@@ -2417,6 +2417,10 @@ if __name__ == '__main__':
     try_path = None
     #  If None, used default TRY (region 5, 2010)
 
+    new_try = False
+    #  new_try has to be set to True, if you want to use TRY data of 2017
+    #  or newer! Else: new_try = False
+
     #  Space heating load generation
     #  ######################################################
     #  Thermal generation method
@@ -2614,7 +2618,8 @@ if __name__ == '__main__':
                               prev_heat_dev=prev_heat_dev,
                               log_path=log_f_path,
                               season_mod=season_mod,
-                              merge_windows=merge_windows)
+                              merge_windows=merge_windows,
+                              new_try=new_try)
 
     # if call_teaser:
     #     #  Search for residential building

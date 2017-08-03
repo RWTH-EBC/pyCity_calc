@@ -132,6 +132,10 @@ def main():
     #     If set to None, uses default weather TRY file (2010, region 5)
     try_path = None
 
+    new_try = False
+    #  new_try has to be set to True, if you want to use TRY data of 2017
+    #  or newer! Else: new_try = False
+
     # location : Tuple, optional
     #     (latitude , longitude) of the simulated system's position,
     #     (default: (50.775346, 6.083887) for Aachen, Germany.
@@ -252,7 +256,8 @@ def main():
     environment = citgen.generate_environment(timestep=timestep, year=year,
                                               try_path=try_path,
                                               location=location,
-                                              altitude=altitude)
+                                              altitude=altitude,
+                                              new_try=new_try)
 
     #  Generate city topology based on osm data
     min_area = 0  # --> Do NOT change! Needed to get all buildings at first and to delete the small buildings later on.  The small buildings are needed for identification of the building types!
