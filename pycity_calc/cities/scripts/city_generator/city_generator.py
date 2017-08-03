@@ -873,6 +873,9 @@ def generate_res_building_multi_zone(environment, net_floor_area,
                 break
 
             count += 1
+    else:
+        msg = 'Number of occupants is None for current building!'
+        warnings.warn(msg)
 
     # Define SLP profiles for residential building with multiple zone
     th_slp_type = 'HMF'
@@ -1338,7 +1341,7 @@ def run_city_generator(generation_mode, timestep, year, location,
                        t_night=16,
                        vdi_sh_manipulate=False, city_osm=None,
                        el_random=False, dhw_random=False, prev_heat_dev=True,
-                       season_mod=None, merge_windows=False):
+                       season_mod=None, merge_windows=False, new_try=False):
     """
     Function generates city district for user defined input. Generated
     buildings consist of only one single zone!
@@ -1475,6 +1478,12 @@ def run_city_generator(generation_mode, timestep, year, location,
         Defines TEASER project setting for merge_windows_calc
         (default: False). If set to False, merge_windows_calc is set to False.
         If True, Windows are merged into wall resistances.
+    new_try : bool, optional
+        Defines, if TRY dataset have been generated after 2017 (default: False)
+        If False, assumes that TRY dataset has been generated before 2017.
+        If True, assumes that TRY dataset has been generated after 2017 and
+        belongs to the new TRY classes. This is important for extracting
+        the correct values from the TRY dataset!
 
     Returns
     -------
@@ -1679,7 +1688,8 @@ def run_city_generator(generation_mode, timestep, year, location,
         environment = generate_environment(timestep=timestep, year=year,
                                            location=location,
                                            try_path=try_path,
-                                           altitude=altitude)
+                                           altitude=altitude,
+                                           new_try=new_try)
 
         print('Generated environment object.\n')
 
@@ -2407,6 +2417,10 @@ if __name__ == '__main__':
     try_path = None
     #  If None, used default TRY (region 5, 2010)
 
+    new_try = False
+    #  new_try has to be set to True, if you want to use TRY data of 2017
+    #  or newer! Else: new_try = False
+
     #  Space heating load generation
     #  ######################################################
     #  Thermal generation method
@@ -2604,7 +2618,8 @@ if __name__ == '__main__':
                               prev_heat_dev=prev_heat_dev,
                               log_path=log_f_path,
                               season_mod=season_mod,
-                              merge_windows=merge_windows)
+                              merge_windows=merge_windows,
+                              new_try=new_try)
 
     # if call_teaser:
     #     #  Search for residential building

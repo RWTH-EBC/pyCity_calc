@@ -49,7 +49,7 @@ def run_overall_gen_and_dim(timestep, year, location, th_gen_method,
                             vdi_sh_manipulate=False,
                             el_random=False, dhw_random=False,
                             prev_heat_dev=True, season_mod=None,
-                            merge_windows=False):
+                            merge_windows=False, new_try=False):
     """
     Peform overall generation and dimensioning of city object with
     street networks, energy networks and energy systems.
@@ -203,6 +203,12 @@ def run_overall_gen_and_dim(timestep, year, location, th_gen_method,
         Defines TEASER project setting for merge_windows_calc
         (default: False). If set to False, merge_windows_calc is set to False.
         If True, Windows are merged into wall resistances.
+    new_try : bool, optional
+        Defines, if TRY dataset have been generated after 2017 (default: False)
+        If False, assumes that TRY dataset has been generated before 2017.
+        If True, assumes that TRY dataset has been generated after 2017 and
+        belongs to the new TRY classes. This is important for extracting
+        the correct values from the TRY dataset!
 
     Returns
     -------
@@ -241,7 +247,8 @@ def run_overall_gen_and_dim(timestep, year, location, th_gen_method,
                                              dhw_random=dhw_random,
                                              prev_heat_dev=prev_heat_dev,
                                              season_mod=season_mod,
-                                             merge_windows=merge_windows)
+                                             merge_windows=merge_windows,
+                                             new_try=new_try)
 
     #  Generate street networks
     if gen_str:
@@ -307,6 +314,9 @@ if __name__ == '__main__':
     try_path = None
     #  If None, used default TRY (region 5, 2010)
 
+    new_try = False
+    #  new_try has to be set to True, if you want to use TRY data of 2017
+    #  or newer! Else: new_try = False
 
     #  Space heating load generation
     #  ######################################################
@@ -506,4 +516,5 @@ if __name__ == '__main__':
                             dhw_random=dhw_random,
                             prev_heat_dev=prev_heat_dev,
                             season_mod=season_mod,
-                            merge_windows=merge_windows)
+                            merge_windows=merge_windows,
+                            new_try=new_try)

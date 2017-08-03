@@ -1076,6 +1076,7 @@ def calc_and_add_vdi_6007_loads_to_city(city,
             array_vent = None  # If array_vent is None, use constant
             print('Use constant air exchange rate.')
             # default value
+            air_vent_mode = 0
 
         elif air_vent_mode == 1:  # Use deterministic, temp-dependent profile
 
