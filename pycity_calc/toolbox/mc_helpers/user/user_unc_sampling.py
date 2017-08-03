@@ -234,6 +234,8 @@ def calc_sampling_el_demand_per_apartment(nb_samples, nb_persons, type,
 
     assert type in ['sfh', 'mfh']
     assert method in ['stromspiegel2017']
+    assert nb_persons > 0
+    assert nb_persons <= 5
 
     list_el_demands = []
 

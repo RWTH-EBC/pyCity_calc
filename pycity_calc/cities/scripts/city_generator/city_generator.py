@@ -696,12 +696,16 @@ def generate_res_building_single_zone(environment, net_floor_area,
     return extended_building
 
 
-def generate_res_building_multi_zone(environment, net_floor_area,
-                                     spec_th_demand, annual_el_demand,
+def generate_res_building_multi_zone(environment,
+                                     net_floor_area,
+                                     spec_th_demand,
                                      th_gen_method,
-                                     el_gen_method, nb_of_apartments,
+                                     el_gen_method,
+                                     nb_of_apartments,
+                                     annual_el_demand=None,
                                      use_dhw=False,
-                                     dhw_method=1, total_number_occupants=None,
+                                     dhw_method=1,
+                                     total_number_occupants=None,
                                      build_year=None, mod_year=None,
                                      build_type=None, pv_use_area=None,
                                      height_of_floors=None, nb_of_floors=None,
@@ -844,7 +848,8 @@ def generate_res_building_multi_zone(environment, net_floor_area,
 
     assert net_floor_area > 0
     assert spec_th_demand >= 0
-    assert annual_el_demand >= 0
+    if annual_el_demand is not None:
+        assert annual_el_demand >= 0
 
     if total_number_occupants is not None:
         assert total_number_occupants > 0
@@ -902,8 +907,11 @@ def generate_res_building_multi_zone(environment, net_floor_area,
                                   dormer=dormer,
                                   with_ahu=curr_central_ahu)
 
-    #  Distribute el. demand equally to apartments
-    annual_el_demand /= nb_of_apartments
+    if annual_el_demand is not None:
+        #  Distribute el. demand equally to apartments
+        annual_el_demand_ap = annual_el_demand / nb_of_apartments
+    else:
+        annual_el_demand_ap = None
 
     #  Loop over apartments
     #  #---------------------------------------------------------------------
@@ -950,6 +958,9 @@ def generate_res_building_multi_zone(environment, net_floor_area,
 
         if (curr_number_occupants is None and dhw_method == 1 and
                     use_dhw == True):
+            #  If dhw profile should be generated, but current number of
+            #  occupants is None, number of occupants is samples from
+            #  occupancy distribution for apartment
             curr_number_occupants = usunc.calc_sampling_occ_per_app(
                 nb_samples=1)
 
@@ -985,6 +996,14 @@ def generate_res_building_multi_zone(environment, net_floor_area,
                                                          livingArea=apartment_area,
                                                          specificDemand=spec_th_demand)
 
+        #  Calculate el. energy demand for apartment, if no el. energy
+        #  demand is given for whole building to rescale
+        if annual_el_demand_ap is None:
+            #  Generate annual_el_demand_ap
+            annual_el_demand_ap = calc_el_dem_ap(nb_occ=curr_number_occupants,
+                                                 el_random=el_random,
+                                                 type='mfh')
+
         # Create electrical power curve
         if el_gen_method == 2:
 
@@ -998,7 +1017,7 @@ def generate_res_building_multi_zone(environment, net_floor_area,
                                                                total_nb_occupants=curr_number_occupants,
                                                                randomizeAppliances=True,
                                                                lightConfiguration=0,
-                                                               annualDemand=annual_el_demand,
+                                                               annualDemand=annual_el_demand_ap,
                                                                occupancy=occupancy_object.occupancy,
                                                                do_normalization=do_normalization,
                                                                prev_heat_dev=prev_heat_dev,
@@ -1007,7 +1026,7 @@ def generate_res_building_multi_zone(environment, net_floor_area,
         else:  # Use el. SLP
             el_power_curve = ElectricalDemand.ElectricalDemand(environment,
                                                                method=1,
-                                                               annualDemand=annual_el_demand,
+                                                               annualDemand=annual_el_demand_ap,
                                                                profileType=el_slp_type)
 
         # Create domestic hot water demand
@@ -1323,6 +1342,64 @@ def get_district_data_from_txt(path, delimiter='\t'):
     district_data = np.where(np.isnan(district_data), None, district_data)
 
     return district_data
+
+
+def calc_el_dem_ap(nb_occ, el_random, type):
+    """
+    Calculate electric energy demand per apartment per year
+    in kWh/a (residential buildings, only)
+
+    Parameters
+    ----------
+    nb_occ : int
+        Number of occupants
+    el_random : bool
+        Defines, if random value should be chosen from statistics
+        or if average value should be chosen. el_random == True means,
+        use random value.
+    type : str
+        Define residential building type (single family or multi-
+        family)
+        Options:
+        - 'sfh' : Single family house
+        - 'mfh' : Multi family house
+
+    Returns
+    -------
+    el_dem : float
+        Electric energy demand per apartment in kWh/a
+    """
+
+    assert nb_occ > 0
+    assert nb_occ <= 5, 'Number of occupants cannot exceed 5 per ap.'
+    assert type in ['sfh', 'mfh']
+
+    if el_random:
+        #  Choose first entry of random sample list
+        el_dem = usunc.calc_sampling_el_demand_per_apartment(
+            nb_samples=1,
+            nb_persons=nb_occ)[0]
+    else:
+        #  Choose average value depending on nb_occ
+        #  Class D without hot water (Stromspiegel 2017)
+        dict_sfh = {1: [2500],
+                    2: [3200],
+                    3: [3900],
+                    4: [4200],
+                    5: [5400]}
+
+        dict_mfh = {1: [1500],
+                    2: [2200],
+                    3: [2800],
+                    4: [3200],
+                    5: [4000]}
+
+        if type == 'sfh':
+            el_dem = dict_sfh[nb_occ]
+        elif type == 'mfh':
+            el_dem = dict_mfh[nb_occ]
+
+    return el_dem
 
 
 def run_city_generator(generation_mode, timestep, year, location,
@@ -1830,6 +1907,7 @@ def run_city_generator(generation_mode, timestep, year, location,
             #  ############################################################
             assert curr_build_type >= 0
             assert curr_nfa > 0
+
             for m in range(5, 9):
                 if multi_data:
                     if district_data[i][m] is not None:
@@ -1837,17 +1915,17 @@ def run_city_generator(generation_mode, timestep, year, location,
                 else:
                     if district_data[m] is not None:
                         assert district_data[m] > 0
+
             if curr_nb_of_apartments is not None:
                 assert curr_nb_of_apartments > 0
                 #  Convert to int
                 curr_nb_of_apartments = int(curr_nb_of_apartments)
+
             if curr_nb_of_occupants is not None:
                 assert curr_nb_of_occupants > 0
                 #  Convert curr_nb_of_occupants from float to int
                 curr_nb_of_occupants = int(curr_nb_of_occupants)
-            # else:  # If number of occupants is None, use SLP generation
-            #     el_gen_method = 1  # For el. SLP
-            #     print('Curr nb. occ is None')
+
             if (curr_nb_of_occupants is not None
                 and curr_nb_of_apartments is not None):
                 assert curr_nb_of_occupants / curr_nb_of_apartments <= 5, (
@@ -1862,10 +1940,15 @@ def run_city_generator(generation_mode, timestep, year, location,
 
             if curr_build_type == 0 and curr_nb_of_apartments is None:
                 #  Define single apartment, if nb of apartments is unknown
+                msg = 'Building ' + str(curr_id) + ' is residential, but' \
+                                                   ' does not have a number' \
+                                                   ' of apartments. Going' \
+                                                   ' to set nb. to 1.'
+                warnings.warn(msg)
                 curr_nb_of_apartments = 1
 
             if (curr_build_type == 0 and curr_nb_of_occupants is None
-                and use_dhw == True and dhw_method == 2):
+                and use_dhw and dhw_method == 2):
                 raise AssertionError('DHW profile cannot be generated' +
                                      'for residential building without' +
                                      'occupants (stochastic mode).' +
@@ -1873,6 +1956,7 @@ def run_city_generator(generation_mode, timestep, year, location,
                                      '(missing number of occupants) ' +
                                      'or disable dhw generation.')
 
+            #  Check if TEASER inputs are defined
             if call_teaser or th_gen_method == 3:
                 if curr_build_type == 0:  # Residential
                     assert curr_nb_of_floors is not None
@@ -1924,133 +2008,134 @@ def run_city_generator(generation_mode, timestep, year, location,
                             spec_th_dem_res_building) - 1 - j][2]
                         break
 
-                # Get spec. electr. demand
-                if curr_nb_of_occupants is None:
-                    #  USE AGEB values
-                    #  Set specific demand value in kWh/m2*a
-                    curr_spec_el_demand = spec_el_dem_res_building[1]
-                    #  Only valid for array like [2012    38.7]
+                # # Get spec. electr. demand
+                # if curr_nb_of_occupants is None:
+                #     #  USE AGEB values, if no number of occupants is given
+                #     #  Set specific demand value in kWh/m2*a
+                #     curr_spec_el_demand = spec_el_dem_res_building[1]
+                #     #  Only valid for array like [2012    38.7]
 
-                else:
-                    #  Use Stromspiegel 2017 values
-                    #  Calculate specific electric demand values depending
-                    #  on number of occupants
+                # else:
+                #     #  Use Stromspiegel 2017 values
+                #     #  Calculate specific electric demand values depending
+                #     #  on number of occupants
+                #
+                #     if curr_nb_of_apartments == 1:
+                #         btype = 'sfh'
+                #     elif curr_nb_of_apartments > 1:
+                #         btype = 'mfh'
+                #
+                #     #  Average occupancy number per apartment
+                #     curr_av_occ_per_app = \
+                #         curr_nb_of_occupants / curr_nb_of_apartments
+                #     print('Average number of occupants per apartment')
+                #     print(round(curr_av_occ_per_app, ndigits=2))
+                #
+                #     if curr_av_occ_per_app <= 5 and curr_av_occ_per_app > 0:
+                #         #  Correctur factor for non-int. av. number of
+                #         #  occupants (#19)
+                #
+                #         #  Divide annual el. energy demand with net floor area
+                #         if btype == 'sfh':
+                #             row_idx_low = math.ceil(curr_av_occ_per_app) - 1
+                #             row_idx_high = math.floor(curr_av_occ_per_app) - 1
+                #         elif btype == 'mfh':
+                #             row_idx_low = math.ceil(curr_av_occ_per_app) - 1 \
+                #                            + 5
+                #             row_idx_high = math.floor(curr_av_occ_per_app) - 1 \
+                #                           + 5
+                #
+                #         cur_spec_el_dem_per_occ_high = \
+                #             spec_el_dem_res_building_per_person[row_idx_high][2]
+                #         cur_spec_el_dem_per_occ_low = \
+                #             spec_el_dem_res_building_per_person[row_idx_low][2]
+                #
+                #         print('Chosen reference spec. el. demands per person '
+                #               'in kWh/a (high and low value):')
+                #         print(cur_spec_el_dem_per_occ_high)
+                #         print(cur_spec_el_dem_per_occ_low)
+                #
+                #         delta = round(curr_av_occ_per_app, 0) - \
+                #                 curr_av_occ_per_app
+                #
+                #         if delta < 0:
+                #             curr_spec_el_dem_occ = cur_spec_el_dem_per_occ_high + \
+                #                                (cur_spec_el_dem_per_occ_high -
+                #                                 cur_spec_el_dem_per_occ_low) * delta
+                #         elif delta > 0:
+                #             curr_spec_el_dem_occ = cur_spec_el_dem_per_occ_low + \
+                #                                (cur_spec_el_dem_per_occ_high -
+                #                                 cur_spec_el_dem_per_occ_low) * delta
+                #         else:
+                #             curr_spec_el_dem_occ = cur_spec_el_dem_per_occ_high
+                #
+                #         # print('Calculated spec. el. demand per person in '
+                #         #       'kWh/a:')
+                #         # print(round(curr_spec_el_dem_occ, ndigits=2))
+                #
+                #         #  Specific el. demand per person (dependend on av.
+                #         #  number of occupants in each apartment)
+                #         #  --> Multiplied with number of occupants
+                #         #  --> Total el. energy demand in kWh
+                #         #  --> Divided with net floor area
+                #         #  --> Spec. el. energy demand in kWh/a
+                #
+                #         curr_spec_el_demand = \
+                #             curr_spec_el_dem_occ * curr_nb_of_occupants \
+                #             / curr_nfa
+                #
+                #         # print('Spec. el. energy demand in kWh/m2:')
+                #         # print(curr_spec_el_demand)
+                #
+                #     else:
+                #         raise AssertionError('Invalid number of occupants')
 
-                    if curr_nb_of_apartments == 1:
-                        btype = 'sfh'
-                    elif curr_nb_of_apartments > 1:
-                        btype = 'mfh'
+                # if el_random:
+                #     if curr_nb_of_occupants is None:
+                #         #  Randomize curr_spec_el_demand with normal distribution
+                #         #  with curr_spec_el_demand as mean and 10 % standard dev.
+                #         curr_spec_el_demand = \
+                #             np.random.normal(loc=curr_spec_el_demand,
+                #                              scale=0.10 * curr_spec_el_demand)
 
-                    #  Average occupancy number per apartment
-                    curr_av_occ_per_app = \
-                        curr_nb_of_occupants / curr_nb_of_apartments
-                    print('Average number of occupants per apartment')
-                    print(round(curr_av_occ_per_app, ndigits=2))
-
-                    if curr_av_occ_per_app <= 5 and curr_av_occ_per_app > 0:
-                        #  Correctur factor for non-int. av. number of
-                        #  occupants (#19)
-
-                        #  Divide annual el. energy demand with net floor area
-                        if btype == 'sfh':
-                            row_idx_low = math.ceil(curr_av_occ_per_app) - 1
-                            row_idx_high = math.floor(curr_av_occ_per_app) - 1
-                        elif btype == 'mfh':
-                            row_idx_low = math.ceil(curr_av_occ_per_app) - 1 \
-                                           + 5
-                            row_idx_high = math.floor(curr_av_occ_per_app) - 1 \
-                                          + 5
-
-                        cur_spec_el_dem_per_occ_high = \
-                            spec_el_dem_res_building_per_person[row_idx_high][2]
-                        cur_spec_el_dem_per_occ_low = \
-                            spec_el_dem_res_building_per_person[row_idx_low][2]
-
-                        print('Chosen reference spec. el. demands per person '
-                              'in kWh/a (high and low value):')
-                        print(cur_spec_el_dem_per_occ_high)
-                        print(cur_spec_el_dem_per_occ_low)
-
-                        delta = round(curr_av_occ_per_app, 0) - \
-                                curr_av_occ_per_app
-
-                        if delta < 0:
-                            curr_spec_el_dem_occ = cur_spec_el_dem_per_occ_high + \
-                                               (cur_spec_el_dem_per_occ_high -
-                                                cur_spec_el_dem_per_occ_low) * delta
-                        elif delta > 0:
-                            curr_spec_el_dem_occ = cur_spec_el_dem_per_occ_low + \
-                                               (cur_spec_el_dem_per_occ_high -
-                                                cur_spec_el_dem_per_occ_low) * delta
-                        else:
-                            curr_spec_el_dem_occ = cur_spec_el_dem_per_occ_high
-
-                        # print('Calculated spec. el. demand per person in '
-                        #       'kWh/a:')
-                        # print(round(curr_spec_el_dem_occ, ndigits=2))
-
-                        #  Specific el. demand per person (dependend on av.
-                        #  number of occupants in each apartment)
-                        #  --> Multiplied with number of occupants
-                        #  --> Total el. energy demand in kWh
-                        #  --> Divided with net floor area
-                        #  --> Spec. el. energy demand in kWh/a
-
-                        curr_spec_el_demand = \
-                            curr_spec_el_dem_occ * curr_nb_of_occupants \
-                            / curr_nfa
-
-                        # print('Spec. el. energy demand in kWh/m2:')
-                        # print(curr_spec_el_demand)
-
-                    else:
-                        raise AssertionError('Invalid number of occupants')
-
-                if el_random:
-                    if curr_nb_of_occupants is None:
-                        #  Randomize curr_spec_el_demand with normal distribution
-                        #  with curr_spec_el_demand as mean and 10 % standard dev.
-                        curr_spec_el_demand = \
-                            np.random.normal(loc=curr_spec_el_demand,
-                                             scale=0.10 * curr_spec_el_demand)
-                    else:
-                        #  Randomize rounding up and down of curr_av_occ_per_ap
-                        if round(curr_av_occ_per_app) > curr_av_occ_per_app:
-                            #  Round up
-                            delta = round(curr_av_occ_per_app) - \
-                                    curr_av_occ_per_app
-                            prob_r_up = 1 - delta
-                            rnb = random.random()
-                            if rnb < prob_r_up:
-                                use_occ = math.ceil(curr_av_occ_per_app)
-                            else:
-                                use_occ = math.floor(curr_av_occ_per_app)
-
-                        else:
-                            #  Round down
-                            delta = curr_av_occ_per_app - \
-                                    round(curr_av_occ_per_app)
-                            prob_r_down = 1 - delta
-                            rnb = random.random()
-                            if rnb < prob_r_down:
-                                use_occ = math.floor(curr_av_occ_per_app)
-                            else:
-                                use_occ = math.ceil(curr_av_occ_per_app)
-
-                        sample_el_per_app = \
-                                usunc.calc_sampling_el_demand_per_apartment(nb_samples=1,
-                                                                      nb_persons=use_occ,
-                                                                      type=btype)[0]
-
-                        #  Divide sampled el. demand per apartment through
-                        #  number of persons of apartment (according to
-                        #  Stromspiegel 2017) and multiply this value with
-                        #  actual number of persons in building to get
-                        #  new total el. energy demand. Divide this value with
-                        #  net floor area to get specific el. energy demand
-                        curr_spec_el_demand = \
-                            (sample_el_per_app / curr_av_occ_per_app) * \
-                            curr_nb_of_occupants / curr_nfa
+                    # else:
+                    #     #  Randomize rounding up and down of curr_av_occ_per_ap
+                    #     if round(curr_av_occ_per_app) > curr_av_occ_per_app:
+                    #         #  Round up
+                    #         delta = round(curr_av_occ_per_app) - \
+                    #                 curr_av_occ_per_app
+                    #         prob_r_up = 1 - delta
+                    #         rnb = random.random()
+                    #         if rnb < prob_r_up:
+                    #             use_occ = math.ceil(curr_av_occ_per_app)
+                    #         else:
+                    #             use_occ = math.floor(curr_av_occ_per_app)
+                    #
+                    #     else:
+                    #         #  Round down
+                    #         delta = curr_av_occ_per_app - \
+                    #                 round(curr_av_occ_per_app)
+                    #         prob_r_down = 1 - delta
+                    #         rnb = random.random()
+                    #         if rnb < prob_r_down:
+                    #             use_occ = math.floor(curr_av_occ_per_app)
+                    #         else:
+                    #             use_occ = math.ceil(curr_av_occ_per_app)
+                    #
+                    #     sample_el_per_app = \
+                    #             usunc.calc_sampling_el_demand_per_apartment(nb_samples=1,
+                    #                                                   nb_persons=use_occ,
+                    #                                                   type=btype)[0]
+                    #
+                    #     #  Divide sampled el. demand per apartment through
+                    #     #  number of persons of apartment (according to
+                    #     #  Stromspiegel 2017) and multiply this value with
+                    #     #  actual number of persons in building to get
+                    #     #  new total el. energy demand. Divide this value with
+                    #     #  net floor area to get specific el. energy demand
+                    #     curr_spec_el_demand = \
+                    #         (sample_el_per_app / curr_av_occ_per_app) * \
+                    #         curr_nb_of_occupants / curr_nfa
 
                 # conversion of the construction_type from int to str
                 if curr_construction_type == 0:
@@ -2078,11 +2163,6 @@ def run_city_generator(generation_mode, timestep, year, location,
                 curr_th_slp_type = convert_th_slp_int_and_str(curr_th_slp_type)
                 curr_el_slp_type = convert_el_slp_int_and_str(curr_el_slp_type)
 
-                # #  Set el_gen_method to SLP
-                # el_gen_method = 1
-                # #  Set use_dhw to False
-                # use_dhw = False
-
             # #-------------------------------------------------------------
             #  If curr_th_e_demand is known, recalc spec e. demand
             if curr_th_e_demand is not None:
@@ -2093,25 +2173,25 @@ def run_city_generator(generation_mode, timestep, year, location,
                 #  net thermal energy demand with efficiency factor
                 curr_spec_th_demand *= eff_factor
 
-            # If curr_el_e_demand is not known, calculate it via spec. demand
-            if curr_el_e_demand is None:
-                curr_el_e_demand = curr_spec_el_demand * curr_nfa
+            # # If curr_el_e_demand is not known, calculate it via spec. demand
+            # if curr_el_e_demand is None:
+            #     curr_el_e_demand = curr_spec_el_demand * curr_nfa
 
             if th_gen_method == 1 or th_gen_method == 2 or curr_build_type != 0:
                 print('Used specific thermal demand value in kWh/m2*a:')
                 print(curr_spec_th_demand)
 
-            print('Annual el. energy demand in kWh:')
-            print(curr_el_e_demand)
-            print()
+            # print('Annual el. energy demand in kWh:')
+            # print(curr_el_e_demand)
+            # print()
+            #
+            # print('Used specific electric demand value in kWh/m2*a:')
+            # print(curr_spec_el_demand)
 
-            print('Used specific electric demand value in kWh/m2*a:')
-            print(curr_spec_el_demand)
-
-            if curr_nb_of_occupants is not None:
-                print('Average spec. el. energy demand per person in kWh/a:')
-                print(curr_el_e_demand / curr_nb_of_occupants)
-                print()
+            # if curr_nb_of_occupants is not None:
+            #     print('Average spec. el. energy demand per person in kWh/a:')
+            #     print(curr_el_e_demand / curr_nb_of_occupants)
+            #     print()
 
             # #-------------------------------------------------------------
             #  Generate BuildingExtended object
