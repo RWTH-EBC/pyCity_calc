@@ -35,7 +35,7 @@ def run_overall_gen_and_dim(timestep, year, location, th_gen_method,
                             show_city=False,
                             altitude=55,
                             do_normalization=True,
-                            dhw_volumen=64,
+                            dhw_volumen=None,
                             plot_pycity_calc=False,
                             slp_manipulate=True,
                             call_teaser=False,
@@ -128,7 +128,7 @@ def run_overall_gen_and_dim(timestep, year, location, th_gen_method,
         annualDemand
     dhw_volumen : float, optional
         Volume of domestic hot water in liter per capita and day
-        (default: 64).
+        (default: None).
     plot_pycity_calc : bool, optional
         Defines, if city district should be visualized (default: False)
     slp_manipulate : bool, optional
@@ -388,7 +388,7 @@ if __name__ == '__main__':
     dhw_method = 2  # Only relevant for residential buildings
 
     #  Define dhw volume per person and day (use_dhw=True)
-    dhw_volumen = 64  # Only relevant for residential buildings
+    dhw_volumen = None  # Only relevant for residential buildings
 
     #  Randomize choosen dhw_volume reference value by selecting new value
     #  from gaussian distribution with 20 % standard deviation

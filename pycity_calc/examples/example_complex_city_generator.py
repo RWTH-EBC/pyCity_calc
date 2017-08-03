@@ -67,7 +67,7 @@ def run_example(printcitydata=False):
     dhw_method = 1  # Only relevant for residential buildings
 
     #  Define dhw volume per capita and day (dhw_method = 1 and use_dhw=True)
-    dhw_volumen = 64  # Only relevant for residential buildings
+    dhw_volumen = None  # Only relevant for residential buildings
 
     #  Efficiency factor of thermal energy systems
     #  Used to convert input values (final energy demand) to net energy demand
