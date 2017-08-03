@@ -340,12 +340,14 @@ def MC_new_economic_evaluation(City, time=10, interest=0.05):
     price_ch_self_usage_chp = rd.uniform(0.8, 1.2)
     price_ch_gas_disc_chp = rd.uniform(0.8, 1.2)
     price_ch_sub_pv = rd.uniform(0.8, 1.2)
+    price_ch_dem_el_hp = rd.uniform(0.8, 1.2)
 
     #  Generate economic calculator object
-    eco_inst = eco_calc.EconomicCalculation(germanmarket=Market_instance, time=time, interest=interest, price_ch_cap=price_ch_cap,
+    eco_inst = eco_calc.EconomicCalculation(germanmarket=Market_instance, time=time, interest=interest,
+                                                price_ch_cap=price_ch_cap,
                                                 price_ch_dem_gas=price_ch_dem_gas, price_ch_dem_el=price_ch_dem_el,
                                                 price_ch_op=price_ch_op, price_ch_proc_chp=price_ch_proc_chp,
-                                                 price_ch_proc_pv=price_ch_proc_pv,
+                                                price_ch_proc_pv=price_ch_proc_pv,
                                                 price_ch_eeg_chp=price_ch_EEG_Umlage_tax_chp,
                                                 price_ch_eeg_pv=price_ch_EEG_Umlage_tax_pv,
                                                 price_ch_eex=price_EEX_baseload_price,
@@ -353,7 +355,7 @@ def MC_new_economic_evaluation(City, time=10, interest=0.05):
                                                 price_ch_chp_sub=price_ch_sub_chp,
                                                 price_ch_chp_self=price_ch_self_usage_chp,
                                                 price_ch_chp_tax_return=price_ch_gas_disc_chp,
-                                                price_ch_pv_sub=price_ch_sub_pv)
+                                                price_ch_pv_sub=price_ch_sub_pv, price_ch_dem_el_hp=price_ch_dem_el_hp)
 
     # New lifetime and maintenance of energy systems
     for key1 in eco_inst.dict_lifetimes.keys():
@@ -491,7 +493,7 @@ if __name__ == '__main__':
 
     #  User Inputs
     #  ##############################
-    nb_samples = 100
+    nb_samples = 1000
     time_sp_force_retro = 50
     max_retro_year = 2014
     nb_occ_unc = True

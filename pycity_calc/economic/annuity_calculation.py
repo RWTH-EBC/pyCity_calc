@@ -309,7 +309,7 @@ class EconomicCalculation(object):
                     self.calc_price_dyn_factor(self.price_ch_chp_tax_return)
                 self.price_dyn_pv_sub = \
                     self.calc_price_dyn_factor(self.price_ch_pv_sub)
-                self.price_ch_dem_el_hp = self.calc_price_dyn_factor(self.price_ch_dem_el_hp)
+                self.price_dyn_dem_el_hp = self.calc_price_dyn_factor(self.price_ch_dem_el_hp)
 
     def __str__(self):
         return str('<EconomicCalculator object of PyCity_Calc with ' +
@@ -1006,7 +1006,7 @@ class EconomicCalculation(object):
         b_el = self.price_dyn_dem_el  # Price dynamic factor el.
         b_gas = self.price_dyn_dem_gas  # Price dynamic factor gas
         b_cool = self.price_dyn_dem_cool
-        b_el_hp = self.price_ch_dem_el_hp # Price dynamic factor el. hp
+        b_el_hp = self.price_dyn_dem_el_hp # Price dynamic factor el. hp
 
         #  Calculate demand-related cost per year
         dem_rel_cost = b_el * sum_el_e * price_el + \

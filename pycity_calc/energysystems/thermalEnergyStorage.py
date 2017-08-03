@@ -335,7 +335,7 @@ class thermalEnergyStorageExtended(TES.ThermalEnergyStorage):
 
         q_out_max = q_in - self.k_loss * area * (self.t_current - t_u) + unitcon.con_kwh_to_joule(tes_energy) \
                                     / self.environment.timer.timeDiscretization
-
+        print ('qout kWh', q_out_max)
         return q_out_max
 
     def calc_storage_q_in_max(self, t_ambient=None, q_out=0):

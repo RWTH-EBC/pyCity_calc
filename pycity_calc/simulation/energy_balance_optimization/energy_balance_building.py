@@ -1264,6 +1264,7 @@ class calculator(object):
 
 
                     for ii in range(len(thermal_demand_building)):
+                        print('timestep', ii)
                         ####print('#######node: ', str(dict_city_data[index]['Buildings in subcity'][i]), '\n',
                               ####'#######timestep: ', ii)
 
