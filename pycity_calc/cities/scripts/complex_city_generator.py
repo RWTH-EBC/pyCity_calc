@@ -31,7 +31,7 @@ def gen_city_with_street_network_from_csvfile(timestep, year, location,
                                               show_city=False,
                                               altitude=55,
                                               do_normalization=True,
-                                              dhw_volumen=64,
+                                              dhw_volumen=None,
                                               slp_manipulate=True,
                                               call_teaser=False,
                                               teaser_proj_name='pycity',
@@ -117,7 +117,7 @@ def gen_city_with_street_network_from_csvfile(timestep, year, location,
         annualDemand
     dhw_volumen : float, optional
         Volume of domestic hot water in liter per capita and day
-        (default: 64). Only relevant for dhw method=1 (Annex 42)
+        (default: None).
     slp_manipulate : bool, optional
         Defines, if thermal space heating SLP profile should be modified
         (default: True). Only used for residential buildings!
@@ -423,7 +423,7 @@ if __name__ == '__main__':
     dhw_method = 2  # Only relevant for residential buildings
 
     #  Define dhw volume per person and day (use_dhw=True)
-    dhw_volumen = 64  # Only relevant for residential buildings
+    dhw_volumen = None  # Only relevant for residential buildings
 
     #  Randomize choosen dhw_volume reference value by selecting new value
     #  from gaussian distribution with 20 % standard deviation
