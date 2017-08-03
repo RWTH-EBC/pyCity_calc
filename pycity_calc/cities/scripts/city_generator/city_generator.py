@@ -2244,6 +2244,11 @@ def run_city_generator(generation_mode, timestep, year, location,
                 curr_th_slp_type = convert_th_slp_int_and_str(curr_th_slp_type)
                 curr_el_slp_type = convert_el_slp_int_and_str(curr_el_slp_type)
 
+                #  If curr_el_e_demand is not known, calculate it via spec.
+                #  demand
+                if curr_el_e_demand is None:
+                    curr_el_e_demand = curr_spec_el_demand * curr_nfa
+
             # #-------------------------------------------------------------
             #  If curr_th_e_demand is known, recalc spec e. demand
             if curr_th_e_demand is not None:
@@ -2261,18 +2266,6 @@ def run_city_generator(generation_mode, timestep, year, location,
             if th_gen_method == 1 or th_gen_method == 2 or curr_build_type != 0:
                 print('Used specific thermal demand value in kWh/m2*a:')
                 print(curr_spec_th_demand)
-
-            # print('Annual el. energy demand in kWh:')
-            # print(curr_el_e_demand)
-            # print()
-            #
-            # print('Used specific electric demand value in kWh/m2*a:')
-            # print(curr_spec_el_demand)
-
-            # if curr_nb_of_occupants is not None:
-            #     print('Average spec. el. energy demand per person in kWh/a:')
-            #     print(curr_el_e_demand / curr_nb_of_occupants)
-            #     print()
 
             # #-------------------------------------------------------------
             #  Generate BuildingExtended object
@@ -2682,7 +2675,7 @@ if __name__ == '__main__':
     #  ######################################################
     #  Define input data filename
 
-    filename = 'city_3_buildings.txt'
+    filename = 'city_3_buildings_mixed.txt'
     # filename = 'city_clust_simple.txt'
     # filename = 'aachen_forsterlinde_mod_6.txt'
     # filename = 'aachen_frankenberg_mod_6.txt'
