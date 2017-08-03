@@ -1036,7 +1036,7 @@ def generate_res_building_multi_zone(environment,
         print('Annual el. demand (apartment) in kWh: ', annual_el_demand_ap)
         if curr_number_occupants is not None:
             print('El. demand per person in kWh: ')
-            print(annual_el_demand / curr_number_occupants)
+            print(annual_el_demand_ap / curr_number_occupants)
         print()
 
         # Create electrical power curve
