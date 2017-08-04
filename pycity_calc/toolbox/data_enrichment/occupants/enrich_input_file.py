@@ -184,10 +184,10 @@ def save_dist_data_to_file(dist_data, path):
              '\tdormer\tconstruction type\tmethod_3_type\tmethod_4_type'
 
     #  Replace all None with np.nan to prevent saving errors
-    for i in range(len(district_data)):
-        for j in range(len(district_data[0])):
-            if district_data[i][j] == None:
-                district_data[i][j] = np.nan
+    for i in range(len(dist_data)):
+        for j in range(len(dist_data[0])):
+            if dist_data[i][j] == None:
+                dist_data[i][j] = np.nan
 
     #  Save to path
     np.savetxt(path, dist_data, delimiter='\t', header=header)

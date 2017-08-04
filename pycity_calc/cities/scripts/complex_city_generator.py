@@ -25,11 +25,13 @@ def gen_city_with_street_network_from_csvfile(timestep, year, location,
                                               try_path=None,
                                               generation_mode=0,
                                               eff_factor=0.85,
-                                              save_city=None,
+                                              do_save=True,
+                                              path_save_city=None,
+                                              city_f_out_name=None,
                                               show_city=False,
                                               altitude=55,
                                               do_normalization=True,
-                                              dhw_volumen=64,
+                                              dhw_volumen=None,
                                               slp_manipulate=True,
                                               call_teaser=False,
                                               teaser_proj_name='pycity',
@@ -44,7 +46,8 @@ def gen_city_with_street_network_from_csvfile(timestep, year, location,
                                               dhw_random=False,
                                               prev_heat_dev=True,
                                               season_mod=None,
-                                              merge_windows=False):
+                                              merge_windows=False,
+                                              new_try=False):
     """
     Run city generator and street generator to generate PyCity_Calc
     city object
@@ -92,9 +95,16 @@ def gen_city_with_street_network_from_csvfile(timestep, year, location,
         generation_mode = 0: Load data from csv/txt file (tab seperated)
     eff_factor : float, optional
          Efficiency factor of thermal boiler system (default: 0.85)
-    save_city : str, optional
-        Defines name of output file (default: None). If set to None,
-        city file is not saved. If not None, file is pickled under given name
+    do_save : bool, optional
+        Defines, if city object instance should be saved as pickle file
+        (default: True)
+    path_save_city : str, optional
+        Path to save (pickle and dump) city object instance to (default: None)
+        If None is used, saves file to .../output/...
+    city_f_out_name : str, optional
+        Defines name of output file (default: None). Only necessary, if
+        no explicit path_save_city is set.
+        Then, .../output_complex_city/city_f_out_name
     show_city : bool, optional
         Defines, if city should be plotted (default: False)
     altitude : float, optional
@@ -107,7 +117,7 @@ def gen_city_with_street_network_from_csvfile(timestep, year, location,
         annualDemand
     dhw_volumen : float, optional
         Volume of domestic hot water in liter per capita and day
-        (default: 64). Only relevant for dhw method=1 (Annex 42)
+        (default: None).
     slp_manipulate : bool, optional
         Defines, if thermal space heating SLP profile should be modified
         (default: True). Only used for residential buildings!
@@ -178,6 +188,12 @@ def gen_city_with_street_network_from_csvfile(timestep, year, location,
         Defines TEASER project setting for merge_windows_calc
         (default: False). If set to False, merge_windows_calc is set to False.
         If True, Windows are merged into wall resistances.
+    new_try : bool, optional
+        Defines, if TRY dataset have been generated after 2017 (default: False)
+        If False, assumes that TRY dataset has been generated before 2017.
+        If True, assumes that TRY dataset has been generated after 2017 and
+        belongs to the new TRY classes. This is important for extracting
+        the correct values from the TRY dataset!
 
     Returns
     -------
@@ -232,6 +248,8 @@ def gen_city_with_street_network_from_csvfile(timestep, year, location,
                                              dhw_method=dhw_method,
                                              district_data=district_data,
                                              pickle_city_filename=None,
+                                             do_save=False,
+                                             path_save_city=None,
                                              eff_factor=eff_factor,
                                              show_city=show_city,
                                              try_path=try_path,
@@ -254,7 +272,8 @@ def gen_city_with_street_network_from_csvfile(timestep, year, location,
                                              dhw_random=dhw_random,
                                              prev_heat_dev=prev_heat_dev,
                                              season_mod=season_mod,
-                                             merge_windows=merge_windows)
+                                             merge_windows=merge_windows,
+                                             new_try=new_try)
 
     #  Get street network data
     name_list, pos_list, edge_list = \
@@ -265,11 +284,15 @@ def gen_city_with_street_network_from_csvfile(timestep, year, location,
     strgen.add_street_network_to_city(city_object, name_list, pos_list,
                                       edge_list)
 
-    if save_city:
-        this_path = os.path.dirname(os.path.abspath(__file__))
-        path_to_save_to = os.path.join(this_path, 'output_complex_city_gen',
-                                       save_city)
-        save_pickle_city_file(city_object, path_to_save_to)
+    if do_save:
+
+        if path_save_city is None:
+            this_path = os.path.dirname(os.path.abspath(__file__))
+            path_save_city = os.path.join(this_path,
+                                           'output_complex_city_gen',
+                                           city_f_out_name)
+
+        save_pickle_city_file(city_object, path_save_city)
 
     return city_object
 
@@ -325,6 +348,10 @@ if __name__ == '__main__':
     #  Weather path
     try_path = None
     #  If None, used default TRY (region 5, 2010)
+
+    new_try = False
+    #  new_try has to be set to True, if you want to use TRY data of 2017
+    #  or newer! Else: new_try = False
 
     #  Space heating load generation
     #  ######################################################
@@ -396,7 +423,7 @@ if __name__ == '__main__':
     dhw_method = 2  # Only relevant for residential buildings
 
     #  Define dhw volume per person and day (use_dhw=True)
-    dhw_volumen = 64  # Only relevant for residential buildings
+    dhw_volumen = None  # Only relevant for residential buildings
 
     #  Randomize choosen dhw_volume reference value by selecting new value
     #  from gaussian distribution with 20 % standard deviation
@@ -412,10 +439,17 @@ if __name__ == '__main__':
     eff_factor = 0.85
 
     #  Define city district input data filename
-    filename = 'aachen_tuerme_osm_4.txt'
+    filename = 'city_clust_simple.txt'
 
     #  Define ouput data filename (pickled city object)
-    save_city = 'aachen_tuerme_5.pkl'
+    city_f_out_name = 'city_clust_simple.pkl'
+
+    #  Pickle and dump city object instance?
+    do_save = True
+
+    #  Path to save city object instance to
+    path_save_city = None
+    #  If None, uses .../output_complex_city/...
 
     #  #####################################
     t_set_heat = 20  # Heating set temperature in degree Celsius
@@ -486,7 +520,7 @@ if __name__ == '__main__':
                                                   str_edge_path=str_edge_path,
                                                   generation_mode=0,
                                                   eff_factor=eff_factor,
-                                                  save_city=save_city,
+                                                  city_f_out_name=city_f_out_name,
                                                   altitude=altitude,
                                                   do_normalization=do_normalization,
                                                   dhw_volumen=dhw_volumen,
@@ -507,19 +541,17 @@ if __name__ == '__main__':
                                                   dhw_random=dhw_random,
                                                   prev_heat_dev=prev_heat_dev,
                                                   season_mod=season_mod,
-                                                  merge_windows=merge_windows)
+                                                  merge_windows=merge_windows,
+                                                  new_try=new_try,
+                                                  do_save=do_save,
+                                                  path_save_city=path_save_city)
 
-    if save_city:  # Load pickle city file
-        this_path = os.path.dirname(os.path.abspath(__file__))
-        file_path = os.path.join(this_path, 'output_complex_city_gen',
-                                 save_city)
-        print('Try loading file from path:', file_path)
-        city = load_pickled_city_file(file_path)
-        print('Loaded city object:', city)
-        print('Node data:', city.nodes(data=True))
+    print('City object:', city_object)
+    print('Node data:', city_object.nodes(data=True))
 
     if plot_pycity_calc:
-        citvis.plot_city_district(city=city, plot_street=True, offset=None,
+        citvis.plot_city_district(city=city_object, plot_street=True,
+                                  offset=None,
                                   plot_build_labels=True,
                                   equal_axis=False, font_size=16,
                                   plt_title=None,
@@ -527,8 +559,8 @@ if __name__ == '__main__':
                                   y_label='y-Position in m',
                                   show_plot=True)
 
-        aggr_sp_heat = city.get_aggr_space_h_power_curve()
-        aggr_dhw = city.get_aggr_dhw_power_curve()
+        aggr_sp_heat = city_object.get_aggr_space_h_power_curve()
+        aggr_dhw = city_object.get_aggr_dhw_power_curve()
 
         aggr_th_load_curve = aggr_sp_heat + aggr_dhw
 
