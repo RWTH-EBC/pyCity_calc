@@ -23,7 +23,7 @@ returns single items from given list with custom probability p for each item
 
 Implemented 14.10.2016 by jsc-swi
 """
-
+from __future__ import division
 import os
 import numpy as np
 import csv

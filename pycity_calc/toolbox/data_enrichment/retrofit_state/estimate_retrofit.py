@@ -6,7 +6,7 @@ every building. Script calls TEASER VDI 6007 simulation core to
 calculate space heating energy demand for different retrofit states
 until simulated values is close to input value.
 """
-
+from __future__ import division
 import os
 import copy
 import warnings
