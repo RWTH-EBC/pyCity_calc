@@ -212,6 +212,73 @@ def convert_method_4_nb_into_str(method_4_nb):
     return method_4_str
 
 
+def conv_build_type_nb_to_name(build_type):
+    """
+    Convert build_type number to name / explanation
+
+    Parameters
+    ----------
+    build_type : int
+        Building type number, based on Spec_demands_non_res.txt
+
+    Returns
+    -------
+    build_name : str
+        Building name / explanation
+    """
+
+    dict_b_name = {
+        0: 'Residential',
+        1: 'Office (simulation)',
+        2: 'Main construction work',
+        3: 'Finishing trade construction work',
+        4: 'Bank and insurance',
+        5: 'Public institution',
+        6: 'Non profit organization',
+        7: 'Small office buildings',
+        8: 'Other services',
+        9: 'Metal',
+        10: 'Automobile',
+        11: 'Wood and timber',
+        12: 'Paper',
+        13: 'Small retailer for food',
+        14: 'Small retailer for non-food',
+        15: 'Large retailer for food',
+        16: 'Large retailer for non-food',
+        17: 'Primary school',
+        18: 'School for physically handicapped',
+        19: 'High school',
+        20: 'Trade school',
+        21: 'University',
+        22: 'Hotel',
+        23: 'Restaurant',
+        24: 'Childrens home',
+        25: 'Backery',
+        26: 'Butcher',
+        27: 'Laundry',
+        28: 'Farm primary agriculture ',
+        29: 'Farm with 10 - 49 cattle units',
+        30: 'Farm with 50 - 100 cattle units',
+        31: 'Farm with more than 100 cattle units',
+        32: 'Gardening',
+        33: 'Hospital',
+        34: 'Library',
+        35: 'Prison',
+        36: 'Cinema',
+        37: 'Theater',
+        38: 'Parish hall',
+        39: 'Sports hall',
+        40: 'Multi purpose hall',
+        41: 'Swimming hall',
+        42: 'Club house',
+        43: 'Fitness studio',
+        44: 'Train station smaller 5000m2',
+        45: 'Train station equal to or larger than 5000m2'
+    }
+
+    return dict_b_name[build_type]
+
+
 def constrained_sum_sample_pos(n, total):
     """
     Return a randomly chosen list of n positive integers summing to total.
