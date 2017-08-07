@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 
 import pycity_calc.visualization.city_visual as citvis
 import pycity_calc.cities.scripts.city_generator.city_generator as citgen
+import pycity_calc.toolbox.analyze.save_city_data as savcit
 
 
 def gen_path_if_not_existent(dir):
@@ -209,29 +210,22 @@ def extract_build_profiles(city, id, file_path, do_plot=False):
                                                 save_data_array=True,
                                                 use_font='arial')
 
-
-def extract_city_data(city, out_path, do_plot=False):
+def extract_city_base_data(city, out_file_path, do_plot=False):
     """
+    Extract and save basic city data
 
     Parameters
     ----------
     city : object
         City object of pyCity_calc
-    out_path : str
-        Path to save city data to
-    do_plot: bool, optional
-        Defines, if load profiles should be plotted
+    out_file_path : str
+        Path to save data to
+    do_plot : bool, optional
+        Defines, if profiles should be plotted (default: False)
     """
 
-    city_path = os.path.join(out_path, 'city')
-    gen_path_if_not_existent(city_path)
-
-    city_out = 'city_data.txt'
-    data_file = os.path.join(city_path, city_out)
-
     #  Extract basic city data to path (.txt)
-    with open(data_file, mode='w') as f:
-
+    with open(out_file_path, mode='w') as f:
         f.write('Number of nodes: ' + str(len(city.nodes())) + '\n')
 
         nb_build_entities = city.get_nb_of_building_entities()
@@ -263,27 +257,62 @@ def extract_city_data(city, out_path, do_plot=False):
 
         f.close()
 
-    #  Generate plot with ids and save it to out_path
-    citvis.plot_city_district(city=city,
-                              city_list=None,
-                              plot_buildings=True,
-                              plot_street=True,
-                              plot_lhn=False, plot_deg=False,
-                              plot_esys=False,
-                              offset=7,
-                              plot_build_labels=True, plot_str_labels=False,
-                              plot_heat_labels=False,
-                              equal_axis=False, font_size=16, plt_title=None,
-                              x_label='x-position in m',
-                              y_label='y-position in m',
-                              show_plot=False,
-                              fig_adjust=None,
-                              plot_elec_labels=False, save_plot=True,
-                              save_path=city_path, dpi=300, plot_color=True,
-                              plot_engl=True,
-                              auto_close=True, plot_str_dist=50,
-                              node_size=50)
+        if do_plot:
+            #  Plot energy demands as bar plots
+            try:
+                import ebc_ues_plot.bar_plots as uesbar
+            except:
+                msg = 'Could not import ebc_ues_plot module.'
+                raise AssertionError(msg)
 
+            dataset = np.array([[ann_th_sh_demand], [ann_el_demand],
+                               [ann_dhw_demand]])
+
+            output_path = os.path.dirname(out_file_path, 'city_energy_bars')
+            f_name = 'city_bar_plot'
+
+            uesbar.plot_multi_language_multi_color_bar(dataset=dataset,
+                                                       output_path=output_path,
+                                                       output_filename=f_name,
+                                                       show_plot=False,
+                                                       use_tight=True,
+                                                       title_engl=None,
+                                                       xlab_engl=None,
+                                                       ylab_engl='Energy demands in kWh/a',
+                                                       list_labels_engl=['Space heating', 'Electric energy', 'Hot water energy'],
+                                                       title_dt=None,
+                                                       xlab_dt=None,
+                                                       ylab_dt='Energiebedarf in kWh/a',
+                                                       list_labels_dt=[u'Raumwärme', 'Elektr. Energie', 'Warmwasser'],
+                                                       fontsize=16,
+                                                       fig_adjust=None,
+                                                       dpi=300,
+                                                       copy_py=True, copy_input=False,
+                                                       input_path=None,
+                                                       save_data_array=True,
+                                                       save_tikz=True,
+                                                       list_labels_leg_engl=None,
+                                                       list_labels_leg_dt=None,
+                                                       use_autolabel=False,
+                                                       bar_width=0.7, set_ylimit=False,
+                                                       ymin=None, ymax=None,
+                                                       rotate_x_labels=False,
+                                                       use_font='arial',
+                                                       legend_pos='inside')
+
+
+def extract_city_profiles(city, city_path, do_plot):
+    """
+
+    Parameters
+    ----------
+    city : object
+        City object of pyCity_calc
+    city_path : str
+        Path to folder, where profiles should be saved
+    do_plot : bool, optional
+        Defines, if profiles should be plotted (default: False)
+    """
     #  Get power curves
     sh_profile = city.get_aggr_space_h_power_curve()
     el_profile = city.get_aggr_el_power_curve()
@@ -373,7 +402,57 @@ def extract_city_data(city, out_path, do_plot=False):
                                                 save_data_array=True,
                                                 use_font='arial')
 
-    #  Plot energy demands as bar plots
+
+def extract_city_data(city, out_path, do_plot=False):
+    """
+
+    Parameters
+    ----------
+    city : object
+        City object of pyCity_calc
+    out_path : str
+        Path to save city data to
+    do_plot: bool, optional
+        Defines, if load profiles should be plotted
+    """
+
+    city_path = os.path.join(out_path, 'city')
+    gen_path_if_not_existent(city_path)
+
+    city_out = 'city_data.txt'
+    data_file = os.path.join(city_path, city_out)
+
+    #  Extract city base data
+    extract_city_base_data(city=city, out_file_path=data_file, do_plot=do_plot)
+
+    #  Extract data into single file
+    save_path = os.path.join(city_path, 'city_data_buildings.txt')
+
+    savcit.save_city_data_to_file(city=city, save_path=save_path)
+
+    #  Generate plot with ids and save it to out_path
+    citvis.plot_city_district(city=city,
+                              city_list=None,
+                              plot_buildings=True,
+                              plot_street=True,
+                              plot_lhn=False, plot_deg=False,
+                              plot_esys=False,
+                              offset=7,
+                              plot_build_labels=True, plot_str_labels=False,
+                              plot_heat_labels=False,
+                              equal_axis=False, font_size=16, plt_title=None,
+                              x_label='x-position in m',
+                              y_label='y-position in m',
+                              show_plot=False,
+                              fig_adjust=None,
+                              plot_elec_labels=False, save_plot=True,
+                              save_path=city_path, dpi=300, plot_color=True,
+                              plot_engl=True,
+                              auto_close=True, plot_str_dist=50,
+                              node_size=50)
+
+    #  Extract and save city profiles
+    extract_city_profiles(city=city, city_path=city_path, do_plot=do_plot)
 
 
 
