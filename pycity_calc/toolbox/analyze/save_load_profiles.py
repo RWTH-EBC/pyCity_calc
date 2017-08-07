@@ -210,7 +210,7 @@ def extract_build_profiles(city, id, file_path, do_plot=False):
                                                 use_font='arial')
 
 
-def extract_city_data(city, out_path):
+def extract_city_data(city, out_path, do_plot=False):
     """
 
     Parameters
@@ -219,10 +219,16 @@ def extract_city_data(city, out_path):
         City object of pyCity_calc
     out_path : str
         Path to save city data to
+    do_plot: bool, optional
+        Defines, if load profiles should be plotted
     """
 
+    city_path = os.path.join(out_path, 'city')
+    gen_path_if_not_existent(city_path)
+
     city_out = 'city_data.txt'
-    data_file = os.path.join(out_path, city_out)
+    data_file = os.path.join(city_path, city_out)
+
     #  Extract basic city data to path (.txt)
     with open(data_file, mode='w') as f:
 
@@ -273,18 +279,104 @@ def extract_city_data(city, out_path):
                               show_plot=False,
                               fig_adjust=None,
                               plot_elec_labels=False, save_plot=True,
-                              save_path=out_path, dpi=300, plot_color=True,
+                              save_path=city_path, dpi=300, plot_color=True,
                               plot_engl=True,
                               auto_close=True, plot_str_dist=50,
                               node_size=50)
 
-    #  Save city profile to path
+    #  Get power curves
+    sh_profile = city.get_aggr_space_h_power_curve()
+    el_profile = city.get_aggr_el_power_curve()
+    dhw_profile = city.get_aggr_dhw_power_curve()
 
+    #  Generate time array
+    timestep = city.environment.timer.timeDiscretization
+    year_in_seconds = 365 * 24 * 3600
+    time_array = np.arange(0, year_in_seconds, timestep)
 
-    #  Plot city profiles to path
+    #  Stack results together
+    res_array = np.vstack((time_array, sh_profile))
+    res_array = np.vstack((res_array, el_profile))
+    res_array = np.vstack((res_array, dhw_profile))
 
+    #  Transpose array
+    res_array = np.transpose(res_array)
+
+    #  Define header
+    header = 'Time in seconds\tNet space heating power in Watt\t' \
+             'Electric power in Watt\tNet hot water power in Watt'
+
+    data_f_name = 'city_profiles.txt'
+    data_f_path = os.path.join(city_path, data_f_name)
+
+    #  Save numpy array to txt
+    np.savetxt(fname=data_f_path, X=res_array, delimiter='\t', header=header)
+
+    if do_plot:
+        #  Plot city profiles to path
+
+        try:
+            import ebc_ues_plot.line_plots as uesline
+        except:
+            msg = 'Cannot import ebc_ues_plot / simple_plot package.' \
+                  'Thus, cannot perform plotting in EBC style!'
+            raise AssertionError(msg)
+
+        # Generate time array
+        nb_timesteps = 365 * 24 * 3600 / timestep
+        time_array = np.arange(0, nb_timesteps, timestep / 3600)
+
+        plotdata = uesline.PlottingData()
+        plotdata.add_data_entry(time_array, sh_profile / 1000)
+        plotdata.add_data_entry(time_array, el_profile / 1000)
+        plotdata.add_data_entry(time_array, dhw_profile / 1000)
+
+        #  Perform plotting
+        output_path = os.path.join(city_path, 'city_power_curves')
+
+        uesline.plot_multi_language_multi_color(plot_data=plotdata,
+                                                plot_sub=True,
+                                                output_path=output_path,
+                                                output_filename='city_power_curves',
+                                                show_plot=False,
+                                                use_tight=True,
+                                                title_engl=None,
+                                                xlab_engl='Time in hours',
+                                                ylab_engl='Power in kW',
+                                                list_labels_engl=[
+                                                    'Space heating\npower in kW',
+                                                    'Electric\npower in kW',
+                                                    'Hot water\npower in kW'],
+                                                title_dt=None,
+                                                xlab_dt='Zeit in Stunden',
+                                                ylab_dt='Leistung in kW',
+                                                list_labels_dt=[
+                                                    'Heizleistung\nin kW',
+                                                    'Elektrische\nLeistung in kW',
+                                                    'Warmwasser-\nleistung in kW'],
+                                                fontsize=12,
+                                                fig_adjust='a4',
+                                                legend_pos_within=True,
+                                                put_leg='below', dpi=500,
+                                                # linewidth=1,
+                                                set_zero_point=True,
+                                                set_x_limits=True,
+                                                xmin=0, xmax=8760,
+                                                set_y_limits=False,
+                                                # ymin=ymin, ymax=ymax,
+                                                use_grid=False,
+                                                # input_path=input_path,
+                                                # save_tikz=save_tikz,
+                                                # rotate_x_labels=rotate_x_labels,
+                                                copy_py=True,
+                                                copy_input=False,
+                                                save_data_array=True,
+                                                use_font='arial')
 
     #  Plot energy demands as bar plots
+
+
+
 
 
 def extract_city_n_build_data(city, out_path):
@@ -301,28 +393,28 @@ def extract_city_n_build_data(city, out_path):
     list_ids = city.get_list_build_entity_node_ids()
 
     #  Extract city data
-    extract_city_data(city=city, out_path=out_path)
+    extract_city_data(city=city, out_path=out_path, do_plot=True)
 
-    # #  Extract building data
-    # for n in list_ids:
-    #     #  Generate folder with node id name
-    #     curr_path = os.path.join(out_path, str(n))
-    #
-    #     gen_path_if_not_existent(curr_path)
-    #
-    #     #  Open txt file and add
-    #     data_f_name = str(n) + '_data.txt'
-    #     data_f_path = os.path.join(curr_path, data_f_name)
-    #
-    #     #  Extract building base data and save them to file
-    #     extract_build_base_data(city=city, id=n, file_path=data_f_path)
-    #
-    #     #  Open txt file and add
-    #     data_f_name = str(n) + '_profiles.txt'
-    #     data_f_path = os.path.join(curr_path, data_f_name)
-    #
-    #     extract_build_profiles(city=city, id=n, file_path=data_f_path,
-    #                            do_plot=True)
+    #  Extract building data
+    for n in list_ids:
+        #  Generate folder with node id name
+        curr_path = os.path.join(out_path, 'buildings', str(n))
+
+        gen_path_if_not_existent(curr_path)
+
+        #  Open txt file and add
+        data_f_name = str(n) + '_data.txt'
+        data_f_path = os.path.join(curr_path, data_f_name)
+
+        #  Extract building base data and save them to file
+        extract_build_base_data(city=city, id=n, file_path=data_f_path)
+
+        #  Open txt file and add
+        data_f_name = str(n) + '_profiles.txt'
+        data_f_path = os.path.join(curr_path, data_f_name)
+
+        extract_build_profiles(city=city, id=n, file_path=data_f_path,
+                               do_plot=True)
 
 
 if __name__ == '__main__':
