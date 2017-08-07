@@ -9,7 +9,7 @@ Comment:
     parameters [kWh/y] and the ECONOMIC parameters [€/kWh]; combining these two is possible to get the variables
     necessary to calculate the total annuity [€/y].
 """
-
+from __future__ import division
 import pycity_calc.toolbox.networks.network_ops as netop
 
 import pycity_calc.economic.energy_sys_cost.bat_cost as bat_cost

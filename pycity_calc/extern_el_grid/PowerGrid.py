@@ -5,7 +5,7 @@ Created on Mon Apr 04 15:26:30 2016
 
 @author: Nadine
 """
-
+from __future__ import division
 import pycity_calc.cities.city as City
 import pycity_calc.extern_el_grid.Transformer as Transformer
 import pycity_calc.data.El_grid.RealisticData as data

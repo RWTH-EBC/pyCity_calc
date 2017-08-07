@@ -6,7 +6,7 @@ an ExtendedBuilding or City Object from pyCity
 You can either use a pickled files for testing or create an object from
 example_city.py or example_building.py respectively
 """
-
+from __future__ import division
 import pycity_calc.examples.example_building as ex_building
 import pycity_calc.examples.example_city as ex_city
 import pycity_calc.toolbox.teaser_usage.teaser_use as teaser_usage

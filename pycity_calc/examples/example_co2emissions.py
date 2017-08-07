@@ -2,7 +2,7 @@
 """
 Example script for emissions class
 """
-
+from __future__ import division
 import pycity_calc.environments.co2emissions as co2
 
 

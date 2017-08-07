@@ -2,7 +2,7 @@
 """
 Script to extend pycity prices object
 """
-
+from __future__ import division
 import os
 import numpy as np
 import warnings

@@ -2,7 +2,7 @@
 """
 Script to extend pycity environment class
 """
-
+from __future__ import division
 import pycity.classes.Environment as Env
 
 
