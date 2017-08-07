@@ -7,6 +7,8 @@ Code extracts and saves load profiles of all buildings of city object
 import os
 import pickle
 import numpy as np
+import matplotlib.pyplot as plt
+import ebc_ues_plot.line_plots as uesline
 
 import pycity_calc.visualization.city_visual as citvis
 import pycity_calc.cities.scripts.city_generator.city_generator as citgen
@@ -103,7 +105,7 @@ def extract_build_base_data(city, id, file_path):
         f.close()
 
 
-def extract_build_profiles(city, id, file_path):
+def extract_build_profiles(city, id, file_path, do_plot=False):
     """
     Extract and save building profiles to file
 
@@ -115,6 +117,8 @@ def extract_build_profiles(city, id, file_path):
         Building node id
     file_path : str
         Path to save file to (e.g. ...\building_data.txt)
+    do_plot : bool, optional
+        Defines, if profiles should be plotted (default: False)
     """
 
     #  Building pointer
@@ -145,8 +149,57 @@ def extract_build_profiles(city, id, file_path):
     #  Save numpy array to txt
     np.savetxt(fname=file_path, X=res_array, delimiter='\t', header=header)
 
+    if do_plot:
 
+        #  Generate time array
+        nb_timesteps = 365 * 24 * 3600 / timestep
+        time_array = np.arange(0, nb_timesteps, timestep/3600)
 
+        plotdata = uesline.PlottingData()
+        plotdata.add_data_entry(time_array, sh_profile/1000)
+        plotdata.add_data_entry(time_array, el_profile/1000)
+        plotdata.add_data_entry(time_array, dhw_profile/1000)
+
+        #  Perform plotting
+        output_path = os.path.join(os.path.dirname(file_path),
+                                   'power_curves_graphics')
+
+        uesline.plot_multi_language_multi_color(plot_data=plotdata,
+                                                plot_sub=True,
+                                                output_path=output_path,
+                                                output_filename=str(id),
+                                                show_plot=False,
+                                                use_tight=True,
+                                                title_engl=None,
+                                                xlab_engl='Time in hours',
+                                                ylab_engl='Power in kW',
+                                                list_labels_engl=['Space heating\npower in kW',
+                                                                  'Electric\npower in kW',
+                                                                  'Hot water\npower in kW'],
+                                                title_dt=None,
+                                                xlab_dt='Zeit in Stunden',
+                                                ylab_dt='Leistung in kW',
+                                                list_labels_dt=['Heizleistung\nin kW',
+                                                                  'Elektrische\nLeistung in kW',
+                                                                  'Warmwasser-\nleistung in kW'],
+                                                fontsize=12,
+                                                fig_adjust='a4',
+                                                legend_pos_within=True,
+                                                put_leg='below', dpi=500,
+                                                #linewidth=1,
+                                                set_zero_point=True,
+                                                set_x_limits=True,
+                                                xmin=0, xmax=8760,
+                                                set_y_limits=False,
+                                                #ymin=ymin, ymax=ymax,
+                                                use_grid=False,
+                                                #input_path=input_path,
+                                                #save_tikz=save_tikz,
+                                                #rotate_x_labels=rotate_x_labels,
+                                                copy_py=True,
+                                                copy_input=False,
+                                                save_data_array=True,
+                                                use_font='arial')
 
 def save_city_load_profiles(city, out_path):
     #  Get all building nodes
@@ -169,7 +222,8 @@ def save_city_load_profiles(city, out_path):
         data_f_name = str(n) + '_profiles.txt'
         data_f_path = os.path.join(curr_path, data_f_name)
 
-        extract_build_profiles(city=city, id=n, file_path=data_f_path)
+        extract_build_profiles(city=city, id=n, file_path=data_f_path,
+                               do_plot=True)
 
 if __name__ == '__main__':
     this_path = os.path.dirname(os.path.abspath(__file__))
