@@ -268,7 +268,8 @@ def extract_city_base_data(city, out_file_path, do_plot=False):
             dataset = np.array([[ann_th_sh_demand], [ann_el_demand],
                                [ann_dhw_demand]])
 
-            output_path = os.path.dirname(out_file_path, 'city_energy_bars')
+            output_path = os.path.join(os.path.dirname(out_file_path),
+                                       'city_energy_bars')
             f_name = 'city_bar_plot'
 
             uesbar.plot_multi_language_multi_color_bar(dataset=dataset,
