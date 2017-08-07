@@ -220,20 +220,74 @@ def extract_city_data(city, out_path):
     out_path : str
         Path to save city data to
     """
-    pass
 
+    city_out = 'city_data.txt'
+    data_file = os.path.join(out_path, city_out)
     #  Extract basic city data to path (.txt)
+    with open(data_file, mode='w') as f:
+
+        f.write('Number of nodes: ' + str(len(city.nodes())) + '\n')
+
+        nb_build_entities = city.get_nb_of_building_entities()
+        f.write('Number of buildings: ' + str(nb_build_entities) + '\n')
+
+        list_ent = city.get_list_build_entity_node_ids()
+        f.write('List of building ids: ' + str(list_ent) + '\n')
+
+        location = city.environment.location
+        f.write('Location (lat/long): ' + (str(location)) + '\n')
+
+        altitude = city.environment.weather.altitude
+        f.write('Altitude in m above NN: ' + str(altitude) + '\n')
+
+        nb_occ = city.get_nb_occupants()
+        f.write('Total number of occupants: ' + str(nb_occ) + '\n')
+
+        ann_th_sh_demand = city.get_annual_space_heating_demand()
+        ann_el_demand = city.get_annual_el_demand()
+        ann_dhw_demand = city.get_annual_dhw_demand()
+
+        f.write('Annual net space heating energy demand in kWh/a: '
+                + str(int(ann_th_sh_demand)) + '\n')
+        f.write('Annual electric energy demand in kWh/a: '
+                + str(int(ann_el_demand)) + '\n')
+        f.write('Annual net hot water energy demand in kWh/a: '
+                + str(int(ann_dhw_demand)) + '\n')
+        f.write('\n')
+
+        f.close()
 
     #  Generate plot with ids and save it to out_path
+    citvis.plot_city_district(city=city,
+                              city_list=None,
+                              plot_buildings=True,
+                              plot_street=True,
+                              plot_lhn=False, plot_deg=False,
+                              plot_esys=False,
+                              offset=7,
+                              plot_build_labels=True, plot_str_labels=False,
+                              plot_heat_labels=False,
+                              equal_axis=False, font_size=16, plt_title=None,
+                              x_label='x-position in m',
+                              y_label='y-position in m',
+                              show_plot=False,
+                              fig_adjust=None,
+                              plot_elec_labels=False, save_plot=True,
+                              save_path=out_path, dpi=300, plot_color=True,
+                              plot_engl=True,
+                              auto_close=True, plot_str_dist=50,
+                              node_size=50)
 
     #  Save city profile to path
 
+
     #  Plot city profiles to path
+
 
     #  Plot energy demands as bar plots
 
 
-def save_city_load_profiles(city, out_path):
+def extract_city_n_build_data(city, out_path):
     """
 
     Parameters
@@ -249,26 +303,26 @@ def save_city_load_profiles(city, out_path):
     #  Extract city data
     extract_city_data(city=city, out_path=out_path)
 
-    #  Extract building data
-    for n in list_ids:
-        #  Generate folder with node id name
-        curr_path = os.path.join(out_path, str(n))
-
-        gen_path_if_not_existent(curr_path)
-
-        #  Open txt file and add
-        data_f_name = str(n) + '_data.txt'
-        data_f_path = os.path.join(curr_path, data_f_name)
-
-        #  Extract building base data and save them to file
-        extract_build_base_data(city=city, id=n, file_path=data_f_path)
-
-        #  Open txt file and add
-        data_f_name = str(n) + '_profiles.txt'
-        data_f_path = os.path.join(curr_path, data_f_name)
-
-        extract_build_profiles(city=city, id=n, file_path=data_f_path,
-                               do_plot=True)
+    # #  Extract building data
+    # for n in list_ids:
+    #     #  Generate folder with node id name
+    #     curr_path = os.path.join(out_path, str(n))
+    #
+    #     gen_path_if_not_existent(curr_path)
+    #
+    #     #  Open txt file and add
+    #     data_f_name = str(n) + '_data.txt'
+    #     data_f_path = os.path.join(curr_path, data_f_name)
+    #
+    #     #  Extract building base data and save them to file
+    #     extract_build_base_data(city=city, id=n, file_path=data_f_path)
+    #
+    #     #  Open txt file and add
+    #     data_f_name = str(n) + '_profiles.txt'
+    #     data_f_path = os.path.join(curr_path, data_f_name)
+    #
+    #     extract_build_profiles(city=city, id=n, file_path=data_f_path,
+    #                            do_plot=True)
 
 
 if __name__ == '__main__':
@@ -285,6 +339,4 @@ if __name__ == '__main__':
 
     city = pickle.load(open(input_path, mode='rb'))
 
-    save_city_load_profiles(city=city, out_path=out_path)
-
-    citvis.plot_city_district(city=city)
+    extract_city_n_build_data(city=city, out_path=out_path)
