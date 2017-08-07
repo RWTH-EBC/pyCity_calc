@@ -3,7 +3,7 @@
 """
 Test script for mod_city_geo_pos.py
 """
-
+from __future__ import division
 import pycity_calc.toolbox.modifiers.mod_city_geo_pos as citymod
 
 # import sympy.geometry.point as point

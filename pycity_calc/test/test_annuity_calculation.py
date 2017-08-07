@@ -4,6 +4,7 @@
 Test script for EconomicCalculation
 """
 
+from __future__ import division
 import pycity_calc.economic.annuity_calculation as ann_calc
 
 
