@@ -1,2 +1,0 @@
-network_id	nodelist	type	method
-1	1001, 1002, 1003	heating	1
