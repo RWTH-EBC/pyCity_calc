@@ -157,14 +157,14 @@ def extract_build_profiles(city, id, file_path, do_plot=False):
                   'Thus, cannot perform plotting in EBC style!'
             raise AssertionError(msg)
 
-        #  Generate time array
+        # Generate time array
         nb_timesteps = 365 * 24 * 3600 / timestep
-        time_array = np.arange(0, nb_timesteps, timestep/3600)
+        time_array = np.arange(0, nb_timesteps, timestep / 3600)
 
         plotdata = uesline.PlottingData()
-        plotdata.add_data_entry(time_array, sh_profile/1000)
-        plotdata.add_data_entry(time_array, el_profile/1000)
-        plotdata.add_data_entry(time_array, dhw_profile/1000)
+        plotdata.add_data_entry(time_array, sh_profile / 1000)
+        plotdata.add_data_entry(time_array, el_profile / 1000)
+        plotdata.add_data_entry(time_array, dhw_profile / 1000)
 
         #  Perform plotting
         output_path = os.path.join(os.path.dirname(file_path),
@@ -179,38 +179,77 @@ def extract_build_profiles(city, id, file_path, do_plot=False):
                                                 title_engl=None,
                                                 xlab_engl='Time in hours',
                                                 ylab_engl='Power in kW',
-                                                list_labels_engl=['Space heating\npower in kW',
-                                                                  'Electric\npower in kW',
-                                                                  'Hot water\npower in kW'],
+                                                list_labels_engl=[
+                                                    'Space heating\npower in kW',
+                                                    'Electric\npower in kW',
+                                                    'Hot water\npower in kW'],
                                                 title_dt=None,
                                                 xlab_dt='Zeit in Stunden',
                                                 ylab_dt='Leistung in kW',
-                                                list_labels_dt=['Heizleistung\nin kW',
-                                                                  'Elektrische\nLeistung in kW',
-                                                                  'Warmwasser-\nleistung in kW'],
+                                                list_labels_dt=[
+                                                    'Heizleistung\nin kW',
+                                                    'Elektrische\nLeistung in kW',
+                                                    'Warmwasser-\nleistung in kW'],
                                                 fontsize=12,
                                                 fig_adjust='a4',
                                                 legend_pos_within=True,
                                                 put_leg='below', dpi=500,
-                                                #linewidth=1,
+                                                # linewidth=1,
                                                 set_zero_point=True,
                                                 set_x_limits=True,
                                                 xmin=0, xmax=8760,
                                                 set_y_limits=False,
-                                                #ymin=ymin, ymax=ymax,
+                                                # ymin=ymin, ymax=ymax,
                                                 use_grid=False,
-                                                #input_path=input_path,
-                                                #save_tikz=save_tikz,
-                                                #rotate_x_labels=rotate_x_labels,
+                                                # input_path=input_path,
+                                                # save_tikz=save_tikz,
+                                                # rotate_x_labels=rotate_x_labels,
                                                 copy_py=True,
                                                 copy_input=False,
                                                 save_data_array=True,
                                                 use_font='arial')
 
+
+def extract_city_data(city, out_path):
+    """
+
+    Parameters
+    ----------
+    city : object
+        City object of pyCity_calc
+    out_path : str
+        Path to save city data to
+    """
+    pass
+
+    #  Extract basic city data to path (.txt)
+
+    #  Generate plot with ids and save it to out_path
+
+    #  Save city profile to path
+
+    #  Plot city profiles to path
+
+    #  Plot energy demands as bar plots
+
+
 def save_city_load_profiles(city, out_path):
+    """
+
+    Parameters
+    ----------
+    city : object
+        City object of pyCity_calc
+    out_path : str
+        Path to save profiles to
+    """
     #  Get all building nodes
     list_ids = city.get_list_build_entity_node_ids()
 
+    #  Extract city data
+    extract_city_data(city=city, out_path=out_path)
+
+    #  Extract building data
     for n in list_ids:
         #  Generate folder with node id name
         curr_path = os.path.join(out_path, str(n))
@@ -230,6 +269,7 @@ def save_city_load_profiles(city, out_path):
 
         extract_build_profiles(city=city, id=n, file_path=data_f_path,
                                do_plot=True)
+
 
 if __name__ == '__main__':
     this_path = os.path.dirname(os.path.abspath(__file__))
