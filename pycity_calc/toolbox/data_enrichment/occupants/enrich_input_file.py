@@ -13,7 +13,7 @@ and VDI6007/TEASER model is used within a loop, until closest mod. year is
 found
 
 """
-
+from __future__ import division
 import os
 import random
 import warnings

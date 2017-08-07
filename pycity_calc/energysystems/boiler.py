@@ -3,7 +3,7 @@
 """
 Extended boiler class (based on Boiler object of pycity)
 """
-
+from __future__ import division
 import numpy as np
 import warnings
 

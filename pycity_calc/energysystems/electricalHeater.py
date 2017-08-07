@@ -3,7 +3,7 @@
 """
 Extended electricalHeater class (based on electricalHeater object of pycity)
 """
-
+from __future__ import division
 import pycity.classes.supply.ElectricalHeater as EHeat
 import warnings
 

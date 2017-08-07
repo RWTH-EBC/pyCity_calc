@@ -4,7 +4,7 @@
 example to show how to use Calc_Buildingoccupancy
 Uses a slightly modified version example_city to create a city
 """
-
+from __future__ import division
 import pycity.classes.Weather as Weather
 import pycity.classes.demand.Apartment as Apartment
 import pycity.classes.demand.ElectricalDemand as ElectricalDemand

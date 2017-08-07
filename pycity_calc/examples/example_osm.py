@@ -11,7 +11,7 @@ http://www.overpass-api.de/api/xapi_meta?*[bbox=7.1450,50.6813,7.1614,50.6906]
 Coordinates are directly changed within uesgraphs form lat/long to pseudo
 mercator coordinates in m
 """
-
+from __future__ import division
 import os
 import pycity_calc.cities.scripts.osm_call as osm_call
 import pycity_calc.cities.scripts.city_generator.city_generator as citgen

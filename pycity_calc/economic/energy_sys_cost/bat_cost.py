@@ -3,7 +3,7 @@
 """
 Script to estimate cost of electric batteries
 """
-
+from __future__ import division
 
 def calc_spec_cost_bat(cap, method='sma'):
     """

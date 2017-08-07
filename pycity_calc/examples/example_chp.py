@@ -5,7 +5,7 @@ Created on Tue Feb 10 14:25:16 2015
 
 @author: tsz
 """
-
+from __future__ import division
 from __future__ import division
 import numpy as np
 import pycity_calc.energysystems.chp as CHP

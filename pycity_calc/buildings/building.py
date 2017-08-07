@@ -4,7 +4,8 @@ Extended building class (inheritance from building class of pycity).
 BuildingExtended holds further attributes, which are necessary for
 TEASER usage.
 """
-
+from __future__ import division
+from __future__ import division
 from __future__ import division
 import warnings
 import numpy as np

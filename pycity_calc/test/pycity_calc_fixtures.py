@@ -4,6 +4,7 @@
 Pytest fixtures of pycity_calc
 """
 
+from __future__ import division
 import pytest
 
 import pycity_calc.environments.market as mark
