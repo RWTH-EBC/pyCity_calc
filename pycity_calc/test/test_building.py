@@ -3,6 +3,7 @@
 Pytest script for BuildingExtended
 """
 
+from __future__ import division
 import pycity_calc.buildings.building as build_ex
 import pycity.classes.demand.DomesticHotWater as DHW
 
