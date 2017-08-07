@@ -2,7 +2,7 @@
 """
 Script to generate city object.
 """
-
+from __future__ import division
 import os
 import math
 import numpy as np
