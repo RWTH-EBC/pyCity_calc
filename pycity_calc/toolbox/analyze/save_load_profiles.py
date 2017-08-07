@@ -6,6 +6,7 @@ Code extracts and saves load profiles of all buildings of city object
 
 import os
 import pickle
+import numpy as np
 
 import pycity_calc.visualization.city_visual as citvis
 import pycity_calc.cities.scripts.city_generator.city_generator as citgen
@@ -102,6 +103,51 @@ def extract_build_base_data(city, id, file_path):
         f.close()
 
 
+def extract_build_profiles(city, id, file_path):
+    """
+    Extract and save building profiles to file
+
+    Parameters
+    ----------
+    city : object
+        City object
+    id : int
+        Building node id
+    file_path : str
+        Path to save file to (e.g. ...\building_data.txt)
+    """
+
+    #  Building pointer
+    build = city.node[id]['entity']
+
+    #  Get power curves
+    sh_profile = build.get_space_heating_power_curve()
+    el_profile = build.get_electric_power_curve()
+    dhw_profile = build.get_dhw_power_curve()
+
+    #  Generate time array
+    timestep = city.environment.timer.timeDiscretization
+    year_in_seconds = 365 * 24 * 3600
+    time_array = np.arange(0, year_in_seconds, timestep)
+
+    #  Stack results together
+    res_array = np.vstack((time_array, sh_profile))
+    res_array = np.vstack((res_array, el_profile))
+    res_array = np.vstack((res_array, dhw_profile))
+
+    #  Transpose array
+    res_array = np.transpose(res_array)
+
+    #  Define header
+    header = 'Time in seconds\tNet space heating power in Watt\t' \
+             'Electric power in Watt\tNet hot water power in Watt'
+
+    #  Save numpy array to txt
+    np.savetxt(fname=file_path, X=res_array, delimiter='\t', header=header)
+
+
+
+
 def save_city_load_profiles(city, out_path):
     #  Get all building nodes
     list_ids = city.get_list_build_entity_node_ids()
@@ -119,16 +165,19 @@ def save_city_load_profiles(city, out_path):
         #  Extract building base data and save them to file
         extract_build_base_data(city=city, id=n, file_path=data_f_path)
 
+        #  Open txt file and add
+        data_f_name = str(n) + '_profiles.txt'
+        data_f_path = os.path.join(curr_path, data_f_name)
+
+        extract_build_profiles(city=city, id=n, file_path=data_f_path)
 
 if __name__ == '__main__':
     this_path = os.path.dirname(os.path.abspath(__file__))
 
     city_f_name = 'aachen_tuerme_mod_7_el_resc_2.pkl'
-
     input_path = os.path.join(this_path, 'input', city_f_name)
 
     out_name = city_f_name[:-4]
-
     out_path = os.path.join(this_path, 'output', 'extracted', out_name)
 
     #  Make out_path, if not existent
