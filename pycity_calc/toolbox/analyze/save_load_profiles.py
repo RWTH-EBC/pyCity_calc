@@ -3,7 +3,7 @@
 """
 Code extracts and saves load profiles of all buildings of city object
 """
-
+from __future__ import division
 import os
 import pickle
 import numpy as np

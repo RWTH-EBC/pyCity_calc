@@ -5,7 +5,7 @@ Annuity calculation, based on VDI 2067 (standard of German association of
 engineers) - Economic efficiency of building installations
 Fundamentals and economic calculation (ICS 91.140.01)
 """
-
+from __future__ import division
 import math
 import warnings
 

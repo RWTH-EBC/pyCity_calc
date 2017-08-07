@@ -2,7 +2,7 @@
 """
 Script extends timer class of pycity
 """
-
+from __future__ import division
 import datetime
 import numpy as np
 import pycity.classes.Timer as Timer

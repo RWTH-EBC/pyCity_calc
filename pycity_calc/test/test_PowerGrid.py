@@ -1,7 +1,5 @@
-__author__ = 'jsc-nle'
-
 from __future__ import division
-import unittest
+__author__ = 'jsc-nle'
 
 import pycity_calc.extern_el_grid.PowerGrid as grid
 import pycity_calc.data.El_grid.RealisticData as data

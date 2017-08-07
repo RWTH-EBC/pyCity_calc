@@ -2,7 +2,7 @@
 """
 Example script of Nadine Lermer for pypower usage with pycity
 """
-
+from __future__ import division
 __author__ = 'jsc-nle'
 
 import pycity.classes.Weather as Weather

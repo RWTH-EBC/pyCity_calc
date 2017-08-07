@@ -3,7 +3,7 @@
 """
 Script to calculate heat pump investment cost
 """
-
+from __future__ import division
 
 def calc_spec_cost_hp(q_nom, method='wolf', hp_type='aw'):
     """
