@@ -8,7 +8,6 @@ import os
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
-import ebc_ues_plot.line_plots as uesline
 
 import pycity_calc.visualization.city_visual as citvis
 import pycity_calc.cities.scripts.city_generator.city_generator as citgen
@@ -150,6 +149,13 @@ def extract_build_profiles(city, id, file_path, do_plot=False):
     np.savetxt(fname=file_path, X=res_array, delimiter='\t', header=header)
 
     if do_plot:
+
+        try:
+            import ebc_ues_plot.line_plots as uesline
+        except:
+            msg = 'Cannot import ebc_ues_plot / simple_plot package.' \
+                  'Thus, cannot perform plotting in EBC style!'
+            raise AssertionError(msg)
 
         #  Generate time array
         nb_timesteps = 365 * 24 * 3600 / timestep
