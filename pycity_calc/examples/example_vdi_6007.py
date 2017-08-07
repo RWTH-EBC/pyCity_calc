@@ -12,7 +12,7 @@ Steps:
 - Generate building and add apartment
 - Run VDI simulation with building
 """
-
+from __future__ import division
 import numpy as np
 
 import pycity.classes.Weather as Weather

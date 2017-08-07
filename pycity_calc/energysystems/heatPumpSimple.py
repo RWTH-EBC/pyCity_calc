@@ -4,7 +4,7 @@ Simple heat Pump class, based on heating device of pycity
 (not on heat pump class of pycity!)
 
 """
-
+from __future__ import division
 import numpy as np
 import warnings
 import pycity.classes.supply.HeatingDevice as heat

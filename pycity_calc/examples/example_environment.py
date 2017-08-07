@@ -2,7 +2,7 @@
 """
 Example script to use extended environment class
 """
-
+from __future__ import division
 import numpy as np
 
 import pycity.classes.Weather as Weather

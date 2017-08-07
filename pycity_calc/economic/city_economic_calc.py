@@ -3,7 +3,7 @@
 """
 Script to calculate annuities of city district
 """
-
+from __future__ import division
 import pycity_calc.toolbox.dimensioning.dim_functions as dimfunc
 import pycity_calc.toolbox.networks.network_ops as netop
 

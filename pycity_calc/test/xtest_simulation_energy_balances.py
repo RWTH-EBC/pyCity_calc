@@ -1,7 +1,7 @@
 """
 Pytestfile for Energy_balance_thermal script
 """
-
+from __future__ import division
 import shapely.geometry.point as point
 
 import pycity.classes.Weather as Weather

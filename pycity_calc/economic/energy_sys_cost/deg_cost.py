@@ -3,7 +3,7 @@
 """
 Script to estimate cost of decentralized electrical grid / microgrid
 """
-
+from __future__ import division
 
 def calc_invest_cost_deg(length, nb_con, nb_sub, share_lhn=0):
     """

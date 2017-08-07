@@ -3,7 +3,7 @@
 """
 Test script for BoilerExtended class
 """
-
+from __future__ import division
 import pycity_calc.energysystems.heatPumpSimple as hp
 
 from pycity_calc.test.pycity_calc_fixtures import fixture_environment, \

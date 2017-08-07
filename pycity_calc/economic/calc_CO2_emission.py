@@ -19,6 +19,7 @@ returns:
 -------
 CO2_total: 'float', total amount of CO2 emission in kg/year
 '''
+from __future__ import division
 
 def CO2_emission_calc(city_object, emission_object, CO2_zero_lowerbound = False, eco_calc_instance=None):
 

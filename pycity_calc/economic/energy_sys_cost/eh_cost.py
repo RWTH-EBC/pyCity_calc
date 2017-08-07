@@ -3,7 +3,7 @@
 """
 Script to estimate Electrical Heater cost
 """
-
+from __future__ import division
 
 def calc_spec_cost_eh(q_nom, method='spieker'):
     """

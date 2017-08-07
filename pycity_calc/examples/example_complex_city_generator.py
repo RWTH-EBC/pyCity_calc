@@ -4,7 +4,7 @@
 Example for complex_city_generator. Creates a City with 32 buildings and
 several streets. Also adds a LHN connecting to specific buildings.
 """
-
+from __future__ import division
 import os
 import matplotlib.pyplot as plt
 

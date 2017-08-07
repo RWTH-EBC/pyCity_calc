@@ -3,7 +3,7 @@
 """
 Examples script for BatteryExtended class
 """
-
+from __future__ import division
 import pycity_calc.energysystems.battery as batt
 
 import pycity.classes.Weather as Weather

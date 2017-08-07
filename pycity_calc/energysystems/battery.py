@@ -3,7 +3,7 @@
 """
 Extended electric battery class (based on battery object of pycity)
 """
-
+from __future__ import division
 import warnings
 
 import pycity.classes.supply.Battery as Batt

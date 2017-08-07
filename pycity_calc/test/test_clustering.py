@@ -3,7 +3,7 @@
 """
 Pytest script for clustering
 """
-
+from __future__ import division
 import shapely.geometry.point as point
 
 import pycity_calc.toolbox.clustering.clustering as clust

@@ -3,7 +3,7 @@
 """
 Pytest script for network operation functions of toolbox
 """
-
+from __future__ import division
 import networkx as nx
 import shapely.geometry.point as point
 import shapely.geometry.linestring as lstr

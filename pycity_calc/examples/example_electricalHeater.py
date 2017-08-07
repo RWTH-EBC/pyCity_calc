@@ -5,7 +5,7 @@ Created on Tue Feb 10 14:35:05 2015
 
 @author: jsc-mth
 """
-
+from __future__ import division
 from __future__ import division
 import numpy as np
 from decimal import *

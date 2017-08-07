@@ -3,7 +3,7 @@
 """
 Script to extend pycity market object
 """
-
+from __future__ import division
 import warnings
 
 import pycity_calc.environments.market as market

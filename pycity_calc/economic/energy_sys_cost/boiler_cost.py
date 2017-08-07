@@ -5,7 +5,7 @@ Script to estimate boiler investment cost
 
 Be aware of correct use of units!
 """
-
+from __future__ import division
 
 def calc_spec_cost_boiler(q_nom, method='viess2013'):
     """

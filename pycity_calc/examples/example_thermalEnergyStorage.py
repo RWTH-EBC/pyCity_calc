@@ -3,7 +3,7 @@
 """
 Created on Tue Feb 10 14:37:31 2015
 """
-
+from __future__ import division
 from __future__ import division
 import numpy as np
 import matplotlib.pyplot as plt

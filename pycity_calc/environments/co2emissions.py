@@ -2,7 +2,7 @@
 """
 Script with emission class holding CO2 and primary energy (PE) factors
 """
-
+from __future__ import division
 import os
 import numpy as np
 import warnings

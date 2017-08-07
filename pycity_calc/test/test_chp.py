@@ -3,6 +3,7 @@
 """
 Test script for BatteryExtended class
 """
+from __future__ import division
 from decimal import *
 
 import pycity_calc.energysystems.chp as Chp

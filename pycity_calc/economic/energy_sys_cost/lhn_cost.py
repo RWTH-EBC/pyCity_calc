@@ -6,7 +6,7 @@ Estimate cost into local heating network (LHN)
 Cost are valid for pipe-combination of inlet and return flow. You do NOT
 need to multiply the resulting cost with factor 2!
 """
-
+from __future__ import division
 import math
 import warnings
 

@@ -1,3 +1,4 @@
+from __future__ import division
 __author__ = 'jsc-nle'
 
 import pycity_calc.data.El_grid.RealisticData as data

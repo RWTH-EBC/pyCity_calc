@@ -3,7 +3,7 @@
 """
 Test script to run all example files
 """
-
+from __future__ import division
 import pycity_calc.examples.example_battery as example_battery
 import pycity_calc.examples.example_boiler as example_boiler
 import pycity_calc.examples.example_building as example_building

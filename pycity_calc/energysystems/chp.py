@@ -3,7 +3,7 @@
 """
 Extended electric chp class (based on CHP object of pycity)
 """
-
+from __future__ import division
 import warnings
 
 import numpy as np

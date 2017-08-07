@@ -6,7 +6,7 @@ Script to save city object instance data to txt file for better overview.
 Currently, only building entities (not PV- or Wind-farms) are included.
 Output file format is close
 """
-
+from __future__ import division
 import os
 import pickle
 import warnings

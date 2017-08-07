@@ -5,7 +5,7 @@ Script to estimate boiler investment cost
 
 Be aware of correct use of units!
 """
-
+from __future__ import division
 import pycity_calc.energysystems.Input.chp_asue_2015 as chp_asue
 
 

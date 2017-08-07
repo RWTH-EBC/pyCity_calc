@@ -3,7 +3,7 @@
 """
 Script to estimate thermal energy storage investment cost
 """
-
+from __future__ import division
 import warnings
 
 

@@ -3,7 +3,7 @@
 """
 Test script for GermanMarket class
 """
-
+from __future__ import division
 import pycity_calc.environments.germanmarket as germanmarket
 
 

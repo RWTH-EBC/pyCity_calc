@@ -4,6 +4,7 @@
 Pytest script for city object of pycity_calc
 """
 
+from __future__ import division
 import copy
 import shapely.geometry.point as point
 
@@ -107,7 +108,7 @@ class Test_City():
         assert abs(city.get_annual_el_demand(nodelist=[1001, 1002])
                    - 2 * 3000) / (2 * 3000) <= 0.001
 
-    def test_get_annual_space_heating_demand(self, fixture_environment,
+    def test_get_annual_space_heating_demand2(self, fixture_environment,
                                              fixture_building):
         """
 

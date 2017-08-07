@@ -2,7 +2,7 @@
 """
 Example script for Market class
 """
-
+from __future__ import division
 import pycity_calc.environments.market as mark
 
 

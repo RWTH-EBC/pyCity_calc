@@ -3,7 +3,7 @@
 """
 Pytest script for city generators
 """
-
+from __future__ import division
 import os
 
 import pycity_calc.cities.scripts.city_generator.city_generator as citygen
