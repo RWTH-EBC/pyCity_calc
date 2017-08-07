@@ -53,8 +53,11 @@ def extract_build_base_data(city, id, file_path):
 
         f.write(
             'Year of construction: ' + str(int(build.build_year)) + '\n')
-        f.write('Last year of modernization: ' + str(
-            int(build.mod_year)) + '\n')
+        if build.mod_year is not None:
+            mod_year = int(build.mod_year)
+        else:
+            mod_year = None
+        f.write('Last year of modernization: ' + str(mod_year) + '\n')
         f.write('Building type number: ' + str(build.build_type) + '\n')
 
         build_name = citgen.conv_build_type_nb_to_name(build.build_type)
@@ -449,7 +452,7 @@ def extract_city_data(city, out_path, do_plot=False):
                               plot_elec_labels=False, save_plot=True,
                               save_path=city_path, dpi=300, plot_color=True,
                               plot_engl=True,
-                              auto_close=True, plot_str_dist=50,
+                              auto_close=True, plot_str_dist=150,
                               node_size=50)
 
     #  Extract and save city profiles
