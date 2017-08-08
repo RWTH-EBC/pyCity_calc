@@ -2645,7 +2645,7 @@ if __name__ == '__main__':
     #  osm call (city object should hold nodes, but no entities. City
     #  generator is going to add building, apartment and load entities to
     #  building nodes
-    generation_mode = 0
+    generation_mode = 1
 
     #  Generate environment
     #  ######################################################
@@ -2742,9 +2742,9 @@ if __name__ == '__main__':
     #  ######################################################
     #  Define input data filename
 
-    filename = 'city_3_buildings_mixed.txt'
+    # filename = 'city_3_buildings_mixed.txt'
     # filename = 'city_clust_simple.txt'
-    # filename = 'aachen_forsterlinde_mod_6.txt'
+    filename = 'aachen_forsterlinde_mod_6.txt'
     # filename = 'aachen_frankenberg_mod_6.txt'
     # filename = 'aachen_huenefeld_mod_6.txt'
     # filename = 'aachen_kronenberg_mod_8.txt'
@@ -2756,12 +2756,12 @@ if __name__ == '__main__':
 
     #  For generation_mode == 1:
     # city_osm_input = None
-    # city_osm_input = 'aachen_forsterlinde_mod_7.pkl'
-    city_osm_input = 'aachen_frankenberg_mod_7.pkl'
-    # city_osm_input = 'aachen_huenefeld_mod_7.pkl'
-    # city_osm_input = 'aachen_kronenberg_mod_7.pkl'
-    # city_osm_input = 'aachen_preusweg_mod_7.pkl'
-    # city_osm_input = 'aachen_tuerme_mod_7.pkl'
+    city_osm_input = 'aachen_forsterlinde_mod_7_rich.pkl'
+    # city_osm_input = 'aachen_frankenberg_mod_7_rich.pkl'
+    # city_osm_input = 'aachen_huenefeld_mod_7_rich.pkl'
+    # city_osm_input = 'aachen_kronenberg_mod_7_rich.pkl'
+    # city_osm_input = 'aachen_preusweg_mod_7_rich.pkl'
+    # city_osm_input = 'aachen_tuerme_mod_7_rich.pkl'
 
     #  Pickle and dump city object instance?
     do_save = True
