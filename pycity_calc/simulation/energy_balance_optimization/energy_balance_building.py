@@ -264,7 +264,6 @@ class calculator(object):
 
 
             Node['electricity_heatpump'] = np.zeros(len(time_vector.time_vector()))
-            Node['fuel demand'] = np.zeros(len(time_vector.time_vector()))
             Node['power_el_chp'] = np.zeros(len(time_vector.time_vector()))
             Node['fuel demand'] = np.zeros(len(time_vector.time_vector()))
             Node['heat_demand_for_boiler'] = np.zeros(len(time_vector.time_vector()))
@@ -304,8 +303,7 @@ class calculator(object):
 
                     #  Loop over thermal demand of building
                     for ii in range(len(thermal_demand_building)):
-                        ####print('#######node: ', str(dict_city_data[index]['Buildings in subcity'][i]), '\n',
-                             # '#######timestep: ', ii)
+                        #print('#######node: ', str(dict_city_data[index]['Buildings in subcity'][i]), '\n','#######timestep: ', ii)
 
                         ####print('case0')
 
@@ -354,7 +352,7 @@ class calculator(object):
                                     set_new_temperature=True,
                                     save_res=True,
                                     time_index=ii)
-
+                            print ('timestep' , ii,'-----',t_tes)
                             #  Calculate power of heat pump (max.)
                             power_hp, power_hp_in = \
                                 Bes.heatpump.calc_hp_all_results(
@@ -810,6 +808,7 @@ class calculator(object):
                 #  Loop over every timestep
                 #  #-----------------------------------------------------
                 for ii in range(len(thermal_demand_building)):
+                    print('timestep', ii)
                     #print('#######node: ', str(dict_city_data[index]['Buildings in subcity'][i]), '\n',
                     #          '#######timestep: ', ii)
 
@@ -1265,6 +1264,7 @@ class calculator(object):
 
 
                     for ii in range(len(thermal_demand_building)):
+                        print('timestep', ii)
                         ####print('#######node: ', str(dict_city_data[index]['Buildings in subcity'][i]), '\n',
                               ####'#######timestep: ', ii)
 
@@ -1599,13 +1599,7 @@ class calculator(object):
 
             #for i in range(len(dict_city_data[index]['Buildings in subcity'])):
             for i in range(len(dict_city_data[index]['Buildings in subcity'])):#TODO:'Buildings in subcity'
-                Node = self.city_object.node[
-                    dict_city_data[index]['Buildings in subcity'][i]]#TODO:'Buildings in subcity'
-                Bes = Node['entity'].bes
-                if Bes.hasHeatpump:
-                    demand_heatpump=Bes.electricalHeater.totalPConsumption+Bes.heatpump.array_el_power_in
-                elif not Bes.hasHeatpump:
-                    demand_heatpump = np.zeros(len(time_vector.time_vector()))
+                Node = self.city_object.node[dict_city_data[index]['Buildings in subcity'][i]]#TODO:'Buildings in subcity'
 
                 if (Node['entity'].hasBes) == False:
                     # if no deg and no bes each building has to buy the full electrical demand
@@ -1617,17 +1611,32 @@ class calculator(object):
                     Node['chp_sold'] = np.zeros(len(time_vector.time_vector()))
                     Node['batt_unload'] = np.zeros(len(time_vector.time_vector()))
                     Node['batt_load'] = np.zeros(len(time_vector.time_vector()))
+                    Node['electrical demand normal usage'] = np.zeros(len(time_vector.time_vector()))
+                    Node['electrical demand hp'] = np.zeros(len(time_vector.time_vector()))
+
                     #Node['pv_used_with_batt'] = 0
                     #Node['pv_not_used'] = 0
                     #Node['chp_used_with_batt'] = 0
                     #Node['chp_not_used'] = 0
 
 
-
-
-                if (Node['entity'].hasBes) == True:
+                else:
+                    assert (Node['entity'].hasBes) == True
                     # if conditions checks if initial electrical demand is changed by bes
                     # these are overwritten if necessary
+
+                    # Pointer to current energy system
+                    Bes = Node['entity'].bes
+
+                    # Calculation of heat pump electricity demand
+                    if Bes.hasHeatpump:
+                        demand_heatpump = Node['electricity_heatpump']
+                        #Node['electrical_dem_heatpump'] = demand_heatpump
+                    else:
+                        demand_heatpump = np.zeros(len(time_vector.time_vector()))
+                        #Node['electrical_dem_heatpump'] = demand_heatpump
+
+                    # Initialisation
                     Node['electrical demand'] = (Node['entity'].get_electric_power_curve()) + (demand_heatpump)
                     Node['electrical demand_with_deg'] = (Node['entity'].get_electric_power_curve()) + (demand_heatpump)
                     Node['pv_used_self'] = np.zeros(len(time_vector.time_vector()))
@@ -1636,44 +1645,45 @@ class calculator(object):
                     Node['chp_sold'] = np.zeros(len(time_vector.time_vector()))
                     Node['batt_unload'] = np.zeros(len(time_vector.time_vector()))
                     Node['batt_load'] = np.zeros(len(time_vector.time_vector()))
-                    general_demand = Node['entity'].get_electric_power_curve()
+                    general_demand = Node['entity'].get_electric_power_curve() + demand_heatpump
+                    Node['electrical demand normal usage'] = np.zeros(len(time_vector.time_vector()))
+                    Node['electrical demand hp'] = np.zeros(len(time_vector.time_vector()))
 
-
-
-
-
-                    if (Node['entity'].bes.hasBattery) == True:
+                    # Building has a battery
+                    if (Node['entity'].bes.hasBattery):
 
                         #reset Battery status
                         Bes.battery.totalSoc = np.zeros(len(time_vector.time_vector()))
-                        Bes.battery.currentSoc=Bes.battery.socInit
-                        Bes.battery.soc_ratio_current=Bes.battery.socInit/Bes.battery.capacity
+                        Bes.battery.currentSoc = Bes.battery.socInit
+                        Bes.battery.soc_ratio_current = Bes.battery.socInit/Bes.battery.capacity
 
-                        if (Node['entity'].bes.hasHeatpump):
-                            general_demand += demand_heatpump
-
+                        # Building with battery, pv but without Chp
                         if Node['entity'].bes.hasPv == True and Node['entity'].bes.hasChp == False:
 
                             # pv electricity is very expensive and therefore more important to use than chp!
-                            supply_pv = self.city_object.node[dict_city_data[index]['Buildings in subcity'][i]]['entity'].bes.pv.getPower()#TODO:'Buildings in subcity'
+                            # Initialisation pv arrays
+                            supply_pv = self.city_object.node[dict_city_data[index]['Buildings in subcity'][i]]
+                            ['entity'].bes.pv.getPower()#TODO:'Buildings in subcity'
                             pv_used = np.zeros(len(time_vector.time_vector()))
                             pv_sold = np.zeros(len(time_vector.time_vector()))
                             demand_after_pv = np.zeros(len(time_vector.time_vector()))
                             load = np.zeros(len(time_vector.time_vector()))
                             unload = np.zeros(len(time_vector.time_vector()))
+
+                            # Loop over timestep
                             for v in range(len(general_demand)):
+                                # maximal discharging battery power
+                                p_batt_max_out = Bes.battery.calc_battery_max_p_el_out(p_el_in=0)
+                                # maximal charging battery power
+                                p_batt_max_in = Bes.battery.calc_battery_max_p_el_in(p_el_out=0)
 
-                                p_batt_max_out = Bes.battery.calc_battery_max_p_el_out(
-                                    p_el_in=0)
-                                p_batt_max_in = Bes.battery.calc_battery_max_p_el_in(
-                                    p_el_out=0)
-
+                                # pv can supply all electricity demand
                                 if general_demand[v] <= supply_pv[v]:
-
+                                    # calculate pv el. surplus
                                     load_power = supply_pv[v] - general_demand[v]
-
+                                    # pv el. surplus can charge the battery without reaching maximal battery capacity
                                     if load_power < p_batt_max_in:
-
+                                        # Calculates new state of charge for the battery
                                         Bes.battery.calc_battery_soc_next_timestep(
                                             p_el_in=load_power, p_el_out=0, save_res=True, time_index=v)
                                         pv_used[v] = supply_pv[v]
@@ -1681,9 +1691,9 @@ class calculator(object):
                                         demand_after_pv[v] = 0
                                         load[v] = load_power
                                         unload[v] = 0
-
+                                    # reach maximal battery capacity: no charge is possible
                                     elif load_power >= p_batt_max_in:
-
+                                        # Calculates new state of charge for the battery
                                         Bes.battery.calc_battery_soc_next_timestep(
                                             p_el_in=0, p_el_out=0, save_res=True, time_index=v)
                                         pv_sold[v] = load_power
@@ -1692,13 +1702,14 @@ class calculator(object):
                                         load[v] = 0
                                         unload[v] = 0
 
+                                # pv are not sufficient to cover demand
                                 elif general_demand[v] > supply_pv[v]:
 
-                                    lack_of_power = general_demand[v] - \
-                                                    supply_pv[v]
+                                    lack_of_power = general_demand[v] - supply_pv[v]
 
+                                    # Battery can cover electricity shortage
                                     if lack_of_power < p_batt_max_out:
-
+                                        # Calculate new state of charge for the battery
                                         pv_used[v] = supply_pv[v]
                                         Bes.battery.calc_battery_soc_next_timestep(
                                             p_el_in=0, p_el_out=lack_of_power, save_res=True, time_index=v)
@@ -1707,8 +1718,9 @@ class calculator(object):
                                         load[v] = 0
                                         unload[v] = lack_of_power
 
+                                    # lack of power can't be cover with battery
                                     elif lack_of_power >= p_batt_max_out:
-
+                                        # Calculate new state of charge for the battery
                                         Bes.battery.calc_battery_soc_next_timestep(
                                             p_el_in=0, p_el_out=0, save_res=True, time_index=v)
                                         pv_used[v] = supply_pv[v]
@@ -1724,8 +1736,6 @@ class calculator(object):
                             Node['pv_sold'] = pv_sold
                             Node['batt_unload'] = unload
                             Node['batt_load'] = load
-
-
 
                             # fig = plt.figure()
                             # plt.title('')
@@ -1748,7 +1758,8 @@ class calculator(object):
                             # plt.grid()
                             # #plt.show()
 
-                        if Node['entity'].bes.hasPv == False and Node['entity'].bes.hasChp == True:
+                        # Building with Chp but without pv
+                        elif Node['entity'].bes.hasPv == False and Node['entity'].bes.hasChp == True:
 
                             supply_chp = Bes.chp.totalPOutput
                             demand_after_chp = np.zeros(len(time_vector.time_vector()))
@@ -1756,18 +1767,20 @@ class calculator(object):
                             chp_sold = np.zeros(len(time_vector.time_vector()))
                             load = np.zeros(len(time_vector.time_vector()))
                             unload = np.zeros(len(time_vector.time_vector()))
+
+                            # Loop over timestep
                             for z in range(len(general_demand)):
+                                # maximal discharging battery power
+                                p_batt_max_out = Bes.battery.calc_battery_max_p_el_out( p_el_in=0)
+                                # maximal charging battery power
+                                p_batt_max_in = Bes.battery.calc_battery_max_p_el_in(p_el_out=0)
 
-                                p_batt_max_out = Bes.battery.calc_battery_max_p_el_out(
-                                    p_el_in=0)
-                                p_batt_max_in = Bes.battery.calc_battery_max_p_el_in(
-                                    p_el_out=0)
-
+                                # Chp can cover general demand
                                 if general_demand[z] <= supply_chp[z]:
+                                    # chp el. surplus
+                                    load_power = supply_chp[z] - general_demand[z]
 
-                                    load_power = supply_chp[z] - \
-                                                 general_demand[z]
-
+                                    # chp el. surplus can charge the battery without reaching maximal battery capacity
                                     if load_power < p_batt_max_in:
 
                                         Bes.battery.calc_battery_soc_next_timestep(
@@ -1778,21 +1791,23 @@ class calculator(object):
                                         load[z] = load_power
                                         unload[z] = 0
 
-                                    elif load_power>= p_batt_max_in:
+                                    #  reach maximal battery capacity: no charge is possible
+                                    elif load_power >= p_batt_max_in:
 
                                         Bes.battery.calc_battery_soc_next_timestep(
                                             p_el_in=0, p_el_out=0, save_res=True, time_index=z)
                                         chp_sold[z] = load_power
                                         chp_used[z] = general_demand[z]
                                         demand_after_chp[z] = 0
-                                        load[z]= 0
+                                        load[z] = 0
                                         unload[z] = 0
 
+                                # Chp are not sufficient to cover demand
                                 elif general_demand[z] > supply_chp[z]:
 
-                                    lack_of_power = general_demand[z] - \
-                                                    supply_chp[z]
+                                    lack_of_power = general_demand[z] - supply_chp[z]
 
+                                    # Battery can cover electricity shortage
                                     if lack_of_power < p_batt_max_out:
 
                                         chp_used[z] = supply_chp[z]
@@ -1803,6 +1818,7 @@ class calculator(object):
                                         load[z] = 0
                                         unload[z] = lack_of_power
 
+                                    # lack of power can't be cover with battery
                                     elif lack_of_power >= p_batt_max_out:
 
                                         Bes.battery.calc_battery_soc_next_timestep(
@@ -1812,6 +1828,7 @@ class calculator(object):
                                         demand_after_chp[z] = lack_of_power
                                         load[z] = 0
                                         unload[z] = 0
+
                             # print ("")
                             # fig = plt.figure()
                             # plt.title('')
@@ -1843,8 +1860,8 @@ class calculator(object):
                             Node['batt_load'] = load
 
 
-
-                        if Node['entity'].bes.hasPv == True and Node['entity'].bes.hasChp == True:
+                        # Building with battery, pv and Chp
+                        elif Node['entity'].bes.hasPv == True and Node['entity'].bes.hasChp == True:
 
                             # THIS CASE WAS IMPLEMENTED BECAUSE OF A MAJOR PROBLEM WITH BATTERY SOC:
                             # If the soc for the complete simulation time is calculated for pv at first and
@@ -1858,6 +1875,7 @@ class calculator(object):
                             # SOC for CHP.
                             # THEREFORE it was necessary to implement a case for PV AND CHP!
 
+                            # Initialisation pv arrays
                             supply_pv = self.city_object.node[dict_city_data[index]['Buildings in subcity'][i]][
                                 'entity'].bes.pv.getPower()#TODO:'Buildings in subcity'
                             pv_used = np.zeros(len(time_vector.time_vector()))
@@ -1865,6 +1883,7 @@ class calculator(object):
                             demand_after_pv = np.zeros(len(time_vector.time_vector()))
                             load = np.zeros(len(time_vector.time_vector()))
                             unload = np.zeros(len(time_vector.time_vector()))
+
                             # for chp energybalance
                             supply_chp = Bes.chp.totalPOutput
                             demand_after_chp = np.zeros(len(time_vector.time_vector()))
@@ -1877,22 +1896,24 @@ class calculator(object):
                             eta_unload = Bes.battery.etaDischarge
                             totalSoc = Bes.battery.socInit
 
+                            # Loop over timestep
                             for v in range(len(general_demand)):
                                 #set selfdischarge to zero to avoid that it is apllied twice in one timerstep
-                                Bes.battery.selfDischarge=0
+                                Bes.battery.selfDischarge = 0
 
-                                p_batt_max_out = Bes.battery.calc_battery_max_p_el_out(
-                                    p_el_in=0)
-                                p_batt_max_in = Bes.battery.calc_battery_max_p_el_in(
-                                    p_el_out=0)
+                                # maximal discharging battery power
+                                p_batt_max_out = Bes.battery.calc_battery_max_p_el_out(p_el_in=0)
+                                # maximal charging battery power
+                                p_batt_max_in = Bes.battery.calc_battery_max_p_el_in(p_el_out=0)
 
+                                #  pv can supply all electricity demand
                                 if general_demand[v] <= supply_pv[v]:
+                                    # calculate pv el. surplus
+                                    load_power = supply_pv[v] - general_demand[v]
 
-                                    load_power = supply_pv[v] - general_demand[
-                                        v]
-
+                                    # pv el. surplus can charge the battery without reaching maximal battery capacity
                                     if load_power < p_batt_max_in:
-
+                                        # Calculate new state of charge for the battery
                                         Bes.battery.calc_battery_soc_next_timestep(
                                             p_el_in=load_power, p_el_out=0, save_res=True, time_index=v)
                                         pv_used[v] = supply_pv[v]
@@ -1901,8 +1922,10 @@ class calculator(object):
                                         load[v] = load_power
                                         unload[v] = 0
 
+                                    # Reach maximal battery capacity: no charge is possible
                                     elif load_power >= p_batt_max_in:
 
+                                        # Calculate new state of charge for the battery
                                         Bes.battery.calc_battery_soc_next_timestep(
                                             p_el_in=0, p_el_out=0, save_res=True, time_index=v)
                                         pv_sold[v] = load_power
@@ -1911,8 +1934,10 @@ class calculator(object):
                                         load[v] = 0
                                         unload[v] = 0
 
+                                # pv can not supply all electricity demand
                                 elif general_demand[v] > supply_pv[v]:
 
+                                    # el. shortage
                                     lack_of_power = general_demand[v] - supply_pv[v]
 
                                     # this case doesn't have a subcase (lack_of_power < or > p_bat_max). It might be
@@ -1928,19 +1953,22 @@ class calculator(object):
 
                                 # Set selfdischarge back to the normal value
                                 Bes.battery.selfDischarge=selfDischarge
-
+                                # maximal discharging battery power
                                 p_batt_max_out = Bes.battery.calc_battery_max_p_el_out(
                                     p_el_in=0)
+                                # maximal charging battery power
                                 p_batt_max_in = Bes.battery.calc_battery_max_p_el_in(
                                     p_el_out=0)
 
+                                # chp can cover lack of power
                                 if demand_after_pv[v] <= supply_chp[v]:
 
-                                    load_power = supply_chp[v] - \
-                                                 demand_after_pv[v]
+                                    load_power = supply_chp[v] - demand_after_pv[v]
 
+                                    # pv el. surplus can charge the battery without reaching maximal battery capacity
                                     if load_power < p_batt_max_in:
 
+                                        # Calculate new state of charge for the battery
                                         Bes.battery.calc_battery_soc_next_timestep(
                                             p_el_in=load_power, p_el_out=0, save_res=True, time_index=v)
                                         chp_used[v] = supply_chp[v]
@@ -1949,8 +1977,9 @@ class calculator(object):
                                         load[v] += load_power
                                         unload[v] += 0
 
+                                    # Reach maximal battery capacity: no charge is possible
                                     elif load_power >= p_batt_max_in:
-
+                                        # Calculate new state of charge for the battery
                                         Bes.battery.calc_battery_soc_next_timestep(
                                             p_el_in=0, p_el_out=0, save_res=True, time_index=v)
                                         chp_sold[v] = load_power
@@ -1959,13 +1988,14 @@ class calculator(object):
                                         load[v] += 0
                                         unload[v] += 0
 
+                                # Chp not sufficient to cover the rest of electricity demand
                                 elif demand_after_pv[v] > supply_chp[v]:
 
-                                    lack_of_power = demand_after_pv[v] - \
-                                                    supply_chp[v]
+                                    lack_of_power = demand_after_pv[v] - supply_chp[v]
 
+                                    # Battery can cover the rest of electricity
                                     if lack_of_power < p_batt_max_out:
-
+                                        # Calculate new state of charge for the battery
                                         chp_used[v] = supply_chp[v]
                                         Bes.battery.calc_battery_soc_next_timestep(
                                             p_el_in=0, p_el_out=lack_of_power, save_res=True, time_index=v)
@@ -1974,8 +2004,9 @@ class calculator(object):
                                         load[v] += 0
                                         unload[v] += lack_of_power
 
+                                    # Battery can not cover the rest of el. demand
                                     elif lack_of_power >= p_batt_max_out:
-
+                                        # Calculate new state of charge for the battery
                                         Bes.battery.calc_battery_soc_next_timestep(
                                             p_el_in=0, p_el_out=0, save_res=True, time_index=v)
                                         chp_used[v] = supply_chp[v]
@@ -1983,7 +2014,6 @@ class calculator(object):
                                         demand_after_chp[v] = lack_of_power
                                         load[v] += 0
                                         unload[v] += 0
-
 
                                 # Since Battery is loaded twice in one timestep it is mandatory to recalculate the total
                                 # SOC. The Soc is calculated in a way that pvload/unload and chpload/unload happen at the same time
@@ -2009,74 +2039,120 @@ class calculator(object):
                             Node['entity'].bes.battery.totalPDischarge = unload
 
 
-                        if (Node['entity'].bes.hasPv) == False and (
-                                Node['entity'].bes.hasChp) == False:
+                        elif (Node['entity'].bes.hasPv) == False and (Node['entity'].bes.hasChp) == False:
                             # In case there is a battery without local producer of electrical energy!
-                            assert (Node[
-                                        'entity'].bes.hasBattery) == False, "Battery System without PV or CHP is useless! Remember that battery only serves local and not interacting with the DEG"
+                            assert (Node['entity'].bes.hasBattery) == False, \
+                                "Battery System without PV or CHP is useless! Remember that battery " \
+                                "only serves local and not interacting with the DEG"
 
-                    if (Node['entity'].bes.hasBattery) == False:
+                    # Building has no Battery
+                    else:
+                        assert (Node['entity'].bes.hasBattery) == False
 
-                        if (Node['entity'].bes.hasHeatpump):
-
-                            general_demand += demand_heatpump
-
+                        # Building with pv
                         if (Node['entity'].bes.hasPv):
 
                             # pv electricity is very expensive and therefore more important to use than chp!
-                            supply_pv = self.city_object.node[
-                                dict_city_data[index]['Buildings in subcity'][
+                            supply_pv = self.city_object.node[dict_city_data[index]['Buildings in subcity'][
                                     i]]['entity'].bes.pv.getPower()#TODO:'Buildings in subcity'
-                            diff1_demand = general_demand - supply_pv
+
+                            # Initialisation
                             pv_sold = np.zeros(len(time_vector.time_vector()))
+                            final_electrical_demand = np.zeros(len(time_vector.time_vector()))
+
+                            # Calculate intermediate variable
+                            diff1_demand = general_demand - supply_pv
+
+                            # Loop over timestep
                             for iii in range(len(pv_sold)):
-                                if diff1_demand[iii]<0:
-                                    pv_sold[iii]=diff1_demand[iii]
-                            pv_used = sum(supply_pv) + sum(pv_sold)
-                            general_demand = np.zeros(len(time_vector.time_vector()))
-                            for y in range(len(diff1_demand)):
-                                if diff1_demand[y] >= 0:
-                                    general_demand[y] = diff1_demand[y]
+                                # pv el. can supply all el. demand
+                                if diff1_demand[iii] < 0:
+
+                                    pv_sold[iii] = diff1_demand[iii]
+
+                                # pv can not supply all el. demand
+                                else: # diff1_demand[iii] >= 0
+                                    final_electrical_demand[iii] = diff1_demand[iii]
 
                             Node['pv_used_self'] = supply_pv + pv_sold
                             Node['pv_sold'] = -1 * (pv_sold)
-                            #Node['pv_not_used'] = -1 * sum(pv_sold)
-                            final_electrical_demand = general_demand
-                            Node['electrical demand_with_deg'] = final_electrical_demand  # useless because there is no DEG here but consequent!
+
+                            Node['electrical demand_with_deg'] = final_electrical_demand
+                            # useless because there is no DEG here but consequent!
                             Node['electrical demand'] = final_electrical_demand
 
+                        # Building with Chp
                         if (Node['entity'].bes.hasChp):
 
-                            supply_chp = Bes.chp.totalPOutput
-                            diff2_demand = general_demand - supply_chp
+                            # Initialisation
                             chp_sold = np.zeros(len(time_vector.time_vector()))
-                            for i in range(len(diff2_demand)):
-                                if diff2_demand[i] < 0:
-                                    chp_sold[i] = diff2_demand[i]
-                            chp_used = sum(supply_chp) + sum(chp_sold)
+                            supply_chp = Bes.chp.totalPOutput
+                            final_electrical_demand= np.zeros(len(time_vector.time_vector()))
 
-                            general_demand = np.zeros(len(time_vector.time_vector()))
+                            # Calculate intermediate variable
+                            diff2_demand = general_demand - supply_chp
+
+                            # Loop over timestep
                             for y in range(len(diff2_demand)):
-                                if diff2_demand[y] >= 0:
-                                    general_demand[y] = diff2_demand[y]
+
+                                if diff2_demand[y] < 0:
+                                    chp_sold[y] = diff2_demand[y]
+
+                                # Chp can not supply all el. demand
+                                else: # diff2_demand[y] >= 0
+
+                                    final_electrical_demand[y] = diff2_demand[y]
 
                             Node['chp_used_self'] = supply_chp + chp_sold
                             Node['chp_sold'] = -1 * (chp_sold)
 
-                            final_electrical_demand = general_demand
                             # To make it complete and comparable to the entities of the other nodes
                             Node['electrical demand_with_deg'] = final_electrical_demand  # useless because there is no DEG here but consequent!
                             Node['electrical demand'] = final_electrical_demand
 
+            # ## Difference beetween electrical demand for daily use or for HP/EH
+            # Assume that pv/chp cover preferentially normal daily electrical needs
+            # Initialisation
+            Node['electrical demand normal usage'] = np.zeros(len(time_vector.time_vector()))
+            Node['electrical demand hp'] = np.zeros(len(time_vector.time_vector()))
+            # electrical demand for daily use
+            el_dem_normal = np.zeros(len(time_vector.time_vector()))
+            # electrical demand for heatpump
+            el_dem_hp = np.zeros(len(time_vector.time_vector()))
+
+            # Loop over timestep
+            for tps in range(len(demand_heatpump)):
+                # Total electrical demand after electrical balance:
+                el_dem = Node['electrical demand']
+
+                # total electrical demand higher than heat_pump demand:
+                if el_dem[tps] > demand_heatpump[tps]:
+                    # electrical demand with normal tariff
+                    el_dem_normal[tps] = el_dem[tps]-demand_heatpump[tps]
+                    # electrical demand with heat_pump tariff
+                    el_dem_hp[tps] = demand_heatpump[tps]
+                    # total electrical demand lower than heat_pump demand:
+                else:
+                    # electrical demand with normal tariff
+                    el_dem_normal[tps] = 0
+                    # electrical demand with heat_pump tariff
+                    el_dem_hp[tps] = demand_heatpump [tps]
+            # electrical demand for daily use
+            Node ['electrical demand normal usage'] = el_dem_normal
+            # electrical demand for heatpump
+            Node ['electrical demand hp'] = el_dem_hp
+
 
                             ######################################################
         """
-        if (dict_city_data[index]['hasDEG']) == True:  ###########
+        elif (dict_city_data[index]['hasDEG']) == True:  ###########
             warnings.warn('the DEG energybalance has not been checked yet!!')
             ######################################################
             cumulated_surplus = np.zeros(len(time_vector.time_vector()))
 
+            # Loop over Buildings
             for i in range(len(dict_city_data[index]['Buildings in subcity'])):
+                #  Pointer to current building
                 Node = self.city_object.node[dict_city_data[index]['Buildings in subcity'][i]]
                 demand_heatpump = Node['electricity_heatpump']
 

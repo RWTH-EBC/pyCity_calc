@@ -2,26 +2,41 @@
 # coding=utf-8
 
 '''
-Script to evaluate the output array for the Morris Analysis of a city object
+Script to evaluate  output arrays for the Morris Analysis of a city object
 Residential buildings only
 Thermal space heating calculate with TEASER
 Electrical load curve calculate with method 2: stochastic method
 Generation of the Domestic Hot water profile with stochastic method
 
-step 1: Load the district data
-step 2: Generation of a city
+step 1: Initialisation
+step 2: Generation of a new city (energy curves recalculation)
 step 3: energy balance
+step 4: economic calculation
+step 5: emissions calculation
 
 Return: Y: array of gas demand values after energy balance
         Z: array of electrical demand values after the energy balance
+        A : array of annuity
+        H : array of ghg emission kg/year
+        F : array of specific ghg emission kg/kwhyear
+        Inter_el : list of intermediate annual electrical demand (for energy balance)
+        Inter_dhw : list of intermediate annual domestic hot water demand (for energy balance)
+        Inter_sph : list of intermediate annual space heating  demand (for energy balance)
+        liste_shp_curve : list of intermediate electrical curve demand (for energy balance)
+        liste_el_curve : list of intermediate space heating demand curve(for energy balance)
+        liste_dhw_curve : list of intermediate domestic hot water demand curve(for energy balance)
+        liste_max_sph : list of intermediate maximum space heating  demand (for energy balance)
+        liste_max_el : list of intermediate maximum electrical demand (for energy balance)
+        liste_max_dhw : list of intermediate maximum domestic hot water demand (for energy balance)
+
+        Nboiler_rescaled : number of City with  rescaled boiler(space heating demand to high)
 
 '''
 
 import pycity_calc.cities.scripts.city_generator.city_generator as City_generator
 import pycity_calc.simulation.energy_balance_optimization.energy_balance_building as EBB
 import pycity_calc.economic.annuity_calculation as eco_calc
-import pycity_calc.economic.economic_ann as economic_ann
-import pycity_calc.environments.market as Mark
+import pycity_calc.environments.germanmarket as Mark
 import pycity_calc.economic.calc_CO2_emission as GHG_calc
 import numpy as np
 import pycity_calc.toolbox.mc_helpers.weather.gen_weather_set as mc_weather
@@ -29,12 +44,85 @@ import copy
 import pycity_calc.toolbox.teaser_usage.teaser_use as teaserusage
 import pycity_calc.toolbox.mc_helpers.Morris_analysis.Building_evaluation_Morris as buildmod
 import pycity_calc.toolbox.mc_helpers.Morris_analysis.Esystems_evaluation_Morris as esysmod
-
+import pycity_calc.toolbox.dimensioning.dim_functions as dimfunc
+import pycity_calc.simulation.energy_balance_optimization.Energy_balance_lhn as EB
 
 def evaluate(City, values):
 
+    """
+    Rescale City with new values for Morris analysis
+
+    Parameters
+    ----------
+    City : object
+        City object from pycity_calc
+    values: Array with rescaling parameters
+            Structure:
+            Columns:
+            0: longitude
+            1: latitude
+            2: Altitude
+            3: weather
+            4: net_floor_area
+            5: average_height_of_floors
+            6: year_of_modernization
+            7: dormer
+            8: attic
+            9: cellar
+            10: construction type
+            11 total_number_occupants
+            12: Annual_el_e_dem
+            13: dhw_Tflow
+            14: dhw_Tsupply
+            15: vent_factor
+            16: tset_heat
+            17: tset_night
+            18 - 42: energy systems parameters
+            43-56: market parameters
+            57: life_factor for energy systems
+            58: maintenance_factor for energy systems
+            59: interest
+
+    Returns
+    -------
+        Y: array of gas demand values after energy balance
+        Z: array of electrical demand values after the energy balance
+        A : array of annuity
+        H : array of ghg emission kg/year
+        F : array of specific ghg emission kg/kwhyear
+        Inter_el : list of intermediate annual electrical demand (for energy balance)
+        Inter_dhw : list of intermediate annual domestic hot water demand (for energy balance)
+        Inter_sph : list of intermediate annual space heating  demand (for energy balance)
+        liste_shp_curve : list of intermediate electrical curve demand (for energy balance)
+        liste_el_curve : list of intermediate space heating demand curve(for energy balance)
+        liste_dhw_curve : list of intermediate domestic hot water demand curve(for energy balance)
+        liste_max_sph : list of intermediate maximum space heating  demand (for energy balance)
+        liste_max_el : list of intermediate maximum electrical demand (for energy balance)
+        liste_max_dhw : list of intermediate maximum domestic hot water demand (for energy balance)
+
+        Nboiler_rescale : number of City with  rescaled boiler(space heating demand to high)
+    """
+
     if type(values) != np.ndarray:
         raise TypeError("The argument `values` must be a numpy ndarray")
+
+    Y = np.zeros([values.shape[0]])  # array of annual gas demand
+    Z = np.zeros([values.shape[0]])  # array of annual electrical demand after energy balance
+    A = np.zeros([values.shape[0]])  # array of annuity
+    H = np.zeros([values.shape[0]])  # array of ghg emission kg/year
+    F = np.zeros([values.shape[0]])  # array of specific ghg emission kg/kwhyear
+    Inter_el = np.zeros([values.shape[0]])  # array of annual electrical demand for energy balance
+    Inter_dhw = np.zeros([values.shape[0]])  # array of annual dhw demand
+    Inter_sph = np.zeros([values.shape[0]])  # array of annual SPH demand
+    liste_shp_curve = []
+    liste_el_curve = []
+    liste_dhw_curve = []
+    liste_max_sph = np.zeros([values.shape[0]])
+    liste_max_el = np.zeros([values.shape[0]])
+    liste_max_dhw = np.zeros([values.shape[0]])
+
+    Nboiler_rescaled = 0 # number of boiler rescaled (thermal demand to high)
+
 
     # Save the City and building numbers
 
@@ -47,10 +135,6 @@ def evaluate(City, values):
     year = 2010
     timestep = City.environment.timer.timeDiscretization  # Timestep in seconds
 
-    Y = np.zeros([values.shape[0]])
-    Z = np.zeros([values.shape[0]])
-    A = np.zeros([values.shape[0]])
-    H = np.zeros([values.shape[0]])
 
     for loop, row in enumerate(values):
 
@@ -89,41 +173,24 @@ def evaluate(City, values):
 
         City.environment.weather = new_weather
 
-        '''# Save the weather file to further use in the city_generator
-                    # TRY file start to read after lines 38
-                    # qDirect = row [13]
-                    # qDiffuse = row [14]
-                    # tAmbient = row [8]
-                    # first step: generation of an array with the weather data
+        ############################################
 
-                    new_weather_array = np.zeros((8798, 18))
-                    new_weather_array[38:, 13] = new_weather.qDiffuse
-                    new_weather_array[38:, 14] = new_weather.qDirect
-                    new_weather_array[38:, 8] = new_weather.tAmbient
+        # ## Generate new buildings
 
-                    filname_weather = 'TRY_morris.dat'
-                    Mypath = os.path.dirname(os.path.dirname(
-                        os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
+        ############################################
 
-                    save_weather_path = os.path.join(Mypath, 'pyCity', 'pycity', 'inputs', 'weather', filname_weather)
-
-                    save_weather = open(save_weather_path, mode='w')
-
-                    np.savetxt(save_weather_path, new_weather_array)
-
-                    # close the file
-                    save_weather.close()
-
-                    # TRY path definition
-                    try_path = None'''
-
+        print ('\nStart loop over buildings')
         for n in list_building:
+            print ('\nBuilding n°: {}'.format(n))
+            print ('-----------------')
             if City.node[n]['entity']._kind == 'building':
 
                 # function to recalculate building electrical_curve DHW and Space Heating Curve
 
-                City.node[n]['entity'] = buildmod.new_evaluation_building(City.node[n]['entity'], parameters=row[4: 12])
+                City.node[n]['entity'] = buildmod.new_evaluation_building(City.node[n]['entity'], parameters=row[4: 15])
 
+        print ('End of loop over buildings')
+        print('###################################')
 
         ############################################
 
@@ -133,9 +200,9 @@ def evaluate(City, values):
 
         # ## Rescaling Space Heating generation
 
-        vent_factor = row[12]
-        Tset_heat = row[13]
-        Tset_night = row[14]
+        vent_factor = row[15]
+        Tset_heat = row[16]
+        Tset_night = row[17]
         Tset_cool = 70
 
         print()
@@ -156,9 +223,10 @@ def evaluate(City, values):
 
         #  Generate energy systems
 
-        City = esysmod.new_evaluation_esys(City, parameters=row[15: 40])
+        City, rescale_boiler = esysmod.new_evaluation_esys(City, parameters=row[18: 43])
 
-
+        if rescale_boiler == True:
+            Nboiler_rescaled += 1
 
         ############################################
 
@@ -168,10 +236,31 @@ def evaluate(City, values):
 
         annual_el_dem = City.get_annual_el_demand()
         annual_th_dem = City.get_total_annual_th_demand()
+        annual_dhw_dem = City.get_annual_dhw_demand()
+        annual_sph_dem = City.get_annual_space_heating_demand()
+        sph_curve = City.get_aggr_space_h_power_curve()
+        dhw_curve = City.get_aggr_dhw_power_curve()
+        el_curve = City.get_aggr_el_power_curve()
+        max_sph = dimfunc.get_max_p_of_power_curve(sph_curve)
+        max_el = dimfunc.get_max_p_of_power_curve(el_curve)
+        max_dhw = dimfunc.get_max_p_of_power_curve(dhw_curve)
+
         print()
         print('Annual electricity demand : ', annual_el_dem, 'kWh/year')
-        print('Annual thermal demand : ', annual_th_dem, 'kWh/year')
+        print('Annual thermal demand : ', annual_sph_dem, 'kWh/year')
+        print('Annual domestic hot water : ', annual_dhw_dem, 'kWh/year')
         print()
+
+        # return intermediate energy demand
+        Inter_el [loop] = annual_el_dem
+        Inter_sph [loop] = annual_sph_dem
+        Inter_dhw [loop] = annual_dhw_dem
+        liste_shp_curve.append(sph_curve)
+        liste_dhw_curve.append(dhw_curve)
+        liste_el_curve.append(el_curve)
+        liste_max_sph [loop] = max_sph
+        liste_max_el [loop] = max_el
+        liste_max_dhw [loop] = max_dhw
 
         ############################################
 
@@ -185,27 +274,60 @@ def evaluate(City, values):
         Calculator = EBB.calculator(City)
         dict_bes_data = Calculator.assembler()
 
-        #print('Dict city data', dict_bes_data)
-        for i in range(len(dict_bes_data)):
-            City, dict_Qlhn, dict_supply = Calculator.eb_balances(dict_bes_data, i)
+        invalidind = EBB.invalidind
+        rescale_boiler = False
+        invalidind2 = EB.invalidind2
+
+
+        # Loop over energy systems
+        try:
+            for i in range(len(dict_bes_data)):
+                City, dict_Qlhn, dict_supply = Calculator.eb_balances(dict_bes_data, i)
+        except invalidind:
+            # Get list of building and rescale boiler
+            list_of_building = City.get_list_build_entity_node_ids()
+            for build in list_of_building:
+                demand_building = dimfunc.get_max_power_of_building(City.node[build]['entity'], with_dhw=True)
+                if City.node[build]['entity'].bes.hasBoiler == True:
+                    City.node[build]['entity'].bes.boiler.qNominal = dimfunc.round_esys_size(demand_building,
+                                                                                             round_up=True)
+            rescale_boiler = True
+
+            print()
+            print('Rescale boiler 0')
+            print('new boiler capacity kW: ', City.node[build]['entity'].bes.boiler.qNominal / 1000)
+            print()
+
+        except invalidind2:
+            # Get list of building and rescale boiler
+            list_of_building = City.get_list_build_entity_node_ids()
+            for build in list_of_building:
+                demand_building = dimfunc.get_max_power_of_building(City.node[build]['entity'], with_dhw=True)
+                if City.node[build]['entity'].bes.hasBoiler == True:
+                    City.node[build]['entity'].bes.boiler.qNominal = dimfunc.round_esys_size(demand_building,
+                                                                                             round_up=True)
+            rescale_boiler = True
+
+            print()
+            print('Rescale boiler 1')
+            print('new boiler capacity kW: ', City.node[build]['entity'].bes.boiler.qNominal / 1000)
+            print()
 
         #Gas and electrical demand
+        el_dem = 0
+        gas_dem = 0
         for n in City.nodes():
             if 'node_type' in City.node[n]:
                 #  If node_type is building
                 if City.node[n]['node_type'] == 'building':
                     #  If entity is kind building
                     if City.node[n]['entity']._kind == 'building':
-
                         if 'electrical demand' in City.node[n]:
-                            if type(City.node[n]['electrical demand']) != int:
-                                el_dem = sum(City.node[n][
-                                                 'electrical demand']) *\
+                            el_dem += sum(City.node[n]['electrical demand']) *\
                                          City.environment.timer.timeDiscretization / 1000 / 3600
 
                         if 'fuel demand' in City.node[n]:
-                            if type(City.node[n]['fuel demand']) != int:
-                                gas_dem = sum(City.node[n]['fuel demand']) *\
+                            gas_dem += sum(City.node[n]['fuel demand']) *\
                                           City.environment.timer.timeDiscretization / 1000 / 3600
 
         print()
@@ -225,42 +347,43 @@ def evaluate(City, values):
         ############################################
 
         time = 10  # Years
-        interest = 0.05  # Interest rate
+        interest = row[59]  # Interest rate
+        print ('\n New interest: {}'.format(interest))
 
-        price_ch_cap = row[40]
-        price_ch_dem_gas = row[41]
-        price_ch_dem_el = row[42]
-        price_ch_op = row[43]
-        price_ch_proc_chp = row[44]
-        price_ch_proc_pv = row[45]
-        price_ch_EEG_Umlage_tax_chp = row[46]
-        price_ch_EEG_Umlage_tax_pv = row[47]
-        price_EEX_baseload_price = row[48]
-        price_ch_avoid_grid_usage = row[49]
-        price_ch_sub_chp = row[50]
-        price_ch_self_usage_chp = row[51]
-        price_ch_gas_disc_chp = row[52]
-        price_ch_sub_pv = row[53]
-        life_factor = row[54]
-        maintenance_factor = row[55]
-        # market_factor_el = row [65]
-        # market_factor_gas = row [66]
+        price_ch_cap = row[43]
+        price_ch_dem_gas = row[44]
+        price_ch_dem_el = row[45]
+        price_ch_op = row[46]
+        price_ch_proc_chp = row[47]
+        price_ch_proc_pv = row[48]
+        price_ch_EEG_Umlage_tax_chp = row[49]
+        price_ch_EEG_Umlage_tax_pv = row[50]
+        price_EEX_baseload_price = row[51]
+        price_ch_avoid_grid_usage = row[52]
+        price_ch_sub_chp = row[53]
+        price_ch_self_usage_chp = row[54]
+        price_ch_gas_disc_chp = row[55]
+        price_ch_sub_pv = row[56]
+        life_factor = row[57]
+        maintenance_factor = row[58]
 
+        print("Annuity calculation")
+        Market_instance = Mark.GermanMarket()
 
         #  Generate economic calculator object
         print("Economic object generation")
-        eco_inst = eco_calc.EconomicCalculation(time=time, interest=interest, price_ch_cap=price_ch_cap,
+        eco_inst = eco_calc.EconomicCalculation(time=time, germanmarket=Market_instance,  interest=interest, price_ch_cap=price_ch_cap,
                                                 price_ch_dem_gas=price_ch_dem_gas, price_ch_dem_el=price_ch_dem_el,
                                                 price_ch_op=price_ch_op, price_ch_proc_chp=price_ch_proc_chp,
                                                 price_ch_proc_pv=price_ch_proc_pv,
-                                                price_ch_EEG_Umlage_tax_chp=price_ch_EEG_Umlage_tax_chp,
-                                                price_ch_EEG_Umlage_tax_pv=price_ch_EEG_Umlage_tax_pv,
-                                                price_EEX_baseload_price=price_EEX_baseload_price,
-                                                price_ch_avoid_grid_usage=price_ch_avoid_grid_usage,
-                                                price_ch_sub_chp=price_ch_sub_chp,
-                                                price_ch_self_usage_chp=price_ch_self_usage_chp,
-                                                price_ch_gas_disc_chp=price_ch_gas_disc_chp,
-                                                price_ch_sub_pv=price_ch_sub_pv)
+                                                price_ch_eeg_chp=price_ch_EEG_Umlage_tax_chp,
+                                                price_ch_eeg_pv=price_ch_EEG_Umlage_tax_pv,
+                                                price_ch_eex=price_EEX_baseload_price,
+                                                price_ch_grid_use=price_ch_avoid_grid_usage,
+                                                price_ch_chp_sub=price_ch_sub_chp,
+                                                price_ch_chp_self=price_ch_self_usage_chp,
+                                                price_ch_chp_tax_return=price_ch_gas_disc_chp,
+                                                price_ch_pv_sub=price_ch_sub_pv)
 
         # Modification lifetime and maintenance
         for key1 in eco_inst.dict_lifetimes.keys():
@@ -272,20 +395,12 @@ def evaluate(City, values):
             eco_inst.dict_maintenance[key2] = tempp
 
         ## Annuity Calculation
-        print("Annuity calculation")
-        Market_instance = Mark.Market()
-
-        # Rescaling market object for the SA
-        #Market_instance.el_price_data_res = Market_instance.el_price_data_res*market_factor_el
-        #Market_instance.el_price_data_ind = Market_instance.el_price_data_ind*market_factor_el
-        #Market_instance.gas_price_data_res = Market_instance.gas_price_data_res*market_factor_gas
-        #Market_instance.gas_price_data_ind = Market_instance.gas_price_data_ind*market_factor_gas
 
 
         # Annuity
-        dem_rel_annuity = economic_ann.calc_dem_rel_annuity_city(City, eco_inst, Market_instance)
-        total_proc_annuity = economic_ann.calc_proc_annuity_multi_comp_city(City, eco_inst)
-        cap_rel_ann, op_rel_ann = economic_ann.calc_cap_and_op_rel_annuity_city(City, eco_inst)
+        dem_rel_annuity = eco_inst.calc_dem_rel_annuity_city(City)
+        total_proc_annuity = eco_inst.calc_proc_annuity_multi_comp_city(City)
+        cap_rel_ann, op_rel_ann = eco_inst.calc_cap_and_op_rel_annuity_city(City)
 
         total_annuity = eco_inst.calc_total_annuity(ann_capital=cap_rel_ann,
                                                          ann_demand=dem_rel_annuity,
@@ -301,6 +416,7 @@ def evaluate(City, values):
         GHG_Emission = GHG_calc.CO2_emission_calc(city_object=City, emission_object=GHG , CO2_zero_lowerbound = False, eco_calc_instance= eco_inst )
 
         print(GHG_Emission, 'kg/year')
-        H[loop]=GHG_Emission
+        H[loop] = GHG_Emission
+        F[loop] = GHG_Emission/(annual_sph_dem+annual_dhw_dem+annual_el_dem)
 
-    return(Y, Z, A, H)
+    return(Y, Z, H, A, F, liste_max_dhw, liste_max_el, liste_max_sph, liste_shp_curve, liste_el_curve, liste_dhw_curve, Nboiler_rescaled)
