@@ -15,7 +15,7 @@ import pycity_calc.visualization.city_visual as citvis
 import pycity_calc.toolbox.networks.network_ops as netop
 import pycity_calc.toolbox.teaser_usage.teaser_use as teasuse
 import pycity_calc.toolbox.dimensioning.dim_networks as dimnet
-import pycity.functions.changeResolution as chres
+import pycity_base.functions.changeResolution as chres
 
 import pycity_opt.demand_cluster_tool as ddtool
 import pycity_opt.ESOpt as esopt
@@ -54,12 +54,12 @@ def run_demo():
     print('####################################################')
     print()
 
-    # import pycity.classes.demand.ElectricalDemand as eldem
-    # import pycity.classes.Timer as time
-    # import pycity.classes.Weather as weath
-    # import pycity.classes.Environment as env
-    # import pycity.classes.Prices as price
-    # import pycity.classes.demand.Occupancy as occ
+    # import pycity_base.classes.demand.ElectricalDemand as eldem
+    # import pycity_base.classes.Timer as time
+    # import pycity_base.classes.Weather as weath
+    # import pycity_base.classes.Environment as env
+    # import pycity_base.classes.Prices as price
+    # import pycity_base.classes.demand.Occupancy as occ
     #
     # timer = time.Timer(timeDiscretization=900)
     # weather = weath.Weather(timer)  # , useTRY=True)
@@ -74,7 +74,7 @@ def run_demo():
     #                                 randomizeAppliances=True,
     #                                 occupancy=occupancy_obj.occupancy)
     #
-    # import pycity.classes.demand.DomesticHotWater as DomesticHotWater
+    # import pycity_base.classes.demand.DomesticHotWater as DomesticHotWater
     #
     # dhw_obj = \
     #     DomesticHotWater.DomesticHotWater(environment,

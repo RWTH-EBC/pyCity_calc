@@ -6,10 +6,10 @@
 
 import shapely.geometry.point as point
 
-import pycity.classes.Weather as Weather
-import pycity.classes.demand.SpaceHeating as SpaceHeating
-import pycity.classes.demand.ElectricalDemand as ElectricalDemand
-import pycity.classes.demand.Apartment as Apartment
+import pycity_base.classes.Weather as Weather
+import pycity_base.classes.demand.SpaceHeating as SpaceHeating
+import pycity_base.classes.demand.ElectricalDemand as ElectricalDemand
+import pycity_base.classes.demand.Apartment as Apartment
 
 import pycity_calc.buildings.building as build_ex
 import pycity_calc.cities.city as cit

@@ -3,7 +3,7 @@
 """
 Script to analyze pickle city file
 """
-
+from __future__ import division
 import os
 import pickle
 import warnings
@@ -784,7 +784,7 @@ def run_c_file_an(city_object):
     """
 
     print('Timestep of environment: ')
-    print(city.environment.timer.timeDiscretization)
+    print(city_object.environment.timer.timeDiscretization)
     print()
 
     #  Get building nodes and entities
@@ -798,13 +798,13 @@ def run_c_file_an(city_object):
                               plot_build_labels=True)
 
     #  Get infos about city and building space heating thermal power levels
-    get_min_max_th_sh_powers(city, print_out=True)
+    get_min_max_th_sh_powers(city_object, print_out=True)
 
     #  Get annual energy demands of city
-    get_ann_energy_demands(city, print_out=True)
+    get_ann_energy_demands(city_object, print_out=True)
 
     #  Get annual power load curves of city
-    get_power_curves(city, print_out=True)
+    get_power_curves(city_object, print_out=True)
 
 
 if __name__ == '__main__':

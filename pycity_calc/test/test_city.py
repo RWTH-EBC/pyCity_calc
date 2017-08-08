@@ -4,10 +4,11 @@
 Pytest script for city object of pycity_calc
 """
 
+from __future__ import division
 import copy
 import shapely.geometry.point as point
 
-import pycity.classes.demand.DomesticHotWater as DHW
+import pycity_base.classes.demand.DomesticHotWater as DHW
 import pycity_calc.cities.city as cit
 
 from pycity_calc.test.pycity_calc_fixtures import fixture_building, \
@@ -107,7 +108,7 @@ class Test_City():
         assert abs(city.get_annual_el_demand(nodelist=[1001, 1002])
                    - 2 * 3000) / (2 * 3000) <= 0.001
 
-    def test_get_annual_space_heating_demand(self, fixture_environment,
+    def test_get_annual_space_heating_demand2(self, fixture_environment,
                                              fixture_building):
         """
 

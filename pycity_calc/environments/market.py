@@ -2,12 +2,12 @@
 """
 Script to extend pycity prices object
 """
-
+from __future__ import division
 import os
 import numpy as np
 import warnings
 
-import pycity.classes.Prices as Price
+import pycity_base.classes.Prices as Price
 
 
 class Market(Price.Prices):

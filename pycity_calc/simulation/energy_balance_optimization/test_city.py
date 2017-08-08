@@ -17,10 +17,10 @@ import numpy as np
 
 import xlrd
 
-import pycity.classes.Weather as Weather
-import pycity.classes.demand.SpaceHeating as SpaceHeating
-import pycity.classes.demand.ElectricalDemand as ElectricalDemand
-import pycity.classes.demand.Apartment as Apartment
+import pycity_base.classes.Weather as Weather
+import pycity_base.classes.demand.SpaceHeating as SpaceHeating
+import pycity_base.classes.demand.ElectricalDemand as ElectricalDemand
+import pycity_base.classes.demand.Apartment as Apartment
 
 import pycity_calc.buildings.building as build_ex
 import pycity_calc.cities.city as city
@@ -31,14 +31,14 @@ import pycity_calc.environments.timer as time
 import pycity_calc.toolbox.dimensioning.dim_functions as dimfunc
 import pycity_calc.toolbox.dimensioning.dim_networks as dimnet
 
-import pycity.classes.supply.BES as BES
+import pycity_base.classes.supply.BES as BES
 import pycity_calc.energysystems.boiler as Boiler
 import pycity_calc.energysystems.electricalHeater as EH
 import pycity_calc.energysystems.heatPumpSimple as HP
 import pycity_calc.energysystems.thermalEnergyStorage as TES
 import pycity_calc.energysystems.chp as CHP
 import pycity_calc.energysystems.battery as Battery
-import pycity.classes.supply.PV as PV
+import pycity_base.classes.supply.PV as PV
 
 
 def run_city_generator(list_types=['BTES'],year = 2010,

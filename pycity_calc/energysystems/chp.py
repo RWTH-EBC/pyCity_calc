@@ -3,12 +3,12 @@
 """
 Extended electric chp class (based on CHP object of pycity)
 """
-
+from __future__ import division
 import warnings
 
 import numpy as np
 
-import pycity.classes.supply.CHP as chp
+import pycity_base.classes.supply.CHP as chp
 import pycity_calc.energysystems.Input.chp_asue_2015 as asue
 
 

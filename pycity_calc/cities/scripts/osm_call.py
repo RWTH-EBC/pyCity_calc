@@ -19,7 +19,7 @@ import shapely.geometry.point as point
 
 import uesgraphs.examples.example_osm as example_osm
 
-import pycity.classes.demand.Apartment as apart
+import pycity_base.classes.demand.Apartment as apart
 
 import pycity_calc.cities.scripts.city_generator.city_generator as citgen
 import pycity_calc.cities.city as cit

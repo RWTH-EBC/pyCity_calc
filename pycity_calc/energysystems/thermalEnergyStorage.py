@@ -3,8 +3,9 @@
 """
 Extended thermal energy storage class (based on battery object of pycity)
 """
+from __future__ import division
 import math
-import pycity.classes.supply.ThermalEnergyStorage as TES
+import pycity_base.classes.supply.ThermalEnergyStorage as TES
 import pycity_calc.toolbox.unit_conversion as unitcon
 import numpy as np
 

@@ -3,11 +3,11 @@
 """
 Script to estimate state of retrofit for single building instance
 """
-
-import pycity.classes.Weather as Weather
-import pycity.classes.demand.Occupancy as occ
-import pycity.classes.demand.ElectricalDemand as eldem
-import pycity.classes.demand.Apartment as Apartment
+from __future__ import division
+import pycity_base.classes.Weather as Weather
+import pycity_base.classes.demand.Occupancy as occ
+import pycity_base.classes.demand.ElectricalDemand as eldem
+import pycity_base.classes.demand.Apartment as Apartment
 
 import pycity_calc.buildings.building as build_ex
 import pycity_calc.environments.co2emissions as co2

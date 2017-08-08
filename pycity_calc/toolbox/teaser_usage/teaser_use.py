@@ -8,12 +8,12 @@ import numpy as np
 import warnings
 import copy
 
-import pycity.classes.Weather as Weather
-import pycity.classes.demand.Occupancy as occ
-import pycity.classes.demand.ElectricalDemand as eldem
-import pycity.classes.demand.Apartment as Apartment
-import pycity.classes.demand.SpaceHeating as spheat
-import pycity.functions.changeResolution as chres
+import pycity_base.classes.Weather as Weather
+import pycity_base.classes.demand.Occupancy as occ
+import pycity_base.classes.demand.ElectricalDemand as eldem
+import pycity_base.classes.demand.Apartment as Apartment
+import pycity_base.classes.demand.SpaceHeating as spheat
+import pycity_base.functions.changeResolution as chres
 
 import pycity_calc.buildings.building as build_ex
 import pycity_calc.environments.co2emissions as co2
@@ -1076,6 +1076,7 @@ def calc_and_add_vdi_6007_loads_to_city(city,
             array_vent = None  # If array_vent is None, use constant
             print('Use constant air exchange rate.')
             # default value
+            air_vent_mode = 0
 
         elif air_vent_mode == 1:  # Use deterministic, temp-dependent profile
 
