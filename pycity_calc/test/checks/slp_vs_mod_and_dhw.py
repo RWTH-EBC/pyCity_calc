@@ -41,16 +41,16 @@ def compare_slp_mod_dhw(timestep=3600, nb_occ=3):
     t_sup = 20
 
     #  Generate pycity environment
-    timer = pycity.classes.Timer.Timer(timeDiscretization=timestep)
-    weather = pycity.classes.Weather.Weather(timer, useTRY=True)
-    prices = pycity.classes.Prices.Prices()
+    timer = pycity_base.classes.Timer.Timer(timeDiscretization=timestep)
+    weather = pycity_base.classes.Weather.Weather(timer, useTRY=True)
+    prices = pycity_base.classes.Prices.Prices()
 
-    environment = pycity.classes.Environment.Environment(timer, weather,
+    environment = pycity_base.classes.Environment.Environment(timer, weather,
                                                          prices)
 
     #  Generate occupancy object
     occupancy_object = \
-        pycity.classes.demand.Occupancy.Occupancy(environment,
+        pycity_base.classes.demand.Occupancy.Occupancy(environment,
                                                   number_occupants=nb_occ)
     occupancy_profile = occupancy_object.occupancy
 

@@ -31,10 +31,10 @@ def gen_pycity_environment(timestep=3600):
         Environment object of pycity
     """
 
-    timer = pycity.classes.Timer.Timer(timeDiscretization=timestep)
-    weather = pycity.classes.Weather.Weather(timer, useTRY=True)
-    prices = pycity.classes.Prices.Prices()
-    env = pycity.classes.Environment.Environment(timer, weather, prices)
+    timer = pycity_base.classes.Timer.Timer(timeDiscretization=timestep)
+    weather = pycity_base.classes.Weather.Weather(timer, useTRY=True)
+    prices = pycity_base.classes.Prices.Prices()
+    env = pycity_base.classes.Environment.Environment(timer, weather, prices)
 
     return env
 
