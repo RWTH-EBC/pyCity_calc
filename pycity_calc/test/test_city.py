@@ -8,7 +8,7 @@ from __future__ import division
 import copy
 import shapely.geometry.point as point
 
-import pycity.classes.demand.DomesticHotWater as DHW
+import pycity_base.classes.demand.DomesticHotWater as DHW
 import pycity_calc.cities.city as cit
 
 from pycity_calc.test.pycity_calc_fixtures import fixture_building, \

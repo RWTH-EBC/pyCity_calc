@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import shapely.geometry.point as point
 
-import pycity.classes.Weather as Weather
+import pycity_base.classes.Weather as Weather
 
 import pycity_calc.buildings.building as build_ex
 import pycity_calc.cities.city as cit

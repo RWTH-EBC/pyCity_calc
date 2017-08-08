@@ -10,8 +10,8 @@ Requires city object (optionally, with networks) as input
 import os
 import csv
 import pickle
-import pycity.classes.supply.BES as BES
-import pycity.classes.supply.PV as PV
+import pycity_base.classes.supply.BES as BES
+import pycity_base.classes.supply.PV as PV
 import pycity_calc.visualization.city_visual as citvis
 import pycity_calc.toolbox.dimensioning.dim_functions as dimfunc
 import pycity_calc.toolbox.networks.network_ops as netop

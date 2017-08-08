@@ -5,12 +5,12 @@ Example script of Nadine Lermer for pypower usage with pycity
 from __future__ import division
 __author__ = 'jsc-nle'
 
-import pycity.classes.Weather as Weather
-import pycity.classes.Environment as Environment
-import pycity.classes.Prices as Prices
+import pycity_base.classes.Weather as Weather
+import pycity_base.classes.Environment as Environment
+import pycity_base.classes.Prices as Prices
 import pycity_calc.buildings.building as Building
-import pycity.classes.demand.ElectricalDemand as ElectricalDemand
-import pycity.classes.demand.Apartment as Apartment
+import pycity_base.classes.demand.ElectricalDemand as ElectricalDemand
+import pycity_base.classes.demand.Apartment as Apartment
 
 import pycity_calc.extern_el_grid.PowerGrid as PowerGrid
 import pycity_calc.environments.timer as Timer

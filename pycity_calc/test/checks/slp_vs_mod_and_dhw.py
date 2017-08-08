@@ -8,14 +8,14 @@ space heating plus domestic hot water curve
 import numpy as np
 import matplotlib.pyplot as plt
 
-import pycity.classes.Timer
-import pycity.classes.Weather
-import pycity.classes.Environment
-import pycity.classes.Prices
-import pycity.classes.demand.SpaceHeating as SpaceHeating
-import pycity.classes.demand.DomesticHotWater as DomesticHotWater
-import pycity.classes.demand.Occupancy as occup
-import pycity.functions.changeResolution as chres
+import pycity_base.classes.Timer
+import pycity_base.classes.Weather
+import pycity_base.classes.Environment
+import pycity_base.classes.Prices
+import pycity_base.classes.demand.SpaceHeating as SpaceHeating
+import pycity_base.classes.demand.DomesticHotWater as DomesticHotWater
+import pycity_base.classes.demand.Occupancy as occup
+import pycity_base.functions.changeResolution as chres
 import pycity_calc.toolbox.dimensioning.slp_th_manipulator as slpman
 
 
@@ -41,16 +41,16 @@ def compare_slp_mod_dhw(timestep=3600, nb_occ=3):
     t_sup = 20
 
     #  Generate pycity environment
-    timer = pycity.classes.Timer.Timer(timeDiscretization=timestep)
-    weather = pycity.classes.Weather.Weather(timer, useTRY=True)
-    prices = pycity.classes.Prices.Prices()
+    timer = pycity_base.classes.Timer.Timer(timeDiscretization=timestep)
+    weather = pycity_base.classes.Weather.Weather(timer, useTRY=True)
+    prices = pycity_base.classes.Prices.Prices()
 
-    environment = pycity.classes.Environment.Environment(timer, weather,
+    environment = pycity_base.classes.Environment.Environment(timer, weather,
                                                          prices)
 
     #  Generate occupancy object
     occupancy_object = \
-        pycity.classes.demand.Occupancy.Occupancy(environment,
+        pycity_base.classes.demand.Occupancy.Occupancy(environment,
                                                   number_occupants=nb_occ)
     occupancy_profile = occupancy_object.occupancy
 
