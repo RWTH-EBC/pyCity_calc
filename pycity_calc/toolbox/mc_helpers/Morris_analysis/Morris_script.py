@@ -458,7 +458,7 @@ def run_Morris():
     print('***********************************************************************************************************')
     # Run the "model" -- this will happen offline for external models
     (Gas_results, El_results, Emissions_results, Annuity_results, Spe_Emission_results, liste_max_dhw, liste_max_el,
-     liste_max_sph, liste_shp_curve, liste_el_curve, liste_dhw_curve,Nboiler_rescaled) =\
+     liste_max_sph, liste_shp_curve, liste_el_curve, liste_dhw_curve) =\
         model_evaluation.evaluate(City, param_values)
 
     print('***********************************************************************************************************')
@@ -600,7 +600,6 @@ def run_Morris():
                                                                                         Si_ghg['sigma'][j]))
         write_results.write('\n------------------------------------------------------------------\n')
         write_results.write('\n  Number of City generated {}\n'.format(Nsample*(Nparameters+1)))
-        write_results.write('\n Number of City with boiler rescaled {} \n'.format(Nboiler_rescaled))
         write_results.close()
 
     print('***********************************************************************************************************')
@@ -609,7 +608,6 @@ def run_Morris():
     print ()
     print ('Number of samples: {} '.format(Nsample))
     print ('Number of City generated {}'.format(Nsample*(Nparameters+1)))
-    print ('Number of City with boiler rescaled {} '.format(Nboiler_rescaled))
 
     fig, (ax1, ax2) = plt.subplots(1, 2)
     horizontal_bar_plot(ax1, Si_gas,{}, sortby='mu_star', unit=r"gas_dem[kWh]/year")

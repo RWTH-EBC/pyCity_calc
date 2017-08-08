@@ -45,8 +45,7 @@ def new_evaluation_esys(City, parameters):
                         23: gamma_PV
                         24: tau_alpha_PV
 
-        Return :  City : City modified with the new energy systems parameters
-                  rescale_boiler : boolean : True if the boiler of the building was rescaled
+        Return :  City : City modified with the new energy systems parameter
         -------
 
         """
@@ -107,27 +106,8 @@ def new_evaluation_esys(City, parameters):
             City.node[build]['entity'].bes.pv.gamma = parameters[23]
             City.node[build]['entity'].bes.pv.tau_alpha = parameters[24]
 
-    '''rescale_boiler = False  # boolean to keep track of the number of rescaled boiler
-
-        if Cityref.node[build]['entity'].bes.hasBoiler == True:
-            # Rescale boiler qNominal to cover all the thermal demand
-
-            boiler_qNominal = City.node[build]['entity'].bes.boiler.qNominal
-
-            demand_building = dimfunc.get_max_power_of_building(City.node[build]['entity'], with_dhw=True)
-
-            if demand_building > boiler_qNominal:
-                City.node[build]['entity'].bes.boiler.qNominal = \
-                    dimfunc.round_esys_size(demand_building, round_up=True)
-                rescale_boiler = True
-
-                print()
-                print('new boiler capacity kW: ', City.node[build]['entity'].bes.boiler.qNominal/1000)
-                print()
-    '''
-
     print ('End of energy systems reevaluation')
     print('----------------------------- ')
-    rescale_boiler=False
 
-    return City, rescale_boiler
+
+    return City

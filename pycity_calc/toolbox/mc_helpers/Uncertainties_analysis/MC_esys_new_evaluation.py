@@ -32,10 +32,21 @@ def MC_rescale_esys(City, esys_unknown=True, recent_systems=False):
     -------
     City :  object
             City object modified for Monte Carlo analysis
-    rescale_boiler : boolean : True if the boiler of the building was rescaled
+    dict_city_esys_sampl : dict (of list)
+            Dictionary of dictionnaries of samples for each building
+            Keys: first keys are building identities then each building dictionary contains:
+            'battery' : Holding modification of battery characteristics
+            'CHP' : Holding modification of CHP characteristics
+            'HP' : Holding modification of HP characteristics
+            'EH' : Holding modification of EH characteristics
+            'Boiler' : Holding modification of Boiler characteristics
+            'PV' : Holding modification of PV characteristics
+
     '''
 
     #TODO rajouter dictionnaire pour choisir quelle energie systeme va etre utilise ou pas dans le MC
+    # Initialisation dictionnary sampling
+    dict_city_esys_sampl = {}
 
     # Get list of building
     list_of_building = City.get_list_build_entity_node_ids()
@@ -49,9 +60,12 @@ def MC_rescale_esys(City, esys_unknown=True, recent_systems=False):
         if esys_unknown:  # generate aleatory energy systems
             building = gen_esys_unknown(building, recent_systems=recent_systems)
 
-        building = MC_new_esys_evaluation(building)  # rescale it to take into account real conditions of use
+        building, dict_build_esys_sampl = MC_new_esys_evaluation(building)
+        # rescale it to take into account real conditions of use
 
-    return City
+        dict_city_esys_sampl[str(id_building)]=dict_build_esys_sampl
+
+    return City, dict_city_esys_sampl
 
 def gen_esys_unknown (building, recent_systems=True):
 
@@ -92,25 +106,34 @@ def gen_esys_unknown (building, recent_systems=True):
             building.bes.tes.t_max = rd.uniform(50,75)
             #print (building.bes.tes.t_max)
             building.bes.tes.t_min = rd.uniform(15,20)
+            print(building.bes.tes.t_min)
             #print (building.bes.tes.t_min )
-            building.bes.tes.t_surroundings = rd.uniform(20,25)
+            #building.bes.tes.t_surroundings = rd.uniform(20,25)
             building.bes.tes.k_loss = rd.uniform(0.25,0.5)
-            building.bes.tes.t_init = rd.uniform(20,50)
+            #building.bes.tes.t_init = rd.uniform(20,50)
             #building.bes.tes.array_temp_storage = np.zeros(building.environment.timer.timeDiscretization)
             #building.bes.tes.array_q_charge = np.zeros(building.environment.timer.timeDiscretization)
             #building.bes.tes.array_q_discharge = np.zeros(building.environment.timer.timeDiscretization)
+            building.bes.tes.t_init = building.bes.tes.t_min
             building.bes.tes.t_current = building.bes.tes.t_init
+            #building.bes.tes.t_current = building.bes.tes.t_init
             #building.bes.tes.totalTSto = np.zeros(building.environment.timer.timestepsTotal)
             #building.bes.tes.currentTSto = np.zeros(building.environment.timer.timeDiscretization)
             #building.bes.tes.capacity = 100000
+
+
         else:
+
             building.bes.tes.t_max = rd.uniform(50, 75)
             building.bes.tes.t_min = rd.uniform(15, 20)
-            building.bes.tes.t_surroundings = rd.uniform(20, 25)
+            #building.bes.tes.t_surroundings = rd.uniform(20, 25)
             building.bes.tes.k_loss = rd.uniform(0.25, 0.5)
-            building.bes.tes.t_init = rd.uniform(20, 50)
+            building.bes.tes.array_temp_storage = np.zeros(8760)
+            building.bes.tes.array_q_charge = np.zeros(8760)
+            building.bes.tes.array_q_discharge = np.zeros(8760)
+            building.bes.tes.t_init = building.bes.tes.t_min
             building.bes.tes.t_current = building.bes.tes.t_init
-            #building.bes.tes.capacity = 100000
+            #building.bes.tes.capacity = building.bes.tes.capacity*1.1
 
     # Boiler
     if building.bes.hasBoiler == True:
@@ -127,30 +150,30 @@ def gen_esys_unknown (building, recent_systems=True):
     if building.bes.hasChp == True:
         if recent_systems:
             building.bes.chp.eta = rd.uniform(0.8,0.9)
-            building.bes.chp.t_max = rd.uniform(80,100)
-            building.bes.chp.lower_activation_limit = rd.uniform(0.1,0.3)
+            #building.bes.chp.t_max = rd.uniform(80,100)
+            #building.bes.chp.lower_activation_limit = rd.uniform(0.1,0.3)
         else:
             building.bes.chp.eta = rd.uniform(0.8,0.9)
-            building.bes.chp.t_max = rd.uniform(80,100)
-            building.bes.chp.lower_activation_limit = rd.uniform(0.1,0.3)
+            #building.bes.chp.t_max = rd.uniform(80,100)
+            #building.bes.chp.lower_activation_limit = rd.uniform(0.1,0.3)
 
     # Electrical heater
     if ex_building.bes.hasElectricalHeater == True:
         if recent_systems:
             building.bes.electricalHeater.eta = rd.uniform(0.8,0.95)
-            building.bes.electricalHeater.t_max = rd.uniform(80,100)
+            #building.bes.electricalHeater.t_max = rd.uniform(80,100)
         else:
             building.bes.electricalHeater.eta = rd.uniform(0.8, 0.95)
-            building.bes.electricalHeater.t_max = rd.uniform(80, 100)
+            #building.bes.electricalHeater.t_max = rd.uniform(80, 100)
 
     # Heat pump
     if ex_building.bes.hasHeatpump == True:
         if recent_systems:
-            building.bes.heatpump.lower_activation_limit = rd.uniform(0.1,0.3)
+            #building.bes.heatpump.lower_activation_limit = rd.uniform(0.1,0.3)
             building.bes.heatpump.t_max = rd.uniform(80,100)
             building.bes.heatpump.t_sink = rd.uniform(20,25)
         else:
-            building.bes.heatpump.lower_activation_limit = rd.uniform(0.1, 0.3)
+            #building.bes.heatpump.lower_activation_limit = rd.uniform(0.1, 0.3)
             building.bes.heatpump.t_max = rd.uniform(80, 100)
             building.bes.heatpump.t_sink = rd.uniform(20, 25)
 
@@ -185,9 +208,20 @@ def MC_new_esys_evaluation (building):
             -------
             Building:  object
                     Building Extended object modified for Monte Carlo analysis
+            dict_build_esys_sampl : dict (of list)
+            Dictionary of samples
+            Keys:
+            'battery' : Holding modification of battery characteristics
+            'CHP' : Holding modification of CHP characteristics
+            'HP' : Holding modification of HP characteristics
+            'EH' : Holding modification of EH characteristics
+            'Boiler' : Holding modification of Boiler characteristics
+            'PV' : Holding modification of PV characteristics
         '''
 
     #TODO edimenssionner les fonctions dechantillonnnage
+    # Dictionary to get samples track
+    dict_build_esys_sampl = {}
 
     # Save copy
     ex_building = copy.deepcopy(building)
@@ -200,40 +234,51 @@ def MC_new_esys_evaluation (building):
         building.bes.battery.self_discharge = rd.normalvariate(mu= ex_building.bes.battery.self_discharge,
                                                                                   sigma = 0.1)
 
-    if ex_building.bes.hasTes == True:
+        dict_build_esys_sampl['battery']['eta_charge']= building.bes.battery.eta_charge
+        dict_build_esys_sampl['battery']['eta_discharge']=building.bes.battery.eta_discharge
+        dict_build_esys_sampl['battery']['self_discharge']=building.bes.battery.self_discharge
+
+    #if ex_building.bes.hasTes == True:
         #building.bes.tes.t_max = rd.normalvariate(mu= ex_building.bes.tes.t_max,sigma = 0.1)
         #building.bes.tes.t_min = rd.normalvariate(mu= ex_building.bes.tes.t_min,sigma = 0.1)
-        building.bes.tes.t_surroundings = rd.normalvariate(mu= ex_building.bes.tes.t_surroundings ,sigma = 0.1)
-        building.bes.tes.k_loss = rd.normalvariate(mu= ex_building.bes.tes.k_loss,sigma = 0.1)
-        building.bes.tes.t_init = rd.normalvariate(mu= ex_building.bes.tes.t_init,sigma = 0.1)
+        #building.bes.tes.t_surroundings = rd.normalvariate(mu= ex_building.bes.tes.t_surroundings ,sigma = 0.1)
+        #building.bes.tes.k_loss = rd.normalvariate(mu= ex_building.bes.tes.k_loss,sigma = 0.1)
+        #building.bes.tes.t_init = rd.normalvariate(mu= ex_building.bes.tes.t_init,sigma = 0.1)
 
     if ex_building.bes.hasBoiler == True:
         building.bes.boiler.eta = rd.normalvariate(mu= ex_building.bes.boiler.eta,
                                                                         sigma = 0.1)
-        building.bes.boiler.lowerActivationLimit = rd.normalvariate(mu=ex_building.bes.boiler.lowerActivationLimit ,sigma=0.1)
-        building.bes.boiler.tMax = rd.normalvariate(mu=ex_building.bes.boiler.tMax,sigma=2)
+        dict_build_esys_sampl['boiler']={}
+        dict_build_esys_sampl['boiler']['eta'] = building.bes.boiler.eta
 
     if ex_building.bes.hasChp == True:
         building.bes.chp.eta = rd.normalvariate(mu= ex_building.bes.chp.eta,
                                                                         sigma = 0.1)
-        building.bes.chp.tMax = rd.normalvariate(mu= ex_building.bes.chp.tMax,
-                                                                        sigma = 0.1)
-        building.bes.chp.lowerActivationLimit = rd.normalvariate(mu= ex_building.bes.chp.lowerActivationLimit,
-                                                                        sigma = 0.1)
+        #building.bes.chp.tMax = rd.normalvariate(mu= ex_building.bes.chp.tMax,sigma = 0.1)
+        #building.bes.chp.lowerActivationLimit = rd.normalvariate(mu= ex_building.bes.chp.lowerActivationLimit,
+                                                                 #sigma = 0.1)
+        dict_build_esys_sampl['CHP']={}
+        dict_build_esys_sampl['CHP']['eta'] = building.bes.chp.eta
 
     if ex_building.bes.hasElectricalHeater == True:
         building.bes.electricalHeater.eta = rd.normalvariate(mu= ex_building.bes.electricalHeater.eta,
                                                                         sigma = 0.1)
-        building.bes.electricalHeater.t_max = rd.normalvariate(mu= ex_building.bes.electricalHeater.t_max,
-                                                                        sigma = 0.1)
+        #building.bes.electricalHeater.t_max = rd.normalvariate(mu= ex_building.bes.electricalHeater.t_max,
+                                                                        #sigma = 0.1)
+        dict_build_esys_sampl['EH']={}
+        dict_build_esys_sampl['EH']['eta'] = building.bes.electricalHeater.eta
 
     if ex_building.bes.hasHeatpump == True:
-        building.bes.heatpump.lower_activation_limit = rd.normalvariate(mu= ex_building.bes.heatpump.lower_activation_limit,
-                                                                        sigma = 0.1)
+        #building.bes.heatpump.lower_activation_limit = rd.normalvariate(mu= ex_building.bes.heatpump.lower_activation_limit,
+                                                                        #sigma = 0.1)
         building.bes.heatpump.t_max = rd.normalvariate(mu= ex_building.bes.heatpump.t_max,
                                                                         sigma = 0.1)
         building.bes.heatpump.t_sink = rd.normalvariate(mu= ex_building.bes.heatpump.t_sink,
                                                                         sigma = 0.1)
+        dict_build_esys_sampl['HP']={}
+        dict_build_esys_sampl['HP']['tmax'] = building.bes.heatpump.t_max
+        dict_build_esys_sampl['HP']['tsink'] = building.bes.heatpump.t_sink
+
 
     if ex_building.bes.hasPv == True:
         building.bes.pv.eta = rd.normalvariate(mu= ex_building.bes.pv.eta,
@@ -249,8 +294,15 @@ def MC_new_esys_evaluation (building):
         building.bes.pv.tau_alpha =rd.normalvariate(mu= ex_building.bes.pv.tau_alpha,
                                                                         sigma = 0.1)
 
+        dict_build_esys_sampl['PV']={}
+        dict_build_esys_sampl['PV']['eta'] =  building.bes.pv.eta
+        dict_build_esys_sampl['PV']['tnominal'] = building.bes.pv.temperature_nominal
+        dict_build_esys_sampl['PV']['beta'] = building.bes.pv.beta
+        dict_build_esys_sampl['PV']['gamma'] = building.bes.pv.gamma
+        dict_build_esys_sampl['PV']['alpha'] = building.bes.pv.tau_alpha
+        dict_build_esys_sampl['PV']['alphPV'] = building.bes.pv.alphPV
 
-    return building
+    return building,dict_build_esys_sampl
 
 
 if __name__ == '__main__':
@@ -294,7 +346,7 @@ if __name__ == '__main__':
 
     for i in range(Nsamples):
         print(i)
-        City = MC_rescale_esys(ref_city)
+        City, dict_city_sample = MC_rescale_esys(ref_city)
         list_boiler_sampling.append(City.node[1001]['entity'].bes.boiler.eta)
 
     plt.hist(list_boiler_sampling, 100, normed=1)

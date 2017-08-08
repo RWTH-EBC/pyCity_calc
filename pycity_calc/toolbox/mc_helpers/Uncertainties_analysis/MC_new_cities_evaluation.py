@@ -25,7 +25,7 @@ import pycity_calc.cities.scripts.street_generator.street_generator as street_ge
 import random as rd
 import pycity_calc.simulation.energy_balance_optimization.Energy_balance_lhn as EB
 
-def new_city_evaluation_monte_carlo(City, dict_sample):
+def new_city_evaluation_monte_carlo(ref_City, dict_sample):
     """
         Does simulations for Monte Carlo Analyse.
         Evaluates new City and calculates gas and electrical demand, annuity and GHG emissions.
@@ -55,7 +55,7 @@ def new_city_evaluation_monte_carlo(City, dict_sample):
         -------
         res_tuple : tuple (of Array)
             Results tuple (Th_results, Gas_results, El_results, Annuity_results, GHG_results, GHG_spe_results,
-                            el_results2, Th_results2, dict_city_pb, Nboiler_rescaled)
+                            el_results2, Th_results2, dict_city_pb, Nboiler_rescaled, NEH_rescaled)
             1. Array holding net space heating demands in kWh as float
             2. Array holding Gas demands in kWh as float
             3. Array holding Electrical demands in kWh as float
@@ -63,18 +63,20 @@ def new_city_evaluation_monte_carlo(City, dict_sample):
             5. Array holding GHG emissions in kg as float
             6. Array holding specific GHG emissions in kg as float
             7. Array holding electrical demand in kWh as float (sum of buildings demand)
-            8. Array holding thermal demand in kWh as float (sum of buildings demand)
-            9. Dict holding parameters for special City (Sph = 0)
-            10. Boolean: True: City with rescaled boilers to cover all city energy demands
-
+            8. Dict holding samples list for each building
+            9. Nboiler_rescaled Number of city with rescaled boiler
+            10: NEH_rescaled Number of city with rescaled EH
+            11: Lal_rescaled Number of city with rescaled boiler lal
         """
 
     # Save the City
-    City_ref = copy.deepcopy(City)
+    City = copy.deepcopy(ref_City)
 
     Nloop = dict_sample['Nsamples']
 
-    Nboiler_rescaled = 0    # number of boiler rescaled (thermal demand to high)
+    Nboiler_rescaled = 0# number of boiler rescaled (thermal demand to high)
+    NEH_rescaled = 0 # number of electrical heater rescaled (thermal demand to high)
+    Lal_rescaled = 0 # Number of city with rescaled boiler lal
     Gas_results = np.zeros(Nloop)  # array of annual gas demand
     El_results = np.zeros(Nloop)  # array of annual electrical demand after energy balance
     Th_results = np.zeros(Nloop) #array of annual space heating demand
@@ -84,7 +86,6 @@ def new_city_evaluation_monte_carlo(City, dict_sample):
     Th_results2 = np.zeros(Nloop)
     dhw_results2 = np.zeros(Nloop)
     el_results2 = np.zeros(Nloop)
-    dict_city_pb = {}
 
     list_weather = dict_sample['weather']
     MC_analysis = dict_sample['MC_analysis']
@@ -94,6 +95,21 @@ def new_city_evaluation_monte_carlo(City, dict_sample):
     max_retro_year = dict_sample['max_retro_year']
     interest = dict_sample['interest']
     time = dict_sample['time']
+
+    # Initialisation dictionary to keep samples list
+    dict_city_pb = {}
+    for buildnb in City.get_list_build_entity_node_ids():
+        dict_city_pb[str(buildnb)] = {}
+        dict_city_pb[str(buildnb)]['year']=[]
+        dict_city_pb[str(buildnb)]['infiltration']=[]
+        dict_city_pb[str(buildnb)]['cellar']=[]
+        dict_city_pb[str(buildnb)]['attic']=[]
+        dict_city_pb[str(buildnb)]['user_air']=[]
+        dict_city_pb[str(buildnb)]['inflation'] =[]
+        dict_city_pb[str(buildnb)]['eeg'] = []
+        dict_city_pb[str(buildnb)]['eex'] = []
+        dict_city_pb[str(buildnb)]['el_ch'] = []
+        dict_city_pb[str(buildnb)]['gas_ch'] = []
 
     for loop in range (Nloop):
 
@@ -115,7 +131,13 @@ def new_city_evaluation_monte_carlo(City, dict_sample):
                                    time_sp_force_retro=time_sp_force_retro,build_physic_unc=build_physic_unc,
                                    MC_analysis= MC_analysis, nb_occ_unc=nb_occ_unc)
 
-        dict_city_pb[str(loop)] = dict_build_pb
+        # Dictionary to keep track of sampling
+        for buildingnb in dict_build_pb:
+            dict_city_pb[buildingnb]['year'].append(dict_build_pb[buildingnb]['year'])
+            dict_city_pb[buildingnb]['infiltration'].append(dict_build_pb[buildingnb]['infiltration'])
+            dict_city_pb[buildingnb]['cellar'].append(dict_build_pb[buildingnb]['cellar'])
+            dict_city_pb[buildingnb]['attic'].append(dict_build_pb[buildingnb]['attic'])
+            dict_city_pb[buildingnb]['user_air'].append(dict_build_pb[buildingnb]['user_air'])
 
         ############################################
 
@@ -125,7 +147,8 @@ def new_city_evaluation_monte_carlo(City, dict_sample):
 
         #  Generate new energy systems
 
-        City = mc_esys.MC_rescale_esys(City, esys_unknown=dict_sample['esys'])
+        City, dict_city_esys_samples = mc_esys.MC_rescale_esys(City, esys_unknown=dict_sample['esys'])
+
 
         ############################################
 
@@ -151,21 +174,28 @@ def new_city_evaluation_monte_carlo(City, dict_sample):
         ############################################
 
         # Energy balance calculations
-        el_dem, gas_dem, rescale_boiler = MC_EBB_calc(City)
+        el_dem, gas_dem, rescale_boiler, rescale_EH, Lal_recaled = MC_EBB_calc(City)
 
-        # add rescale boiler
-        Nboiler_rescaled = rescale_boiler
+        if rescale_boiler:
+            Nboiler_rescaled += 1
+        if rescale_EH:
+            NEH_rescaled += 1
+        if Lal_recaled:
+            Lal_rescaled += 1
 
         print()
         print('loop n°:  ', loop)
-        print('Nboiler_rescaled =', Nboiler_rescaled)
+        print('boiler_rescaled =', rescale_boiler)
+        print('EH_rescaled =', rescale_EH)
+        print('Lal_rescaled=', Lal_recaled)
+        print()
         print('Annual electricity demand : ', annual_el_dem, 'kWh/year')
         print('Annual thermal demand : ', annual_th_dem, 'kWh/year')
         print('Annual Space Heating demand: ', annual_sph_dem, 'kWh/year')
         print('Annual domestic hot water demand: ', annual_dhw_dem, 'kWh/year')
         print()
-        print('Annual reference electricity demand : ', City_ref.get_annual_el_demand(), 'kWh/year')
-        print('Annual reference thermal demand : ', City_ref.get_total_annual_th_demand(), 'kWh/year')
+        print('Annual reference electricity demand : ', ref_City.get_annual_el_demand(), 'kWh/year')
+        print('Annual reference thermal demand : ', ref_City.get_total_annual_th_demand(), 'kWh/year')
         print ()
         print('Annual electricity demand after energy balance : ', el_dem, 'kWh/year')
         print('Annual gas demand after energy balance : ', gas_dem, 'kWh/year')
@@ -177,7 +207,8 @@ def new_city_evaluation_monte_carlo(City, dict_sample):
 
         ############################################
 
-        City, GHG_Emission, total_annuity = MC_new_economic_evaluation(City, time=time, interest=interest[loop])
+        City, GHG_Emission, total_annuity, dict_eco_Sample =\
+            MC_new_economic_evaluation(City, time=time, interest=interest[loop])
 
         # Add results to result_arrays
 
@@ -188,14 +219,20 @@ def new_city_evaluation_monte_carlo(City, dict_sample):
         GHG_results[loop] = round(GHG_Emission,4)
         GHG_spe_results[loop] = round(GHG_Emission / (annual_sph_dem + annual_dhw_dem + annual_el_dem),4)
 
-        # Comparaison with the sum of building demands
+        # Keep track of electrical demand for EBB
 
         el_results2[loop] = round(sum(el_city_list),2)
-        Th_results2[loop] = round(sum(sph_city_list+dhw_city_list),2)
-        dhw_results2[loop] = round(sum(dhw_city_list),2)
+
+        #  Dictionary to keep track of sampling
+        for buildingnb in dict_build_pb:
+            dict_city_pb[buildingnb]['inflation'].append(dict_eco_Sample['inflation'])
+            dict_city_pb[buildingnb]['eeg'].append(dict_eco_Sample['eeg'])
+            dict_city_pb[buildingnb]['eex'].append(dict_eco_Sample['eex'])
+            dict_city_pb[buildingnb]['el_ch'].append(dict_eco_Sample['el_ch'])
+            dict_city_pb[buildingnb]['gas_ch'].append(dict_eco_Sample['gas_ch'])
 
     return Th_results, Gas_results, El_results, Annuity_results, GHG_results, \
-           GHG_spe_results, el_results2, Th_results2, dict_city_pb, Nboiler_rescaled
+           GHG_spe_results, el_results2, dict_city_pb, Nboiler_rescaled, NEH_rescaled, Lal_rescaled
 
 
 def MC_new_city_generation (City, new_weather, max_retro_year=2014, time_sp_force_retro=40,
@@ -234,10 +271,10 @@ def MC_new_city_generation (City, new_weather, max_retro_year=2014, time_sp_forc
        City :   object
                 City object of pycity_calc modified for Monte Carlo analysis
         sph_city_list: list holding net space heating demands for each building in kWh as float
-        el_city_list: list holding net electric energy demands in kWh
-        dhw_city_list: list holding hot water net energy demands in kWh
+        el_city_list: list holding net electric energy demands for each building in kWh as float in kWh
+        dhw_city_list: list holding hot water net energy demands for each building in kWh as float in kWh
         dict_build_problem : dict (of dictionaries)
-        Dictionary of dictionaries holding parameters for each building with sph = 0
+        Dictionary of dictionaries holding parameters for each building
         Keys: 'build_id' : example: '1001'
 
        """
@@ -265,10 +302,13 @@ def MC_new_city_generation (City, new_weather, max_retro_year=2014, time_sp_forc
                                                 max_retro_year=max_retro_year, time_sp_force_retro=time_sp_force_retro,
                                                 build_physic_unc=build_physic_unc, MC_analysis=MC_analysis,
                                                 nb_occ_unc=nb_occ_unc)
+
+        # List of energy demand for each building
         sph_city_list.append(sum_heat)
         el_city_list.append(el_demand)
         dhw_city_list.append (dhw_energy)
 
+        # Get the sampling in a dictionary
         dict_build_pb[str(build)] = dict_problem
 
 
@@ -313,7 +353,17 @@ def MC_new_economic_evaluation(City, time=10, interest=0.05):
     el_dem:     float
                 El demand per year in kWh
 
+    dict_eco_samples: Dictionary
+    Dictionary with samples
+    key: inflation sample
+        eeg_change sample
+        eex_change sample
+        el_change sample
+        gas_change sample
+
     """
+    # Initialisation samples dictionary
+    dict_eco_samples = {}
 
     #  Generate economic calculator object
     #print("Start Economic evaluation /n")
@@ -326,21 +376,41 @@ def MC_new_economic_evaluation(City, time=10, interest=0.05):
     print("Start Economic evaluation /n")
 
     # New_price change factor
-    price_ch_cap = rd.uniform(0.8, 1.2)
-    price_ch_dem_gas = rd.uniform(0.8, 1.2)
-    price_ch_dem_el = rd.uniform(0.8, 1.2)
-    price_ch_op = rd.uniform(0.8, 1.2)
-    price_ch_proc_chp = rd.uniform(0.8, 1.2)
-    price_ch_proc_pv = rd.uniform(0.8, 1.2)
-    price_ch_EEG_Umlage_tax_chp = rd.uniform(0.8, 1.2)
-    price_ch_EEG_Umlage_tax_pv = rd.uniform(0.8, 1.2)
-    price_EEX_baseload_price = rd.uniform(0.8, 1.2)
-    price_ch_avoid_grid_usage = rd.uniform(0.8, 1.2)
-    price_ch_sub_chp = rd.uniform(0.8, 1.2)
-    price_ch_self_usage_chp = rd.uniform(0.8, 1.2)
-    price_ch_gas_disc_chp = rd.uniform(0.8, 1.2)
-    price_ch_sub_pv = rd.uniform(0.8, 1.2)
-    price_ch_dem_el_hp = rd.uniform(0.8, 1.2)
+    inflation = rd.uniform(0.8, 1.2)
+    eeg_change = rd.uniform(0.8, 1.2)
+    eex_change = -eeg_change
+    el_change = rd.uniform(0.8, 1.2)
+    gas_change = rd.uniform(0.8, 1.2)
+
+    dict_eco_samples['inflation']=inflation
+    dict_eco_samples['eeg']=eeg_change
+    dict_eco_samples['eex']=eex_change
+    dict_eco_samples['el_ch']=el_change
+    dict_eco_samples['gas_ch']=gas_change
+
+    # Change factor follow inflation
+    price_ch_cap = inflation
+    price_ch_op = inflation
+
+    # Change facrtor follow energy market trend
+    price_ch_dem_gas = gas_change
+    price_ch_dem_el = el_change
+    price_ch_dem_el_hp = el_change
+
+    # change factor follow eeg trend
+    price_ch_proc_chp = eeg_change
+    price_ch_proc_pv = eeg_change
+    price_ch_EEG_Umlage_tax_chp = eeg_change
+    price_ch_EEG_Umlage_tax_pv = eeg_change
+    price_ch_avoid_grid_usage = eeg_change
+    price_ch_sub_chp = eeg_change
+    price_ch_self_usage_chp = eeg_change
+    price_ch_gas_disc_chp = eeg_change
+    price_ch_sub_pv =eeg_change
+
+    # change factor follow eex market trend
+    price_EEX_baseload_price = eex_change
+
 
     #  Generate economic calculator object
     eco_inst = eco_calc.EconomicCalculation(germanmarket=Market_instance, time=time, interest=interest,
@@ -395,7 +465,7 @@ def MC_new_economic_evaluation(City, time=10, interest=0.05):
 
     print('Emissions: ', GHG_Emission, 'kg/year')
 
-    return City, GHG_Emission, total_annuity
+    return City, GHG_Emission, total_annuity , dict_eco_samples
 
 
 def MC_EBB_calc (City):
@@ -417,6 +487,10 @@ def MC_EBB_calc (City):
                 Electrical demand per year in kWh
         rescale_boiler: Boolean
                         True: City with rescaled boilers to cover all city energy demands
+        rescale_EH : Boolean
+                        True: City with rescaled EH to cover all city energy demands
+        LaL_boiler_rescaled : Boolean
+                        True: Lower Activation limit of boiler is set to 0
 
     """
     invalidind = EBB.invalidind
@@ -428,46 +502,116 @@ def MC_EBB_calc (City):
     # Get dictionary of energy systems
     Calculator = EBB.calculator(City)
     dict_bes_data = Calculator.assembler()
-    #tnext = 25
-    #delta= 0
-    #t_prior = 20
-    #t_u = 0
-    #ii = 0
-    #t_tes = 25
 
-
+    rescale_boiler=False
+    rescale_EH=False
+    LaL_boiler_rescaled = False
 
     # Loop over energy systems
     try:
         for i in range(len(dict_bes_data)):
             City, dict_Qlhn, dict_supply = Calculator.eb_balances(dict_bes_data, i)
+
     except invalidind:
-        # Get list of building and rescale boiler
+        # Get list of building and rescale boiler or EH
         list_of_building = City.get_list_build_entity_node_ids()
         for build in list_of_building:
+            # Get max demand building
             demand_building = dimfunc.get_max_power_of_building(City.node[build]['entity'], with_dhw=True)
+            # Start try to rescale just LAl boiler or EH
             if City.node[build]['entity'].bes.hasBoiler == True:
-                City.node[build]['entity'].bes.boiler.qNominal = dimfunc.round_esys_size(demand_building, round_up=True)
-        rescale_boiler = True
+                City.node[build]['entity'].bes.boiler.lowerActivationLimit = 0
+                LaL_boiler_rescaled = True
 
-        print()
-        print('Rescale boiler')
-        print('new boiler capacity kW: ', City.node[build]['entity'].bes.boiler.qNominal / 1000)
-        print()
+                print()
+                print('Rescale LAl boiler')
+                print('new boiler Lal kW: ', City.node[build]['entity'].bes.boiler.lowerActivationLimit )
+                print()
+
+            if City.node[build]['entity'].bes.hasElectricalHeater == True:
+                City.node[build]['entity'].bes.electricalHeater.qNominal = \
+                    dimfunc.round_esys_size(demand_building*1.05/City.node[build]['entity'].bes.electricalHeater.eta,
+                                            round_up=True)
+                rescale_EH = True
+
+                print()
+                print('Rescale EH')
+                print('new EH capacity kW: ', City.node[build]['entity'].bes.electricalHeater.qNominal / 1000)
+                print()
+
+        # Do another time EBB
+        for i in range(len(dict_bes_data)):
+            try:
+                City, dict_Qlhn, dict_supply = Calculator.eb_balances(dict_bes_data, i)
+
+            except invalidind:
+                # Get list of building and rescale boiler or EH
+                list_of_building = City.get_list_build_entity_node_ids()
+                for build in list_of_building:
+                    # get max building demand
+                    demand_building = dimfunc.get_max_power_of_building(City.node[build]['entity'], with_dhw=True)
+                    # Rescal Boiler capacity
+                    if City.node[build]['entity'].bes.hasBoiler == True:
+                        City.node[build]['entity'].bes.boiler.qNominal = \
+                            dimfunc.round_esys_size(demand_building * 1.05 / City.node[build]['entity'].bes.boiler.eta,
+                                                    round_up=True)
+                        rescale_boiler = True
+
+                        print()
+                        print('Rescale boiler')
+                        print('new boiler capacity kW: ', City.node[build]['entity'].bes.boiler.qNominal / 1000)
+                        print()
+
+                    if City.node[build]['entity'].bes.hasElectricalHeater == True:
+                        City.node[build]['entity'].bes.electricalHeater.qNominal = \
+                            dimfunc.round_esys_size(
+                                demand_building * 1.2 / City.node[build]['entity'].bes.electricalHeater.eta,
+                                round_up=True)
+                        rescale_EH = True
+
+                        print()
+                        print('Rescale EH for the second time')
+                        print('new EH capacity kW: ', City.node[build]['entity'].bes.electricalHeater.qNominal / 1000)
+                        print()
+
+                # Do another time EBB
+                for i in range(len(dict_bes_data)):
+                    City, dict_Qlhn, dict_supply = Calculator.eb_balances(dict_bes_data, i)
 
     except invalidind2:
         # Get list of building and rescale boiler
         list_of_building = City.get_list_build_entity_node_ids()
         for build in list_of_building:
+            # Get max demand building
             demand_building = dimfunc.get_max_power_of_building(City.node[build]['entity'], with_dhw=True)
+            # Rescaled boiler
             if City.node[build]['entity'].bes.hasBoiler == True:
-                City.node[build]['entity'].bes.boiler.qNominal = dimfunc.round_esys_size(demand_building, round_up=True)
-        rescale_boiler = True
+                City.node[build]['entity'].bes.boiler.qNominal = \
+                    dimfunc.round_esys_size(demand_building * 1.05 / City.node[build]['entity'].bes.boiler.eta,
+                                            round_up=True)
+                rescale_boiler = True
 
-        print()
-        print('Rescale boiler')
-        print('new boiler capacity kW: ', City.node[build]['entity'].bes.boiler.qNominal / 1000)
-        print()
+                print()
+                print('Rescale boiler')
+                print('new boiler capacity kW: ', City.node[build]['entity'].bes.boiler.qNominal / 1000)
+                print()
+
+            if City.node[build]['entity'].bes.hasElectricalHeater == True:
+                City.node[build]['entity'].bes.electricalHeater.qNominal =\
+                    dimfunc.round_esys_size(demand_building*1.05/City.node[build]['entity'].bes.electricalHeater.eta,
+                                            round_up=True)
+
+                rescale_EH = True
+
+                print()
+                print('Rescale EH')
+                print('new EH capacity kW: ', City.node[build]['entity'].bes.electricalHeater.qNominal / 1000)
+                print()
+
+            # Do another time EBB
+            for i in range(len(dict_bes_data)):
+
+                City, dict_Qlhn, dict_supply = Calculator.eb_balances(dict_bes_data, i)
 
     # ## Gas and electrical demand
     el_dem = 0
@@ -487,13 +631,13 @@ def MC_EBB_calc (City):
                         gas_dem += sum(City.node[n]['fuel demand']) * \
                                    City.environment.timer.timeDiscretization / 1000 / 3600
 
-    return el_dem, gas_dem, rescale_boiler
+    return el_dem, gas_dem, rescale_boiler, rescale_EH, LaL_boiler_rescaled
 
 if __name__ == '__main__':
 
     #  User Inputs
     #  ##############################
-    nb_samples = 1000
+    nb_samples = 100
     time_sp_force_retro = 50
     max_retro_year = 2014
     nb_occ_unc = True
@@ -531,6 +675,7 @@ if __name__ == '__main__':
 
         #  Generate energy systems
         City_gen.esysgen.gen_esys_for_city(city=city, list_data=list_esys,dhw_scale=dhw_dim_esys)
+
 
     # Add energy networks to city
     if gen_e_net:  # True - Generate energy networks
@@ -583,11 +728,14 @@ if __name__ == '__main__':
     dict_pam['time']=time
     #  Perform MC analysis for whole city
     (Th_results, Gas_results, El_results, Annuity_results, GHG_results, \
-           GHG_spe_results, el_results2, Th_results2, dict_city_pb, Nboiler_rescaled) = \
-        new_city_evaluation_monte_carlo(City=city, dict_sample=dict_pam)
+           GHG_spe_results, el_results2, dict_city_pb, Nboiler_rescaled, NEH_rescaled, Lal_rescaled) = \
+        new_city_evaluation_monte_carlo(ref_City=city, dict_sample=dict_pam)
 
     #  Results
     #  ##################################################################
+    print ('Nboiler rescaled : ', Nboiler_rescaled)
+    print('NEH rescaled : ', NEH_rescaled)
+    print ('Lal rescaled : ', Lal_rescaled)
 
     fig = plt.figure()
     # the histogram of the data
@@ -597,11 +745,5 @@ if __name__ == '__main__':
     plt.show()
     plt.close()
 
-    fig = plt.figure()
-    # the histogram of the data
-    plt.hist(Th_results2, 100)
-    plt.xlabel('Thermal  energy demand in kWh (sum of Buildings space heating)')
-    plt.ylabel('Number of values')
-    plt.show()
     plt.close()
 

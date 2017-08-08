@@ -57,7 +57,7 @@ def new_building_evaluation_mc(building, new_weather, max_retro_year=2014, time_
         building : object
             Modified extended building object
         dict_problem : dict (of list)
-            Dictionary of inputs with problems
+            Dictionary of samples
             Keys:
             'year' : Holding modification year sample lists
             'infiltration' : Holding infiltration rate sample lists
@@ -65,6 +65,12 @@ def new_building_evaluation_mc(building, new_weather, max_retro_year=2014, time_
             'cellar' : Holding cellar samples list
             'attic' : Holding attic samples list
             'user_air' : Holding user air ventilation factor sampling
+            'net_floor_area' : Holding net floor area samples list
+            'nb_occupants': Holding nb occupants samples list
+            'tset-heat': Holding tset heat samples list
+            'el': Holding elctricity demand samples list per year and person
+
+
         el_demand : float
                     Electrical demand for this building per year (kWh)
         dhw_energy : float
@@ -80,12 +86,12 @@ def new_building_evaluation_mc(building, new_weather, max_retro_year=2014, time_
     timestep = building.environment.timer.timeDiscretization
 
     dict_problem = {}
-    dict_problem['infiltration'] = []
-    dict_problem['dormer'] = []
-    dict_problem['attic'] = []
-    dict_problem['cellar'] = []
-    dict_problem['user_air'] = []
-    dict_problem['year'] = []
+    #dict_problem['infiltration'] = []
+    #dict_problem['dormer'] = []
+    #dict_problem['attic'] = []
+    #dict_problem['cellar'] = []
+    #dict_problem['user_air'] = []
+    #dict_problem['year'] = []
 
     print('Start Modification building')
     print ()
@@ -153,12 +159,16 @@ def new_building_evaluation_mc(building, new_weather, max_retro_year=2014, time_
               'and high internal loads.)'
         warnings.warn(msg)
 
-        dict_problem['infiltration'].append(dict_samples['inf'][0])
-        dict_problem['dormer'].append(dict_samples['dormer'][0])
-        dict_problem['attic'].append(dict_samples['attic'][0])
-        dict_problem['cellar'].append(dict_samples['cellar'][0])
-        dict_problem['user_air'].append(dict_samples['user_air'][0])
-        dict_problem ['year'].append(dict_samples['mod_year'][0])
+    dict_problem['infiltration']= dict_samples['inf'][0]
+    dict_problem['dormer']= dict_samples['dormer'][0]
+    dict_problem['attic']= dict_samples['attic'][0]
+    dict_problem['cellar'] = dict_samples['cellar'][0]
+    dict_problem['user_air']= dict_samples['user_air'][0]
+    dict_problem['year'] = dict_samples['mod_year'][0]
+    dict_problem['tset_heat'] = dict_samples['set_temp'][0]
+    dict_problem['nb_ocupants'] = dict_samples['occ'][0]
+    dict_problem['el'] = dict_samples['el'][0]
+    dict_problem ['net_floor_area'] = dict_samples['net_floor_area']
 
     #  Get el. demand and dhw energy for a building
     el_demand = new_building.get_annual_el_demand()

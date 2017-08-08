@@ -97,7 +97,7 @@ def do_uncertainty_analysis(Nsamples=10):
     GHG_specific = 'user energy demand'
 
     # ## Save results
-    save_result = False  # if set to false: no generation of results txt file
+    save_result = True  # if set to false: no generation of results txt file
     results_name = 'mc_results.txt'
 
     print('***********************************************************************************************************')
@@ -125,7 +125,7 @@ def do_uncertainty_analysis(Nsamples=10):
 
         #  Add energy systems to city
         gen_esys = True  # True - Generate energy systems
-        gen_e_net = True# True - Generate energy networks
+        gen_e_net = False# True - Generate energy networks
         dhw_dim_esys = True  # Use dhw profiles for esys dimensioning
 
         #  Path to energy system input file (csv/txt; tab separated)
@@ -141,6 +141,8 @@ def do_uncertainty_analysis(Nsamples=10):
             #  Generate energy systems
             City_gen.esysgen.gen_esys_for_city(city=City, list_data=list_esys,
                                                dhw_scale=dhw_dim_esys)
+        # else enter all the parameter your self
+
 
         #  Add energy networks to city
         if gen_e_net:  # True - Generate energy networks
@@ -554,8 +556,9 @@ def do_uncertainty_analysis(Nsamples=10):
     print('Do the simulations')
     print('***********************************************************************************************************')
 
+
     Th_results, Gas_results, El_results, Annuity_results, GHG_results, \
-    GHG_spe_results, el_results2, Th_results2, dict_city_pb, Nboiler_rescaled = \
+    GHG_spe_results, el_results2, dict_city_pb, Nboiler_rescaled, NEH_rescaled, Lal_rescaled = \
         newcity.new_city_evaluation_monte_carlo(City, dict_par_unc)
 
     print('***********************************************************************************************************')
@@ -685,6 +688,10 @@ def do_uncertainty_analysis(Nsamples=10):
     print('third quantil : ', third_quantil_spe_GHG)
     print ()
 
+    print ('Number of simulations with rescaled boiler : ', Nboiler_rescaled)
+    print('Number of simulations with rescaled EH : ', NEH_rescaled)
+    print ('Number of simulations with rescaled Boiler Lal : ', Lal_rescaled)
+
     print('***********************************************************************************************************')
     print('Save results')
     print('***********************************************************************************************************')
@@ -745,6 +752,8 @@ def do_uncertainty_analysis(Nsamples=10):
             write_results.write('dhw_volumen: ' + str(dhw_volumen) + '\n')
             write_results.write(
                 'Do random dhw. normalization: ' + str(dhw_random) + '\n')
+
+        write_results.write('\n############################Esys #########################\n')
 
         write_results.write('+++++++++++++++++++ \n')
         write_results.write('energy systems type: ' + str(list_esys)+ '\n')
@@ -819,6 +828,11 @@ def do_uncertainty_analysis(Nsamples=10):
         write_results.write('{:0.2%} of the means are in confident interval'.format(
             ((GHG_spe_results >= confident_inter_spe_GHG[0]) & (GHG_spe_results < confident_inter_spe_GHG[1])).sum() / float(
                 Nsamples)) + '\n')
+
+
+        write_results.write('\n Nboiler Lal rescaled: ' + str(Lal_rescaled))
+        write_results.write('\n Nboiler rescaled' + str(Nboiler_rescaled))
+        write_results.write('\n NEH rescaled' + str(NEH_rescaled))
         write_results.close()
 
     print('***********************************************************************************************************')
@@ -831,6 +845,7 @@ def do_uncertainty_analysis(Nsamples=10):
     fig, ((ax1,ax2), (ax3,ax4)) = plt.subplots(2, 2)
 
     ax1.hist(El_results,50, normed=1)
+    ax2.set_title('Final electrical demand in kWh')
 
     ax2.hist(Gas_results,50 , normed=1)
     ax2.set_title('Gas demand in kWh')
@@ -862,18 +877,25 @@ def do_uncertainty_analysis(Nsamples=10):
 
     fig3,((ax11,ax12), (ax13,ax14)) = plt.subplots(2, 2)
     ax11.hist(Th_results, 50)
-    ax11.set_title('Thermal demand normal')
-    ax12.hist(Th_results2, 50)
-    ax12.set_title('Thermal demand sum buildings')
+    ax11.set_title('Thermal demand')
+    ax12.hist(el_results2, 50)
+    ax12.set_title('Electrical demand for EBB')
     ax13.hist(El_results, 50)
-    ax13.set_title('Electrical demand normal')
-    ax14.hist(el_results2, 50)
-    ax14.set_title('electrical demand sum buildings')
-
+    ax13.set_title('Electrical demand')
+    ax14.hist(Gas_results, 50)
+    ax14.set_title('Gas demand')
     plt.show()
 
+    # Print samples
     for keys in dict_city_pb:
-        print(str(keys), dict_city_pb[keys])
+        print('Sampling building: {}'.format(keys))
+        for keys2 in dict_city_pb[keys]:
+            fig = plt.figure()
+            print(keys2, dict_city_pb[keys][keys2])
+            plt.hist(dict_city_pb[keys][keys2],50)
+            plt.xlabel('Sampling for {}, {}'.format(keys, keys2))
+            plt.ylabel('Number of values')
+    plt.show()
 
 if __name__ == '__main__':
     do_uncertainty_analysis()

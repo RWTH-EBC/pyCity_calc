@@ -219,7 +219,7 @@ class calculator(object):
 
         #  Loop over building list in subcity
         for i in range(len(dict_city_data[index]['Buildings in subcity'])):#TODO:'Buildings in subcity'
-
+            #print('buildinnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnng')
             # Initialize result lists
             Qth_sum=np.zeros(time_vector.timestepsTotal)
             Qchp_nom=np.zeros(time_vector.timestepsTotal)
@@ -303,11 +303,13 @@ class calculator(object):
 
                     #  Loop over thermal demand of building
                     for ii in range(len(thermal_demand_building)):
+                        #print('timestep', ii)
                         #print('#######node: ', str(dict_city_data[index]['Buildings in subcity'][i]), '\n','#######timestep: ', ii)
 
                         ####print('case0')
 
                         #  Define max. possible input/output power of tes
+                        #print ('first calcul of max in and out power')
                         q_out_max_tes = Bes.tes.calc_storage_q_out_max(
                             t_ambient=20, q_in=0)
                         q_in_max_tes = Bes.tes.calc_storage_q_in_max(
@@ -316,6 +318,11 @@ class calculator(object):
                         # for numerical reasons
                         if Bes.tes.tMax - Bes.tes.t_current < 0.01:
                             q_in_max_tes = 0
+                            #print('---------- differrence de temperature trop faible')
+
+                        if Bes.tes.t_current - Bes.tes.t_min < 0.1:
+                            q_out_max_tes = 0
+                            #print('---------- differrence de temperature trop faible')
 
                         #  Calculate max load power (max. supply mimus
                         #  current demand)
@@ -328,7 +335,7 @@ class calculator(object):
 
                         #  #---------------------------------------------
                         if load_power_max < 0:
-                            ####print('case1')
+                            #print('case1')
                             #  Thermal building demand is larger than
                             #  nominal hp and eh power!
                             #  In case of peak load eh has to run under
@@ -336,14 +343,14 @@ class calculator(object):
 
                             if q_out_max_tes < -load_power_max:
                                 if (dict_city_data[index]['hasLHN']) == False:
-
                                     print('Invalid Individual: TES is now emtpy and can not be unloaded')
                                     raise invalidind # raise the invalid Individual Error
 
-                                # else:
-                                #     #tes is empty, can't be unloaded. Energy from LHN is needed
-                                #     load_power_max=0
-
+                                else:
+                                    print('LHN needed')
+                                    #   #tes is empty, can't be unloaded. Energy from LHN is needed
+                                    #   load_power_max=0
+                            #print('load power max', -load_power_max)
                             #  Calc. temperature of next timestep
                             t_tes = \
                                 Bes.tes.calc_storage_temp_for_next_timestep(
@@ -352,7 +359,7 @@ class calculator(object):
                                     set_new_temperature=True,
                                     save_res=True,
                                     time_index=ii)
-                            print ('timestep' , ii,'-----',t_tes)
+                            #print ('timestep' , ii,'-----',t_tes)
                             #  Calculate power of heat pump (max.)
                             power_hp, power_hp_in = \
                                 Bes.heatpump.calc_hp_all_results(
@@ -375,7 +382,7 @@ class calculator(object):
 
 
                         elif load_power < 0 and load_power_max >= 0:
-                            ####print('case4')
+                            #print('case4')
 
                             #TODO: added a if case to check if hp is below partload
                             # sph_demand_building[ii] + 3 / 4 *dhw_demand_building[ii] needs to be supplied by HP
@@ -572,8 +579,7 @@ class calculator(object):
                         # #---------------------------------------------
                         #  Thermal demand power of building is smaller than
                         #  part load behavior of heat pump
-                        elif thermal_demand_building[
-                            ii] <= hp_lal * hp_qNominal:
+                        elif thermal_demand_building[ii] <= hp_lal * hp_qNominal:
                             ####print('case3')
 
                             # unvered demand
@@ -775,7 +781,7 @@ class calculator(object):
             # #------------------------------------------------------
             #  E. balance for chp usage
             if (Node['entity'].bes.hasChp) == True:
-                ####print('################################### hasCHP')
+                print('################################### hasCHP')
                 # Script for Building with CHP, Boiler and Tes
 
                 tes_object = Bes.tes
@@ -808,7 +814,7 @@ class calculator(object):
                 #  Loop over every timestep
                 #  #-----------------------------------------------------
                 for ii in range(len(thermal_demand_building)):
-                    print('timestep', ii)
+                    #print('timestep', ii)
                     #print('#######node: ', str(dict_city_data[index]['Buildings in subcity'][i]), '\n',
                     #          '#######timestep: ', ii)
 
@@ -818,8 +824,12 @@ class calculator(object):
                         t_ambient=20, q_out=0)
 
                     # for numerical reasons
-                    if Bes.tes.tMax - Bes.tes.t_current < 0.01:
+                    if Bes.tes.tMax - Bes.tes.t_current < 0.1:
                         q_in_max_tes = 0
+
+                    # for numerical reasons
+                    if Bes.tes.t_current - Bes.tes.tMin < 0.1:
+                        q_out_max_tes = 0
 
                     load_power = chp_qNominal - \
                                  thermal_demand_building[ii]
@@ -1100,8 +1110,7 @@ class calculator(object):
                             total_heat_demand_for_chp[ii]=thermal_demand_building[ii] # demand which has to be covered by chp, the actual supplied energy might be higher when LAL condition
 
 
-                    elif thermal_demand_building[
-                        ii] <= chp_lal * chp_qNominal and thermal_demand_building[ii] != 0:
+                    elif thermal_demand_building[ii] <= chp_lal * chp_qNominal and thermal_demand_building[ii] != 0:
                         # under chp minimum condition. Use tes or run chp_lal an charge tes
                         ####print('case3')
 
@@ -1264,7 +1273,7 @@ class calculator(object):
 
 
                     for ii in range(len(thermal_demand_building)):
-                        print('timestep', ii)
+                        #print('timestep', ii)
                         ####print('#######node: ', str(dict_city_data[index]['Buildings in subcity'][i]), '\n',
                               ####'#######timestep: ', ii)
 
@@ -1275,6 +1284,9 @@ class calculator(object):
                         # for numerical reasons
                         if Bes.tes.tMax - Bes.tes.t_current < 0.01:
                             q_in_max_tes = 0
+
+                        if Bes.tes.t_current - Bes.tes.t_min < 0.01:
+                            q_out_max_tes = 0
 
                         # when t_tes almost equal to t_tes_max tes_object.calc_storage_temp_for_next_timestep was unstable
                         #if q_in_max_tes <= 0.1:
@@ -1512,7 +1524,7 @@ class calculator(object):
                                 raise invalidind  # raise the invalid Individual Error
 
                     for ii in range(len(thermal_demand_building)):
-
+                        #print ('timestep', ii)
                         ####print('#######node: ', str(dict_city_data[index]['Buildings in subcity'][i]), '\n',
                               ####'#######timestep: ', ii)
                         if thermal_demand_building[ii]>= boiler_qNominal*boiler_lal:
@@ -1581,6 +1593,7 @@ class calculator(object):
         ###########################################                     ######################################################################
         ######################################################################################################################################
         if dict_city_data[index]['hasLHN'] == True:
+            print('#######################################LHN')
             import pycity_calc.simulation.energy_balance_optimization.Energy_balance_lhn as EB
             self.city_object, dict_supply = EB.city_energy_balance(self.city_object, dict_Qlhn, subcity_building_nodes=dict_city_data[index]['Buildings in subcity'])
         else:

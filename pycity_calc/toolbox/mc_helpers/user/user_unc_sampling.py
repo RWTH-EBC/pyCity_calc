@@ -234,8 +234,6 @@ def calc_sampling_el_demand_per_apartment(nb_samples, nb_persons, type,
 
     assert type in ['sfh', 'mfh']
     assert method in ['stromspiegel2017']
-    assert nb_persons > 0
-    assert nb_persons <= 5
 
     list_el_demands = []
 
@@ -349,9 +347,8 @@ def calc_dhw_ref_volume_for_multiple_occ(nb_occ, ref_one_occ=64):
 
 
 def calc_sampling_dhw_per_apartment(nb_samples, nb_persons,
-                                    method='stromspiegel_2017', pdf='equal',
-                                    equal_diff=34, mean=64, std=10,
-                                    b_type='sfh'):
+                                    method='nb_occ_dep', pdf='equal',
+                                    equal_diff=34, mean=64, std=10):
     """
     Perform domestic hot water sampling (hot water volume in liters per
     apartment and day; temperature split of 35 Kelvin, according to
@@ -369,8 +366,6 @@ def calc_sampling_dhw_per_apartment(nb_samples, nb_persons,
         'nb_occ_dep' : Dependend on number of occupants (reduced
         demand per person, if more persons are present)
         'indep' : Independent from total number of occupants
-        'stromspiegel_2017' : Based on hot water consumption data of
-        Stromspiegel 2017.
     pdf : str, optional
         Probability density function (default: 'equal')
         Options:
@@ -384,11 +379,6 @@ def calc_sampling_dhw_per_apartment(nb_samples, nb_persons,
     std : float, optional
         Standard deviation of domestic hot water volume per person and day
         in liter for gaussian distribution (default: 10)
-    b_type : str, optional
-        Building type (default: 'sfh')
-        Options:
-        - 'sfh' : Apartment is within single family house
-        - 'mfh' : Apartment is within multi-family house
 
     Returns
     -------
@@ -396,9 +386,8 @@ def calc_sampling_dhw_per_apartment(nb_samples, nb_persons,
         List of hot water volumes per apartment and day in liters
     """
 
-    assert method in ['nb_occ_dep', 'indep', 'stromspiegel_2017']
+    assert method in ['nb_occ_dep', 'indep']
     assert pdf in ['equal', 'gaussian']
-    assert b_type in ['sfh', 'mfh']
 
     list_dhw_vol = []
 
@@ -434,31 +423,6 @@ def calc_sampling_dhw_per_apartment(nb_samples, nb_persons,
                                                  pdf=pdf,
                                                  equal_diff=equal_diff,
                                                  std=std)[0]
-            list_dhw_vol.append(dhw_value)
-
-    elif method == 'stromspiegel_2017':
-
-        if nb_persons > 5:
-            nb_persons = 5
-
-        dict_sfh = {1: [200, 1000],
-                    2: [400, 1400],
-                    3: [400, 2100],
-                    4: [600, 2100],
-                    5: [700, 3400]}
-
-        dict_mfh = {1: [400, 800],
-                    2: [700, 1100],
-                    3: [900, 1700],
-                    4: [900, 2000],
-                    5: [1300, 3300]}
-
-        for i in range(nb_samples):
-            if b_type == 'sfh':
-                dhw_value = dict_sfh[nb_persons]
-            elif b_type == 'mfh':
-                dhw_value = dict_mfh[nb_persons]
-
             list_dhw_vol.append(dhw_value)
 
     return list_dhw_vol
