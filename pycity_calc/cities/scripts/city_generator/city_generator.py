@@ -12,12 +12,12 @@ import random
 import datetime
 import shapely.geometry.point as point
 
-import pycity.classes.Weather as weath
-import pycity.classes.demand.SpaceHeating as SpaceHeating
-import pycity.classes.demand.ElectricalDemand as ElectricalDemand
-import pycity.classes.demand.Apartment as Apartment
-import pycity.classes.demand.DomesticHotWater as DomesticHotWater
-import pycity.classes.demand.Occupancy as occup
+import pycity_base.classes.Weather as weath
+import pycity_base.classes.demand.SpaceHeating as SpaceHeating
+import pycity_base.classes.demand.ElectricalDemand as ElectricalDemand
+import pycity_base.classes.demand.Apartment as Apartment
+import pycity_base.classes.demand.DomesticHotWater as DomesticHotWater
+import pycity_base.classes.demand.Occupancy as occup
 
 import pycity_calc.environments.timer as time
 import pycity_calc.environments.market as price

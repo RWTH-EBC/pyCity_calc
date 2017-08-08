@@ -32,10 +32,10 @@ temperature-split should be reduced
 import numpy as np
 import matplotlib.pyplot as plt
 
-import pycity.classes.demand.DomesticHotWater as DomesticHotWater
-import pycity.classes.demand.Occupancy as occ
-import pycity.classes.Weather as Weather
-import pycity.functions.changeResolution as chres
+import pycity_base.classes.demand.DomesticHotWater as DomesticHotWater
+import pycity_base.classes.demand.Occupancy as occ
+import pycity_base.classes.Weather as Weather
+import pycity_base.functions.changeResolution as chres
 
 import pycity_calc.environments.co2emissions as co2
 import pycity_calc.environments.environment as env

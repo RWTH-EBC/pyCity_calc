@@ -904,10 +904,10 @@ def plot_cluster_results(city, cluster_dict, plot_street=True,
 
 
 if __name__ == '__main__':
-    import pycity.classes.supply.BES as BES
-    import pycity.classes.supply.Boiler as Boiler
-    import pycity.classes.supply.CHP as CHP
-    import pycity.classes.supply.Battery as Batt
+    import pycity_base.classes.supply.BES as BES
+    import pycity_base.classes.supply.Boiler as Boiler
+    import pycity_base.classes.supply.CHP as CHP
+    import pycity_base.classes.supply.Battery as Batt
 
     import pycity_calc.examples.example_city as excity
 

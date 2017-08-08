@@ -10,7 +10,7 @@ except:
     ImportError('Package pycity is not found. Please install pycity first.' +
                 'https://github.com/RWTH-EBC/pyCity')
 
-import pycity.classes.CityDistrict as citydist
+import pycity_base.classes.CityDistrict as citydist
 
 
 class City(citydist.CityDistrict):
@@ -29,10 +29,10 @@ class City(citydist.CityDistrict):
 
         Example
         -------
-        >>> import pycity.classes.Timer as time
-        >>> import pycity.classes.Weather as weath
-        >>> import pycity.classes.Prices as price
-        >>> import pycity.classes.Environment as env
+        >>> import pycity_base.classes.Timer as time
+        >>> import pycity_base.classes.Weather as weath
+        >>> import pycity_base.classes.Prices as price
+        >>> import pycity_base.classes.Environment as env
         >>> timer = time.Timer()
         >>> weather = weath.Weather(timer)
         >>> prices = price.Prices()

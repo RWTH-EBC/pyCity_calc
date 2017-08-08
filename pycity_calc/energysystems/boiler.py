@@ -7,7 +7,7 @@ from __future__ import division
 import numpy as np
 import warnings
 
-import pycity.classes.supply.Boiler as Boil
+import pycity_base.classes.supply.Boiler as Boil
 
 
 class BoilerExtended(Boil.Boiler):

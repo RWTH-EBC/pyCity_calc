@@ -15,7 +15,7 @@ import os
 import math
 import pickle
 
-import pycity.functions.process_city as prcity
+import pycity_base.functions.process_city as prcity
 
 import pycity_calc.visualization.city_visual as cityvis
 import pycity_calc.toolbox.dimensioning.dim_functions as dimfunc
