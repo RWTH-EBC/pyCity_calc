@@ -5,9 +5,9 @@ Pycity_calc city class (as inheritance from citydistrict class of pycity)
 from __future__ import division
 
 try:
-    import pycity
+    import pycity_base
 except:
-    ImportError('Package pycity is not found. Please install pycity first.' +
+    ImportError('Package pycity_base is not found. Please install pycity first.' +
                 'https://github.com/RWTH-EBC/pyCity')
 
 import pycity_base.classes.CityDistrict as citydist

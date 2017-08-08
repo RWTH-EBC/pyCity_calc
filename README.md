@@ -47,7 +47,7 @@ by adding new .py file and trying to import uesgraphs and pycity.
 
 `import uesgraphs`
 
-`import pycity`
+`import pycity_base`
 
 Import should be possible without errors.
 
