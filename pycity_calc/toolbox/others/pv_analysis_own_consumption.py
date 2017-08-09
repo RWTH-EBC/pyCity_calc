@@ -4,11 +4,11 @@
 
 """
 
-import pycity.classes.supply.PV as pvmodule
-import pycity.classes.Weather as Weather
-import pycity.classes.demand.ElectricalDemand as elecdem
-import pycity.classes.demand.Occupancy as occu
-import pycity.functions.changeResolution as chres
+import pycity_base.classes.supply.PV as pvmodule
+import pycity_base.classes.Weather as Weather
+import pycity_base.classes.demand.ElectricalDemand as elecdem
+import pycity_base.classes.demand.Occupancy as occu
+import pycity_base.functions.changeResolution as chres
 
 import pycity_calc.environments.co2emissions as co2
 import pycity_calc.environments.environment as env

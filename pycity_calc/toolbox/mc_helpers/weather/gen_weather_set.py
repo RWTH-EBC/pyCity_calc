@@ -12,8 +12,8 @@ import random
 import copy
 import numpy as np
 
-import pycity.classes.Timer as time
-import pycity.classes.Weather as wea
+import pycity_base.classes.Timer as time
+import pycity_base.classes.Weather as wea
 
 
 def calc_lin_ipl_array(ref_array, side_array, factor):

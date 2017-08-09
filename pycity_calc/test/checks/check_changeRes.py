@@ -1,4 +1,4 @@
-import pycity.functions.changeResolution as chres
+import pycity_base.functions.changeResolution as chres
 
 
 def run_change_res_mean_timestep():
