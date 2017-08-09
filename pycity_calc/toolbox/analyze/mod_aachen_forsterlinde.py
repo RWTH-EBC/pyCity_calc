@@ -35,7 +35,7 @@ if __name__ == '__main__':
     city = pickle.load(open(file_path, mode='rb'))
 
     #  Erase buildings 1001 and 1008
-    for n in [1001, 1008]:
+    for n in [1001, 1006, 1008]:
         city.remove_building(n)
 
     pickle.dump(city, open(out_path, mode='wb'))

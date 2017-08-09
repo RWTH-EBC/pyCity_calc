@@ -253,18 +253,32 @@ if __name__ == '__main__':
 
     list_files = []
 
-    #  City file name (to
-    city_file = 'aachen_forsterlinde_osm.pkl'
+    # #  City file name
+    # city_file = 'aachen_forsterlinde_osm.pkl'
+    # list_files.append(city_file)
+    # city_file = 'aachen_frankenberg_osm.pkl'
+    # list_files.append(city_file)
+    # city_file = 'aachen_huenefeld_osm.pkl'
+    # list_files.append(city_file)
+    # city_file = 'aachen_kronenberg_osm.pkl'
+    # list_files.append(city_file)
+    # city_file = 'aachen_preusweg_osm.pkl'
+    # list_files.append(city_file)
+    # city_file = 'aachen_tuerme_osm.pkl'
+    # list_files.append(city_file)
+
+    #  City file name
+    city_file = 'aachen_forsterlinde_osm_mod_1.pkl'
     list_files.append(city_file)
-    city_file = 'aachen_frankenberg_osm.pkl'
+    city_file = 'aachen_frankenberg_osm_mod_1.pkl'
     list_files.append(city_file)
-    city_file = 'aachen_huenefeld_osm.pkl'
+    city_file = 'aachen_huenefeld_osm_mod_1.pkl'
     list_files.append(city_file)
-    city_file = 'aachen_kronenberg_osm.pkl'
+    city_file = 'aachen_kronenberg_osm_mod_1.pkl'
     list_files.append(city_file)
-    city_file = 'aachen_preusweg_osm.pkl'
+    city_file = 'aachen_preusweg_osm_mod_1.pkl'
     list_files.append(city_file)
-    city_file = 'aachen_tuerme_osm.pkl'
+    city_file = 'aachen_tuerme_osm_mod_1.pkl'
     list_files.append(city_file)
 
     for n in list_files:
@@ -276,7 +290,9 @@ if __name__ == '__main__':
         out_name = n[:-1] + '.txt'
 
         #  Path to save data to
-        out_path = os.path.join(this_path, 'output', 'aachen', 'osm_extract',
+        out_path = os.path.join(this_path, 'output', 'aachen',
+                                #  'osm_extract',
+                                'osm_extract_mod',
                                 out_name)
 
         #  Load city object
