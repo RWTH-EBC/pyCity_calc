@@ -20,6 +20,7 @@ import pickle
 import numpy as np
 from copy import deepcopy
 import xlrd
+import math
 
 import matplotlib.pyplot as plt
 import pycity_calc.cities.city as City
@@ -56,7 +57,7 @@ def run_approach(city):
 
     # building_con, heating_net, geothermal = additional_information()
 
-#----------------------- Abschätzung ob zentral/dezentral versorgt werden sollte ----------------------------------
+#----------------------- Check Eligibility for District Heating Network ----------------------------------
 
     # Energiekennwert des Quartiers (Keine Unterscheidung der Gebäude - nur Betrachtung als Gesamtes zur Abschätzung)
     th_total = city.get_annual_space_heating_demand() + city.get_annual_dhw_demand()
@@ -81,9 +82,8 @@ def run_approach(city):
         for scenario in all_scenarios:
             if 'centralized' in scenario['type']:
                 if approve_scenario(city, scenario, geothermal):
-                    solutions.append(dim_centralized(deepcopy(city),scenario))
-
-
+                    result = dim_centralized(deepcopy(city),scenario)
+                    solutions.append(result)
 
 
     elif dhn_elig < 3:
@@ -103,6 +103,10 @@ def run_approach(city):
         #         if 'decentralized' in scenario['type']:
         #             print('dim_decentralized mit', scenario)
         #             solutions.append(dim_decentralized(city,scenario))
+
+
+
+
 
 
 
@@ -308,17 +312,13 @@ def dim_centralized(city, scenario):
     :return: scenario with sizes of devices - in welcher form? city_object
     '''
 
-    [el_curve, th_curve] = city.get_power_curves(current_values=False)
-    th_LDC = get_LDC(th_curve)
     eta_transmission = 0.9  # richtigen Faktor suchen
-
-    building_age = get_building_age(city)
-    if building_age == 'new':
-        print('Check if requirements of EEWärmeG are fulfilled!')
+    [el_curve, th_curve] = city.get_power_curves(current_values=False)
+    th_LDC = get_LDC(th_curve / eta_transmission)
+    q_total = sum(th_curve)
 
     bes = BES.BES(city.environment)
 
-    q_base_max = []
 
     for device in scenario['base']:
         if device == 'chp':
@@ -328,18 +328,52 @@ def dim_centralized(city, scenario):
 
             # Dimensionierungsstrategie: 1.Anlage bei 5500h/a mit 1/2 mehr installierter Leistung als nötig für Speicher
 
+            chp_flh = 7000 #best possible full-load-hours
+            q_chp = 3 / 2 * th_LDC[chp_flh]
 
-            q_chp = 3/2*th_LDC[5500]/eta_transmission
+            while q_chp/max(th_LDC) < 0.1: #falls leistungsanteil kleiner als 10%
+                chp_flh -= 50
+                q_chp = 3/2*th_LDC[chp_flh]
 
-            [eta_el, eta_th, p_nom, q_nom] = choose_device('chp',q_chp)
+            [eta_el, eta_th, p_nom, q_nom] = choose_device('chp', q_chp)
+
+            if get_building_age(city) == 'new':
+                print('EEWärmeG beachten!')
+                eewg = False
+                count = 0
+                while not eewg:
+                    ee_ratio = q_chp / q_total
+                    if ee_ratio > 0.5:
+                        #PEE berechnen
+                        refeta_th = 0.85  # th. Referenzwirkungsgrad für Anlagen vor 2016, Dampf, Erdgas
+                        refeta_el = 0.525  # el. Referenzwirkungsgrad für Anlagen zwischen 2012 und 2015, Erdgas
+                        # Primärenergieeinsparung (PEE) in % nach Richtlinie 2012/27/EU
+                        pee = (1 - 1 / ((eta_th / refeta_th) + (eta_el / refeta_el))) * 100
+                        if p_nom >= 1000000:
+                            if pee >= 10:
+                                print('EEWärmeG erfüllt. (>=1MW)')
+                                eewg = True
+                                break
+                        else:
+                            if pee > 0:
+                                print('EEWärmeG erfüllt. (<1MW)')
+                                eewg = True
+                                break
+                        if q_chp/q_total > 0.9:
+                            print('EEWärmeG nicht erfüllt: Unrealistische Werte! (Q_chp > 90% von Q_total)')
+                            break
+                    q_chp = math.ceil(0.5*q_total+count*q_total/100) #Mindestwert 50% Deckung + 1% der Gesamtleistung je Durchlauf
+                    [eta_el, eta_th, p_nom, q_nom] = choose_device('chp', q_chp)
+                    count += 1
+            else:
+                print('EEWärmeG muss aufgrund des Gebäudealters nicht beachtet werden.')
+                eewg = True
+
+            enev = False
+
             chp = CHP.CHP(city.environment, p_nom, q_nom, eta_el+eta_th)
             bes.addDevice(chp)
 
-            # Dimensionierung nach Krimmling "Energieeffiziente Nahwärmesysteme", S.127 - Faustformel: BHKW-Leistung zwischen 10% und 20% der Maximallast
-            # q_borders = [min(th_LDC, key=lambda x:abs(x-0.1*max(th_LDC))), min(th_LDC, key=lambda x:abs(x-0.2*max(th_LDC)))] #gibt die Leistungsgrenzen nach Faustformel aus
-            # t_borders = [th_LDC.index(q_borders[0]), th_LDC.index(q_borders[1])] #gibt die Volllaststunden für die errechneten Leistungen aus
-            # print('BHKW mit Leistung zwischen ', q_borders)
-            # print('Betriebszeiten zwischen ', t_borders)
 
             if 'boiler' in scenario['peak']:
                 q_boiler = max(th_LDC) - q_nom
@@ -491,13 +525,73 @@ def dim_decentralized(city, scenario):
     :return: scenario with sizes of devices - in welcher form? city_object
     '''
 
-    result = {}
     # get thermal and electrical demand curves (only available for sanitation)
 
 
 
     print('dim_decentralized clone of centralized... not working correctly')
 
+
+
+def check_compliance_EEWaermeG(city,bes_type):
+    """
+    check for compliance of EEWärmeG
+    new buildings (built after 2009)
+    renovated public service buildings (not integrated)
+
+    Heizung und WW wird immer zusammen betrachtet!
+
+    Wärme- und Kälteenergiebedarf die Summe
+    a) der zur Deckung des Wärmebedarfs für Heizung und Warmwasserbereitung jährlich benötigten Wärmemenge und
+    b) der zur Deckung des Kältebedarfs für Raumkühlung jährlich benötigten Kältemenge
+
+    jeweils einschließlich des thermischen Aufwands für Übergabe, Verteilung und Speicherung. Der Wärme- und
+    Kälteenergiebedarf wird nach den technischen Regeln berechnet, die den Anlagen 1 und 2 zur Energieeinsparverordnung
+    zugrunde gelegt werden. --> Anstatt den Wärmebedarf zu berechnen werden hier die vorgegebenen Wärmelasten zugrunde gelegt.
+
+    :param city: 
+    :return: 
+    """
+
+
+    # mind. 50% Deckung
+    # Falls Nutzung mit el. Wärmepumpe  Jahresarbeitszahl = 3,5 (für Luft/Wasser; Luft/Luft)
+    # bzw. JAZ = 4,0 (alle anderen Wärmepumpen)
+    # Falls auch WW über el. Wärmepumpe oder zu wesentlichem Anteil aus EE
+    # JAZ = 3,3 (für Luft/Wasser; Luft/Luft) bzw. JAZ = 3,8 (alle anderen WP)
+    # JAZ == COP ?? Wo steht was in hp class
+
+    # WAS IST MIT PV? NUR WÄRMENUTZUNG DURCH EE?!
+    print('check compliance EEWG hp')
+
+
+
+def check_compliance_EnEV(city,bes_type):
+    """
+    check for compliance of EnEV
+    :param city:
+    :return:
+    """
+
+    print('EnEV prüfen!')
+
+
+
+
+
+def calc_annuity(city):
+    """
+    - Kosten/Annuität
+        - KWK Vergünstigungen
+        - Einspeisevergütung durch EEG
+        - Strom- und Brennstoffkosten
+        - Investitionskosten
+        - sonstige Förderungen (Recherche!)
+    
+    :param city: 
+    :return: 
+    """
+    print('Annuity check not implemented')
 
 
 
