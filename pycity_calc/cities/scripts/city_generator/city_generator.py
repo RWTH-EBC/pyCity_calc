@@ -2744,24 +2744,24 @@ if __name__ == '__main__':
 
     # filename = 'city_3_buildings_mixed.txt'
     # filename = 'city_clust_simple.txt'
-    filename = 'aachen_forsterlinde_mod_6.txt'
-    # filename = 'aachen_frankenberg_mod_6.txt'
-    # filename = 'aachen_huenefeld_mod_6.txt'
-    # filename = 'aachen_kronenberg_mod_8.txt'
-    # filename = 'aachen_preusweg_mod_8.txt'
-    # filename = 'aachen_tuerme_mod_6.txt'
+    filename = 'aachen_forsterlinde_osm_mod_6.txt'
+    # filename = 'aachen_frankenberg_osm_8.txt'
+    # filename = 'aachen_huenefeld_osm_6.txt'
+    # filename = 'aachen_kronenberg_osm_8.txt'
+    # filename = 'aachen_preusweg_mod_9.txt'
+    # filename = 'aachen_tuerme_osm_6.txt'
 
     #  Output filename
-    pickle_city_filename = filename[:-4] + '.pkl'
+    pickle_city_filename = filename[:-4] + '_with_richardsonpy.pkl'
 
     #  For generation_mode == 1:
     # city_osm_input = None
-    city_osm_input = 'aachen_forsterlinde_mod_7_rich.pkl'
-    # city_osm_input = 'aachen_frankenberg_mod_7_rich.pkl'
-    # city_osm_input = 'aachen_huenefeld_mod_7_rich.pkl'
-    # city_osm_input = 'aachen_kronenberg_mod_7_rich.pkl'
-    # city_osm_input = 'aachen_preusweg_mod_7_rich.pkl'
-    # city_osm_input = 'aachen_tuerme_mod_7_rich.pkl'
+    city_osm_input = 'aachen_forsterlinde_mod_7.pkl'
+    # city_osm_input = 'aachen_frankenberg_mod_8.pkl'
+    # city_osm_input = 'aachen_huenefeld_mod_7.pkl'
+    # city_osm_input = 'aachen_kronenberg_mod_7.pkl'
+    # city_osm_input = 'aachen_preusweg_mod_7.pkl'
+    # city_osm_input = 'aachen_tuerme_mod_7.pkl'
 
     #  Pickle and dump city object instance?
     do_save = True
@@ -2806,9 +2806,10 @@ if __name__ == '__main__':
     # (default: False). If set to False, merge_windows_calc is set to False.
     #  If True, Windows are merged into wall resistances.
 
-    txt_path = os.path.join(this_path, 'input', filename)
+    txt_path = os.path.join(this_path, 'input', 'aachen', filename)
     if generation_mode == 1:
-        path_city_osm_in = os.path.join(this_path, 'input', city_osm_input)
+        path_city_osm_in = os.path.join(this_path, 'input', 'aachen',
+                                        city_osm_input)
 
     # Path for log file
     log_f_name = log_file_name = str('log_' + filename)

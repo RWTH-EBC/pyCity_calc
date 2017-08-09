@@ -187,14 +187,20 @@ def add_build_entities(city, add_ap=False):
 if __name__ == '__main__':
 
     #  osm filename
-    filename = 'test.osm'
+    # filename = 'test.osm'
+    filename = 'aachen_forsterlinde.osm'
+    # filename = 'aachen_frankenberg.osm'
+    # filename = 'aachen_huenefeld.osm'
+    # filename = 'aachen_kronenberg.osm'
+    # filename = 'aachen_preusweg.osm'
+    # filename = 'aachen_tuerme.osm'
 
     #  Minimal required building area in m2
     min_area = 35
 
     #  Save generated city objecct as pickle file?
     save_city = True
-    city_filename = 'test_osm.pkl'
+    city_filename = filename[:-4] + '_osm.pkl'
 
     #  Convert lat/long to utm coordinates in meters?
     #  Only necessary, if no conversion is done within uesgraphs itself
@@ -216,7 +222,7 @@ if __name__ == '__main__':
     year = 2010
     location = (50.781743,6.083470)  #  Aachen
     #  location = (51.529086, 6.944689)  # Bottrop
-    altitude = 55
+    altitude = 266
     try_path = None
 
     #   End of user input  ###################################################
