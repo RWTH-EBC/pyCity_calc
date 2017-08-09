@@ -228,7 +228,7 @@ if __name__ == '__main__':
     #   End of user input  ###################################################
 
     this_path = os.path.dirname(os.path.abspath(__file__))
-    osm_path = os.path.join(this_path, 'input_osm', filename)
+    osm_path = os.path.join(this_path, 'input_osm', 'aachen', filename)
     # osm_path = os.path.join(this_path, 'input_osm', 'Diss_Quartiere', filename)
     osm_out_path = os.path.join(this_path, 'output_osm', city_filename)
     # osm_out_path = os.path.join(this_path, 'input_osm',
