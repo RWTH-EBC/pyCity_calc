@@ -251,28 +251,37 @@ if __name__ == '__main__':
     this_path = os.path.dirname(os.path.abspath(__file__))
     src_path = os.path.dirname(os.path.dirname(this_path))
 
+    list_files = []
+
     #  City file name (to
-    city_f_name = 'city_clust_simple.p'
+    city_file = 'aachen_forsterlinde_osm.pkl'
+    list_files.append(city_file)
+    city_file = 'aachen_frankenberg_osm.pkl'
+    list_files.append(city_file)
+    city_file = 'aachen_huenefeld_osm.pkl'
+    list_files.append(city_file)
+    city_file = 'aachen_kronenberg_osm.pkl'
+    list_files.append(city_file)
+    city_file = 'aachen_preusweg_osm.pkl'
+    list_files.append(city_file)
+    city_file = 'aachen_tuerme_osm.pkl'
+    list_files.append(city_file)
 
-    #  Path to load city object
-    city_path = os.path.join(this_path, 'input', city_f_name)
-    # city_path = os.path.join(src_path, 'cities', 'scripts', 'input_osm',
-    #                          'Diss_Quartiere',
-    #                          city_f_name)
+    for n in list_files:
 
-    #  Txt output filename
-    out_name = city_f_name[:-1] + '.txt'
+        #  Path to load city object
+        city_path = os.path.join(this_path, 'input', 'aachen', n)
 
-    #  Path to save data to
-    out_path = os.path.join(this_path, 'output', out_name)
-    # out_path = os.path.join(src_path, 'cities', 'scripts', 'input_osm',
-    #                          'Diss_Quartiere', out_name)
+        #  Txt output filename
+        out_name = n[:-1] + '.txt'
 
-    #  Load city object
-    city = pickle.load(open(city_path, mode='rb'))
+        #  Path to save data to
+        out_path = os.path.join(this_path, 'output', 'aachen', 'osm_extract',
+                                out_name)
 
-    #  Extract and save city object data
-    save_city_data_to_file(city=city, save_path=out_path, with_esys=False)
+        #  Load city object
+        city = pickle.load(open(city_path, mode='rb'))
 
-    #  Extract all building load profiles and write them to file
-    #  extract_and_save_building_load_profiles(city=city, save_path=out_path)
+        #  Extract and save city object data
+        save_city_data_to_file(city=city, save_path=out_path, with_esys=False)
+
