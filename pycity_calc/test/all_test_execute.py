@@ -13,4 +13,3 @@ import pytest
 #  Calling all pytest, except energy balance test, as the fail for
 #  regular pytest call
 pytest.main(['--ignore=test_simulation_energy_balances.py'])
-
