@@ -2744,24 +2744,24 @@ if __name__ == '__main__':
 
     # filename = 'city_3_buildings_mixed.txt'
     # filename = 'city_clust_simple.txt'
-    filename = 'aachen_forsterlinde_osm_mod_6.txt'
-    # filename = 'aachen_frankenberg_osm_8.txt'
-    # filename = 'aachen_huenefeld_osm_6.txt'
-    # filename = 'aachen_kronenberg_osm_8.txt'
-    # filename = 'aachen_preusweg_mod_9.txt'
-    # filename = 'aachen_tuerme_osm_6.txt'
+    filename = 'aachen_forsterlinde_mod_new_1.txt'
+    # filename = 'aachen_frankenberg_mod_new_1.txt'
+    # filename = 'aachen_huenefeld_mod_new_1.txt'
+    # filename = 'aachen_kronenberg_mod_new_1.txt'
+    # filename = 'aachen_preusweg_mod_new_1.txt'
+    # filename = 'aachen_tuerme_mod_new_1.txt'
 
     #  Output filename
-    pickle_city_filename = filename[:-4] + '_with_richardsonpy.pkl'
+    pickle_city_filename = filename[:-4] + '.pkl'
 
     #  For generation_mode == 1:
     # city_osm_input = None
-    city_osm_input = 'aachen_forsterlinde_mod_7.pkl'
-    # city_osm_input = 'aachen_frankenberg_mod_8.pkl'
-    # city_osm_input = 'aachen_huenefeld_mod_7.pkl'
-    # city_osm_input = 'aachen_kronenberg_mod_7.pkl'
-    # city_osm_input = 'aachen_preusweg_mod_7.pkl'
-    # city_osm_input = 'aachen_tuerme_mod_7.pkl'
+    city_osm_input = 'aachen_forsterlinde_osm_mod_1.pkl'
+    # city_osm_input = 'aachen_frankenberg_osm_mod_1.pkl'
+    # city_osm_input = 'aachen_huenefeld_osm_mod_1.pkl'
+    # city_osm_input = 'aachen_kronenberg_osm_mod_1.pkl'
+    # city_osm_input = 'aachen_preusweg_osm_mod_1.pkl'
+    # city_osm_input = 'aachen_tuerme_osm_mod_1.pkl'
 
     #  Pickle and dump city object instance?
     do_save = True
