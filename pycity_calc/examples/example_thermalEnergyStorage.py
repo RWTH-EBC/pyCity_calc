@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 import pycity_calc.energysystems.thermalEnergyStorage as TES
 
-import pycity.classes.Weather as Weather
+import pycity_base.classes.Weather as Weather
 import pycity_calc.environments.co2emissions as co2
 import pycity_calc.environments.environment as env
 import pycity_calc.environments.market as mark

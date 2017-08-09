@@ -9,7 +9,7 @@ import pickle
 import copy
 import numpy as np
 
-import pycity.functions.changeResolution as chres
+import pycity_base.functions.changeResolution as chres
 
 import pycity_calc.toolbox.mc_helpers.building.build_unc_set_gen as bunc
 import pycity_calc.toolbox.mc_helpers.user.user_unc_sampling as usunc

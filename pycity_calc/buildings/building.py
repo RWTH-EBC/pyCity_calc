@@ -10,7 +10,7 @@ from __future__ import division
 import warnings
 import numpy as np
 
-import pycity.classes.Building as build
+import pycity_base.classes.Building as build
 import pycity_calc.toolbox.unit_conversion as unitcon
 
 
@@ -106,10 +106,10 @@ class BuildingExtended(build.Building):
 
         Examples
         --------
-        >>> import pycity.classes.Timer as time
-        >>> import pycity.classes.Weather as weath
-        >>> import pycity.classes.Prices as price
-        >>> import pycity.classes.Environment as env
+        >>> import pycity_base.classes.Timer as time
+        >>> import pycity_base.classes.Weather as weath
+        >>> import pycity_base.classes.Prices as price
+        >>> import pycity_base.classes.Environment as env
         >>> timer = time.Timer()
         >>> weather = weath.Weather(timer)
         >>> prices = price.Prices()

@@ -8,16 +8,16 @@ Script to rescale building electrical curve and domestic hot water for Morris an
 
 import copy
 import numpy as np
-import pycity.classes.Weather as Weather
+import pycity_base.classes.Weather as Weather
 import pycity_calc.environments.environment as env
 import pycity_calc.environments.co2emissions as co2
 import pycity_calc.environments.market as mark
 import pycity_calc.environments.timer as time
 import pycity_calc.buildings.building as build_ex
-import pycity.classes.demand.Apartment as Apartment
-import pycity.classes.demand.ElectricalDemand as ElectricalDemand
-import pycity.classes.demand.DomesticHotWater as dhwater
-import pycity.classes.demand.Occupancy as occ
+import pycity_base.classes.demand.Apartment as Apartment
+import pycity_base.classes.demand.ElectricalDemand as ElectricalDemand
+import pycity_base.classes.demand.DomesticHotWater as dhwater
+import pycity_base.classes.demand.Occupancy as occ
 
 
 def new_evaluation_building(building, parameters):

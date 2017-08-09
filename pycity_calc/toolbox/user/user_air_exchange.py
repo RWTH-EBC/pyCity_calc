@@ -26,12 +26,12 @@ import random
 import warnings
 import numpy as np
 
-import pycity.classes.Timer as Timer
-import pycity.classes.Weather as Weather
-import pycity.classes.Environment as Envir
-import pycity.classes.Prices as Prices
-import pycity.functions.changeResolution as chres
-import pycity.classes.demand.Occupancy as Occupancy
+import pycity_base.classes.Timer as Timer
+import pycity_base.classes.Weather as Weather
+import pycity_base.classes.Environment as Envir
+import pycity_base.classes.Prices as Prices
+import pycity_base.functions.changeResolution as chres
+import pycity_base.classes.demand.Occupancy as Occupancy
 
 
 def get_inf_rate(mod_year):

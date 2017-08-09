@@ -12,10 +12,10 @@ import pycity_calc.environments.timer as time
 import pycity_calc.environments.co2emissions as co2
 import pycity_calc.environments.environment as env
 
-import pycity.classes.Weather as weat
-import pycity.classes.demand.SpaceHeating as SpaceHeating
-import pycity.classes.demand.ElectricalDemand as ElDemand
-import pycity.classes.demand.Apartment as Apartment
+import pycity_base.classes.Weather as weat
+import pycity_base.classes.demand.SpaceHeating as SpaceHeating
+import pycity_base.classes.demand.ElectricalDemand as ElDemand
+import pycity_base.classes.demand.Apartment as Apartment
 import pycity_calc.buildings.building as build_ex
 import pycity_calc.cities.city as city
 
