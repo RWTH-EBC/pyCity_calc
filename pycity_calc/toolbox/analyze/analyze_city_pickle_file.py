@@ -811,8 +811,8 @@ if __name__ == '__main__':
     #  City pickle filename
     # city_file = 'city_clust_simple.p'
     # city_file = 'aachen_forsterlinde_osm.pkl'
-    city_file = 'aachen_frankenberg_osm.pkl'
-    # city_file = 'aachen_huenefeld_osm.pkl'
+    # city_file = 'aachen_frankenberg_osm.pkl'
+    city_file = 'aachen_huenefeld_osm.pkl'
     # city_file = 'aachen_kronenberg_osm.pkl'
     # city_file = 'aachen_preusweg_osm.pkl'
     # city_file = 'aachen_tuerme_osm.pkl'

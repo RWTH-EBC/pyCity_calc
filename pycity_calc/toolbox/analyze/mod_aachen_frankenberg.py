@@ -20,10 +20,6 @@ import pycity_calc.toolbox.networks.network_ops as netop
 if __name__ == '__main__':
     #  City pickle filename
     city_file = 'aachen_frankenberg_osm.pkl'
-    # city_file = 'aachen_huenefeld_osm.pkl'
-    # city_file = 'aachen_kronenberg_osm.pkl'
-    # city_file = 'aachen_preusweg_osm.pkl'
-    # city_file = 'aachen_tuerme_osm.pkl'
 
     #  Path to load file
     this_path = os.path.dirname(os.path.abspath(__file__))
