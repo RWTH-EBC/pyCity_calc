@@ -19,7 +19,11 @@ import pycity_calc.toolbox.networks.network_ops as netop
 
 if __name__ == '__main__':
     #  City pickle filename
-    city_file = 'aachen_forsterlinde_osm.pkl'
+    city_file = 'aachen_frankenberg_osm.pkl'
+    # city_file = 'aachen_huenefeld_osm.pkl'
+    # city_file = 'aachen_kronenberg_osm.pkl'
+    # city_file = 'aachen_preusweg_osm.pkl'
+    # city_file = 'aachen_tuerme_osm.pkl'
 
     #  Path to load file
     this_path = os.path.dirname(os.path.abspath(__file__))
@@ -35,7 +39,7 @@ if __name__ == '__main__':
     city = pickle.load(open(file_path, mode='rb'))
 
     #  Erase buildings 1001 and 1008
-    for n in [1001, 1008]:
+    for n in [1034, 1035, 1036, 1031, 1028, 1032, 1029, 1030, 1001, 1033, 1027]:
         city.remove_building(n)
 
     pickle.dump(city, open(out_path, mode='wb'))
