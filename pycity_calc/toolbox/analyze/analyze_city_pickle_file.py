@@ -814,8 +814,8 @@ if __name__ == '__main__':
     # city_file = 'aachen_frankenberg_osm.pkl'
     # city_file = 'aachen_huenefeld_osm.pkl'
     # city_file = 'aachen_kronenberg_osm.pkl'
-    city_file = 'aachen_preusweg_osm.pkl'
-    # city_file = 'aachen_tuerme_osm.pkl'
+    # city_file = 'aachen_preusweg_osm.pkl'
+    city_file = 'aachen_tuerme_osm.pkl'
 
     print('Analyse city file: ', city_file)
 

@@ -19,7 +19,7 @@ import pycity_calc.toolbox.networks.network_ops as netop
 
 if __name__ == '__main__':
     #  City pickle filename
-    city_file = 'aachen_preusweg_osm.pkl'
+    city_file = 'aachen_tuerme_osm.pkl'
 
     #  Path to load file
     this_path = os.path.dirname(os.path.abspath(__file__))
@@ -34,16 +34,9 @@ if __name__ == '__main__':
     #  Load city object from pickle file
     city = pickle.load(open(file_path, mode='rb'))
 
-    list_extract = [1092, 1079, 1094, 1097, 1098, 1036, 1048, 1109]
-
-    for n in city.nodes():
-        if n not in list_extract:
-            city.remove_building(n)
-
-    # list_remove = [1111, 1096, 1085, 1021, 1089, 1024, 1003, 1023, 1052]
-    #
-    # for n in list_remove:
-    #     city.remove_building(n)
+    #  Erase buildings
+    for n in [1004, 1001, 1003, 1002, 1009]:
+        city.remove_building(n)
 
     pickle.dump(city, open(out_path, mode='wb'))
 
