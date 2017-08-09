@@ -631,13 +631,13 @@ def check_single_building_consistency(exbuild, id=None, check_sh=True,
             volume_per_person_and_day = \
                 volume_per_day / exbuild.get_number_of_occupants()
 
-            if volume_per_person_and_day < 64 - 24:
+            if volume_per_person_and_day < 10:
                 msg = 'Building ' + str(id) + \
                       ' has low hot water volume per person and day of: ' \
                       '' + str(volume_per_person_and_day) + ' liters.'
                 warnings.warn(msg)
                 b_is_correct = False
-            elif volume_per_person_and_day > 64 + 24:
+            elif volume_per_person_and_day > 80:
                 msg = 'Building ' + str(id) + \
                       ' has high hot water volume per person and day of: ' \
                       '' + str(volume_per_person_and_day) + ' liters.'
