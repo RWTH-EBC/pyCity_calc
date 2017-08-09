@@ -236,3 +236,35 @@ class Test_City_Generators():
         assert build_4.dormer == None
 
         assert build_1.get_annual_space_heat_demand() > 0
+
+    def test_convert_th_slp_int_and_str(self):
+
+        assert citygen.convert_th_slp_int_and_str(0) == 'HEF'
+        assert citygen.convert_th_slp_int_and_str(7) == 'GKO'
+
+    def test_convert_el_slp_int_and_str(self):
+
+        assert citygen.convert_el_slp_int_and_str(0) == 'H0'
+        assert citygen.convert_el_slp_int_and_str(1) == 'G0'
+
+    def test_convert_method_3_nb_into_str(self):
+
+        assert citygen.convert_method_3_nb_into_str(1) == 'metal'
+
+    def test_convert_method_4_nb_into_str(self):
+
+        assert citygen.convert_method_4_nb_into_str(2) == 'warehouse'
+
+    def test_conv_build_type_nb_to_name(self):
+
+        assert citygen.conv_build_type_nb_to_name(0) == 'Residential'
+        assert citygen.conv_build_type_nb_to_name(23) == 'Restaurant'
+
+    def test_redistribute_occ(self):
+
+        list_person_per_ap = [5, 6, 7, 1, 1, 2, 3, 2, 1]
+
+        list_new = citygen.redistribute_occ(list_person_per_ap)
+
+        assert max(list_new) <= 5
+        assert min(list_new) >= 1
