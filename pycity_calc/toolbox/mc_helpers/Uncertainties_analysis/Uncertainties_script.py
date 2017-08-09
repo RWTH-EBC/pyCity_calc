@@ -53,7 +53,7 @@ import numpy as np
 from scipy import stats
 import random as rd
 
-def do_uncertainty_analysis(Nsamples=10):
+def do_uncertainty_analysis(Nsamples=100):
 
     # Define Uncertainty analysis parameters
     # #############################################################################################################
