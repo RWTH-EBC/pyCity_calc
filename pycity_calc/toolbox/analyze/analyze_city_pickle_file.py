@@ -14,6 +14,7 @@ import pycity_calc.toolbox.dimensioning.dim_functions as dimfunc
 import pycity_calc.visualization.city_visual as citvis
 import pycity_calc.toolbox.teaser_usage.teaser_use as tusage
 import pycity_calc.toolbox.networks.network_ops as netop
+import pycity_calc.cities.scripts.city_generator.city_generator as citgen
 
 
 
@@ -449,6 +450,9 @@ def check_single_building_consistency(exbuild, id=None, check_sh=True,
 
     print('Check building with id: ', id)
     print('Building type number: ', exbuild.build_type)
+
+    build_name = citgen.conv_build_type_nb_to_name(exbuild.build_type)
+    print('Building type explanation: ', build_name)
 
     if check_base_par:
         # Check existence of base parameters of
