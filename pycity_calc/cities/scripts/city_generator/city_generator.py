@@ -2299,13 +2299,13 @@ def run_city_generator(generation_mode, timestep, year, location,
 
                 #  Get spec. demands and slp types according to building_type
                 curr_spec_th_demand = \
-                    spec_dem_and_slp_non_res[curr_build_type - 1][2]
+                    spec_dem_and_slp_non_res[curr_build_type - 2][2]
                 curr_spec_el_demand = \
-                    spec_dem_and_slp_non_res[curr_build_type - 1][3]
+                    spec_dem_and_slp_non_res[curr_build_type - 2][3]
                 curr_th_slp_type = \
-                    spec_dem_and_slp_non_res[curr_build_type - 1][4]
+                    spec_dem_and_slp_non_res[curr_build_type - 2][4]
                 curr_el_slp_type = \
-                    spec_dem_and_slp_non_res[curr_build_type - 1][5]
+                    spec_dem_and_slp_non_res[curr_build_type - 2][5]
 
                 #  Convert slp type integers into strings
                 curr_th_slp_type = convert_th_slp_int_and_str(curr_th_slp_type)
