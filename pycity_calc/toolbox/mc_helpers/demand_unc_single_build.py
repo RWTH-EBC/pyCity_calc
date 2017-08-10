@@ -5,6 +5,8 @@ Script to perform thermal demand uncertainty analysis for single building with
 single thermal zone and apartment
 """
 
+from __future__ import division
+
 import os
 import copy
 import pickle
@@ -32,7 +34,8 @@ import pycity_calc.toolbox.teaser_usage.teaser_use as tus
 
 
 def building_unc_sampling(exbuilding, nb_samples, max_retro_year=2014,
-                          time_sp_force_retro=40, nb_occ_unc=True, buil_physic_unc=True):
+                          time_sp_force_retro=40, nb_occ_unc=True,
+                          buil_physic_unc=True):
     """
     Perform uncertain parameter sampling for single building. Accounts for
     years of modernization, infiltration rate, number of occupants,
@@ -56,7 +59,7 @@ def building_unc_sampling(exbuilding, nb_samples, max_retro_year=2014,
         False - Number of occupants is known and taken from apartment.occupancy
         objects
     buil_physic_unc: bool, optional
-        Defines,if building physics unknown or not (default: True)
+        Defines, if building physics unknown or not (default: True)
         True - Building physics is unknown
         False - Building physics is known
 
@@ -267,7 +270,8 @@ def building_unc_sampling(exbuilding, nb_samples, max_retro_year=2014,
     return dict_samples
 
 
-def mod_single_build_w_samples(exbuilding, dict_samples, list_wea, i , MC_analysis=False, build_physic_unc=True):
+def mod_single_build_w_samples(exbuilding, dict_samples, list_wea,
+                               i, MC_analysis=False, build_physic_unc=True):
     """
     Copies exbuilding and modifies copy according to sample lists
 
@@ -401,7 +405,8 @@ def mod_single_build_w_samples(exbuilding, dict_samples, list_wea, i , MC_analys
     return building
 
 
-def mc_call_single_building(exbuilding, dict_samples, list_wea, MC_analysis=False, build_physic_unc=True):
+def mc_call_single_building(exbuilding, dict_samples, list_wea,
+                            MC_analysis=False, build_physic_unc=True):
     """
     Performs uncertainty calculation of space heating demands for building
     object. Number of samples is defined by length of dict_sample list entries.
@@ -552,13 +557,13 @@ def mc_call_single_building(exbuilding, dict_samples, list_wea, MC_analysis=Fals
                   'and high internal loads.)'
             warnings.warn(msg)
 
-            dict_problem['infiltration'].append(dict_samples['inf'][n_samp])
-            dict_problem['const_type'].append(dict_samples['const_type'][n_samp])
-            dict_problem['dormer'].append(dict_samples['dormer'][n_samp])
-            dict_problem['attic'].append(dict_samples['attic'][n_samp])
-            dict_problem['cellar'].append(dict_samples['cellar'][n_samp])
-            dict_problem['user_air'].append(dict_samples['user_air'][n_samp])
-            dict_problem ['year'].append(dict_samples['mod_year'][n_samp])
+        dict_problem['infiltration'].append(dict_samples['inf'][n_samp])
+        dict_problem['const_type'].append(dict_samples['const_type'][n_samp])
+        dict_problem['dormer'].append(dict_samples['dormer'][n_samp])
+        dict_problem['attic'].append(dict_samples['attic'][n_samp])
+        dict_problem['cellar'].append(dict_samples['cellar'][n_samp])
+        dict_problem['user_air'].append(dict_samples['user_air'][n_samp])
+        dict_problem ['year'].append(dict_samples['mod_year'][n_samp])
 
 
 
