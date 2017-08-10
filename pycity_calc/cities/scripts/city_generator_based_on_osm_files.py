@@ -358,7 +358,7 @@ def main():  # pragma: no cover
     print(filename)
 
 
-def pickle_dumper(obj, filepath):  
+def pickle_dumper(obj, filepath):
     """
     This is a defensive way to write pickle.write, allowing for very large files on all platforms
     """
