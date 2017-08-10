@@ -20,7 +20,7 @@ class Test_OverallGenAndDim():
         #  Generate environment
         #  ######################################################
         year = 2010
-        timestep = 3600  # Timestep in seconds
+        timestep = 900  # Timestep in seconds
         # location = (51.529086, 6.944689)  # (latitude, longitude) of Bottrop
         location = (50.775346, 6.083887)  # (latitude, longitude) of Aachen
         altitude = 266  # Altitude of location in m (Aachen)
