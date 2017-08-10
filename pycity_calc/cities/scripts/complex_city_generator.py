@@ -341,9 +341,9 @@ if __name__ == '__main__':
     #  Generate environment
     year = 2010
     timestep = 3600  # Timestep in seconds
-    # location = (51.529086, 6.944689)  # (latitude, longitude) of Bottrop
-    location = (50.775346, 6.083887)  # (latitude, longitude) of Aachen
-    altitude = 266  # Altitude of location in m (Aachen)
+    location = (51.529086, 6.944689)  # (latitude, longitude) of Bottrop
+    # location = (50.775346, 6.083887)  # (latitude, longitude) of Aachen
+    altitude = 55  # Altitude of location in m (Aachen)
 
     #  Weather path
     try_path = None
@@ -393,7 +393,7 @@ if __name__ == '__main__':
     do_normalization = True
 
     #  Randomize electrical demand value (residential buildings, only)
-    el_random = True
+    el_random = False
 
     #  Prevent usage of electrical heating and hot water devices in
     #  electrical load generation
@@ -427,7 +427,7 @@ if __name__ == '__main__':
 
     #  Randomize choosen dhw_volume reference value by selecting new value
     #  from gaussian distribution with 20 % standard deviation
-    dhw_random = True
+    dhw_random = False
 
     #  Input file names and pathes
     #  ######################################################
@@ -436,13 +436,15 @@ if __name__ == '__main__':
 
     #  Efficiency factor of thermal energy systems
     #  Used to convert input values (final energy demand) to net energy demand
-    eff_factor = 0.85
+    eff_factor = 1
 
     #  Define city district input data filename
-    filename = 'city_clust_simple.txt'
+    filename = 'city_rheinbaben_nord_mod_new_1.txt'
+    # filename = 'city_rheinbaben_sued_mod_new_1.txt'
+    # filename = 'city_innenstadt_mod_new_1.txt'
 
     #  Define ouput data filename (pickled city object)
-    city_f_out_name = 'city_clust_simple.pkl'
+    city_f_out_name = filename[:-4] + '.pkl'
 
     #  Pickle and dump city object instance?
     do_save = True
@@ -485,11 +487,15 @@ if __name__ == '__main__':
     #  Load street data from csv
     this_path = os.path.dirname(os.path.abspath(__file__))
 
-    txt_path = os.path.join(this_path, 'city_generator', 'input', filename)
+    txt_path = os.path.join(this_path, 'city_generator', 'input',
+                            'sustain',
+                            filename)
 
     str_node_path = os.path.join(this_path, 'street_generator', 'input',
+                                 'sustain',
                                  str_node_filename)
     str_edge_path = os.path.join(this_path, 'street_generator', 'input',
+                                 'sustain',
                                  str_edge_filename)
 
     #  Log file
