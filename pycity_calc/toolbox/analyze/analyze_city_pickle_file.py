@@ -830,9 +830,9 @@ if __name__ == '__main__':
     city_file = 'aachen_forsterlinde_mod_new_1.pkl'
     # city_file = 'aachen_frankenberg_mod_new_1.pkl'
     # city_file = 'aachen_huenefeld_mod_new_1.pkl'
-    # city_file = 'log_aachen_kronenberg_mod_new_1.pkl'
-    # city_file = 'log_aachen_preusweg_mod_new_1.pkl'
-    # city_file = 'log_aachen_tuerme_mod_new_1.pkl'
+    # city_file = 'aachen_kronenberg_mod_new_1.pkl'
+    # city_file = 'aachen_preusweg_mod_new_1.pkl'
+    # city_file = 'aachen_tuerme_mod_new_1.pkl'
 
     print('Analyse city file: ', city_file)
 
