@@ -480,9 +480,19 @@ if __name__ == '__main__':
     #  (default: False). If set to False, merge_windows_calc is set to False.
     #   If True, Windows are merged into wall resistances.
 
-    #  Names of street node and edge files
-    str_node_filename = 'street_nodes_cluster_simple.csv'
-    str_edge_filename = 'street_edges_cluster_simple.csv'
+    # #  Names of street node and edge files
+    # str_node_filename = 'street_nodes_cluster_simple.csv'
+    # str_edge_filename = 'street_edges_cluster_simple.csv'
+
+    if filename == 'city_rheinbaben_nord_mod_new_1.txt':
+        str_node_filename = 'str_nodes_rheinbaben.csv'
+        str_edge_filename = 'str_edges_rheinbaben.csv'
+    elif filename == 'city_rheinbaben_sued_mod_new_1.txt':
+        str_node_filename = 'str_nodes_rheinbaben_sued.csv'
+        str_edge_filename = 'str_edges_rheinbaben_sued.csv'
+    elif filename == 'city_innenstadt_mod_new_1.txt':
+        str_node_filename = 'str_nodes_innenstadt.csv'
+        str_edge_filename = 'str_edges_innenstadt.csv'
 
     #  Load street data from csv
     this_path = os.path.dirname(os.path.abspath(__file__))
