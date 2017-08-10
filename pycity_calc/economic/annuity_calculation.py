@@ -123,7 +123,7 @@ class EconomicCalculation(object):
         assert method in list_methods, 'Unknown method chosen. Check input!'
 
         #  TODO: Change, after year_specific method has been implemented
-        if method == 'year_specific':
+        if method == 'year_specific':  # pragma: no cover
             msg = 'Not implemented, yet!'
             raise AssertionError(msg)
 
@@ -134,7 +134,8 @@ class EconomicCalculation(object):
         for factor in list_price_change_factors:
             msg = 'Price change rate seems to be unrealistic, please check ' \
                   'input factors.'
-            if (factor < 0.9 or factor > 1.1):  # limits of -/+ 10 % per year
+            if (factor < 0.9 or factor > 1.1):  # pragma: no cover
+                # limits of -/+ 10 % per year
                 warnings.warn(msg)
 
         # General attributes
@@ -311,7 +312,7 @@ class EconomicCalculation(object):
                     self.calc_price_dyn_factor(self.price_ch_pv_sub)
                 self.price_dyn_dem_el_hp = self.calc_price_dyn_factor(self.price_ch_dem_el_hp)
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         return str('<EconomicCalculator object of PyCity_Calc with ' +
                    str(self.time) + ' years calculation time and '
                    + str(self.interest) + ' internal interest '
@@ -527,21 +528,21 @@ class EconomicCalculation(object):
         dict_valid = self.get_dict_of_valid_components()
 
         #  Check if component is valid
-        if type not in dict_valid:
+        if type not in dict_valid:  # pragma: no cover
             msg = 'Type of component is unknown. Check your input for type.'
             raise AssertionError(msg)
 
         # Access price change rate of cash
         r_cash = self.price_ch_cap
 
-        if r_cash is None:
+        if r_cash is None:  # pragma: no cover
             msg = 'Price change rate of cash has to be defined!'
             raise AssertionError(msg)
 
         # Get number of replacements for component type
         total_nb_repl = self.dict_nb_replacements[type]
 
-        if total_nb_repl is None:
+        if total_nb_repl is None:  # pragma: no cover
             msg = 'Total number of replacements has to be calculated, first'
             raise AssertionError(msg)
 
@@ -600,7 +601,7 @@ class EconomicCalculation(object):
         dict_valid = self.get_dict_of_valid_components()
 
         #  Check if component is valid
-        if type not in dict_valid:
+        if type not in dict_valid:  # pragma: no cover
             msg = 'Type of component is unknown. Check your input for type.'
             raise AssertionError(msg)
 

@@ -107,7 +107,7 @@ def add_energy_networks_to_city(city, dict_data):
             use_street_network = False
         elif method == 2:
             use_street_network = True
-        else:
+        else:  # pragma: no cover
             raise ValueError('Unknown method. Please check dict_data!')
 
         if type == 'heating' or type == 'heating_and_deg':
@@ -119,7 +119,7 @@ def add_energy_networks_to_city(city, dict_data):
             dimnet.add_deg_to_city(city=city, list_build_node_nb=nodelist,
                                    use_street_network=use_street_network)
 
-        else:
+        else:  # pragma: no cover
             raise ValueError('Unknown networktype. Please check dict_data!')
 
 

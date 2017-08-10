@@ -248,7 +248,8 @@ def run_overall_gen_and_dim(timestep, year, location, th_gen_method,
                                              prev_heat_dev=prev_heat_dev,
                                              season_mod=season_mod,
                                              merge_windows=merge_windows,
-                                             new_try=new_try)
+                                             new_try=new_try,
+                                             do_save=False)
 
     #  Generate street networks
     if gen_str:
