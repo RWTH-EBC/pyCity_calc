@@ -23,6 +23,7 @@ exclude_lines =
 omit =
     # omit everything in gui and example packages
     pycity_calc/toolbox/others/*
+	pycity_calc/cities/scripts/city_generator_based_on_osm_files.py
 
 ignore_errors = True
 

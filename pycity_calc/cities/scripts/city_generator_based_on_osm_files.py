@@ -70,7 +70,7 @@ import uesgraphs.uesgraph as ues
 
 import pycity_calc.cities.scripts.osm_call as osm
 
-def main():
+def main():  # pragma: no cover
 
     """
     BEGINNING OF USER INPUT
@@ -358,7 +358,7 @@ def main():
     print(filename)
 
 
-def pickle_dumper(obj, filepath):
+def pickle_dumper(obj, filepath):  
     """
     This is a defensive way to write pickle.write, allowing for very large files on all platforms
     """
