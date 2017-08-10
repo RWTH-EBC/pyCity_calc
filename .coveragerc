@@ -1,1 +1,33 @@
+# .coveragerc to control coverage.py
 [run]
+branch = True
+
+[report]
+# Regexes for lines to exclude from consideration
+exclude_lines =
+    # Have to re-enable the standard pragma
+    pragma: no cover
+
+    # Don't complain about missing debug-only code:
+    def __repr__
+    if self\.debug
+
+    # Don't complain if tests don't hit defensive assertion code:
+    raise AssertionError
+    raise NotImplementedError
+
+    # Don't complain if non-runnable code isn't run:
+    if 0:
+    if __name__ == .__main__.:
+
+omit =
+    # omit everything in gui and example packages
+    pycity_calc/toolbox/others/*
+	pycity_calc/cities/scripts/city_generator_based_on_osm_files.py
+	pycity_calc/simulation/energy_balance_ref_state/*
+	pycity_calc/tests/checks/*
+
+ignore_errors = True
+
+[html]
+directory = coverage_html_report

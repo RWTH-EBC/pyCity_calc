@@ -32,7 +32,7 @@ import pycity_calc.toolbox.mc_helpers.user.user_unc_sampling as usunc
 
 try:
     import teaser.logic.simulation.VDI_6007.weather as vdiweather
-except:
+except:  # pragma: no cover
     msg = 'Could not import TEASER package. If you need to use it, install ' \
           'it via pip "pip install TEASER". Alternatively, you might have ' \
           'run into trouble with XML bindings in TEASER. This can happen ' \
