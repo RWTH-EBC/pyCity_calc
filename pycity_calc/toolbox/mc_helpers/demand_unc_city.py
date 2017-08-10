@@ -120,7 +120,7 @@ def run_mc_sh_uncertain_city(city, nb_samples,
             #  Perform MC simulation for single building with single sample
             #  parameter --> Only one entry per list, as dict_samples list
             #  only hold a single entry (nb_samples=1 in building_unc_sampling)
-            (list_sh, list_sh_curves, list_el, list_dhw) = \
+            (list_sh, list_sh_curves, list_el, list_dhw, dict_problem) = \
                 mcb.mc_call_single_building(exbuilding=curr_b,
                                             dict_samples=dict_samples,
                                             list_wea=curr_list_wea)
@@ -147,17 +147,12 @@ if __name__ == '__main__':
 
     #  User Inputs
     #  ##############################
-    nb_samples = 10000
+    nb_samples = 1000
     time_sp_force_retro = 50
     max_retro_year = 2014
     weather_region = 5
     weather_year = 2010
     nb_occ_unc = True
-
-    #city_f_name = 'rheinbaben_nord_mod_jsc.p'
-    #city_f_name = 'rheinbaben_sued_mod_jsc_20.p'
-    city_f_name = 'rheinbaben_nord_mod_jsc_extract_alex.p'
-    #city_f_name = 'city_Rheinbaben_sued_mod_jsc_20_extr_alex.p'
 
     #city_f_name = 'aachen_forsterlinde_mod_6.pkl'
     #city_f_name = 'aachen_frankenberg_mod_6.pkl'
@@ -165,6 +160,8 @@ if __name__ == '__main__':
     #city_f_name = 'aachen_kronenberg_mod_6.pkl'
     #city_f_name = 'aachen_preusweg_mod_6.pkl'
     #city_f_name = 'aachen_tuerme_mod_6.pkl'
+
+    city_f_name = 'aachen_kronenberg_3_mfh_ref_1.pkl'
 
     save_f_name = city_f_name[:-4] + '_mc_city_samples_' + str(nb_samples) + '.pkl'
 
@@ -180,7 +177,7 @@ if __name__ == '__main__':
 
     this_path = os.path.dirname(os.path.abspath(__file__))
 
-    city_path = os.path.join(this_path, 'input', 'sustain', city_f_name)
+    city_path = os.path.join(this_path, 'input', city_f_name)
 
     save_path = os.path.join(this_path, 'output', save_f_name)
 

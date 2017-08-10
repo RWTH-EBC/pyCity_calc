@@ -3,7 +3,7 @@
 """
 Script to extend pycity market object
 """
-
+from __future__ import division
 import warnings
 
 import pycity_calc.environments.market as market
@@ -79,7 +79,7 @@ class GermanMarket(market.Market):
         self.eeg_pay = eeg_pay
 
         #  Dict with EEG payment on self consumed energy (status quo: 2017)
-        self._dict_eeg_self = {'PV': 0.4 * eeg_pay, 'CHP': 0.4 * eeg_pay}
+        self._dict_eeg_self = {'pv': 0.4 * eeg_pay, 'chp': 0.4 * eeg_pay}
 
     def get_sub_chp(self, p_nom):
         """
@@ -202,6 +202,32 @@ class GermanMarket(market.Market):
 
         return sub_pv
 
+    def get_eeg_payment(self, type):
+        """
+        Returns EEG payment on self-produced and consumed el. energy of CHP
+        or PV system.
+
+        Parameters
+        ----------
+        type : str
+            Defines system type. Options:
+            - 'chp' : CHP system
+            - 'pv' : PV system
+
+        Returns
+        -------
+        eeg_pay : float
+            Specific EEG payment in Euro/kWh
+        """
+
+        assert type in ['chp', 'pv'], 'Type is invalid (must be PV or CHP)'
+
+        if type == 'chp':
+            eeg_pay = self._dict_eeg_self['chp']
+        elif type == 'pv':
+            eeg_pay = self._dict_eeg_self['pv']
+
+        return eeg_pay
 
 if __name__ == '__main__':
 
@@ -256,3 +282,10 @@ if __name__ == '__main__':
     print('PV subsidy payment in Euro/kWh for PV module with peak load '
           + str(pv_peak_power / 1000) + ' kW on non-residential building:')
     print(pv_sub_nonres)
+
+    #  Get EEG payment on self-produced and consumed CHP el. energy
+    #  ###################################################################
+    eeg_pay = germanmarket.get_eeg_payment(type='chp')
+
+    print('EEG payment on self-consumed CHP el. energy in Euro/kWh:')
+    print(eeg_pay)

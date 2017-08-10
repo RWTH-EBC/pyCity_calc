@@ -7,7 +7,7 @@ Script with dimensioning functions of pycity_calc
 import math
 import numpy as np
 
-import pycity.functions.process_city as prcity
+import pycity_base.functions.process_city as prcity
 
 
 #  # General dimensioning functions

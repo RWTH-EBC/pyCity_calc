@@ -8,8 +8,8 @@ system sized to be more realistic.
 import os
 import pickle
 
-import pycity.classes.supply.BES as BES
-import pycity.classes.supply.PV as PV
+import pycity_base.classes.supply.BES as BES
+import pycity_base.classes.supply.PV as PV
 
 import pycity_calc.toolbox.networks.network_ops as netop
 import pycity_calc.toolbox.dimensioning.dim_networks as dimnet

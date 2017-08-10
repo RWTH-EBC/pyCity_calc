@@ -1,3 +1,7 @@
+![E.ON EBC RWTH Aachen University](./doc/_static/EBC_Logo.png)
+
+[![Build Status](https://travis-ci.com/RWTH-EBC/pyCity_calc.svg?token=ssfy4ps1Qm5kvs5yAxfm&branch=master)](https://travis-ci.com/RWTH-EBC/pyCity_calc.svg?token=ssfy4ps1Qm5kvs5yAxfm&branch=master)
+
 #  pyCity_calc
 
 pyCity addon to perform energy balance and economic calculations for city 
@@ -43,7 +47,7 @@ by adding new .py file and trying to import uesgraphs and pycity.
 
 `import uesgraphs`
 
-`import pycity`
+`import pycity_base`
 
 Import should be possible without errors.
 

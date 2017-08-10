@@ -3,10 +3,10 @@
 """
 Extended electric battery class (based on battery object of pycity)
 """
-
+from __future__ import division
 import warnings
 
-import pycity.classes.supply.Battery as Batt
+import pycity_base.classes.supply.Battery as Batt
 import pycity_calc.toolbox.unit_conversion as unitcon
 
 

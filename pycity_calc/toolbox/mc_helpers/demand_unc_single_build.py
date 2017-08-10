@@ -13,11 +13,11 @@ import scipy
 import numpy as np
 import matplotlib.pyplot as plt
 
-import pycity.classes.Weather as Weather
-import pycity.classes.demand.Occupancy as occ
-import pycity.classes.demand.ElectricalDemand as eldem
-import pycity.classes.demand.Apartment as Apartment
-import pycity.classes.demand.DomesticHotWater as dhwater
+import pycity_base.classes.Weather as Weather
+import pycity_base.classes.demand.Occupancy as occ
+import pycity_base.classes.demand.ElectricalDemand as eldem
+import pycity_base.classes.demand.Apartment as Apartment
+import pycity_base.classes.demand.DomesticHotWater as dhwater
 
 import pycity_calc.buildings.building as build_ex
 import pycity_calc.environments.co2emissions as co2
@@ -32,7 +32,7 @@ import pycity_calc.toolbox.teaser_usage.teaser_use as tus
 
 
 def building_unc_sampling(exbuilding, nb_samples, max_retro_year=2014,
-                          time_sp_force_retro=40, nb_occ_unc=True):
+                          time_sp_force_retro=40, nb_occ_unc=True, buil_physic_unc=True):
     """
     Perform uncertain parameter sampling for single building. Accounts for
     years of modernization, infiltration rate, number of occupants,
@@ -42,7 +42,7 @@ def building_unc_sampling(exbuilding, nb_samples, max_retro_year=2014,
     Parameters
     ----------
     exbuilding : object
-        Extendec building object of pycity_calc (should hold occupancy profile)
+        Extended building object of pycity_calc (should hold occupancy profile)
     nb_samples : int
         Number of samples
     max_retro_year : int, optional
@@ -53,8 +53,12 @@ def building_unc_sampling(exbuilding, nb_samples, max_retro_year=2014,
     nb_occ_unc : bool, optional
         Defines, if number of occupants in known or uncertain (default: True)
         True - Number of occupants is uncertain
-        False - Number of occuants is known and taken from apartment.occupancy
+        False - Number of occupants is known and taken from apartment.occupancy
         objects
+    buil_physic_unc: bool, optional
+        Defines,if building physics unknown or not (default: True)
+        True - Building physics is unknown
+        False - Building physics is known
 
     Returns
     -------
@@ -67,6 +71,12 @@ def building_unc_sampling(exbuilding, nb_samples, max_retro_year=2014,
         'el' : Holding electrical demand sample lists
         'set_temp' : Holding set temperature sample lists
         'user_air' : Holding user air exchange rate sample lists
+        'dormer' : Holding dormer samples list
+        'cellar' : Holding cellar samples list
+        'attic' : Holding attic samples list
+        'const_type' : Holding construction type samples list
+        'net_floor_area' : Holding net floor area samples list
+
     """
 
     print('Start building uncertainty sampling')
@@ -81,19 +91,46 @@ def building_unc_sampling(exbuilding, nb_samples, max_retro_year=2014,
     #  #####################################
 
     #  Do retrofit year sampling
-    list_mod_years = \
-        bunc.calc_list_mod_years_single_build(nb_samples=nb_samples,
+    if buil_physic_unc:
+        list_mod_years = bunc.calc_list_mod_years_single_build(nb_samples=nb_samples,
                                               year_of_constr=year_of_constr,
                                               max_year=max_retro_year,
                                               time_sp_force_retro=
                                               time_sp_force_retro)
 
-    dict_samples['mod_year'] = list_mod_years
+        dict_samples['mod_year'] = list_mod_years
 
-    #  Infiltration rate sampling
-    list_inf = bunc.calc_inf_samples(nb_samples=nb_samples)
+        # Dormer, attic, cellar, construction_type sampling
+        (list_dormer, list_attic, list_cellar, list_const_type) = bunc.calc_list_dormer_samples(nb_samples)
+        dict_samples['dormer'] = list_dormer
+        dict_samples['cellar'] = list_cellar
+        dict_samples['attic'] = list_attic
+        dict_samples['const_type'] = list_const_type
 
-    dict_samples['inf'] = list_inf
+        # Net floor area sampling
+        list_nf_area = bunc.calc_list_net_floor_area_sampling(nb_of_samples=nb_samples,
+                                                              sigma=(exbuilding.net_floor_area*0.1),
+                                                              mean= exbuilding.net_floor_area)
+        dict_samples['net_floor_area'] = list_nf_area
+
+        #  Infiltration rate sampling
+        list_inf = bunc.calc_inf_samples(nb_samples=nb_samples)
+        dict_samples['inf'] = list_inf
+
+    else:
+        # Net floor area sampling
+        list_nf_area = bunc.calc_list_net_floor_area_sampling(nb_of_samples=nb_samples,
+                                                              sigma=(exbuilding.net_floor_area*0.025),
+                                                              mean= exbuilding.net_floor_area)
+        dict_samples['net_floor_area'] = list_nf_area
+
+        #  Infiltration rate sampling
+        if year_of_constr < 1990:
+            list_inf = bunc.calc_inf_samples(nb_samples=nb_samples)
+        else:
+            list_inf = bunc.calc_inf_samples(nb_samples=nb_samples, mean=0.26)
+
+        dict_samples['inf'] = list_inf
 
     #  User uncertainty
     #  #####################################
@@ -112,9 +149,8 @@ def building_unc_sampling(exbuilding, nb_samples, max_retro_year=2014,
         for i in range(len(exbuilding.apartments)):
 
             #  Sampling for occupants per apartment
-            list_nb_occ = \
-                usunc.calc_sampling_occ_per_app(nb_samples=nb_samples)#,
-                                                #method='equal')
+            list_nb_occ = usunc.calc_sampling_occ_per_app(nb_samples=
+                                                          nb_samples)
             list_of_lists_of_nb_of_occ_per_app.append(list_nb_occ)
 
             list_el_dem = []
@@ -231,7 +267,7 @@ def building_unc_sampling(exbuilding, nb_samples, max_retro_year=2014,
     return dict_samples
 
 
-def mod_single_build_w_samples(exbuilding, dict_samples, list_wea, i):
+def mod_single_build_w_samples(exbuilding, dict_samples, list_wea, i , MC_analysis=False, build_physic_unc=True):
     """
     Copies exbuilding and modifies copy according to sample lists
 
@@ -239,12 +275,31 @@ def mod_single_build_w_samples(exbuilding, dict_samples, list_wea, i):
     ----------
     exbuilding : object
         Extended building object of py
-    dict_samples : int
-        Number of samples
+    dict_samples : dict
+        Dictionary holding lists with samples for different uncertain parameters
+        Keys:
+        'mod_year' : Holding modification year sample lists
+        'inf' : Holding infiltration rate sample lists
+        'occ' : Holding occupants per apartment sample lists
+        'el' : Holding electrical demand sample lists
+        'set_temp' : Holding set temperature sample lists
+        'user_air' : Holding user air exchange rate sample lists
+        'dormer' : Holding dormer samples list
+        'cellar' : Holding cellar samples list
+        'attic' : Holding attic samples list
+        'const_type' : Holding construction type samples list
+        'net_floor_area' : Holding net floor area samples list
     list_wea : list (of weather objects)
         List holding weather objects from sampling
     i : int
         Sampling index (0 to nb_samples - 1)
+    MC_analysis: boolean, optional
+            Defines extra modifications for monte carlo analysis
+            (dormer,attic,cellar, construction_type, net_floor_area)
+    buil_physic_unc: bool, optional
+        Defines,if building physics unknown or not (default: True)
+        True - Building physics is unknown
+        False - Building physics is known
 
     Returns
     -------
@@ -266,12 +321,13 @@ def mod_single_build_w_samples(exbuilding, dict_samples, list_wea, i):
     #  Overwrite mod year (or year of construction)
     #  If mod_year is smaller than 1982 (smallest retrofit option in teaser)
     #  add mod_year as new year of construction
-    if dict_samples['mod_year'][i] < 1982:
-        building.build_year = dict_samples['mod_year'][i]
-        building.mod_year = None
-    else:
-        #  Else, define new year of modernization
-        building.mod_year = dict_samples['mod_year'][i]
+    if build_physic_unc:
+        if dict_samples['mod_year'][i] < 1982:
+            building.build_year = dict_samples['mod_year'][i]
+            building.mod_year = None
+        else:
+            #  Else, define new year of modernization
+            building.mod_year = dict_samples['mod_year'][i]
 
     if building.mod_year is not None and building.build_year is not None:
         assert building.build_year < building.mod_year
@@ -301,8 +357,7 @@ def mod_single_build_w_samples(exbuilding, dict_samples, list_wea, i):
         print('Sampled dhw. volume in liters per apartment and day: ',
               dhw_vol_app_n_day)
 
-        volume = sum(building.apartments[
-                         j].demandDomesticHotWater.water) * timestep / 3600
+        volume = sum(building.apartments[j].demandDomesticHotWater.water) * timestep / 3600
         print('Original annual volume in liters: ', volume)
         volume_per_day = volume / 365
         print('Original volume in liters per day and apartment; ',
@@ -321,13 +376,32 @@ def mod_single_build_w_samples(exbuilding, dict_samples, list_wea, i):
     #  Overwrite current weather
     building.environment.weather = weather_new
 
+    # Extra modifications for Monte Carlo analysis
+    if MC_analysis:
+        if build_physic_unc:
+
+            # Overwrite building physic
+            building.dormer = dict_samples['dormer'][i]
+            print('dormer: ', building.dormer)
+            building.attic = dict_samples['attic'][i]
+            print('attic: ', building.attic)
+            building.cellar = dict_samples['cellar'][i]
+            print('cellar :', building.cellar)
+            if dict_samples['const_type'][i] == 0:
+                building.construction_type = "heavy"
+            else:
+                building.construction_type = "light"
+            print('construction type: ', building.construction_type)
+
+        building.net_floor_area = dict_samples['net_floor_area'][i]
+
     print('Finished modification of building copy with sample data')
     print()
 
     return building
 
 
-def mc_call_single_building(exbuilding, dict_samples, list_wea):
+def mc_call_single_building(exbuilding, dict_samples, list_wea, MC_analysis=False, build_physic_unc=True):
     """
     Performs uncertainty calculation of space heating demands for building
     object. Number of samples is defined by length of dict_sample list entries.
@@ -345,9 +419,21 @@ def mc_call_single_building(exbuilding, dict_samples, list_wea):
         'el' : Holding electrical demand sample lists
         'set_temp' : Holding set temperature sample lists
         'user_air' : Holding user air exchange rate sample lists
+        'dormer' : Holding dormer samples list
+        'cellar' : Holding cellar samples list
+        'attic' : Holding attic samples list
+        'const_type' : Holding construction type samples list
+        'net_floor_area' : Holding net floor area samples list
     list_wea : list (of weather objects)
         List holding different pycity weather objects for uncertainty
         analysis
+    MC_analysis: boolean, optional
+            Defines extra modifications for monte carlo analysis
+            (dormer,attic,cellar, construction_type, net_floor_area)
+    buil_physic_unc: bool, optional
+        Defines,if building physics unknown or not (default: True)
+        True - Building physics is unknown
+        False - Building physics is known
 
     Returns
     -------
@@ -358,6 +444,16 @@ def mc_call_single_building(exbuilding, dict_samples, list_wea):
         2. Entry: list holding space heating power curves in W as arrays
         3. Entry: list holding net electric energy demands in kWh
         4. Entry: list holding hot water net energy demands in kWh
+    dict_problem : dict (of list)
+        Dictionary of inputs with problems
+        Keys:
+        'year' : Holding modification year sample lists
+        'infiltration' : Holding infiltration rate sample lists
+        'dormer' : Holding dormer samples list
+        'cellar' : Holding cellar samples list
+        'attic' : Holding attic samples list
+        'const_type' : Holding construction type samples list
+        'user_air' : Holding user air ventilation factor sampling
     """
 
     print('Start Monte-Carlo space heating simulation for single building')
@@ -371,21 +467,31 @@ def mc_call_single_building(exbuilding, dict_samples, list_wea):
     list_el_net_demand = []
     list_dhw_energies = []
 
-    nb_samples = len(dict_samples['inf'])
+    dict_problem = {}
+    dict_problem['infiltration'] = []
+    dict_problem['const_type'] = []
+    dict_problem['dormer'] = []
+    dict_problem['attic'] = []
+    dict_problem['cellar'] = []
+    dict_problem['user_air'] = []
+    dict_problem['year'] = []
 
-    for i in range(nb_samples):
+    nb_of_samples = len(dict_samples['inf'])
+
+    for n_samp in range(nb_of_samples):
 
         #  Get modified building (use uncertain parameter samples to modify
         #  building)
         modbuild = \
             mod_single_build_w_samples(exbuilding=exbuilding,
                                        dict_samples=dict_samples,
-                                       list_wea=list_wea, i=i)
+                                       list_wea=list_wea, i=n_samp, MC_analysis=MC_analysis,
+                                       build_physic_unc=build_physic_unc)
 
         #  Get samples for parameters, which are not stored on building object
-        inf_rate = dict_samples['inf'][i]
+        inf_rate = dict_samples['inf'][n_samp]
         print('Inf. rate: ', inf_rate)
-        usr_air_ex_rate = dict_samples['user_air'][i]
+        usr_air_ex_rate = dict_samples['user_air'][n_samp]
         print('User air exchange rate: ', usr_air_ex_rate)
 
         # vent_array = list_air_ex_profiles[i]
@@ -394,7 +500,7 @@ def mc_call_single_building(exbuilding, dict_samples, list_wea):
         vent_array += inf_rate + usr_air_ex_rate
         #  Sum up user air exchange and infiltration
 
-        temp_set = dict_samples['set_temp'][i]
+        temp_set = dict_samples['set_temp'][n_samp]
         print('Set temperature: ', temp_set)
 
         #  #  Uncomment, if you want to save and/or load a building pickle file
@@ -422,7 +528,9 @@ def mc_call_single_building(exbuilding, dict_samples, list_wea):
                                                     t_set_heat=temp_set,
                                                     t_set_cool=100,
                                                     t_night=16,
-                                                    heat_lim_val=1000000)
+                                                    heat_lim_val=1000000000)
+
+        print ('result VDI:', temp_in, q_heat_cool, q_in_wall, q_out_wall)
 
         #  Results
         #  #####################################
@@ -444,8 +552,19 @@ def mc_call_single_building(exbuilding, dict_samples, list_wea):
                   'and high internal loads.)'
             warnings.warn(msg)
 
+            dict_problem['infiltration'].append(dict_samples['inf'][n_samp])
+            dict_problem['const_type'].append(dict_samples['const_type'][n_samp])
+            dict_problem['dormer'].append(dict_samples['dormer'][n_samp])
+            dict_problem['attic'].append(dict_samples['attic'][n_samp])
+            dict_problem['cellar'].append(dict_samples['cellar'][n_samp])
+            dict_problem['user_air'].append(dict_samples['user_air'][n_samp])
+            dict_problem ['year'].append(dict_samples['mod_year'][n_samp])
+
+
+
         #  Store space heating results
         list_sh_net_demand.append(sum_heat)
+        print ('net sh demand', sum_heat)
         list_sh_power_curves.append(q_heat)
 
         #  Store el. demand and dhw energy
@@ -467,14 +586,14 @@ def mc_call_single_building(exbuilding, dict_samples, list_wea):
     print()
 
     return (list_sh_net_demand, list_sh_power_curves, list_el_net_demand,
-            list_dhw_energies)
+            list_dhw_energies, dict_problem)
 
 def run_mc_sh_uncertain_single_building(building, nb_samples,
                                         time_sp_force_retro=40,
                                         max_retro_year=2014,
                                         weather_region=5,
                                         weather_year=2010,
-                                        nb_occ_unc=True):
+                                        nb_occ_unc=True, MC_analysis=False, build_physic_unc=True):
     """
     Perform Monte-Carlo simulation for thermal space heating power generation
     for a single building with single zone/apartment.
@@ -500,6 +619,14 @@ def run_mc_sh_uncertain_single_building(building, nb_samples,
         If set to True, number of occupants is unknown
         If set to False, uses number of occupants on occupancy objects
         as known values.
+    MC_analysis: boolean, optional
+            Defines extra modifications for monte carlo analysis
+            (dormer,attic,cellar, construction_type, net_floor_area)
+    buil_physic_unc: bool, optional
+        Defines,if building physics unknown or not (default: True)
+        True - Building physics is unknown
+        False - Building physics is known (year of modernisation, dormer, cellar , construction type
+                and attic are fixed, net floor area variation is smaller)
 
     Returns
     -------
@@ -509,6 +636,17 @@ def run_mc_sh_uncertain_single_building(building, nb_samples,
         2. Entry: list holding space heating power curves in W as arrays
         3. Entry: list holding net electric energy demands in kWh
         4. Entry: list holding hot water net energy demands in kWh
+    dict_problem : dict (of list)
+        Dictionary of inputs with problems
+        Keys:
+        'year' : Holding modification year sample lists
+        'infiltration' : Holding infiltration rate sample lists
+        'dormer' : Holding dormer samples list
+        'cellar' : Holding cellar samples list
+        'attic' : Holding attic samples list
+        'const_type' : Holding construction type samples list
+        'user_air' : Holding user air ventilation factor sampling
+
     """
 
     exbuilding = copy.deepcopy(building)
@@ -527,7 +665,7 @@ def run_mc_sh_uncertain_single_building(building, nb_samples,
         building_unc_sampling(exbuilding=exbuilding, nb_samples=nb_samples,
                               max_retro_year=max_retro_year,
                               time_sp_force_retro=time_sp_force_retro,
-                              nb_occ_unc=nb_occ_unc)
+                              nb_occ_unc=nb_occ_unc, buil_physic_unc=build_physic_unc)
 
     #  Weather uncertainty
     #  #####################################
@@ -543,13 +681,15 @@ def run_mc_sh_uncertain_single_building(building, nb_samples,
     #  ##################################################################
     print('Start Monte-Carlo simulation for single building')
 
-    (list_sh, list_sh_curves, list_el, list_dhw) = \
-        mc_call_single_building(exbuilding, dict_samples, list_wea)
+    (list_sh, list_sh_curves, list_el, list_dhw, dict_problem) = \
+        mc_call_single_building(exbuilding, dict_samples, list_wea,
+                                MC_analysis=MC_analysis,
+                                build_physic_unc=build_physic_unc)
 
     print('Finished Monte-Carlo simulation for single building')
     print()
 
-    return (list_sh, list_sh_curves, list_el, list_dhw)
+    return (list_sh, list_sh_curves, list_el, list_dhw, dict_samples, dict_problem)
 
 if __name__ == '__main__':
 
@@ -558,7 +698,7 @@ if __name__ == '__main__':
 
     #  User inputs for Monte-Carlo Simulation
     #  ###############################################################
-    nb_samples = 2000
+    nb_samples = 1000
     time_sp_force_retro = 50  # years
     max_retro_year = 2014
     weather_region = 5
@@ -580,9 +720,9 @@ if __name__ == '__main__':
     #  Decide, if you want to load a city object and extract a building or
     #  ir you want to load a pickled building object or
     #  if you want to generate a new building object instance
-    use_build_mode = 0
+    use_build_mode = 2
     #  use_build_mode == 0: Load city object and extract specific building
-    #  use_build_mode == 1: Load pickled building object
+    #  use_build_mode == 1: Load pickled building object   w
     #  use_build_mode == 2: Generate own building object instance
 
     # #  Data to save building object
@@ -601,7 +741,7 @@ if __name__ == '__main__':
         # city_f_name = 'aachen_kronenberg_5.pkl'
         # city_f_name = 'aachen_preusweg_5b.pkl'
         # city_f_name = 'aachen_tuerme_osm_extr_enriched.pkl'
-        city_f_name = 'huenefeld_5.pkl'
+        city_f_name = 'aachen_kronenberg_3_mfh_ref_1.pkl'
 
         #  Building node number, which should be used to extract building data
         # build_node_nb = 1011  # Forsterlinde
@@ -609,18 +749,17 @@ if __name__ == '__main__':
         # build_node_nb = 1002  # Kronenberg
         # build_node_nb = 1092  # Preusweg
         # build_node_nb = 1010  # Tuerme
-        build_node_nb = 1003  # Huenefeld
+        build_node_nb = 1001  # Huenefeld
 
         #  Path to load city file
-        load_city_path = os.path.join(this_path, 'input', city_f_name)
+        load_city_path = os.path.join(this_path, 'output', city_f_name)
 
         #  Load city object instance
         city = pickle.load(open(load_city_path, mode='rb'))
 
         extended_building = city.node[build_node_nb]['entity']
 
-        save_file = city_f_name[:-4] + '_single_b_new_dhw_' + str(build_node_nb) + \
-                    '.pkl'
+        save_file = city_f_name[:-4] + '_single_b_new_dhw_' + str(build_node_nb) + '.pkl'
         save_path = os.path.join(this_path, 'output', save_file)
 
     # Load building object
@@ -640,8 +779,8 @@ if __name__ == '__main__':
     #  ###############################################################
     elif use_build_mode == 2:
         #  Define simulation settings
-        build_year = 1962  # Year of construction
-        mod_year = None  # Year of retrofit
+        build_year = 1990  # Year of construction
+        mod_year = 2000  # Year of retrofit
         net_floor_area = 200  # m2
         height_of_floors = 2.8  # m
         nb_of_floors = 2  # m
@@ -690,8 +829,7 @@ if __name__ == '__main__':
 
         print('Calculate el. load.\n')
 
-        el_dem_stochastic = \
-            eldem.ElectricalDemand(environment,
+        el_dem_stochastic = eldem.ElectricalDemand(environment,
                                    method=2,
                                    annualDemand=3000,  # Dummy value
                                    do_normalization=True,
@@ -704,8 +842,7 @@ if __name__ == '__main__':
 
         #  # Create dhw load
         #  #####################################################################
-        dhw_stochastical = \
-            dhwater.DomesticHotWater(environment,
+        dhw_stochastical = dhwater.DomesticHotWater(environment,
                                      tFlow=60,
                                      thermal=True,
                                      method=2,
@@ -723,8 +860,7 @@ if __name__ == '__main__':
                                        dhw_stochastical])
 
         #  Create extended building object
-        extended_building = \
-            build_ex.BuildingExtended(environment,
+        extended_building = build_ex.BuildingExtended(environment,
                                       build_year=build_year,
                                       mod_year=mod_year,
                                       build_type=0,
@@ -741,7 +877,7 @@ if __name__ == '__main__':
         #  Add apartment to extended building
         extended_building.addEntity(entity=apartment)
 
-    (list_sh, list_sh_curves, list_el, list_dhw) = \
+    (list_sh, list_sh_curves, list_el, list_dhw, dict_samples, dict_problem) = \
         run_mc_sh_uncertain_single_building(building=extended_building,
                                             nb_samples=nb_samples,
                                             time_sp_force_retro=
@@ -749,7 +885,7 @@ if __name__ == '__main__':
                                             max_retro_year=max_retro_year,
                                             weather_region=weather_region,
                                             weather_year=weather_year,
-                                            nb_occ_unc=nb_occ_unc)
+                                            nb_occ_unc=nb_occ_unc, MC_analysis=True, build_physic_unc=True)
 
     list_max_power = []
     for power in list_sh_curves:
@@ -802,6 +938,15 @@ if __name__ == '__main__':
     print(conf_int)
     print()
 
+    print('Problem:', dict_problem)
+    print('modification year: ', dict_problem['year'])
+    print('infiltration', dict_problem['infiltration'])
+    print('user air: ', dict_problem['user_air'])
+    print('const_type', dict_problem['const_type'])
+    print('dormer : ', dict_problem['dormer'])
+    print('cellar : ', dict_problem['cellar'])
+    print('attic : ', dict_problem['attic'])
+
     fig = plt.figure()
     for curve in list_sh_curves:
         plt.plot(curve / 1000, alpha=0.5)
@@ -849,5 +994,22 @@ if __name__ == '__main__':
     plt.hist(list_vol, bins='auto')
     plt.xlabel('Hot water volume in liters')
     plt.ylabel('Number of values')
+    plt.show()
+    plt.close()
+
+    fig, ((ax1,ax2),(ax3,ax4)) = plt.subplots(2,2)
+    # the histogram of the sampling
+    ax1.hist(dict_samples['inf'], 100)
+    ax1.set_title('Infiltration')
+
+    ax2.hist(dict_samples['mod_year'], 100)
+    ax2.set_title('modification year')
+
+    ax3.hist(dict_samples['attic'], 100)
+    ax3.set_title('attic')
+
+    ax4.hist(dict_samples['net_floor_area'], 100)
+    ax4.set_title('net floor area')
+
     plt.show()
     plt.close()

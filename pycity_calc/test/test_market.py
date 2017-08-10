@@ -2,7 +2,7 @@
 """
 Pytest file for market class
 """
-
+from __future__ import division
 import pycity_calc.environments.market as mark
 from pycity_calc.test.pycity_calc_fixtures import fixture_market
 

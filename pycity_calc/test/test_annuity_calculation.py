@@ -4,6 +4,7 @@
 Test script for EconomicCalculation
 """
 
+from __future__ import division
 import pycity_calc.economic.annuity_calculation as ann_calc
 
 
@@ -191,10 +192,10 @@ class Test_EconomicCalculation():
                                    'BAT': 15,
                                    'DEG': 15}
 
-        residual_value = \
+        residual_value2 = \
             eco_calc.calc_residual_value(invest=invest, type=type)
 
-        assert abs(residual_value - 801.6951635) < 0.0001
+        assert abs(residual_value2 - 801.6951635) < 0.0001
 
     def test_vdi_example_b(self):
         """

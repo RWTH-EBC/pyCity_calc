@@ -68,7 +68,7 @@ def city_energy_balance(City_Object, dict_Qlhn, sortingmethod='CO2', LHN_supply_
     for u, v in City_Object.edges():
         if u in lhn_con_nodes and v in lhn_con_nodes:
             if 'network_type' in City_Object.edge[u][v]:
-                if City_Object.edge[u][v]['network_type'] == 'heating':
+                if City_Object.edge[u][v]['network_type'] == 'heating' or City_Object.edge[u][v]['network_type'] == 'heating_and_deg':
                     #  Add street edge to street_graph
                     lhn_graph.add_edge(u, v, network_type='heating')
                     temp_vl = City_Object.edge[u][v]['temp_vl']
