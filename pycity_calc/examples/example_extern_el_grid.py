@@ -112,23 +112,25 @@ def run_example_1():
     #   power flow calculation
     results = power_grid.power_flow_calculation(save=False, start=25, end=45)
 
-    print('Evaluate power flow results')
-    print('###########################################')
-    print()
+    # print('Evaluate power flow results')
+    # print('###########################################')
+    # print()
 
-    #   power flow evaluation
-    res_city_district = power_grid.power_flow_evaluation(results)
+    #  FIXME: Not working, any more
 
+    # #   power flow evaluation
+    # res_city_district = power_grid.power_flow_evaluation(results)
+    #
+    #
+    # #   check results for off-limit conditions
+    # power_grid.check_off_limit_conditions(res_city_district)
+    #
+    # print('Start power flow visualization')
+    # print('###########################################')
+    # print()
 
-    #   check results for off-limit conditions
-    power_grid.check_off_limit_conditions(res_city_district)
-
-    print('Start power flow visualization')
-    print('###########################################')
-    print()
-
-    #   animation
-    power_grid.power_flow_animation(res_city_district)
+    # #   animation
+    # power_grid.power_flow_animation(res_city_district)
 
     print("END")
 

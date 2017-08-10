@@ -30,10 +30,6 @@ def run_osm_example(plot_res=False):
 
     min_allowed_ground_area = 70  # m2
 
-    #  Save generated city objecct as pickle file?
-    save_city = True
-    city_filename = 'test_osm.pkl'
-
     #  Add building entities?
     add_entities = True
     #  True: Add building object instances to building nodes
