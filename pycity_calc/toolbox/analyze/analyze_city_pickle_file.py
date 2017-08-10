@@ -825,7 +825,14 @@ if __name__ == '__main__':
     # city_file = 'aachen_huenefeld_osm.pkl'
     # city_file = 'aachen_kronenberg_osm.pkl'
     # city_file = 'aachen_preusweg_osm.pkl'
-    city_file = 'aachen_tuerme_osm.pkl'
+    # city_file = 'aachen_tuerme_osm.pkl'
+
+    city_file = 'aachen_forsterlinde_mod_new_1.pkl'
+    # city_file = 'aachen_frankenberg_mod_new_1.pkl'
+    # city_file = 'aachen_huenefeld_mod_new_1.pkl'
+    # city_file = 'log_aachen_kronenberg_mod_new_1.pkl'
+    # city_file = 'log_aachen_preusweg_mod_new_1.pkl'
+    # city_file = 'log_aachen_tuerme_mod_new_1.pkl'
 
     print('Analyse city file: ', city_file)
 
@@ -833,9 +840,10 @@ if __name__ == '__main__':
     this_path = os.path.dirname(os.path.abspath(__file__))
     pycity_path = os.path.dirname(os.path.dirname(this_path))
 
-    file_path = os.path.join(this_path, 'input', 'aachen', city_file)
-    # file_path = os.path.join(pycity_path, 'cities', 'scripts',
-    #                          'output_complex_city_gen', city_file)
+    # file_path = os.path.join(this_path, 'input', 'aachen', city_file)
+    file_path = os.path.join(pycity_path, 'cities', 'scripts',
+                             'city_generator',
+                             'output', city_file)
 
     #  Load city object from pickle file
     city = load_pickled_city_file(file_path)
