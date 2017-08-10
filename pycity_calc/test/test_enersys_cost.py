@@ -4,6 +4,7 @@
 
 """
 
+from __future__ import division
 import pycity_calc.economic.energy_sys_cost.bat_cost as bat_cost
 import pycity_calc.economic.energy_sys_cost.boiler_cost as boiler_cost
 import pycity_calc.economic.energy_sys_cost.chp_cost as chp_cost
