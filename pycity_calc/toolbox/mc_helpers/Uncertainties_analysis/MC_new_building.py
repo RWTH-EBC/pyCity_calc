@@ -116,6 +116,7 @@ def new_building_evaluation_mc(building, new_weather, max_retro_year=2014, time_
     # Get samples for parameters, which are not stored on building object
     inf_rate = dict_samples['inf']
     print('Inf. rate: ', inf_rate)
+
     usr_air_ex_rate = dict_samples['user_air']
     print('User air exchange rate: ', usr_air_ex_rate)
 
@@ -160,15 +161,15 @@ def new_building_evaluation_mc(building, new_weather, max_retro_year=2014, time_
         warnings.warn(msg)
 
     dict_problem['infiltration']= dict_samples['inf'][0]
-    dict_problem['dormer']= dict_samples['dormer'][0]
-    dict_problem['attic']= dict_samples['attic'][0]
-    dict_problem['cellar'] = dict_samples['cellar'][0]
+    dict_problem['dormer']= new_building.dormer
+    dict_problem['attic']= new_building.attic
+    dict_problem['cellar'] = new_building.cellar
     dict_problem['user_air']= dict_samples['user_air'][0]
-    dict_problem['year'] = dict_samples['mod_year'][0]
+    dict_problem['year'] = new_building.mod_year
     dict_problem['tset_heat'] = dict_samples['set_temp'][0]
     dict_problem['nb_ocupants'] = dict_samples['occ'][0]
     dict_problem['el'] = dict_samples['el'][0]
-    dict_problem ['net_floor_area'] = dict_samples['net_floor_area']
+    dict_problem ['net_floor_area'] = new_building.net_floor_area
 
     #  Get el. demand and dhw energy for a building
     el_demand = new_building.get_annual_el_demand()
@@ -205,9 +206,9 @@ def new_building_evaluation_mc(building, new_weather, max_retro_year=2014, time_
 
         #new_building.apartments[j].demandDomesticHotWater.loadcurve = dhwapp
 
-    #print(len(new_building.get_electric_power_curve()))
-    #print(len(new_building.get_space_heating_power_curve()))
-    #print(len(new_building.get_dhw_power_curve()))
+    print(new_building.get_electric_power_curve())
+    print(new_building.get_space_heating_power_curve())
+    print(new_building.get_dhw_power_curve())
 
     return new_building,  dict_problem, el_demand, dhw_energy, sum_heat
 

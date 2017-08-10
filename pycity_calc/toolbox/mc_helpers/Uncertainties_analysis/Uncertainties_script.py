@@ -48,12 +48,15 @@ import pycity_calc.economic.annuity_calculation as eco_calc
 import pycity_calc.economic.calc_CO2_emission as GHG_calc
 import pycity_calc.toolbox.mc_helpers.Uncertainties_analysis.MC_new_cities_evaluation as newcity
 import pycity_calc.toolbox.mc_helpers.weather.gen_weather_set as genweather
+import pycity_calc.toolbox.mc_helpers.Uncertainties_analysis.MC_esys_new_evaluation as esys_gen
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
 import random as rd
+from xlwt import Workbook
 
-def do_uncertainty_analysis(Nsamples=100):
+def do_uncertainty_analysis(Nsamples=1000):
 
     # Define Uncertainty analysis parameters
     # #############################################################################################################
@@ -61,15 +64,16 @@ def do_uncertainty_analysis(Nsamples=100):
     load_city = True  # load a pickle City file
     # if set to False: generation of a City with city_generator
     city_pickle_name = 'aachen_kronenberg_3_mfh_ref_1.pkl'
-
+    # Scaling of esys (initialization)
+    size_esys=False
     # ## Uncertainty
 
     # energy systems parameters are unknown (efficiency, maximum temperature...)
-    Is_k_esys_parameters = True
+    Is_k_esys_parameters = False
     # Set to false: energy systems are known: buildings characteristics uncertainties
 
     # buildings parameters are unknown (infiltration rate, net_floor_area, modernisation year)
-    Is_k_building_parameters = True
+    Is_k_building_parameters = False
     # Set to False:  buildings parameters are known: building uncertainties (infiltration rate and net_floor_area)
     time_sp_force_retro = 40
     max_retro_year = 2014
@@ -80,7 +84,7 @@ def do_uncertainty_analysis(Nsamples=100):
 
     # ## Economic calculations:
     # Interest rate is uncertain: Set to False: interest_rate is fixed
-    interest_unc = True
+    interest_unc = False
     interest_rate_variation = 'low' #0-0.05
     #interest_rate_variation = 'medium' #0.05-0.1
     #interest_rate_variation = 'high' #0.1-0.2
@@ -99,6 +103,7 @@ def do_uncertainty_analysis(Nsamples=100):
     # ## Save results
     save_result = True  # if set to false: no generation of results txt file
     results_name = 'mc_results.txt'
+    results_excel_name = 'mesresultats.xlx'
 
     print('***********************************************************************************************************')
     print('Initialisation: Reference City Generation')
@@ -116,7 +121,7 @@ def do_uncertainty_analysis(Nsamples=100):
     if load_city == True:
         # load pickle City
 
-        load_path = os.path.join(this_path, 'City_generation', 'output', city_pickle_name)
+        load_path = os.path.join(this_path, 'City_generation', 'input', city_pickle_name)
         City = pickle.load(open(load_path, mode='rb'))
 
         print()
@@ -129,18 +134,17 @@ def do_uncertainty_analysis(Nsamples=100):
         dhw_dim_esys = True  # Use dhw profiles for esys dimensioning
 
         #  Path to energy system input file (csv/txt; tab separated)
-        esys_filename = 'lolo_esys.txt'
+        esys_filename = 'City_lolo_esys.txt'
         esys_path = os.path.join(this_path, 'City_generation', 'input', 'input_esys_generator', esys_filename)
 
         # Generate energy systems for city district
         if gen_esys:
             #  Load energy networks planing data
-            list_esys = City_gen.esysgen.load_enersys_input_data(esys_path)
+            list_esys = esys_gen.load_enersys_input_data(esys_path)
             print ('Add energy systems')
 
             #  Generate energy systems
-            City_gen.esysgen.gen_esys_for_city(city=City, list_data=list_esys,
-                                               dhw_scale=dhw_dim_esys)
+            esys_gen.gen_esys_for_city(city=City, list_data=list_esys, size_esys=size_esys)
         # else enter all the parameter your self
 
 
@@ -411,6 +415,7 @@ def do_uncertainty_analysis(Nsamples=100):
                                                 prev_heat_dev=prev_heat_dev,
                                                 season_mod=season_mod)
 
+
     # #----------------------------------------------------------------------
     # #----------------------------------------------------------------------
 
@@ -502,6 +507,8 @@ def do_uncertainty_analysis(Nsamples=100):
     if Is_k_esys_parameters:
         # energy systems parameters are totally uncertain
         dict_par_unc['esys'] = True
+    else:
+        dict_par_unc['esys'] = False
 
     if Is_k_building_parameters:
         dict_par_unc['build_physic_unc'] = True
@@ -835,6 +842,36 @@ def do_uncertainty_analysis(Nsamples=100):
         write_results.write('\n NEH rescaled' + str(NEH_rescaled))
         write_results.close()
 
+
+
+        # Xecel
+        # Creation
+        book = Workbook()
+
+        #creation feuille1
+        feuill1 = book.add_sheet('feuille 1')
+
+        # ajout des en-tête
+        feuill1.write(0,0,'el_demand')
+        feuill1.write(0,1,'gas_demand')
+        feuill1.write(0,2,'Annuity')
+        feuill1.write(0,3,'GHG')
+
+        #ajout des valeurs dans la ligne suivante
+        ligne1 = feuill1.row(1)
+        ligne2 = feuill1.row(2)
+        ligne3 = feuill1.row(3)
+        ligne4 = feuill1.row(4)
+
+        for value in range(len(El_results)):
+            ligne1.write(value,str(El_results[value]))
+            ligne2.write(value, str(Gas_results[value]))
+            ligne3.write(value, str(Annuity_results[value]))
+            ligne4.write(value, str(GHG_results[value]))
+
+        # creation materielle du fichier
+        book.save(results_excel_name)
+
     print('***********************************************************************************************************')
     print('Visualisation')
     print('***********************************************************************************************************')
@@ -845,7 +882,7 @@ def do_uncertainty_analysis(Nsamples=100):
     fig, ((ax1,ax2), (ax3,ax4)) = plt.subplots(2, 2)
 
     ax1.hist(El_results,50, normed=1)
-    ax2.set_title('Final electrical demand in kWh')
+    ax1.set_title('Final electrical demand in kWh')
 
     ax2.hist(Gas_results,50 , normed=1)
     ax2.set_title('Gas demand in kWh')
@@ -876,25 +913,30 @@ def do_uncertainty_analysis(Nsamples=100):
     ax8.grid(color='b', alpha=0.5, linestyle='dashed', linewidth=0.5)
 
     fig3,((ax11,ax12), (ax13,ax14)) = plt.subplots(2, 2)
-    ax11.hist(Th_results, 50)
-    ax11.set_title('Thermal demand')
-    ax12.hist(el_results2, 50)
-    ax12.set_title('Electrical demand for EBB')
-    ax13.hist(El_results, 50)
-    ax13.set_title('Electrical demand')
+    ax12.hist(Th_results, 50)
+    ax12.set_title('Thermal demand')
+    ax11.hist(El_results, 50)
+    ax11.set_title('Electrical demand after EBB')
+    ax13.hist(el_results2, 50)
+    ax13.set_title('Electrical demand for EBB')
     ax14.hist(Gas_results, 50)
     ax14.set_title('Gas demand')
     plt.show()
 
     # Print samples
-    for keys in dict_city_pb:
-        print('Sampling building: {}'.format(keys))
-        for keys2 in dict_city_pb[keys]:
-            fig = plt.figure()
-            print(keys2, dict_city_pb[keys][keys2])
-            plt.hist(dict_city_pb[keys][keys2],50)
-            plt.xlabel('Sampling for {}, {}'.format(keys, keys2))
-            plt.ylabel('Number of values')
+    #for keys in dict_city_pb:
+        #print('Sampling building: {}'.format(keys))
+        #for keys2 in dict_city_pb[keys]:
+            #fig = plt.figure()
+            #print(keys2, dict_city_pb[keys][keys2])
+            #plt.hist(dict_city_pb[keys][keys2],50)
+            #plt.xlabel('Sampling for {}, {}'.format(keys, keys2))
+            #plt.ylabel('Number of values')
+
+    fig = plt.figure()
+    plt.hist(El_results, 100)
+    plt.xlabel('Electrical demand after EBB in kWh')
+
     plt.show()
 
 if __name__ == '__main__':

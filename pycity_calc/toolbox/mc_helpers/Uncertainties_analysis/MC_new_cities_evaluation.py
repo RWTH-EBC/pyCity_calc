@@ -108,6 +108,8 @@ def new_city_evaluation_monte_carlo(ref_City, dict_sample):
         dict_city_pb[str(buildnb)]['eex'] = []
         dict_city_pb[str(buildnb)]['el_ch'] = []
         dict_city_pb[str(buildnb)]['gas_ch'] = []
+        dict_city_pb[str(buildnb)]['t_set'] = []
+        dict_city_pb[str(buildnb)]['nb_occ'] = []
 
     for loop in range (Nloop):
 
@@ -129,13 +131,16 @@ def new_city_evaluation_monte_carlo(ref_City, dict_sample):
                                    time_sp_force_retro=time_sp_force_retro,build_physic_unc=build_physic_unc,
                                    MC_analysis= MC_analysis, nb_occ_unc=nb_occ_unc)
 
+
         # Dictionary to keep track of sampling
         for buildingnb in dict_build_pb:
-            dict_city_pb[buildingnb]['year'].append(dict_build_pb[buildingnb]['year'])
+            #dict_city_pb[buildingnb]['year'].append(dict_build_pb[buildingnb]['year'])
             dict_city_pb[buildingnb]['infiltration'].append(dict_build_pb[buildingnb]['infiltration'])
-            dict_city_pb[buildingnb]['cellar'].append(dict_build_pb[buildingnb]['cellar'])
-            dict_city_pb[buildingnb]['attic'].append(dict_build_pb[buildingnb]['attic'])
+            #dict_city_pb[buildingnb]['cellar'].append(dict_build_pb[buildingnb]['cellar'])
+            #dict_city_pb[buildingnb]['attic'].append(dict_build_pb[buildingnb]['attic'])
             dict_city_pb[buildingnb]['user_air'].append(dict_build_pb[buildingnb]['user_air'])
+            dict_city_pb[buildingnb]['t_set'].append(dict_build_pb[buildingnb]['tset_heat'])
+            dict_city_pb[buildingnb]['nb_occ'].append(dict_build_pb[buildingnb]['nb_ocupants'])
 
         ############################################
 
@@ -146,7 +151,6 @@ def new_city_evaluation_monte_carlo(ref_City, dict_sample):
         #  Generate new energy systems
 
         City, dict_city_esys_samples = mc_esys.MC_rescale_esys(City, esys_unknown=dict_sample['esys'])
-
 
         ############################################
 
@@ -205,21 +209,21 @@ def new_city_evaluation_monte_carlo(ref_City, dict_sample):
 
         ############################################
 
-        City, GHG_Emission, total_annuity, dict_eco_Sample =\
-            MC_new_economic_evaluation(City, time=time, interest=interest[loop])
+        City, GHG_Emission, total_annuity, dict_eco_Sample = MC_new_economic_evaluation(City, time=time, interest=interest[loop])
 
         # Add results to result_arrays
-
         Gas_results[loop] = round(gas_dem,4)
         El_results[loop] = round(el_dem,4)
         Th_results[loop] = round(annual_th_dem, 4)
 
         # If tes rescaled don't take in account Annuity
         if Rescale_tes:
-            Annuity_results[loop]=Annuity_results[loop-1]
+            Annuity_results[loop] = Annuity_results[loop-1]
         else:
             Annuity_results[loop] = round(total_annuity, 4)
 
+        print (Rescale_tes)
+        print ('annuity {}'.format(loop), Annuity_results[loop] )
         GHG_results[loop] = round(GHG_Emission,4)
         GHG_spe_results[loop] = round(GHG_Emission / (annual_sph_dem + annual_dhw_dem + annual_el_dem),4)
 
@@ -324,12 +328,12 @@ def MC_new_city_generation (City, new_weather, max_retro_year=2014, time_sp_forc
     print('DHW demand: ', sum(dhw_city_list))
     print('Thermal demand: ', sum(dhw_city_list)+sum(sph_city_list))
     print('*****************************************************************************************************')
-    print ('Comparaison with get annual demand:')
-    print('*****************************************************************************************************')
-    print('Annual electricity demand : ', City.get_annual_el_demand(), 'kWh/year')
-    print('Annual thermal demand : ', City.get_total_annual_th_demand(), 'kWh/year')
-    print('Annual space heating demand: ',City.get_annual_space_heating_demand(), 'kWh/year')
-    print('Annual dhw demand : ', City.get_annual_dhw_demand(), 'kWh/year')
+    #print ('Comparaison with get annual demand:')
+    #print('*****************************************************************************************************')
+    #print('Annual electricity demand : ', City.get_annual_el_demand(), 'kWh/year')
+    #print('Annual thermal demand : ', City.get_total_annual_th_demand(), 'kWh/year')
+    #print('Annual space heating demand: ',City.get_annual_space_heating_demand(), 'kWh/year')
+    #print('Annual dhw demand : ', City.get_annual_dhw_demand(), 'kWh/year')
     print('*****************************************************************************************************')
     print()
 
@@ -380,11 +384,11 @@ def MC_new_economic_evaluation(City, time=10, interest=0.05):
     print("Start Economic evaluation /n")
 
     # New_price change factor
-    inflation = rd.uniform(0.8, 1.2)
-    eeg_change = rd.uniform(0.8, 1.2)
+    inflation = rd.uniform(0.99, 1.01)
+    eeg_change = rd.uniform(0.9, 1.1)
     eex_change = -eeg_change
-    el_change = rd.uniform(0.8, 1.2)
-    gas_change = rd.uniform(0.8, 1.2)
+    el_change = rd.uniform(0.99, 1.01)
+    gas_change = rd.uniform(0.98, 1.02)
 
     dict_eco_samples['inflation']=inflation
     dict_eco_samples['eeg']=eeg_change
@@ -464,8 +468,7 @@ def MC_new_economic_evaluation(City, time=10, interest=0.05):
     GHG = City.environment.co2emissions
 
     # Emissions calculation
-    GHG_Emission = GHG_calc.CO2_emission_calc(city_object=City, emission_object=GHG, CO2_zero_lowerbound=False,
-                                              eco_calc_instance=eco_inst)
+    GHG_Emission = GHG_calc.CO2_emission_calc(city_object=City, emission_object=GHG, CO2_zero_lowerbound=False)
 
     print('Emissions: ', GHG_Emission, 'kg/year')
 
@@ -512,7 +515,7 @@ def MC_EBB_calc (City):
     rescale_boiler=False
     rescale_EH=False
     LaL_boiler_rescaled = False
-    Rescale_tes = True
+    Rescale_tes = False
 
     # Loop over energy systems
     try:
@@ -560,7 +563,7 @@ def MC_EBB_calc (City):
                     # Rescal Boiler capacity
                     if City.node[build]['entity'].bes.hasBoiler == True:
                         City.node[build]['entity'].bes.boiler.qNominal = \
-                            dimfunc.round_esys_size(demand_building * 1.05 / City.node[build]['entity'].bes.boiler.eta,
+                            dimfunc.round_esys_size(demand_building * 1.5 / City.node[build]['entity'].bes.boiler.eta,
                                                     round_up=True)
                         rescale_boiler = True
 
@@ -675,7 +678,7 @@ if __name__ == '__main__':
     build_physic_unc = True
     esys_unc = True
     Interest = 0.05
-    esys_filename = 'lolo_esys.txt'
+    esys_filename = 'City_lolo_esys.txt'
     city_f_name = 'aachen_kronenberg_3_mfh_ref_1.pkl'
     time = 10 #years
 
@@ -700,11 +703,11 @@ if __name__ == '__main__':
     # Generate energy systems for city district
     if gen_esys:
         #  Load energy networks planing data
-        list_esys = City_gen.esysgen.load_enersys_input_data(esys_path)
+        list_esys = mc_esys.load_enersys_input_data(esys_path)
         print('Add energy systems')
 
         #  Generate energy systems
-        City_gen.esysgen.gen_esys_for_city(city=city, list_data=list_esys,dhw_scale=dhw_dim_esys)
+        mc_esys.gen_esys_for_city(city=city, list_data=list_esys)
 
 
     # Add energy networks to city
@@ -721,26 +724,26 @@ if __name__ == '__main__':
         City_gen.enetgen.add_energy_networks_to_city(city=city, dict_data=dict_e_net_data)
 
     # Add street generator:
-    street_g = True
-    path_street = os.path.join(this_path, 'City_generation', 'input', 'street_generator', 'street_edges_cluster_simple.csv')
-    path_edges = os.path.join(this_path, 'City_generation', 'input', 'street_generator', 'street_nodes_cluster_simple.csv')
-    if street_g:
-        name_list, pos_list, edge_list = street_gen.load_street_data_from_csv( path_str_nodes=path_edges ,path_str_edges=path_street)
+    #street_g = True
+    #path_street = os.path.join(this_path, 'City_generation', 'input', 'street_generator', 'street_edges_cluster_simple.csv')
+    #path_edges = os.path.join(this_path, 'City_generation', 'input', 'street_generator', 'street_nodes_cluster_simple.csv')
+    #if street_g:
+        #name_list, pos_list, edge_list = street_gen.load_street_data_from_csv( path_str_nodes=path_edges ,path_str_edges=path_street)
 
 
-        street_gen.add_street_network_to_city(city_object=city, name_list=name_list, pos_list=pos_list, edge_list=edge_list)
+        #street_gen.add_street_network_to_city(city_object=city, name_list=name_list, pos_list=pos_list, edge_list=edge_list)
 
-    print (name_list )
-    print (pos_list)
-    print (edge_list)
+    #print (name_list )
+    #print (pos_list)
+    #print (edge_list)
 
-    for key in city.node:
-        for key2 in city.node[key]:
-            print(key2, '--', city.node[key][key2])
+    #for key in city.node:
+        #for key2 in city.node[key]:
+            #print(key2, '--', city.node[key][key2])
 
-    for key in city.edge:
-        for key2 in city.edge[key]:
-            print(key2, '--', city.edge[key][key2])
+    #for key in city.edge:
+        #for key2 in city.edge[key]:
+            #print(key2, '--', city.edge[key][key2])
 
     dict_pam = {}
     dict_pam['Nsamples'] = nb_samples
