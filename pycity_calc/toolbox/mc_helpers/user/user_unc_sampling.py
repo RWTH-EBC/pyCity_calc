@@ -455,9 +455,13 @@ def calc_sampling_dhw_per_apartment(nb_samples, nb_persons,
 
         for i in range(nb_samples):
             if b_type == 'sfh':
-                dhw_value = dict_sfh[nb_persons]
+                dhw_range = dict_sfh[nb_persons]
+                dhw_value = rd.randrange(start=dhw_range[0],
+                                         stop=dhw_range[1])
             elif b_type == 'mfh':
-                dhw_value = dict_mfh[nb_persons]
+                dhw_range = dict_mfh[nb_persons]
+                dhw_value = rd.randrange(start=dhw_range[0],
+                                         stop=dhw_range[1])
 
             list_dhw_vol.append(dhw_value)
 
@@ -495,7 +499,7 @@ if __name__ == '__main__':
     # the histogram of the data
     plt.hist(list_usr_airx, bins='auto')
     plt.xlabel('User air exchange rates in 1/h')
-    plt.ylabel('Number of values�')
+    plt.ylabel('Number of values')
     plt.show()
     plt.close()
 
