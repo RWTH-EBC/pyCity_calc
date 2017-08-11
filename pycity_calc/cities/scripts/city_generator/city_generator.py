@@ -318,7 +318,7 @@ def redistribute_occ(occ_list):
 
     occ_list_new = occ_list[:]
 
-    if sum(occ_list_new) / len(occ_list_new) > 5:
+    if sum(occ_list_new) / len(occ_list_new) > 5:  #  pragma: no cover
         msg = 'Average number of occupants per apartment is higher than 5.' \
               ' This is not valid for usage of Richardson profile generator.'
         raise AssertionError(msg)
@@ -367,7 +367,7 @@ def redistribute_occ(occ_list):
                     #  Return original list
                     return occ_list_new
 
-    if nb_occ_redist:
+    if nb_occ_redist:  #  pragma: no cover
         raise AssertionError('Not all occupants could be distributed.'
                              'Check inputs and/or redistribute_occ() call.')
 
@@ -1789,19 +1789,19 @@ def run_city_generator(generation_mode, timestep, year, location,
 
     assert eff_factor > 0, 'Efficiency factor has to be larger than zero.'
     assert eff_factor <= 1, 'Efficiency factor cannot increase value 1.'
-    if dhw_volumen is not None:
+    if dhw_volumen is not None:  # pragma: no cover
         assert dhw_volumen >= 0, 'Hot water volume cannot be below zero.'
 
-    if generation_mode == 1:
+    if generation_mode == 1: # pragma: no cover
         assert city_osm is not None, 'Generation mode 1 requires city object!'
 
-    if vdi_sh_manipulate is True and th_gen_method == 3:
+    if vdi_sh_manipulate is True and th_gen_method == 3: # pragma: no cover
         msg = 'Simulated profiles of VDI 6007 call (TEASER --> ' \
               'space heating) is going to be normalized with annual thermal' \
               ' space heating demand values given by user!'
         warnings.warn(msg)
 
-    if do_log:
+    if do_log: # pragma: no cover
         #  Write log file
         #  ################################################################
 
@@ -2097,7 +2097,7 @@ def run_city_generator(generation_mode, timestep, year, location,
             if curr_method_4_nb is not None:
                 curr_method_4_nb >= 0
 
-            if curr_build_type == 0 and curr_nb_of_apartments is None:
+            if curr_build_type == 0 and curr_nb_of_apartments is None:  # pragma: no cover
                 #  Define single apartment, if nb of apartments is unknown
                 msg = 'Building ' + str(curr_id) + ' is residential, but' \
                                                    ' does not have a number' \
@@ -2602,7 +2602,7 @@ def run_city_generator(generation_mode, timestep, year, location,
                                           city=city_object,
                                           generate_Output=False)
 
-        if do_save:
+        if do_save:  # pragma: no cover
 
             if path_save_city is None:
                 if pickle_city_filename is None:
@@ -2622,7 +2622,7 @@ def run_city_generator(generation_mode, timestep, year, location,
             except:
                 warnings.warn('Could not pickle and save city object')
 
-        if do_log:
+        if do_log:  # pragma: no cover
 
             if pickle_city_filename is not None:
                 log_file.write('pickle_city_filename: ' +
@@ -2633,7 +2633,7 @@ def run_city_generator(generation_mode, timestep, year, location,
             log_file.close()
 
         # Visualize city
-        if show_city:
+        if show_city:  # pragma: no cover
             #  Plot city district
             try:
                 citvis.plot_city_district(city=city_object,
