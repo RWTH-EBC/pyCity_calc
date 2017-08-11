@@ -6,7 +6,7 @@
 from __future__ import division
 
 import pycity_calc.toolbox.mc_helpers.building.build_unc_set_gen as mcbuild
-
+import pycity_calc.toolbox.mc_helpers.user.user_unc_sampling as mcuse
 
 
 class Test_MC_Sampling():
@@ -94,8 +94,208 @@ class Test_MC_Sampling():
         assert min(list_const) >= 0
         assert max(list_const) <= 1
 
+    def test_calc_set_temp_samples(self):
+        nb_samples = 100
 
+        list_set_temp = \
+            mcuse.calc_set_temp_samples(nb_samples, mean=20, sdev=2.5)
 
+        assert len(list_set_temp) == nb_samples
 
+        assert min(list_set_temp) >= 0
+        assert max(list_set_temp) <= 50
 
+    def test_calc_user_air_ex_rates(self):
+        nb_samples = 100
 
+        list_usr_inf = \
+            mcuse.calc_user_air_ex_rates(nb_samples, min_value=0,
+                                         max_value=1.2,
+                                         pdf='nakagami')
+
+        assert len(list_usr_inf) == nb_samples
+
+        assert min(list_usr_inf) >= 0
+        assert max(list_usr_inf) <= 10
+
+        list_usr_inf = \
+            mcuse.calc_user_air_ex_rates(nb_samples, min_value=0,
+                                         max_value=1.2,
+                                         pdf='triangle')
+
+        assert len(list_usr_inf) == nb_samples
+
+        assert min(list_usr_inf) >= 0
+        assert max(list_usr_inf) <= 1.2
+
+        list_usr_inf = \
+            mcuse.calc_user_air_ex_rates(nb_samples, min_value=0,
+                                         max_value=1.2,
+                                         pdf='equal')
+
+        assert len(list_usr_inf) == nb_samples
+
+        assert min(list_usr_inf) >= 0
+        assert max(list_usr_inf) <= 1.2
+
+    def test_calc_sampling_occ_per_app(self):
+        nb_samples = 100
+
+        list_nb_occ = mcuse.calc_sampling_occ_per_app(nb_samples,
+                                                      method='destatis',
+                                                      min_occ=1, max_occ=5)
+
+        assert len(list_nb_occ) == nb_samples
+        assert min(list_nb_occ) >= 1
+        assert max(list_nb_occ) <= 5
+
+        list_nb_occ = mcuse.calc_sampling_occ_per_app(nb_samples,
+                                                      method='equal',
+                                                      min_occ=2, max_occ=3)
+
+        assert len(list_nb_occ) == nb_samples
+        assert min(list_nb_occ) >= 2
+        assert max(list_nb_occ) <= 3
+
+    def test_calc_sampling_el_demand_per_apartment(self):
+        nb_samples = 100
+
+        list_el_demands = \
+            mcuse.calc_sampling_el_demand_per_apartment(nb_samples,
+                                                        nb_persons=1,
+                                                        type='sfh',
+                                                        method='stromspiegel2017')
+
+        assert len(list_el_demands) == nb_samples
+        assert min(list_el_demands) >= 1300
+        assert max(list_el_demands) <= 4000
+
+        list_el_demands = \
+            mcuse.calc_sampling_el_demand_per_apartment(nb_samples,
+                                                        nb_persons=5,
+                                                        type='sfh',
+                                                        method='stromspiegel2017')
+
+        assert len(list_el_demands) == nb_samples
+        assert min(list_el_demands) >= 3500
+        assert max(list_el_demands) <= 7500
+
+        list_el_demands = \
+            mcuse.calc_sampling_el_demand_per_apartment(nb_samples,
+                                                        nb_persons=1,
+                                                        type='mfh',
+                                                        method='stromspiegel2017')
+
+        assert len(list_el_demands) == nb_samples
+        assert min(list_el_demands) >= 800
+        assert max(list_el_demands) <= 2200
+
+        list_el_demands = \
+            mcuse.calc_sampling_el_demand_per_apartment(nb_samples,
+                                                        nb_persons=5,
+                                                        type='mfh',
+                                                        method='stromspiegel2017')
+
+        assert len(list_el_demands) == nb_samples
+        assert min(list_el_demands) >= 2200
+        assert max(list_el_demands) <= 5700
+
+    def test_calc_sampling_dhw_per_person(self):
+        nb_samples = 100
+
+        list_dhw_vol = \
+            mcuse.calc_sampling_dhw_per_person(nb_samples, pdf='equal',
+                                               equal_diff=34,
+                                               mean=64, std=10)
+        assert len(list_dhw_vol) == nb_samples
+        assert min(list_dhw_vol) >= 30
+        assert max(list_dhw_vol) <= 98
+
+        list_dhw_vol = \
+            mcuse.calc_sampling_dhw_per_person(nb_samples, pdf='gaussian',
+                                               equal_diff=34,
+                                               mean=64, std=10)
+
+        assert len(list_dhw_vol) == nb_samples
+        assert min(list_dhw_vol) >= 0
+        assert max(list_dhw_vol) <= 150
+
+    def test_calc_dhw_ref_volume_for_multiple_occ(self):
+
+        dhw_ref = mcuse.calc_dhw_ref_volume_for_multiple_occ(nb_occ=1,
+                                                             ref_one_occ=64)
+
+        assert dhw_ref == 64
+
+        dhw_ref = mcuse.calc_dhw_ref_volume_for_multiple_occ(nb_occ=2,
+                                                             ref_one_occ=64)
+
+        assert dhw_ref < 64
+
+    def test_calc_sampling_dhw_per_apartment(self):
+        nb_samples = 100
+        nb_persons = 3
+
+        list_dhw_vol = \
+            mcuse.calc_sampling_dhw_per_apartment(nb_samples,
+                                                  nb_persons,
+                                                  method='stromspiegel_2017',
+                                                  pdf='equal',
+                                                  equal_diff=34, mean=64,
+                                                  std=10,
+                                                  b_type='sfh', delta_t=35,
+                                                  c_p_water=4182,
+                                                  rho_water=995)
+
+        assert len(list_dhw_vol) == nb_samples
+        assert min(list_dhw_vol) >= 3 * 9
+        assert max(list_dhw_vol) <= 3 * 50
+
+        list_dhw_vol = \
+            mcuse.calc_sampling_dhw_per_apartment(nb_samples,
+                                                  nb_persons,
+                                                  method='stromspiegel_2017',
+                                                  pdf='equal',
+                                                  equal_diff=34, mean=64,
+                                                  std=10,
+                                                  b_type='mfh', delta_t=35,
+                                                  c_p_water=4182,
+                                                  rho_water=995)
+
+        assert len(list_dhw_vol) == nb_samples
+        assert min(list_dhw_vol) >= 3 * 20
+        assert max(list_dhw_vol) <= 3 * 40
+
+        nb_persons = 1
+
+        list_dhw_vol = \
+            mcuse.calc_sampling_dhw_per_apartment(nb_samples,
+                                                  nb_persons,
+                                                  method='nb_occ_dep',
+                                                  pdf='gaussian',
+                                                  equal_diff=34, mean=64,
+                                                  std=10,
+                                                  b_type='mfh', delta_t=35,
+                                                  c_p_water=4182,
+                                                  rho_water=995)
+
+        assert len(list_dhw_vol) == nb_samples
+        assert min(list_dhw_vol) >= 0
+        assert max(list_dhw_vol) <= 150
+
+        list_dhw_vol = \
+            mcuse.calc_sampling_dhw_per_apartment(nb_samples,
+                                                  nb_persons,
+                                                  method='indep',
+                                                  pdf='equal',
+                                                  equal_diff=34, mean=64,
+                                                  std=10,
+                                                  b_type='mfh', delta_t=35,
+                                                  c_p_water=4182,
+                                                  rho_water=995)
+
+        assert len(list_dhw_vol) == nb_samples
+        assert min(list_dhw_vol) >= 0
+        assert max(list_dhw_vol) <= 150
+
+    
