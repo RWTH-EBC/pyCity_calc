@@ -31,6 +31,7 @@ omit =
 	pycity_calc/toolbox/mc_helpers/Morris_analysis/*
 	pycity_calc/test/xtest_simulation_energy_balances.py
 	pycity_calc/toolbox/clustering/experiments/*
+	pycity_calc/toolbox/clustering/ba_clustering.py
 
 ignore_errors = True
 
