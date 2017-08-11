@@ -6,11 +6,14 @@
 from __future__ import division
 
 import copy
+import shapely.geometry.point as point
 
+import pycity_calc.cities.city as city
 import pycity_calc.toolbox.mc_helpers.building.build_unc_set_gen as mcbuild
 import pycity_calc.toolbox.mc_helpers.user.user_unc_sampling as mcuse
 import pycity_calc.toolbox.mc_helpers.weather.gen_weather_set as mcweat
 import pycity_calc.toolbox.mc_helpers.demand_unc_single_build as mc_build
+import pycity_calc.toolbox.mc_helpers.demand_unc_city as mc_city
 
 from pycity_calc.test.pycity_calc_fixtures import fixture_building, \
     fixture_environment, fixture_city, fixture_apartment, fixture_th_demand, \
@@ -340,3 +343,22 @@ class Test_MC_Sampling():
                                                      nb_occ_unc=True,
                                                      MC_analysis=False,
                                                      build_physic_unc=True)
+
+    def test_mc_city(self, fixture_environment, fixture_detailed_building):
+        nb_samples = 2
+
+        city_obj = city.City(environment=fixture_environment)
+
+        building1 = copy.deepcopy(fixture_detailed_building)
+        building2 = copy.deepcopy(fixture_detailed_building)
+
+        city_obj.add_building(building1, point.Point(0, 0))
+        city_obj.add_building(building2, point.Point(10, 10))
+
+        mc_city.run_mc_sh_uncertain_city(city=city_obj,
+                                         nb_samples=nb_samples,
+                                         time_sp_force_retro=40,
+                                         max_retro_year=2014,
+                                         weather_region=5,
+                                         weather_year=2010,
+                                         nb_occ_unc=True)
