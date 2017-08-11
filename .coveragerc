@@ -15,6 +15,7 @@ exclude_lines =
     # Don't complain if tests don't hit defensive assertion code:
     raise AssertionError
     raise NotImplementedError
+	assert
 
     # Don't complain if non-runnable code isn't run:
     if 0:
@@ -25,7 +26,12 @@ omit =
     pycity_calc/toolbox/others/*
 	pycity_calc/cities/scripts/city_generator_based_on_osm_files.py
 	pycity_calc/simulation/energy_balance_ref_state/*
-	pycity_calc/tests/checks/*
+	pycity_calc/test/checks/*
+	pycity_calc/toolbox/shp_geo_processing/*
+	pycity_calc/toolbox/mc_helpers/Morris_analysis/*
+	pycity_calc/test/xtest_simulation_energy_balances.py
+	pycity_calc/toolbox/clustering/experiments/*
+	pycity_calc/toolbox/clustering/ba_clustering.py
 
 ignore_errors = True
 

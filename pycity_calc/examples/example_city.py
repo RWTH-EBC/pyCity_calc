@@ -3,6 +3,7 @@
 Example script for usage of city class.
 """
 from __future__ import division
+
 import shapely.geometry.point as point
 
 import pycity_base.classes.Weather as Weather
