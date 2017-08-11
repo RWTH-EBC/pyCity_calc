@@ -5,9 +5,17 @@
 """
 from __future__ import division
 
+import copy
+
 import pycity_calc.toolbox.mc_helpers.building.build_unc_set_gen as mcbuild
 import pycity_calc.toolbox.mc_helpers.user.user_unc_sampling as mcuse
 import pycity_calc.toolbox.mc_helpers.weather.gen_weather_set as mcweat
+import pycity_calc.toolbox.mc_helpers.demand_unc_single_build as mc_build
+
+from pycity_calc.test.pycity_calc_fixtures import fixture_building, \
+    fixture_environment, fixture_city, fixture_apartment, fixture_th_demand, \
+    fixture_el_demand, fixture_detailed_building
+
 
 
 class Test_MC_Sampling():
@@ -317,3 +325,18 @@ class Test_MC_Sampling():
         assert len(list_wea) == nb_weather
         assert min(list_wea[0].tAmbient) >= -25
         assert max(list_wea[0].tAmbient) <= 50
+
+    def test_run_mc_sh_uncertain_single_building(self,
+                                                 fixture_detailed_building):
+
+        building = copy.deepcopy(fixture_detailed_building)
+        nb_samples = 2
+
+        mc_build.run_mc_sh_uncertain_single_building(building, nb_samples,
+                                                     time_sp_force_retro=40,
+                                                     max_retro_year=2014,
+                                                     weather_region=5,
+                                                     weather_year=2010,
+                                                     nb_occ_unc=True,
+                                                     MC_analysis=False,
+                                                     build_physic_unc=True)
