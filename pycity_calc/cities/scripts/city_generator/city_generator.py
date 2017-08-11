@@ -1490,7 +1490,8 @@ def calc_el_dem_ap(nb_occ, el_random, type):
     return el_dem
 
 
-def calc_dhw_dem_ap(nb_occ, dhw_random, type):
+def calc_dhw_dem_ap(nb_occ, dhw_random, type, delta_t=35, c_p_water=4182,
+                    rho_water=995):
     """
     Calculate hot water energy demand per apartment per year
     in kWh/a (residential buildings, only)
@@ -1509,6 +1510,12 @@ def calc_dhw_dem_ap(nb_occ, dhw_random, type):
         Options:
         - 'sfh' : Single family house
         - 'mfh' : Multi family house
+    delta_t : float, optional
+        Temperature split of heated up water in Kelvin (default: 35)
+    c_p_water : float, optional
+        Specific heat capacity of water in J/kgK (default: 4182)
+    rho_water : float, optional
+        Density of water in kg/m3 (default: 995)
 
     Returns
     -------
@@ -1522,10 +1529,14 @@ def calc_dhw_dem_ap(nb_occ, dhw_random, type):
 
     if dhw_random:
         #  Choose first entry of random sample list
-        dhw_dem = usunc.calc_sampling_el_demand_per_apartment(
+        #  DHW volume in liters per apartment and day
+        dhw_volume = usunc.calc_sampling_dhw_per_apartment(
             nb_samples=1,
             nb_persons=nb_occ,
-            type=type)[0]
+            b_type=type)[0]
+
+        dhw_dem = dhw_volume * 365 * rho_water * c_p_water * delta_t / \
+                  (1000 * 3600 * 1000)
     else:
         #  Choose average value depending on nb_occ
         #  Class D without hot water (Stromspiegel 2017)
@@ -2703,7 +2714,7 @@ if __name__ == '__main__':
     do_normalization = True
 
     #  Randomize electrical demand value (residential buildings, only)
-    el_random = False
+    el_random = True
 
     #  Prevent usage of electrical heating and hot water devices in
     #  electrical load generation (only relevant if el_gen_method == 2)
@@ -2736,7 +2747,7 @@ if __name__ == '__main__':
     dhw_volumen = None  # Only relevant for residential buildings
 
     #  Randomize choosen dhw_volume reference value by selecting new value
-    dhw_random = False
+    dhw_random = True
 
     #  Input file names and pathes
     #  ######################################################
