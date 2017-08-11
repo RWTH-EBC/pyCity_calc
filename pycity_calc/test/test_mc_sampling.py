@@ -7,6 +7,7 @@ from __future__ import division
 
 import pycity_calc.toolbox.mc_helpers.building.build_unc_set_gen as mcbuild
 import pycity_calc.toolbox.mc_helpers.user.user_unc_sampling as mcuse
+import pycity_calc.toolbox.mc_helpers.weather.gen_weather_set as mcweat
 
 
 class Test_MC_Sampling():
@@ -298,4 +299,21 @@ class Test_MC_Sampling():
         assert min(list_dhw_vol) >= 0
         assert max(list_dhw_vol) <= 150
 
-    
+    def test_gen_set_of_weathers(self):
+        timestep = 3600
+        region_nb = 5  # Region number for TRY usage
+        #  (currently, 5 and 12 are available. More TRY datasets can be found
+        #   on DWD website for download)
+        year = 2010  # Year of TRY (2010 for current TRY or 2035 for future TRY)
+        nb_weather = 5
+        random_method = 'uniform'  # 'normal' or 'uniform'
+
+        list_wea = mcweat.gen_set_of_weathers(nb_weath=nb_weather,
+                                              year=year,
+                                              timestep=timestep,
+                                              region_nb=region_nb,
+                                              random_method=random_method)
+
+        assert len(list_wea) == nb_weather
+        assert min(list_wea[0].tAmbient) >= -25
+        assert max(list_wea[0].tAmbient) <= 50
