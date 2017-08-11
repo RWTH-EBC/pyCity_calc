@@ -147,21 +147,19 @@ if __name__ == '__main__':
 
     #  User Inputs
     #  ##############################
-    nb_samples = 2
+    nb_samples = 10000
     time_sp_force_retro = 50
     max_retro_year = 2014
     weather_region = 5
     weather_year = 2010
     nb_occ_unc = True
 
-    #city_f_name = 'aachen_forsterlinde_mod_6.pkl'
-    #city_f_name = 'aachen_frankenberg_mod_6.pkl'
-    #city_f_name = 'aachen_huenefeld_mod_6.pkl'
-    #city_f_name = 'aachen_kronenberg_mod_6.pkl'
-    #city_f_name = 'aachen_preusweg_mod_6.pkl'
-    #city_f_name = 'aachen_tuerme_mod_6.pkl'
-
-    city_f_name = 'aachen_preusweg_mod_new_1.pkl'
+    # city_f_name = 'aachen_forsterlinde_mod_new_1.pkl'
+    city_f_name = 'aachen_frankenberg_mod_new_1.pkl'
+    #city_f_name = 'aachen_huenefeld_mod_new_1.pkl'
+    #city_f_name = 'aachen_kronenberg_mod_new_1.pkl'
+    # city_f_name = 'aachen_preusweg_mod_new_1.pkl'
+    #city_f_name = 'aachen_tuerme_mod_new_1.pkl'
 
     save_f_name = city_f_name[:-4] + '_mc_city_samples_' + str(nb_samples) + '.pkl'
 
