@@ -4,6 +4,7 @@
 Pytest script for city generators
 """
 from __future__ import division
+
 import os
 
 import pycity_calc.cities.scripts.city_generator.city_generator as citygen
@@ -183,7 +184,7 @@ class Test_City_Generators():
         th_gen_method = 2
         el_gen_method = 1
         do_normalization = True
-        use_dhw = False
+        use_dhw = True
         dhw_method = 1
         dhw_volumen = 64
         eff_factor = 1
@@ -237,6 +238,45 @@ class Test_City_Generators():
 
         assert build_1.get_annual_space_heat_demand() > 0
 
+    def test_city_generator3(self, fixture_environment):
+
+        this_path = os.path.dirname(os.path.abspath(__file__))
+
+        th_gen_method = 3
+        el_gen_method = 2
+        do_normalization = True
+        use_dhw = True
+        dhw_method = 2
+        dhw_volumen = None
+        eff_factor = 0.85
+        filename = 'city_1_building.txt'
+        filepath = os.path.join(this_path, 'input_generator', filename)
+
+        timestep = fixture_environment.timer.timeDiscretization
+        year = fixture_environment.timer.year
+        location = fixture_environment.location
+        altitude = fixture_environment.weather.altitude
+
+        #  Load district_data file
+        district_data = citygen.get_district_data_from_txt(filepath)
+
+        city = citygen.run_city_generator(generation_mode=0,
+                                          timestep=timestep,
+                                          year=year, location=location,
+                                          th_gen_method=th_gen_method,
+                                          el_gen_method=el_gen_method,
+                                          use_dhw=use_dhw,
+                                          dhw_method=dhw_method,
+                                          district_data=district_data,
+                                          pickle_city_filename=None,
+                                          eff_factor=eff_factor,
+                                          show_city=False,
+                                          try_path=None, altitude=altitude,
+                                          dhw_volumen=dhw_volumen,
+                                          do_normalization=do_normalization,
+                                          do_save=False,
+                                          call_teaser=True)
+
     def test_convert_th_slp_int_and_str(self):
 
         assert citygen.convert_th_slp_int_and_str(0) == 'HEF'
@@ -262,9 +302,107 @@ class Test_City_Generators():
 
     def test_redistribute_occ(self):
 
-        list_person_per_ap = [5, 6, 7, 1, 1, 2, 3, 2, 1]
+        list_person_per_ap = [5, 6, 7, 1, 1, 2, 3, 2, 1, 0, 0]
 
         list_new = citygen.redistribute_occ(list_person_per_ap)
 
         assert max(list_new) <= 5
         assert min(list_new) >= 1
+
+        list_person_per_ap = [5, 4, 3, 2, 1]
+
+        list_new = citygen.redistribute_occ(list_person_per_ap)
+
+        assert list_new == list_person_per_ap
+
+    def test_gen_non_res(self, fixture_environment):
+
+        citygen.generate_nonres_building_single_zone(environment=fixture_environment,
+                                                     net_floor_area=500,
+                                                     spec_th_demand=250,
+                                                     annual_el_demand=40000,
+                                                     th_slp_type='GGA',
+                                                     el_slp_type='G0')
+
+    def test_calc_el_dem_ap(self):
+
+        nb_occ = 1
+        el_random = True
+        type = 'sfh'
+
+        el_dem = citygen.calc_el_dem_ap(nb_occ=nb_occ, el_random=el_random,
+                                        type=type)
+
+        assert el_dem >= 0
+
+        nb_occ = 2
+        el_random = True
+        type = 'mfh'
+
+        el_dem = citygen.calc_el_dem_ap(nb_occ=nb_occ, el_random=el_random,
+                                        type=type)
+
+        assert el_dem >= 0
+
+        nb_occ = 1
+        el_random = False
+        type = 'sfh'
+
+        el_dem = citygen.calc_el_dem_ap(nb_occ=nb_occ, el_random=el_random,
+                                        type=type)
+
+        assert el_dem == 2500
+
+        nb_occ = 2
+        el_random = False
+        type = 'mfh'
+
+        el_dem = citygen.calc_el_dem_ap(nb_occ=nb_occ, el_random=el_random,
+                                        type=type)
+
+        assert el_dem == 2200
+
+    def test_calc_dhw_dem_ap(self):
+
+        nb_occ = 1
+        dhw_random = True
+        type = 'sfh'
+
+        dhw_dem = citygen.calc_dhw_dem_ap(nb_occ, dhw_random, type, delta_t=35,
+                                          c_p_water=4182,
+                                          rho_water=995)
+
+        assert dhw_dem >= 200 - 20
+        assert dhw_dem <= 1000 + 20
+
+        nb_occ = 3
+        dhw_random = True
+        type = 'mfh'
+
+        dhw_dem = citygen.calc_dhw_dem_ap(nb_occ, dhw_random, type, delta_t=35,
+                                          c_p_water=4182,
+                                          rho_water=995)
+
+        assert dhw_dem >= 900 - 20
+        assert dhw_dem <= 1700 + 20
+
+        nb_occ = 1
+        dhw_random = False
+        type = 'sfh'
+
+        dhw_dem = citygen.calc_dhw_dem_ap(nb_occ, dhw_random, type, delta_t=35,
+                                          c_p_water=4182,
+                                          rho_water=995)
+
+        assert dhw_dem == 500
+
+
+        nb_occ = 3
+        dhw_random = False
+        type = 'mfh'
+
+        dhw_dem = citygen.calc_dhw_dem_ap(nb_occ, dhw_random, type, delta_t=35,
+                                          c_p_water=4182,
+                                          rho_water=995)
+
+        assert dhw_dem == 1300
