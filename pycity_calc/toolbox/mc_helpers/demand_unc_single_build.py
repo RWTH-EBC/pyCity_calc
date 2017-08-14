@@ -361,7 +361,18 @@ def mod_single_build_w_samples(exbuilding, dict_samples, list_wea,
         print('Sampled dhw. volume in liters per apartment and day: ',
               dhw_vol_app_n_day)
 
-        volume = sum(building.apartments[j].demandDomesticHotWater.water) * timestep / 3600
+        #  Substituted volume calculation with energy to volume calc #153
+        try:
+            volume = sum(building.apartments[j].demandDomesticHotWater.water) \
+                     * timestep / 3600
+        except:
+            #  Hot water energy per apartment per year in Joule
+            dhw_energy = \
+                sum(building.apartments[j].demandDomesticHotWater.loadcurve) * \
+                timestep
+
+            volume = dhw_energy * 1000 / (990 * 4180 * 35)
+
         print('Original annual volume in liters: ', volume)
         volume_per_day = volume / 365
         print('Original volume in liters per day and apartment; ',
@@ -369,8 +380,13 @@ def mod_single_build_w_samples(exbuilding, dict_samples, list_wea,
 
         conv_dhw = dhw_vol_app_n_day / volume_per_day
 
+        #  Substituted volume calculation with energy to volume calc #153
         #  Convert water volume
-        building.apartments[j].demandDomesticHotWater.water *= conv_dhw
+        try:
+            building.apartments[j].demandDomesticHotWater.water *= conv_dhw
+        except:
+            warnings.warn('Did not find attribute water on dhw object.'
+                          ' Thus, only going to convert loadcurve values.')
 
         #  Convert dhw heat power
         building.apartments[j].demandDomesticHotWater.loadcurve *= conv_dhw
@@ -598,10 +614,12 @@ def run_mc_sh_uncertain_single_building(building, nb_samples,
                                         max_retro_year=2014,
                                         weather_region=5,
                                         weather_year=2010,
-                                        nb_occ_unc=True, MC_analysis=False, build_physic_unc=True):
+                                        nb_occ_unc=True,
+                                        MC_analysis=False,
+                                        build_physic_unc=True):
     """
     Perform Monte-Carlo simulation for thermal space heating power generation
-    for a single building with single zone/apartment.
+    for a single building
 
     Parameters
     ----------
@@ -625,8 +643,8 @@ def run_mc_sh_uncertain_single_building(building, nb_samples,
         If set to False, uses number of occupants on occupancy objects
         as known values.
     MC_analysis: boolean, optional
-            Defines extra modifications for monte carlo analysis
-            (dormer,attic,cellar, construction_type, net_floor_area)
+        Defines extra modifications for monte carlo analysis
+        (dormer,attic,cellar, construction_type, net_floor_area)
     buil_physic_unc: bool, optional
         Defines,if building physics unknown or not (default: True)
         True - Building physics is unknown
@@ -653,6 +671,12 @@ def run_mc_sh_uncertain_single_building(building, nb_samples,
         'user_air' : Holding user air ventilation factor sampling
 
     """
+
+    #  Check, if building holds necessary information
+    assert building.build_year is not None
+    assert len(building.apartments) >= 1
+    for ap in building.apartments:
+        assert ap.occupancy is not None, 'Apartment has no occupants!'
 
     exbuilding = copy.deepcopy(building)
 
@@ -694,7 +718,8 @@ def run_mc_sh_uncertain_single_building(building, nb_samples,
     print('Finished Monte-Carlo simulation for single building')
     print()
 
-    return (list_sh, list_sh_curves, list_el, list_dhw, dict_samples, dict_problem)
+    return (list_sh, list_sh_curves, list_el, list_dhw, dict_samples,
+            dict_problem)
 
 if __name__ == '__main__':
 
@@ -708,6 +733,7 @@ if __name__ == '__main__':
     max_retro_year = 2014
     weather_region = 5
     weather_year = 2010
+    build_physic_unc = True  #  Building physics are uncertain --> True
 
     #  Defines, if number of occupants per apartment is unknown
     nb_occ_unc = True
@@ -735,6 +761,9 @@ if __name__ == '__main__':
     save_building = False
     building_save_file = 'building_obj.pkl'
     build_path = os.path.join(this_path, 'output', building_save_file)
+
+    #  Settings of MA Laura Esling
+    MC_analysis = False  # Enable usage of further uncertain parameters
 
     #  Load city object and extract building below
     # #  ###############################################################
@@ -890,7 +919,9 @@ if __name__ == '__main__':
                                             max_retro_year=max_retro_year,
                                             weather_region=weather_region,
                                             weather_year=weather_year,
-                                            nb_occ_unc=nb_occ_unc, MC_analysis=True, build_physic_unc=True)
+                                            nb_occ_unc=nb_occ_unc,
+                                            MC_analysis=MC_analysis,
+                                            build_physic_unc=build_physic_unc)
 
     list_max_power = []
     for power in list_sh_curves:

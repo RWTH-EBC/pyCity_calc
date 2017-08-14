@@ -4,8 +4,8 @@
 Test script for BatteryExtended class
 """
 from __future__ import division
-import pycity_calc.energysystems.battery as batt
 
+import pycity_calc.energysystems.battery as batt
 from pycity_calc.test.pycity_calc_fixtures import fixture_environment, \
     fixture_battery
 

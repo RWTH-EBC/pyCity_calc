@@ -160,8 +160,10 @@ def calc_sampling_occ_per_app(nb_samples, method='destatis',
         statistics from 2015
     min_occ : int, optional
         Minimal possible number of occupants per apartment (default: 1)
+        Only relevant for method == 'equal'
     max_occ : int, optional
         Maximal possible number of occupants per apartment (default: 5)
+        Only relevant for method == 'equal'
 
     Returns
     -------
