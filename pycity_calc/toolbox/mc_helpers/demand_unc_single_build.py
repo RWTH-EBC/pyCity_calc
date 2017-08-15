@@ -76,6 +76,7 @@ def building_unc_sampling(exbuilding, nb_samples, max_retro_year=2014,
         'attic' : Holding attic samples list
         'const_type' : Holding construction type samples list
         'net_floor_area' : Holding net floor area samples list
+        'height_of_floor': Holding average_height_of_floor list
 
     """
 
@@ -117,12 +118,24 @@ def building_unc_sampling(exbuilding, nb_samples, max_retro_year=2014,
         list_inf = bunc.calc_inf_samples(nb_samples=nb_samples)
         dict_samples['inf'] = list_inf
 
+        # Average height of floor sampling
+        list_average_height_of_floor = bunc.calc_list_net_floor_area_sampling(nb_samples=nb_samples,
+                                                                              sigma=(
+                                                                              exbuilding.height_of_floors * 0.005),
+                                                                              mean=exbuilding.height_of_floor)
+        dict_samples['height_of_floor'] = list_average_height_of_floor
     else:
         # Net floor area sampling
         list_nf_area = bunc.calc_list_net_floor_area_sampling(nb_of_samples=nb_samples,
-                                                              sigma=(exbuilding.net_floor_area*0.025),
+                                                              sigma=(exbuilding.net_floor_area*0.01),
                                                               mean= exbuilding.net_floor_area)
         dict_samples['net_floor_area'] = list_nf_area
+
+        # Average height of floor sampling
+        list_average_height_of_floor = bunc.calc_list_net_floor_area_sampling(nb_of_samples=nb_samples,
+                                                                              sigma=(exbuilding.height_of_floors*0.005),
+                                                                              mean=exbuilding.height_of_floors)
+        dict_samples['height_of_floor'] = list_average_height_of_floor
 
         #  Infiltration rate sampling
         if year_of_constr < 1990:
@@ -395,6 +408,8 @@ def mod_single_build_w_samples(exbuilding, dict_samples, list_wea, i , MC_analys
 
         building.net_floor_area = dict_samples['net_floor_area'][i]
 
+        building.height_of_floors = dict_samples['height_of_floor'][i]
+
     print('Finished modification of building copy with sample data')
     print()
 
@@ -424,6 +439,7 @@ def mc_call_single_building(exbuilding, dict_samples, list_wea, MC_analysis=Fals
         'attic' : Holding attic samples list
         'const_type' : Holding construction type samples list
         'net_floor_area' : Holding net floor area samples list
+        'height_of_floor': Holding average_height_of_floor list
     list_wea : list (of weather objects)
         List holding different pycity weather objects for uncertainty
         analysis

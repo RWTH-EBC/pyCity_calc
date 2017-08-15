@@ -128,6 +128,10 @@ def new_building_evaluation_mc(building, new_weather, max_retro_year=2014, time_
     tset_heat = dict_samples['set_temp'][0]
     print('Set temperature: ', tset_heat)
 
+    height_of_floors = dict_samples['height_of_floor'][0]
+    print ('new_height_of_floor', height_of_floors)
+
+
     #  Perform VDI 6007 simulation
     #  ##################################################################
     (temp_in, q_heat_cool, q_in_wall, q_out_wall) = tus.calc_th_load_build_vdi6007_ex_build(exbuild=new_building,
@@ -170,6 +174,7 @@ def new_building_evaluation_mc(building, new_weather, max_retro_year=2014, time_
     dict_problem['nb_ocupants'] = dict_samples['occ'][0]
     dict_problem['el'] = dict_samples['el'][0]
     dict_problem ['net_floor_area'] = new_building.net_floor_area
+    dict_problem['height_of_floor'] = new_building.height_of_floors
 
     #  Get el. demand and dhw energy for a building
     el_demand = new_building.get_annual_el_demand()

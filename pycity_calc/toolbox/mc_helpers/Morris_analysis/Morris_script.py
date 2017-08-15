@@ -49,6 +49,7 @@ from SALib.plotting.morris import horizontal_bar_plot, covariance_plot, sample_h
 import pycity_calc.economic.annuity_calculation as eco_calc
 import pycity_calc.simulation.energy_balance_optimization.energy_balance_building as EBB
 import pycity_calc.economic.calc_CO2_emission as GHG_calc
+import pycity_calc.toolbox.mc_helpers.Uncertainties_analysis.MC_esys_new_evaluation as esys_gen
 import pickle
 import numpy as np
 
@@ -59,15 +60,16 @@ def run_Morris():
     # #############################################################################################################
 
     # number of samples
-    Nsample = 5
+    Nsample = 10
     print(Nsample)
     Morris_name = 'Morris_values.txt' # filename of the parameters definition variation space for the Morris analysis
-    Scenario = 1
+    Scenario = 2
 
     # City generation mode
     load_city = True  # load a pickle City file
     # if set to False: generation of a City with city_generator
     city_pickle_name = 'aachen_kronenberg_3_mfh_ref_1.pkl'
+    size_esys = False
 
     # results
     save_result = True  # if set to false: no generation of results txt file
@@ -101,20 +103,20 @@ def run_Morris():
 
         #  Add energy systems to city
         gen_esys = True  # True - Generate energy networks
-        dhw_dim_esys = True  # Use dhw profiles for esys dimensioning
 
         #  Path to energy system input file (csv/txt; tab separated)
-        esys_filename = 'lolo_esys.txt'
+        esys_filename = 'City_lolo_esys_ref.txt'
         esys_path = os.path.join(this_path, 'City_generation', 'input', 'input_esys_generator', esys_filename)
 
         # Generate energy systems for city district
         if gen_esys:
             #  Load energy networks planing data
-            list_esys = City_gen.esysgen.load_enersys_input_data(esys_path)
-            print ('Add energy systems')
+            list_esys = esys_gen.load_enersys_input_data(esys_path)
+            print('Add energy systems')
 
             #  Generate energy systems
-            City_gen.esysgen.gen_esys_for_city(city=City, list_data=list_esys, dhw_scale=dhw_dim_esys)
+            esys_gen.gen_esys_for_city(city=City, list_data=list_esys, size_esys=size_esys)
+            # else enter all the parameter your self
 
     else:
         # Generate City with City_generator

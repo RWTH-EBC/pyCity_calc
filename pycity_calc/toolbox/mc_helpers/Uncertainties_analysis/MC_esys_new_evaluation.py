@@ -20,7 +20,7 @@ import pycity_calc.energysystems.heatPumpSimple as hpsys
 import pycity_calc.energysystems.electricalHeater as ehsys
 import pycity_calc.energysystems.battery as batt
 
-def MC_rescale_esys(City, esys_unknown=True, recent_systems=False):
+def MC_rescale_esys(City, esys_unknown=True, recent_systems=True):
 
     '''
     Performs uncertainty rescaling for energy systems.
@@ -152,22 +152,22 @@ def gen_esys_unknown (building, recent_systems=True):
     if building.bes.hasBoiler == True:
         print('rescale Boiler 1')
         if recent_systems:
-            building.bes.boiler.eta = rd.uniform(0.8,0.98)
+            building.bes.boiler.eta = rd.uniform(0.85,0.90)
             #City.node[build]['entity'].bes.boiler.lower_activation_limit = rd.uniform(0.1,0.3)
             #City.node[build]['entity'].bes.boiler.t_max = rd.uniform(80,100)
         else:
-            building.bes.boiler.eta = rd.uniform(0.6, 0.8)
+            building.bes.boiler.eta = rd.uniform(0.8, 0.90)
             # City.node[build]['entity'].bes.boiler.lower_activation_limit = rd.uniform(0.1,0.3)
             # City.node[build]['entity'].bes.boiler.t_max = rd.uniform(80,100)
 
     # Combined heat pump
     if building.bes.hasChp == True:
         if recent_systems:
-            building.bes.chp.omega = rd.uniform(0.85,0.95)
+            building.bes.chp.omega = rd.uniform(0.9,0.94)
             #building.bes.chp.t_max = rd.uniform(80,100)
             #building.bes.chp.lower_activation_limit = rd.uniform(0.1,0.3)
         else:
-            building.bes.chp.omega = rd.uniform(0.7,0.9)
+            building.bes.chp.omega = rd.uniform(0.88,0.93)
             #building.bes.chp.t_max = rd.uniform(80,100)
             #building.bes.chp.lower_activation_limit = rd.uniform(0.1,0.3)
 
@@ -177,32 +177,32 @@ def gen_esys_unknown (building, recent_systems=True):
             building.bes.electricalHeater.eta = rd.uniform(0.9,0.99)
             #building.bes.electricalHeater.t_max = rd.uniform(80,100)
         else:
-            building.bes.electricalHeater.eta = rd.uniform(0.8, 0.9)
+            building.bes.electricalHeater.eta = rd.uniform(0.8, 0.99)
             #building.bes.electricalHeater.t_max = rd.uniform(80, 100)
 
     # Heat pump
-    if ex_building.bes.hasHeatpump == True:
+    #if ex_building.bes.hasHeatpump == True:
 
         #building.bes.heatpump.lower_activation_limit = rd.uniform(0.1,0.3)
-        building.bes.heatpump.t_max = rd.uniform(80,100)
-        building.bes.heatpump.t_sink = rd.uniform(20,25)
+        #building.bes.heatpump.t_max = rd.uniform(80,100)
+        #building.bes.heatpump.t_sink = rd.uniform(20,25)
 
     # photovoltaic
     if ex_building.bes.hasPv == True:
         if recent_systems:
 
-            building.bes.pv.eta = rd.uniform(0.8,0.95)
+            building.bes.pv.eta = rd.uniform(0.17,0.2)
             building.bes.pv.temperature_nominal = rd.uniform(18,25)
 
         else:
 
-            building.bes.pv.eta = rd.uniform(0.6, 0.85)
+            building.bes.pv.eta = rd.uniform(0.14,0.2 )
             building.bes.pv.temperature_nominal = rd.uniform(18, 25)
 
-        building.bes.pv.alpha = rd.uniform(0.8, 0.9)
-        building.bes.pv.beta = rd.uniform(0.8, 0.9)
-        building.bes.pv.gamma = rd.uniform(0.8, 0.9)
-        building.bes.pv.tau_alpha = rd.uniform(0.8, 0.9)
+        #building.bes.pv.alpha = rd.uniform(0.8, 0.9)
+        building.bes.pv.beta = rd.uniform(0, 45)
+        building.bes.pv.gamma = rd.uniform(-45,45 )
+        #building.bes.pv.tau_alpha = rd.uniform(0.8, 0.9)
 
     return building
 
@@ -236,12 +236,9 @@ def MC_new_esys_evaluation (building):
     ex_building = copy.deepcopy(building)
 
     if ex_building.bes.hasBattery == True:
-        building.bes.battery.eta_charge = rd.normalvariate(mu= ex_building.bes.battery.eta_charge,
-                                                                                  sigma = 0.005)
-        building.bes.battery.eta_discharge = rd.normalvariate(mu= ex_building.bes.battery.eta_discharge,
-                                                                                  sigma = 0.005)
-        building.bes.battery.self_discharge = rd.normalvariate(mu= ex_building.bes.battery.self_discharge,
-                                                                                  sigma = 0.005)
+        building.bes.battery.eta_charge = rd.normalvariate(mu= ex_building.bes.battery.eta_charge,sigma = 0.01)
+        building.bes.battery.eta_discharge = rd.normalvariate(mu= ex_building.bes.battery.eta_discharge,sigma = 0.01)
+        building.bes.battery.self_discharge = rd.normalvariate(mu= ex_building.bes.battery.self_discharge,sigma = 0.01)
         dict_build_esys_sampl['battery']={}
         dict_build_esys_sampl['battery']['Battery_eta_charge']= building.bes.battery.eta_charge
         dict_build_esys_sampl['battery']['Battery_eta_discharge']=building.bes.battery.eta_discharge
@@ -260,24 +257,42 @@ def MC_new_esys_evaluation (building):
 
     if ex_building.bes.hasBoiler == True:
         print('Rescale Boiler 2')
-        building.bes.boiler.eta = rd.normalvariate(mu= ex_building.bes.boiler.eta,
-                                                                        sigma = 0.005)
+        building.bes.boiler.eta = rd.normalvariate(mu= ex_building.bes.boiler.eta,sigma = 0.01)
+
+        # Assert that their is no extrem values
+        if building.bes.boiler.eta < 0.70:
+            building.bes.boiler.eta = 0.85
+
+        elif building.bes.boiler.eta > 0.90:
+            building.bes.boiler.eta = 0.85
+
         print('Rescaleboiler',building.bes.boiler.eta )
         dict_build_esys_sampl['boiler']={}
         dict_build_esys_sampl['boiler']['eta'] = building.bes.boiler.eta
 
     if ex_building.bes.hasChp == True:
-        building.bes.omega = rd.normalvariate(mu= ex_building.bes.chp.omega,
-                                                                        sigma = 0.005)
+        building.bes.chp.omega = rd.normalvariate(mu= ex_building.bes.chp.omega,sigma = 0.01)
         #building.bes.chp.tMax = rd.normalvariate(mu= ex_building.bes.chp.tMax,sigma = 0.1)
         #building.bes.chp.lowerActivationLimit = rd.normalvariate(mu= ex_building.bes.chp.lowerActivationLimit,
-                                                                 #sigma = 0.1)
+
+        # Assert that their is no extrem values                                                      #sigma = 0.1)
+        if building.bes.chp.omega>1:
+            building.bes.chp.omega = 0.9
+
+        elif  building.bes.chp.omega<0.8:
+            building.bes.chp.omega = 0.9
+
         dict_build_esys_sampl['CHP']={}
         dict_build_esys_sampl['CHP']['CHP_omega'] = building.bes.chp.omega
 
     if ex_building.bes.hasElectricalHeater == True:
-        building.bes.electricalHeater.eta = rd.normalvariate(mu= ex_building.bes.electricalHeater.eta,
-                                                                        sigma = 0.005)
+        building.bes.electricalHeater.eta = rd.normalvariate(mu= ex_building.bes.electricalHeater.eta,sigma = 0.01)
+        # Assert that their is no extrem values
+        if building.bes.electricalHeater.eta < 0.90 :
+            building.bes.electricalHeater.eta = 0.99
+        elif building.bes.electricalHeater.eta > 1:
+            building.bes.electricalHeater.eta = 0.99
+
         #building.bes.electricalHeater.t_max = rd.normalvariate(mu= ex_building.bes.electricalHeater.t_max,
                                                                         #sigma = 0.1)
         dict_build_esys_sampl['EH']={}
@@ -301,18 +316,21 @@ def MC_new_esys_evaluation (building):
         building.bes.pv.environment.weather.timer = building.environment.timer
 
 
-        building.bes.pv.eta = rd.normalvariate(mu= ex_building.bes.pv.eta,sigma = 0.005)
+        building.bes.pv.eta = rd.normalvariate(mu= ex_building.bes.pv.eta,sigma = 0.01)
         print('pv eta',building.bes.pv.eta )
+
+        # Assert that their is no extrem values
+        if building.bes.pv.eta < 10 or building.bes.pv.eta > 25:
+            building.bes.pv.eta = 0.15
+
         #building.bes.pv.temperature_nominal = rd.normalvariate(mu= ex_building.bes.pv.temperature_nominal,
                                                                         #sigma = 0.05)
-        building.bes.pv.alpha = rd.normalvariate(mu= ex_building.bes.pv.alpha,
-                                                                        sigma = 0.01)
-        building.bes.pv.beta = rd.normalvariate(mu= ex_building.bes.pv.beta,
-                                                                        sigma = 0.01)
-        building.bes.pv.gamma = rd.normalvariate(mu= ex_building.bes.pv.gamma,
-                                                                        sigma = 0.01)
-        building.bes.pv.tau_alpha =rd.normalvariate(mu= ex_building.bes.pv.tau_alpha,
-                                                                        sigma = 0.01)
+        #building.bes.pv.alpha = rd.normalvariate(mu= ex_building.bes.pv.alpha,
+                                                                        #sigma = 0.01)
+        building.bes.pv.beta = rd.normalvariate(mu= ex_building.bes.pv.beta, sigma = 0.01)
+
+        building.bes.pv.gamma = rd.normalvariate(mu= ex_building.bes.pv.gamma, sigma = 0.01)
+        building.bes.pv.tau_alpha = rd.normalvariate(mu= ex_building.bes.pv.tau_alpha, sigma = 0.01)
 
         dict_build_esys_sampl['PV']={}
         dict_build_esys_sampl['PV']['eta'] =  building.bes.pv.eta

@@ -232,8 +232,7 @@ class calculator(object):
 
 
             #  Pointer to current node
-            Node = self.city_object.node[
-                dict_city_data[index]['Buildings in subcity'][i]]#TODO:'Buildings in subcity'
+            Node = self.city_object.node[dict_city_data[index]['Buildings in subcity'][i]]#TODO:'Buildings in subcity'
 
 
             #  Check if single building holds bes
@@ -282,8 +281,7 @@ class calculator(object):
                 eh_qNominal = Node['entity'].bes.electricalHeater.qNominal
 
                 #  Get space heating demand of building
-                sph_demand_building = Node[
-                    'entity'].get_space_heating_power_curve()
+                sph_demand_building = Node['entity'].get_space_heating_power_curve()
 
                 #  Get building hot water demand
                 dhw_demand_building = Node['entity'].get_dhw_power_curve()
@@ -326,8 +324,7 @@ class calculator(object):
 
                         #  Calculate max load power (max. supply mimus
                         #  current demand)
-                        load_power_max = hp_qNominal + eh_qNominal - \
-                                         thermal_demand_building[ii]
+                        load_power_max = hp_qNominal + eh_qNominal - thermal_demand_building[ii]
                         #  Calculate max hp load power (max. hp power minus
                         #  current demand)
                         load_power = hp_qNominal - thermal_demand_building[
@@ -491,8 +488,7 @@ class calculator(object):
                         #  possible part load power of hp, but smaller than
                         #  nominal hp power --> HP can supply full power
                         #  and charge storage
-                        elif thermal_demand_building[
-                            ii] > hp_lal * hp_qNominal and load_power >= 0:
+                        elif thermal_demand_building[ii] > hp_lal * hp_qNominal and load_power >= 0:
                             ####print('case2')
 
                             if q_in_max_tes >= 0 and load_power >= q_in_max_tes:
@@ -781,7 +777,7 @@ class calculator(object):
             # #------------------------------------------------------
             #  E. balance for chp usage
             if (Node['entity'].bes.hasChp) == True:
-                print('################################### hasCHP')
+                #print('################################### hasCHP')
                 # Script for Building with CHP, Boiler and Tes
 
                 tes_object = Bes.tes
@@ -793,12 +789,12 @@ class calculator(object):
                 boiler_qNominal = Node['entity'].bes.boiler.qNominal
                 boiler_lal = Node['entity'].bes.boiler.lowerActivationLimit
 
-                sph_demand_building = Node[
-                    'entity'].get_space_heating_power_curve()
+                sph_demand_building = Node['entity'].get_space_heating_power_curve()
+
 
                 dhw_demand_building = Node['entity'].get_dhw_power_curve()
-                thermal_demand_building = sph_demand_building + \
-                                          dhw_demand_building
+                thermal_demand_building = sph_demand_building + dhw_demand_building
+
                 # Start temperature of the storage is set as tInit
                 t_tes = Bes.tes.tInit
 
@@ -814,7 +810,7 @@ class calculator(object):
                 #  Loop over every timestep
                 #  #-----------------------------------------------------
                 for ii in range(len(thermal_demand_building)):
-                    #print('timestep', ii)
+                    #print(ii, '-2-', thermal_demand_building[ii])
                     #print('#######node: ', str(dict_city_data[index]['Buildings in subcity'][i]), '\n',
                     #          '#######timestep: ', ii)
 
@@ -828,11 +824,10 @@ class calculator(object):
                         q_in_max_tes = 0
 
                     # for numerical reasons
-                    if Bes.tes.t_current - Bes.tes.tMin < 0.1:
+                    if Bes.tes.t_current - Bes.tes.t_min < 0.1:
                         q_out_max_tes = 0
 
-                    load_power = chp_qNominal - \
-                                 thermal_demand_building[ii]
+                    load_power = chp_qNominal - thermal_demand_building[ii]
 
                     #  #-------------------------------------------------
                     if thermal_demand_building[ii] > chp_qNominal:
@@ -840,16 +835,14 @@ class calculator(object):
                         #  Thermal demand power  of building is larger than
                         #  nominal thermal chp power
 
-                        if thermal_demand_building[ii] > (
-                                    boiler_qNominal + chp_qNominal):
+                        if thermal_demand_building[ii] > (boiler_qNominal + chp_qNominal):
                             ####print('case1.1')
                             #  Thermal demand power of building is larger
                             #  than boiler and chp nominals. Requires
                             #  thermal storage usage
 
                             #  Power differenz
-                            diff = thermal_demand_building[
-                                       ii] - boiler_qNominal - chp_qNominal
+                            diff = thermal_demand_building[ii] - boiler_qNominal - chp_qNominal
 
                             #  Check if tes can provide enough power
                             #assert q_out_max_tes > diff, ("TES is now "
@@ -1029,10 +1022,8 @@ class calculator(object):
                                     total_heat_demand_for_chp[ii]=chp_qNominal # demand which has to be covered by chp, the actual supplied energy might be higher when LAL condition
 
 
-                    elif thermal_demand_building[
-                        ii] > chp_lal * chp_qNominal and \
-                                    thermal_demand_building[
-                                        ii] <= chp_qNominal:
+                    elif thermal_demand_building[ ii] > chp_lal * chp_qNominal and \
+                                    thermal_demand_building[ii] <= chp_qNominal:
                         # chp is running and loads the tes if possible;
                         # TES off
                         # In this case the TES is filled up using the load_power(energy from CHP, so is covenient
@@ -1180,6 +1171,8 @@ class calculator(object):
 
 
                     elif thermal_demand_building[ii] == 0:
+                        #print(ii)
+                        #print(thermal_demand_building[ii])
                         ####print('case4')
                         t_tes = tes_object.calc_storage_temp_for_next_timestep(
                                 q_in=0, q_out=0,
@@ -1889,8 +1882,7 @@ class calculator(object):
                             # THEREFORE it was necessary to implement a case for PV AND CHP!
 
                             # Initialisation pv arrays
-                            supply_pv = self.city_object.node[dict_city_data[index]['Buildings in subcity'][i]][
-                                'entity'].bes.pv.getPower()#TODO:'Buildings in subcity'
+                            supply_pv = self.city_object.node[dict_city_data[index]['Buildings in subcity'][i]]['entity'].bes.pv.getPower()#TODO:'Buildings in subcity'
                             pv_used = np.zeros(len(time_vector.time_vector()))
                             pv_sold = np.zeros(len(time_vector.time_vector()))
                             demand_after_pv = np.zeros(len(time_vector.time_vector()))
@@ -2066,8 +2058,7 @@ class calculator(object):
                         if (Node['entity'].bes.hasPv):
 
                             # pv electricity is very expensive and therefore more important to use than chp!
-                            supply_pv = self.city_object.node[dict_city_data[index]['Buildings in subcity'][
-                                    i]]['entity'].bes.pv.getPower()#TODO:'Buildings in subcity'
+                            supply_pv = self.city_object.node[dict_city_data[index]['Buildings in subcity'][i]]['entity'].bes.pv.getPower()#TODO:'Buildings in subcity'
 
                             # Initialisation
                             pv_sold = np.zeros(len(time_vector.time_vector()))

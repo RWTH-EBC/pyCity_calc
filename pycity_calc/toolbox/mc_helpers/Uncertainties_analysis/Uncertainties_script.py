@@ -56,7 +56,7 @@ from scipy import stats
 import random as rd
 from xlwt import Workbook
 
-def do_uncertainty_analysis(Nsamples=1000):
+def do_uncertainty_analysis(Nsamples=10000):
 
     # Define Uncertainty analysis parameters
     # #############################################################################################################
@@ -69,7 +69,7 @@ def do_uncertainty_analysis(Nsamples=1000):
     # ## Uncertainty
 
     # energy systems parameters are unknown (efficiency, maximum temperature...)
-    Is_k_esys_parameters = False
+    Is_k_esys_parameters = True
     # Set to false: energy systems are known: buildings characteristics uncertainties
 
     # buildings parameters are unknown (infiltration rate, net_floor_area, modernisation year)
@@ -94,7 +94,9 @@ def do_uncertainty_analysis(Nsamples=1000):
     # Time for economic calculation in years (default: 10)
     time = 10  # Years
 
+
     MC_analyse_total = True
+    # if set to false: MC analyse without uncertainties for area, height of floors, energy systems and economy
 
     # ## Analyse
     Confident_intervall_pourcentage = 90
@@ -103,7 +105,7 @@ def do_uncertainty_analysis(Nsamples=1000):
     # ## Save results
     save_result = True  # if set to false: no generation of results txt file
     results_name = 'mc_results.txt'
-    results_excel_name = 'mesresultats.xlx'
+    results_excel_name = 'mesresultats'
 
     print('***********************************************************************************************************')
     print('Initialisation: Reference City Generation')
@@ -131,7 +133,7 @@ def do_uncertainty_analysis(Nsamples=1000):
         #  Add energy systems to city
         gen_esys = True  # True - Generate energy systems
         gen_e_net = False# True - Generate energy networks
-        dhw_dim_esys = True  # Use dhw profiles for esys dimensioning
+        #dhw_dim_esys = True  # Use dhw profiles for esys dimensioning
 
         #  Path to energy system input file (csv/txt; tab separated)
         esys_filename = 'City_lolo_esys.txt'
@@ -565,7 +567,7 @@ def do_uncertainty_analysis(Nsamples=1000):
 
 
     Th_results, Gas_results, El_results, Annuity_results, GHG_results, \
-    GHG_spe_results, el_results2, dict_city_pb, Nboiler_rescaled, NEH_rescaled, Lal_rescaled = \
+    GHG_spe_results, el_results2, dict_city_pb, Nboiler_rescaled, NEH_rescaled, Lal_rescaled, Tes_rescaled = \
         newcity.new_city_evaluation_monte_carlo(City, dict_par_unc)
 
     print('***********************************************************************************************************')
@@ -698,6 +700,7 @@ def do_uncertainty_analysis(Nsamples=1000):
     print ('Number of simulations with rescaled boiler : ', Nboiler_rescaled)
     print('Number of simulations with rescaled EH : ', NEH_rescaled)
     print ('Number of simulations with rescaled Boiler Lal : ', Lal_rescaled)
+    print ('Number of Tes rescaled : ', Tes_rescaled)
 
     print('***********************************************************************************************************')
     print('Save results')
@@ -778,6 +781,7 @@ def do_uncertainty_analysis(Nsamples=1000):
         write_results.write('sigma : '+ str(sigma_gas_demand) + '\n')
         write_results.write('confident interval {}'.format(Confident_intervall_pourcentage)+ str(confident_inter_gas) + '\n')
         write_results.write('{:0.2%} of the means are in confident interval'.format(((Gas_results >= confident_inter_gas[0]) & (Gas_results < confident_inter_gas[1])).sum() / float(Nsamples))+ '\n')
+        write_results.write('reference:' + str(gas_dem_ref) + '\n')
 
         write_results.write('\n electrical demand\n')
         write_results.write('\n -----------------\n')
@@ -792,6 +796,7 @@ def do_uncertainty_analysis(Nsamples=1000):
         write_results.write('{:0.2%} of the means are in confident interval'.format(
             ((El_results >= confident_inter_el[0]) & (El_results < confident_inter_el[1])).sum() / float(
                 Nsamples)) + '\n')
+        write_results.write('reference:' + str(el_dem_ref) + '\n')
 
         write_results.write('\n Annuity\n')
         write_results.write('\n -------\n')
@@ -806,6 +811,7 @@ def do_uncertainty_analysis(Nsamples=1000):
         write_results.write('{:0.2%} of the means are in confident interval'.format(
             ((Annuity_results >= confident_inter_a[0]) & (Annuity_results < confident_inter_a[1])).sum() / float(
                 Nsamples)) + '\n')
+        write_results.write('reference:' + str(total_annuity_ref) + '\n')
 
         write_results.write('\n GHG Emissions\n')
         write_results.write('\n -------------\n')
@@ -835,6 +841,7 @@ def do_uncertainty_analysis(Nsamples=1000):
         write_results.write('{:0.2%} of the means are in confident interval'.format(
             ((GHG_spe_results >= confident_inter_spe_GHG[0]) & (GHG_spe_results < confident_inter_spe_GHG[1])).sum() / float(
                 Nsamples)) + '\n')
+        write_results.write('reference:' + str(GHG_Emission_ref) + '\n')
 
 
         write_results.write('\n Nboiler Lal rescaled: ' + str(Lal_rescaled))
@@ -858,16 +865,16 @@ def do_uncertainty_analysis(Nsamples=1000):
         feuill1.write(0,3,'GHG')
 
         #ajout des valeurs dans la ligne suivante
-        ligne1 = feuill1.row(1)
-        ligne2 = feuill1.row(2)
-        ligne3 = feuill1.row(3)
-        ligne4 = feuill1.row(4)
+        #ligne1 = feuill1.row(1)
+        #ligne2 = feuill1.row(2)
+        #ligne3 = feuill1.row(3)
+        #ligne4 = feuill1.row(4)
 
         for value in range(len(El_results)):
-            ligne1.write(value,str(El_results[value]))
-            ligne2.write(value, str(Gas_results[value]))
-            ligne3.write(value, str(Annuity_results[value]))
-            ligne4.write(value, str(GHG_results[value]))
+            feuill1.write(value+1,0,str(El_results[value]))
+            feuill1.write(value+1,1, str(Gas_results[value]))
+            feuill1.write(value+1,2, str(Annuity_results[value]))
+            feuill1.write(value+1,3, str(GHG_results[value]))
 
         # creation materielle du fichier
         book.save(results_excel_name)

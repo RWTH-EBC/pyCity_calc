@@ -77,6 +77,7 @@ def new_city_evaluation_monte_carlo(ref_City, dict_sample):
     Nboiler_rescaled = 0# number of boiler rescaled (thermal demand to high)
     NEH_rescaled = 0 # number of electrical heater rescaled (thermal demand to high)
     Lal_rescaled = 0 # Number of city with rescaled boiler lal
+    Tes_rescale = 0
     Gas_results = np.zeros(Nloop)  # array of annual gas demand
     El_results = np.zeros(Nloop)  # array of annual electrical demand after energy balance
     Th_results = np.zeros(Nloop) #array of annual space heating demand
@@ -117,6 +118,9 @@ def new_city_evaluation_monte_carlo(ref_City, dict_sample):
         print('simulations n° : ', loop)
         print('_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-')
         print()
+
+        # Save the City
+        City = copy.deepcopy(ref_City)
 
         ############################################
 
@@ -184,12 +188,15 @@ def new_city_evaluation_monte_carlo(ref_City, dict_sample):
             NEH_rescaled += 1
         if Lal_recaled:
             Lal_rescaled += 1
+        if Tes_rescale:
+            Tes_rescale +=1
 
         print()
         print('loop n°:  ', loop)
         print('boiler_rescaled =', rescale_boiler)
         print('EH_rescaled =', rescale_EH)
         print('Lal_rescaled=', Lal_recaled)
+        print('Tes_rescaled = ', Rescale_tes)
         print()
         print('Annual electricity demand : ', annual_el_dem, 'kWh/year')
         print('Annual thermal demand : ', annual_th_dem, 'kWh/year')
@@ -240,7 +247,7 @@ def new_city_evaluation_monte_carlo(ref_City, dict_sample):
             dict_city_pb[buildingnb]['gas_ch'].append(dict_eco_Sample['gas_ch'])
 
     return Th_results, Gas_results, El_results, Annuity_results, GHG_results, \
-           GHG_spe_results, el_results2, dict_city_pb, Nboiler_rescaled, NEH_rescaled, Lal_rescaled
+           GHG_spe_results, el_results2, dict_city_pb, Nboiler_rescaled, NEH_rescaled, Lal_rescaled, Tes_rescale
 
 
 def MC_new_city_generation (City, new_weather, max_retro_year=2014, time_sp_force_retro=40,
@@ -540,7 +547,7 @@ def MC_EBB_calc (City):
 
             if City.node[build]['entity'].bes.hasElectricalHeater == True:
                 City.node[build]['entity'].bes.electricalHeater.qNominal = \
-                    dimfunc.round_esys_size(demand_building*1.05/City.node[build]['entity'].bes.electricalHeater.eta,
+                    dimfunc.round_esys_size(demand_building /City.node[build]['entity'].bes.electricalHeater.eta,
                                             round_up=True)
                 rescale_EH = True
 
@@ -563,7 +570,7 @@ def MC_EBB_calc (City):
                     # Rescal Boiler capacity
                     if City.node[build]['entity'].bes.hasBoiler == True:
                         City.node[build]['entity'].bes.boiler.qNominal = \
-                            dimfunc.round_esys_size(demand_building * 1.5 / City.node[build]['entity'].bes.boiler.eta,
+                            dimfunc.round_esys_size(demand_building * 1.00 / City.node[build]['entity'].bes.boiler.eta,
                                                     round_up=True)
                         rescale_boiler = True
 
@@ -583,6 +590,10 @@ def MC_EBB_calc (City):
                         print('Rescale EH for the second time')
                         print('new EH capacity kW: ', City.node[build]['entity'].bes.electricalHeater.qNominal / 1000)
                         print()
+
+
+
+
 
                 # Do another time EBB
                 for i in range(len(dict_bes_data)):
@@ -761,7 +772,7 @@ if __name__ == '__main__':
     dict_pam['time']=time
     #  Perform MC analysis for whole city
     (Th_results, Gas_results, El_results, Annuity_results, GHG_results, \
-           GHG_spe_results, el_results2, dict_city_pb, Nboiler_rescaled, NEH_rescaled, Lal_rescaled) = \
+           GHG_spe_results, el_results2, dict_city_pb, Nboiler_rescaled, NEH_rescaled, Lal_rescaled, Tes_rescaled) = \
         new_city_evaluation_monte_carlo(ref_City=city, dict_sample=dict_pam)
 
     #  Results
