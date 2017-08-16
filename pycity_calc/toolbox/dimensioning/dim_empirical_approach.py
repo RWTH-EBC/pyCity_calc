@@ -34,17 +34,20 @@ import pycity.classes.supply.ElectricalHeater as ElectricalHeater
 import pycity.classes.supply.Inverter as Inverter
 import pycity.classes.supply.PV as PV
 import pycity.classes.supply.ThermalEnergyStorage as ThermalEnergyStorage
+import pycity.classes.demand.SpaceHeating as SpaceHeating
 
-sc0 = {'type':['centralized','decentralized'],'base':['hp_geo'],'peak':['boiler']}
-sc1 = {'type':['centralized','decentralized'],'base':['hp_air'],'peak':['boiler']}
-sc2 = {'type':['centralized','decentralized'],'base':[],'peak':['boiler']}
+
+#sc0 = {'type':['centralized','decentralized'],'base':['hp_geo'],'peak':['boiler']}
+#sc1 = {'type':['centralized','decentralized'],'base':['hp_air'],'peak':['boiler']}
+#sc2 = {'type':['centralized','decentralized'],'base':[],'peak':['boiler']}
+#sc3 = {'type':['centralized','decentralized'],'base':['chp'],'peak':['boiler']}
+#sc4 = {'type':['centralized','decentralized'],'base':['hp_geo'],'peak':[]}
+# sc5 = {'type':['decentralized'],'base':['hp_air'],'peak':['elHeater']} # elHeater = Heizstab
+
+#all_scenarios = [sc0, sc1, sc2, sc3, sc4]
+
 sc3 = {'type':['centralized','decentralized'],'base':['chp'],'peak':['boiler']}
-sc4 = {'type':['centralized','decentralized'],'base':['solar'],'peak':['boiler']}
-sc5 = {'type':['centralized','decentralized'],'base':['hp_geo'],'peak':[]}
-
-
-all_scenarios = [sc0, sc1, sc2, sc3, sc4, sc5]
-
+all_scenarios = [sc3]
 
 
 def run_approach(city):
@@ -57,14 +60,26 @@ def run_approach(city):
 
     # building_con, heating_net, geothermal = additional_information()
 
+    # Change SpaceHeatingDemand of apartments to method 1 (SLP)
+    for n in city.nodelist_building:
+        b = city.node[n]['entity']
+        spec_th_dem = b.get_annual_space_heat_demand()/b.get_net_floor_area_of_building()
+        for ap in b.apartments:
+            if ap.demandSpaceheating.method != 1:
+                ap.demandSpaceheating = SpaceHeating.SpaceHeating(city.environment,
+                                           method=1,  # Standard load profile
+                                           livingArea=ap.net_floor_area,
+                                           specificDemand=spec_th_dem)
+
+
 #----------------------- Check Eligibility for District Heating Network ----------------------------------
 
     # Energiekennwert des Quartiers (Keine Unterscheidung der Gebäude - nur Betrachtung als Gesamtes zur Abschätzung)
     th_total = city.get_annual_space_heating_demand() + city.get_annual_dhw_demand()
 
     area_total = 0
-    for house in city.node.values():
-        area_total += house['entity'].get_net_floor_area_of_building() #sum area of buildings
+    for n in city.nodelist_building:
+        area_total += city.node[n]['entity'].get_net_floor_area_of_building() #sum area of buildings
     ekw = th_total/area_total #in kWh/(m2*a)
 
 
@@ -77,7 +92,7 @@ def run_approach(city):
 
 #------------------------------------ Dimensionierung der Anlagen -------------------------------------------------
 
-    if dhn_elig >= 3:
+    if dhn_elig > 3:
         print('District Heating eligible!')
         for scenario in all_scenarios:
             if 'centralized' in scenario['type']:
@@ -88,27 +103,21 @@ def run_approach(city):
 
     elif dhn_elig < 3:
         print('District Heating not eligible!')
-        # for scenario in all_scenarios:
-        #     if 'decentralized' in scenario['type']:
-        #         if approve_scenario(city, scenario, geothermal):
-        #             solutions.append(dim_decentralized(city,scenario))
+        for scenario in all_scenarios:
+            if 'decentralized' in scenario['type']:
+                if approve_scenario(city, scenario, geothermal):
+                    solutions.append(dim_decentralized(deepcopy(city),scenario))
 
     else:
         print('District Heating solutions might be eligible...')
-        # for scenario in all_scenarios:
-        #     if approve_scenario(city, scenario, geothermal):
-        #         if 'centralized' in scenario['type']:
-        #             print('dim_centralized mit', scenario)
-        #             solutions.append(dim_centralized(city,scenario))
-        #         if 'decentralized' in scenario['type']:
-        #             print('dim_decentralized mit', scenario)
-        #             solutions.append(dim_decentralized(city,scenario))
+        for scenario in all_scenarios:
+            if approve_scenario(city, scenario, geothermal):
+                if 'centralized' in scenario['type']:
+                    solutions.append(dim_centralized(deepcopy(city),scenario))
+                if 'decentralized' in scenario['type']:
+                    solutions.append(dim_decentralized(deepcopy(city),scenario))
 
-
-
-
-
-
+    return solutions
 
 
 
@@ -194,17 +203,9 @@ def approve_scenario(city, scenario, geothermal):
     :param scenario:
     :return: True/False
     '''
-    if 'solar' in scenario['base']:
-        pv_area = 0
-        for building in city.node.values():
-            pv_area += building['entity'].roof_usabl_pv_area
-        if pv_area == 0:
-            print('No usable area for solar available.')
-            return False
 
     if 'hp_geo' in scenario['base'] and not geothermal:
         return False
-
     return True
 
 
@@ -311,31 +312,33 @@ def dim_centralized(city, scenario):
     :param scenario:
     :return: scenario with sizes of devices - in welcher form? city_object
     '''
-
+    # TODO: Netzverluste korrekt integrieren (-> Wolff & Jagnow S.20)
     eta_transmission = 0.9  # richtigen Faktor suchen
-    [el_curve, th_curve] = city.get_power_curves(current_values=False)
-    th_LDC = get_LDC(th_curve / eta_transmission)
-    q_total = sum(th_curve)
+    [el_curve, th_c] = city.get_power_curves(current_values=False)
+    th_curve = th_c/eta_transmission
+    th_LDC = get_LDC(th_curve)
+    q_total = np.sum(th_curve)
 
     bes = BES.BES(city.environment)
 
 
     for device in scenario['base']:
+        # TODO: Devices sollten in eigene Methode ausgegliedert werden, die bei (de)zentraler Dimensionierung aufgerufen werden (quasi gleiches Vorgehen bei Dimensionierung)
         if device == 'chp':
             # Dimensionierungspremissen:
             # BHKW zwischen 5000 und 7000 h/a Volllast und
             # BHKW immer mit Speicher
 
-            # Dimensionierungsstrategie: 1.Anlage bei 5500h/a mit 1/2 mehr installierter Leistung als nötig für Speicher
+            # Dimensionierungsstrategie: 1.Anlage mit 1/2 mehr installierter Leistung als nötig für Speicher
 
             chp_flh = 7000 #best possible full-load-hours
-            q_chp = 3 / 2 * th_LDC[chp_flh]
-
-            while q_chp/max(th_LDC) < 0.1: #falls leistungsanteil kleiner als 10%
-                chp_flh -= 50
-                q_chp = 3/2*th_LDC[chp_flh]
-
+            # TODO: Validieren bzw. verändern mit Dimensionierung von Wärmespeicher
+            q_chp = th_LDC[chp_flh]
             [eta_el, eta_th, p_nom, q_nom] = choose_device('chp', q_chp)
+            while q_nom*eta_th/max(th_curve) < 0.1: #falls leistungsanteil kleiner als 10%
+                chp_flh -= 50
+                q_chp = th_LDC[chp_flh]
+                [eta_el, eta_th, p_nom, q_nom] = choose_device('chp', q_chp)
 
             if get_building_age(city) == 'new':
                 print('EEWärmeG beachten!')
@@ -373,12 +376,20 @@ def dim_centralized(city, scenario):
 
             chp = CHP.CHP(city.environment, p_nom, q_nom, eta_el+eta_th)
             bes.addDevice(chp)
+            # Volllaststunde hier nicht mehr genau chp_flh, da Leistung der Anlage verändert (choose_device())
+            print('CHP with Q_nom =', q_nom, ' W (', round(q_nom * 100 / max(th_curve),2), '%) ->', chp_flh, 'full-load hours.')
 
 
             if 'boiler' in scenario['peak']:
                 q_boiler = max(th_LDC) - q_nom
                 boiler = Boiler.Boiler(city.environment, q_boiler, 0.8)
                 bes.addDevice(boiler)
+
+            if 'elHeater' in scenario['peak']:
+                q_elHeater = max(th_LDC) - q_nom
+                # TODO: Werte überprüfen
+                elHeater = ElectricalHeater.ElectricalHeater(city.environment, q_elHeater, 0.95, 100, 0.2)
+                bes.addDevice(elHeater)
 
         elif device == 'solar': # Regeln für Dimensionierung einführen!
             pv_area = 0
@@ -394,6 +405,13 @@ def dim_centralized(city, scenario):
 
 
         elif device == 'hp_air':
+
+            # TODO: sind Vor- und Rücklauftemperaturen in city_object gegeben? Sonst über Diagramm aus KVS-Klimatechnik bestimmen (Bild 1.1a, S.11)
+
+
+
+
+
 
             # erster Teil aus py_city -> examples übernommen (Daten für Dimplex_LA60TU angepasst)
 
@@ -524,63 +542,92 @@ def dim_decentralized(city, scenario):
     :param scenario:
     :return: scenario with sizes of devices - in welcher form? city_object
     '''
+    # TODO: Netzverluste korrigieren (siehe dim_centralized)
+    eta_transmission = 0.9  # richtigen Faktor suchen
 
-    # get thermal and electrical demand curves (only available for sanitation)
+    for b_node in city.nodelist_building:
+        building = city.node[b_node]['entity']
+        th_curve = building.get_space_heating_power_curve() + building.get_dhw_power_curve()
+        th_LDC = get_LDC(th_curve / eta_transmission)
+        q_total = sum(th_curve)
 
+        bes = BES.BES(city.environment)
 
+        for device in scenario['base']:
+            if device == 'chp':
+                # Dimensionierungspremissen:
+                # BHKW zwischen 5000 und 7000 h/a Volllast und
+                # BHKW immer mit Speicher
 
-    print('dim_decentralized clone of centralized... not working correctly')
+                # Dimensionierungsstrategie: 1.Anlage bei 7000h/a mit 1/2 mehr installierter Leistung als nötig für Speicher
 
+                chp_flh = 7000  # best possible full-load-hours
+                q_chp = th_LDC[chp_flh]
 
+                [eta_el, eta_th, p_nom, q_nom] = choose_device('chp', q_chp)
 
-def check_compliance_EEWaermeG(city,bes_type):
-    """
-    check for compliance of EEWärmeG
-    new buildings (built after 2009)
-    renovated public service buildings (not integrated)
+                while q_nom * eta_th / max(th_curve) < 0.1:  # falls leistungsanteil kleiner als 10%
+                    chp_flh -= 50
+                    q_chp = th_LDC[chp_flh]
+                    [eta_el, eta_th, p_nom, q_nom] = choose_device('chp', q_chp)
 
-    Heizung und WW wird immer zusammen betrachtet!
+                if building.build_year >= 2009:
+                    print('EEWärmeG beachten!')
+                    eewg = False
+                    count = 0
+                    while not eewg:
+                        ee_ratio = q_chp / q_total
+                        if ee_ratio > 0.5:
+                            # PEE berechnen
+                            refeta_th = 0.85  # th. Referenzwirkungsgrad für Anlagen vor 2016, Dampf, Erdgas
+                            refeta_el = 0.525  # el. Referenzwirkungsgrad für Anlagen zwischen 2012 und 2015, Erdgas
+                            # Primärenergieeinsparung (PEE) in % nach Richtlinie 2012/27/EU
+                            pee = (1 - 1 / ((eta_th / refeta_th) + (eta_el / refeta_el))) * 100
+                            if p_nom >= 1000000:
+                                if pee >= 10:
+                                    print('EEWärmeG erfüllt. (>=1MW)')
+                                    eewg = True
+                                    break
+                            else:
+                                if pee > 0:
+                                    print('EEWärmeG erfüllt. (<1MW)')
+                                    eewg = True
+                                    break
+                            if q_chp / q_total > 0.9:
+                                print('EEWärmeG nicht erfüllt: Unrealistische Werte! (Q_chp > 90% von Q_total)')
+                                break
+                        q_chp = math.ceil(
+                            0.5 * q_total + count * q_total / 100)  # Mindestwert 50% Deckung + 1% der Gesamtleistung je Durchlauf
+                        [eta_el, eta_th, p_nom, q_nom] = choose_device('chp', q_chp)
+                        count += 1
+                else:
+                    print('EEWärmeG muss aufgrund des Gebäudealters nicht beachtet werden.')
+                    eewg = True
 
-    Wärme- und Kälteenergiebedarf die Summe
-    a) der zur Deckung des Wärmebedarfs für Heizung und Warmwasserbereitung jährlich benötigten Wärmemenge und
-    b) der zur Deckung des Kältebedarfs für Raumkühlung jährlich benötigten Kältemenge
+                enev = False
 
-    jeweils einschließlich des thermischen Aufwands für Übergabe, Verteilung und Speicherung. Der Wärme- und
-    Kälteenergiebedarf wird nach den technischen Regeln berechnet, die den Anlagen 1 und 2 zur Energieeinsparverordnung
-    zugrunde gelegt werden. --> Anstatt den Wärmebedarf zu berechnen werden hier die vorgegebenen Wärmelasten zugrunde gelegt.
+                chp = CHP.CHP(city.environment, p_nom, q_nom, eta_el + eta_th)
+                bes.addDevice(chp)
+                print('CHP with Q_nom =', q_nom, ' W (', round(q_nom * 100 / max(th_curve),2), '%) ->', chp_flh, 'full-load hours.' )
 
-    :param city: 
-    :return: 
-    """
+                if 'boiler' in scenario['peak']:
+                    q_boiler = max(th_LDC) - q_nom
+                    boiler = Boiler.Boiler(city.environment, q_boiler, 0.8)
+                    bes.addDevice(boiler)
 
+        # TODO: Wärmepumpe und andere Anlagen implementieren!
 
-    # mind. 50% Deckung
-    # Falls Nutzung mit el. Wärmepumpe  Jahresarbeitszahl = 3,5 (für Luft/Wasser; Luft/Luft)
-    # bzw. JAZ = 4,0 (alle anderen Wärmepumpen)
-    # Falls auch WW über el. Wärmepumpe oder zu wesentlichem Anteil aus EE
-    # JAZ = 3,3 (für Luft/Wasser; Luft/Luft) bzw. JAZ = 3,8 (alle anderen WP)
-    # JAZ == COP ?? Wo steht was in hp class
+        assert not city.node[b_node]['entity'].hasBes, ('Building ', b_node ,' has already BES. Mistakes may occur!')
+        city.node[b_node]['entity'].addEntity(bes)
 
-    # WAS IST MIT PV? NUR WÄRMENUTZUNG DURCH EE?!
-    print('check compliance EEWG hp')
-
-
-
-def check_compliance_EnEV(city,bes_type):
-    """
-    check for compliance of EnEV
-    :param city:
-    :return:
-    """
-
-    print('EnEV prüfen!')
-
+    return city
 
 
 
 
 def calc_annuity(city):
     """
+
     - Kosten/Annuität
         - KWK Vergünstigungen
         - Einspeisevergütung durch EEG
