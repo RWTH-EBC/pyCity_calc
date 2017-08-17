@@ -471,111 +471,113 @@ def est_mod_year(district_data, environment):
         if curr_nb_of_floors is not None:
             curr_nb_of_floors = int(curr_nb_of_floors)
 
-        if curr_mod_year is None and curr_th_e_demand is not None:
+        if curr_build_type == 0:  # Residential buildings
 
-            print('Estimate mod. year for building with id ' + str(curr_id))
+            if curr_mod_year is None and curr_th_e_demand is not None:
 
-            #  Convert construction types from int to str
-            if curr_construction_type == 0:
-                new_curr_construction_type = 'heavy'
-            elif curr_construction_type == 1:
-                new_curr_construction_type = 'light'
-            else:
-                new_curr_construction_type = 'heavy'
+                print('Estimate mod. year for building with id ' + str(curr_id))
 
-            #  Generate extended building
-            if curr_nb_of_apartments == 1:
-                build = \
-                    citgen.generate_res_building_single_zone(environment,
-                                                             net_floor_area=curr_nfa,
-                                                             spec_th_demand=curr_th_e_demand/curr_nfa,
-                                                             th_gen_method=1,
-                                                             el_gen_method=1,
-                                                             annual_el_demand=curr_el_e_demand,
-                                                             el_random=False,
-                                                             use_dhw=False,
-                                                             dhw_method=1,
-                                                             number_occupants=curr_nb_of_occupants,
-                                                             build_year=curr_build_year,
-                                                             mod_year=curr_mod_year,
-                                                             build_type=curr_build_type,
-                                                             pv_use_area=curr_pv_roof_area,
-                                                             height_of_floors=curr_avg_height_of_floors,
-                                                             nb_of_floors=curr_nb_of_floors,
-                                                             neighbour_buildings=curr_nb_of_neighbour_bld,
-                                                             residential_layout=curr_res_layout,
-                                                             attic=curr_type_attic,
-                                                             cellar=curr_type_cellar,
-                                                             construction_type=new_curr_construction_type,
-                                                             dormer=curr_dormer,
-                                                             dhw_volumen=None,
-                                                             do_normalization=True,
-                                                             slp_manipulate=False,
-                                                             curr_central_ahu=curr_central_ahu,
-                                                             dhw_random=False,
-                                                             prev_heat_dev=True,
-                                                             season_mod=None)
-            else:
-                build = \
-                    citgen.generate_res_building_multi_zone(environment,
-                                                            net_floor_area=curr_nfa,
-                                                            spec_th_demand=curr_th_e_demand / curr_nfa,
-                                                            th_gen_method=1,
-                                                            el_gen_method=1,
-                                                            nb_of_apartments=curr_nb_of_apartments,
-                                                            annual_el_demand=curr_el_e_demand,
-                                                            el_random=False,
-                                                            use_dhw=False,
-                                                            dhw_method=1,
-                                                            total_number_occupants=curr_nb_of_occupants,
-                                                            build_year=curr_build_year,
-                                                            mod_year=curr_mod_year,
-                                                            build_type=curr_build_type,
-                                                            pv_use_area=curr_pv_roof_area,
-                                                            height_of_floors=curr_avg_height_of_floors,
-                                                            nb_of_floors=curr_nb_of_floors,
-                                                            neighbour_buildings=curr_nb_of_neighbour_bld,
-                                                            residential_layout=curr_res_layout,
-                                                            attic=curr_type_attic,
-                                                            cellar=curr_type_cellar,
-                                                            construction_type=new_curr_construction_type,
-                                                            dormer=curr_dormer,
-                                                            dhw_volumen=None,
-                                                            do_normalization=True,
-                                                            slp_manipulate=False,
-                                                            curr_central_ahu=curr_central_ahu,
-                                                            dhw_random=False,
-                                                            prev_heat_dev=True,
-                                                            season_mod=None)
+                #  Convert construction types from int to str
+                if curr_construction_type == 0:
+                    new_curr_construction_type = 'heavy'
+                elif curr_construction_type == 1:
+                    new_curr_construction_type = 'light'
+                else:
+                    new_curr_construction_type = 'heavy'
 
-            #  Add dummy occupancy and ocupancy profile to each apartment
-            #  Required for VDI 6007 simulation
-            for ap in build.apartments:
+                #  Generate extended building
+                if curr_nb_of_apartments == 1:
+                    build = \
+                        citgen.generate_res_building_single_zone(environment,
+                                                                 net_floor_area=curr_nfa,
+                                                                 spec_th_demand=curr_th_e_demand/curr_nfa,
+                                                                 th_gen_method=1,
+                                                                 el_gen_method=1,
+                                                                 annual_el_demand=curr_el_e_demand,
+                                                                 el_random=False,
+                                                                 use_dhw=False,
+                                                                 dhw_method=1,
+                                                                 number_occupants=curr_nb_of_occupants,
+                                                                 build_year=curr_build_year,
+                                                                 mod_year=curr_mod_year,
+                                                                 build_type=curr_build_type,
+                                                                 pv_use_area=curr_pv_roof_area,
+                                                                 height_of_floors=curr_avg_height_of_floors,
+                                                                 nb_of_floors=curr_nb_of_floors,
+                                                                 neighbour_buildings=curr_nb_of_neighbour_bld,
+                                                                 residential_layout=curr_res_layout,
+                                                                 attic=curr_type_attic,
+                                                                 cellar=curr_type_cellar,
+                                                                 construction_type=new_curr_construction_type,
+                                                                 dormer=curr_dormer,
+                                                                 dhw_volumen=None,
+                                                                 do_normalization=True,
+                                                                 slp_manipulate=False,
+                                                                 curr_central_ahu=curr_central_ahu,
+                                                                 dhw_random=False,
+                                                                 prev_heat_dev=True,
+                                                                 season_mod=None)
+                else:
+                    build = \
+                        citgen.generate_res_building_multi_zone(environment,
+                                                                net_floor_area=curr_nfa,
+                                                                spec_th_demand=curr_th_e_demand / curr_nfa,
+                                                                th_gen_method=1,
+                                                                el_gen_method=1,
+                                                                nb_of_apartments=curr_nb_of_apartments,
+                                                                annual_el_demand=curr_el_e_demand,
+                                                                el_random=False,
+                                                                use_dhw=False,
+                                                                dhw_method=1,
+                                                                total_number_occupants=curr_nb_of_occupants,
+                                                                build_year=curr_build_year,
+                                                                mod_year=curr_mod_year,
+                                                                build_type=curr_build_type,
+                                                                pv_use_area=curr_pv_roof_area,
+                                                                height_of_floors=curr_avg_height_of_floors,
+                                                                nb_of_floors=curr_nb_of_floors,
+                                                                neighbour_buildings=curr_nb_of_neighbour_bld,
+                                                                residential_layout=curr_res_layout,
+                                                                attic=curr_type_attic,
+                                                                cellar=curr_type_cellar,
+                                                                construction_type=new_curr_construction_type,
+                                                                dormer=curr_dormer,
+                                                                dhw_volumen=None,
+                                                                do_normalization=True,
+                                                                slp_manipulate=False,
+                                                                curr_central_ahu=curr_central_ahu,
+                                                                dhw_random=False,
+                                                                prev_heat_dev=True,
+                                                                season_mod=None)
 
-                nb_occ = ap.occupancy.number_occupants
+                #  Add dummy occupancy and ocupancy profile to each apartment
+                #  Required for VDI 6007 simulation
+                for ap in build.apartments:
 
-                occ_obj = Occ.Occupancy(environment=environment,
-                                        number_occupants=nb_occ)
+                    nb_occ = ap.occupancy.number_occupants
 
-                #  Overwrite existing occupancy object
-                ap.occupancy = occ_obj
+                    occ_obj = Occ.Occupancy(environment=environment,
+                                            number_occupants=nb_occ)
 
-            #  Estimate mod. year and add it as attribute mod_year to building
-            estretro.estimate_build_retrofit(building=build,
-                                             sh_ann_demand=curr_th_e_demand,
-                                             overwrite_sh=True,
-                                             overwrite_mod=True)
+                    #  Overwrite existing occupancy object
+                    ap.occupancy = occ_obj
 
-            mod_year = build.mod_year
+                #  Estimate mod. year and add it as attribute mod_year to building
+                estretro.estimate_build_retrofit(building=build,
+                                                 sh_ann_demand=curr_th_e_demand,
+                                                 overwrite_sh=True,
+                                                 overwrite_mod=True)
 
-            if multi_data:
-                #  Add to district data
-                district_data[i][6] = mod_year
-            else:
-                district_data[6] = mod_year
+                mod_year = build.mod_year
 
-            print('Estimated last year of modernization: ' + str(mod_year))
-            print()
+                if multi_data:
+                    #  Add to district data
+                    district_data[i][6] = mod_year
+                else:
+                    district_data[6] = mod_year
+
+                print('Estimated last year of modernization: ' + str(mod_year))
+                print()
         print()
 
 
