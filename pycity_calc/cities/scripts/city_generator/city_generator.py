@@ -297,7 +297,7 @@ def constrained_sum_sample_pos(n, total):
         List with result integers, which sum up to value 'total'
     """
 
-    dividers = sorted(random.sample(range(1, total), n - 1))
+    dividers = sorted(random.sample(range(1, total), int(n - 1)))
     return [a - b for a, b in zip(dividers + [total], [0] + dividers)]
 
 
@@ -492,7 +492,7 @@ def generate_res_building_single_zone(environment, net_floor_area,
     pv_use_area : float, optional
         Usable pv area in m2 (default: None)
     height_of_floors : float
-        average height of the floors
+        average height of single floor
     nb_of_floors : int
         Number of floors above the ground
     neighbour_buildings : int
@@ -1011,7 +1011,7 @@ def generate_res_building_multi_zone(environment,
 
     # Loop over apartments
     #  #---------------------------------------------------------------------
-    for i in range(nb_of_apartments):
+    for i in range(int(nb_of_apartments)):
 
         #  Dummy init of number of occupants
         curr_number_occupants = None

@@ -17,8 +17,12 @@ from __future__ import division
 
 import os
 
+import pycity_base.classes.demand.Occupancy as Occ
 import pycity_calc.cities.scripts.city_generator.city_generator as citgen
 import pycity_calc.toolbox.data_enrichment.occupants.enrich_input_file as oen
+import pycity_calc.toolbox.data_enrichment.retrofit_state.estimate_retrofit \
+    as estretro
+
 
 def check_district_data_set(district_data, check_sim_data=True):
     """
@@ -267,8 +271,7 @@ def enrich_apartments(district_data):
     Parameters
     ----------
     district_data : ndarray
-        Numpy 2d-array with city district data (each column represents
-        different parameter, see annotations)
+        Numpy 2d-array with city district data
     """
 
     print('Start apartment enrichment')
@@ -315,7 +318,7 @@ def enrich_apartments(district_data):
                 #  Estimate number of apartments
                 nb_app = oen.est_nb_apartments(net_floor_area=curr_nfa)
                 #  Set number of apartments
-                district_data[i][10] = nb_app
+                district_data[i][10] = int(nb_app)
                 print('Added ' + str(nb_app) + ' apartments.')
 
             else:  # Non-residential type
@@ -325,6 +328,242 @@ def enrich_apartments(district_data):
 
     print('All buildings hold number of apartments, now.')
     print()
+
+
+def est_mod_year(district_data, environment):
+    """
+    Estimate last year of modernization, if net space heating demand is given,
+    but last year of modernization is None.
+
+    Parameters
+    ----------
+    district_data : ndarray
+        Numpy 2d-array with city district data
+
+    Returns
+    -------
+
+    """
+
+    #  Search for buildings with th. demand, but no year of mod
+    print()
+    print('Start estimation of last years of modernization')
+
+    # Check if district_data only holds one entry for single building
+    #  In this case, has to be processed differently
+    if district_data.ndim > 1:
+        multi_data = True
+    else:  # Only one entry (single building)
+        multi_data = False
+        #  If multi_data is false, loop below is going to be exited with
+        #  a break statement at the end.
+
+    #  Extract data
+    #  Loop over district_data
+    #  ############################################################
+    for i in range(len(district_data)):
+        if multi_data:
+            #  Extract data out of input file
+            curr_id = int(
+                district_data[i][0])  # id / primary key of building
+            curr_x = district_data[i][1]  # x-coordinate in m
+            curr_y = district_data[i][2]  # y-coordinate in m
+            curr_build_type = int(
+                district_data[i][3])  # building type nb (int)
+            curr_nfa = district_data[i][4]  # Net floor area in m2
+            curr_build_year = district_data[i][5]  # Year of construction
+            curr_mod_year = district_data[i][
+                6]  # optional (last year of modernization)
+            curr_th_e_demand = district_data[i][
+                7]  # optional: Final thermal energy demand in kWh
+            #  For residential buildings: Space heating only!
+            #  For non-residential buildings: Space heating AND hot water! (SLP)
+            curr_el_e_demand = district_data[i][
+                8]  # optional  (Annual el. energy demand in kWh)
+            curr_pv_roof_area = district_data[i][
+                9]  # optional (Usable pv roof area in m2)
+            curr_nb_of_apartments = district_data[i][
+                10]  # optional (Number of apartments)
+            curr_nb_of_occupants = district_data[i][
+                11]  # optional (Total number of occupants)
+            curr_nb_of_floors = district_data[i][
+                12]  # optional (Number of floors above the ground)
+            curr_avg_height_of_floors = district_data[i][
+                13]  # optional (Average Height of floors)
+            curr_central_ahu = district_data[i][
+                14]  # optional (If building has a central air handling unit (AHU) or not (boolean))
+            curr_res_layout = district_data[i][
+                15]  # optional Residential layout (int, optional, e.g. 0 for compact)
+            curr_nb_of_neighbour_bld = district_data[i][
+                16]  # optional Neighbour Buildings (int, optional)
+            curr_type_attic = district_data[i][
+                17]  # optional Type of attic (int, optional, e.g. 0 for flat roof);
+            # 1 - Roof, non heated; 2 - Roof, partially heated; 3- Roof, fully heated;
+            curr_type_cellar = district_data[i][
+                18]  # optional Type of basement
+            # (int, optional, e.g. 1 for non heated basement 0 - No basement; 1 - basement, non heated; 2 - basement, partially heated; 3- basement, fully heated;
+            curr_dormer = district_data[i][
+                19]  # optional  Dormer (int, optional, 0: no dormer/ 1: dormer)
+            curr_construction_type = district_data[i][
+                20]  # optional  Construction Type(heavy/light, optional) (0 - heavy; 1 - light)
+            curr_method_3_nb = district_data[i][
+                21]  # optional  Method_3_nb (for usage of measured, weekly non-res. el. profile
+            curr_method_4_nb = district_data[i][
+                22]  # optional  Method_4_nb (for usage of measured, annual non-res. el. profile
+        else:  # Single entry
+            #  Extract data out of input file
+            curr_id = int(district_data[0])  # id / primary key of building
+            curr_x = district_data[1]  # x-coordinate in m
+            curr_y = district_data[2]  # y-coordinate in m
+            curr_build_type = int(
+                district_data[3])  # building type nb (int)
+            curr_nfa = district_data[4]  # Net floor area in m2
+            curr_build_year = district_data[5]  # Year of construction
+            curr_mod_year = district_data[
+                6]  # optional (last year of modernization)
+            curr_th_e_demand = district_data[
+                7]  # optional: Final thermal energy demand in kWh
+            #  For residential buildings: Space heating only!
+            #  For non-residential buildings: Space heating AND hot water! (SLP)
+            curr_el_e_demand = district_data[
+                8]  # optional  (Annual el. energy demand in kWh)
+            curr_pv_roof_area = district_data[
+                9]  # optional (Usable pv roof area in m2)
+            curr_nb_of_apartments = district_data[
+                10]  # optional (Number of apartments)
+            curr_nb_of_occupants = district_data[
+                11]  # optional (Total number of occupants)
+            curr_nb_of_floors = district_data[
+                12]  # optional (Number of floors above the ground)
+            curr_avg_height_of_floors = district_data[
+                13]  # optional (Average Height of floors)
+            curr_central_ahu = district_data[
+                14]  # optional (If building has a central air handling unit (AHU) or not (boolean))
+            curr_res_layout = district_data[
+                15]  # optional Residential layout (int, optional, e.g. 0 for compact)
+            curr_nb_of_neighbour_bld = district_data[
+                16]  # optional Neighbour Buildings (int, optional)
+            curr_type_attic = district_data[
+                17]  # optional Type of attic (int, optional, e.g. 0 for flat roof);
+            # 1 - Roof, non heated; 2 - Roof, partially heated; 3- Roof, fully heated;
+            curr_type_cellar = district_data[
+                18]  # optional Type of basement
+            # (int, optional, e.g. 1 for non heated basement 0 - No basement; 1 - basement, non heated; 2 - basement, partially heated; 3- basement, fully heated;
+            curr_dormer = district_data[
+                19]  # optional  Dormer (int, optional, 0: no dormer/ 1: dormer)
+            curr_construction_type = district_data[
+                20]  # optional  Construction Type(heavy/light, optional) (0 - heavy; 1 - light)
+            curr_method_3_nb = district_data[
+                21]  # optional  Method_3_nb (for usage of measured, weekly non-res. el. profile
+            curr_method_4_nb = district_data[
+                22]  # optional  Method_4_nb (for usage of measured, annual non-res. el. profile
+
+        if curr_mod_year is None and curr_th_e_demand is not None:
+
+            print('Estimate mod. year for building ' + str(curr_id))
+
+            #  Convert construction types from int to str
+            if curr_construction_type == 0:
+                new_curr_construction_type = 'heavy'
+            elif curr_construction_type == 1:
+                new_curr_construction_type = 'light'
+            else:
+                new_curr_construction_type = 'heavy'
+
+            #  Generate extended building
+            if curr_nb_of_apartments == 1:
+                build = \
+                    citgen.generate_res_building_single_zone(environment,
+                                                             net_floor_area=curr_nfa,
+                                                             spec_th_demand=curr_th_e_demand/curr_nfa,
+                                                             th_gen_method=1,
+                                                             el_gen_method=1,
+                                                             annual_el_demand=curr_el_e_demand,
+                                                             el_random=False,
+                                                             use_dhw=False,
+                                                             dhw_method=1,
+                                                             number_occupants=curr_nb_of_occupants,
+                                                             build_year=curr_build_year,
+                                                             mod_year=curr_mod_year,
+                                                             build_type=curr_build_type,
+                                                             pv_use_area=curr_pv_roof_area,
+                                                             height_of_floors=curr_avg_height_of_floors,
+                                                             nb_of_floors=curr_nb_of_floors,
+                                                             neighbour_buildings=curr_nb_of_neighbour_bld,
+                                                             residential_layout=curr_res_layout,
+                                                             attic=curr_type_attic,
+                                                             cellar=curr_type_cellar,
+                                                             construction_type=new_curr_construction_type,
+                                                             dormer=curr_dormer,
+                                                             dhw_volumen=None,
+                                                             do_normalization=True,
+                                                             slp_manipulate=False,
+                                                             curr_central_ahu=curr_central_ahu,
+                                                             dhw_random=False,
+                                                             prev_heat_dev=True,
+                                                             season_mod=None)
+            else:
+                build = \
+                    citgen.generate_res_building_multi_zone(environment,
+                                                            net_floor_area=curr_nfa,
+                                                            spec_th_demand=curr_th_e_demand / curr_nfa,
+                                                            th_gen_method=1,
+                                                            el_gen_method=1,
+                                                            nb_of_apartments=curr_nb_of_apartments,
+                                                            annual_el_demand=curr_el_e_demand,
+                                                            el_random=False,
+                                                            use_dhw=False,
+                                                            dhw_method=1,
+                                                            total_number_occupants=curr_nb_of_occupants,
+                                                            build_year=curr_build_year,
+                                                            mod_year=curr_mod_year,
+                                                            build_type=curr_build_type,
+                                                            pv_use_area=curr_pv_roof_area,
+                                                            height_of_floors=curr_avg_height_of_floors,
+                                                            nb_of_floors=curr_nb_of_floors,
+                                                            neighbour_buildings=curr_nb_of_neighbour_bld,
+                                                            residential_layout=curr_res_layout,
+                                                            attic=curr_type_attic,
+                                                            cellar=curr_type_cellar,
+                                                            construction_type=new_curr_construction_type,
+                                                            dormer=curr_dormer,
+                                                            dhw_volumen=None,
+                                                            do_normalization=True,
+                                                            slp_manipulate=False,
+                                                            curr_central_ahu=curr_central_ahu,
+                                                            dhw_random=False,
+                                                            prev_heat_dev=True,
+                                                            season_mod=None)
+
+            #  Add dummy occupancy and ocupancy profile to each apartment
+            #  Required for VDI 6007 simulation
+            for ap in build.apartments:
+
+                nb_occ = ap.occupancy.number_occupants
+
+                occ_obj = Occ.Occupancy(environment=environment,
+                                        number_occupants=nb_occ)
+
+                #  Overwrite existing occupancy object
+                ap.occupancy = occ_obj
+
+            #  Estimate mod. year and add it as attribute mod_year to building
+            estretro.estimate_build_retrofit(building=build,
+                                             sh_ann_demand=curr_th_e_demand,
+                                             overwrite_sh=True,
+                                             overwrite_mod=True)
+
+            mod_year = build.mod_year
+
+            if multi_data:
+                #  Add to district data
+                district_data[i][6] = mod_year
+            else:
+                district_data[6] = mod_year
+
+            print('Estimated last year of modernization: ' + str(mod_year))
+            print()
+        print()
 
 
 if __name__ == '__main__':
@@ -354,6 +593,13 @@ if __name__ == '__main__':
     #  is given
     enrich_occ = True
 
+    #  Estimate last year of modernization, based on given thermal net space
+    #  heating demand
+    est_m_year = True
+
+    #  Save modified district_data
+    save_data = True
+
     #  End of user input
     #  ####################################################################
 
@@ -376,3 +622,16 @@ if __name__ == '__main__':
     if enrich_occ:
         #  Run occupancy enrichment
         oen.add_occ_to_given_app(district_data=district_data)
+
+    if est_m_year:
+        #  Estimate mod. year, based on given net space heating thermal
+        #  energy demand (if no year of mod. is given)
+
+        #  Generate dummy environment
+        environment = citgen.generate_environment()
+
+        est_mod_year(district_data=district_data, environment=environment)
+
+    if save_data:
+        #  Save data to file
+        oen.save_dist_data_to_file(dist_data=district_data, path=out_path)
