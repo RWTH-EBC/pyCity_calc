@@ -81,7 +81,7 @@ class Test_DataEnrich():
         #  ####################################################################
 
         #  Input and output filename
-        filename = 'city_3_enrich.txt'
+        filename = 'city_5_enrich.txt'
 
         #  Input and output filepath
         file_path = os.path.join(this_path, 'input_generator', filename)
