@@ -96,8 +96,11 @@ def add_occ_to_given_app(district_data):
     (optional)
     """
 
+    print('Start occupancy enrichment for district_data.')
+
     #  Loop over district_data
     for i in range(len(district_data)):
+        curr_id = int(district_data[i][0])  # id / primary key of building
         curr_nb_of_apartments = district_data[i][10]
         curr_nb_of_occupants = district_data[i][11]
 
@@ -108,7 +111,8 @@ def add_occ_to_given_app(district_data):
             warnings.warn(msg)
 
         else:  # Number of apartments is set
-            curr_nb_of_apartments > 0, 'Number of apartments has to be > 0!'
+            assert curr_nb_of_apartments > 0, \
+                'Number of apartments has to be > 0!'
 
             #  Number of occupants is already defined
             if curr_nb_of_occupants is not None:
@@ -118,6 +122,9 @@ def add_occ_to_given_app(district_data):
 
             else:  # Number of occupants is None
 
+                print('Building ' + str(curr_id) + ' has no occupants.'
+                                                   ' Going to enrich it.')
+
                 nb_occ = 0
 
                 #  Loop over apartments
@@ -125,8 +132,12 @@ def add_occ_to_given_app(district_data):
                     #  Execute adding of occupants (per apartment)
                     nb_occ += estimate_occ_per_ap()
 
+                print('Going to add ' + str(nb_occ) + ' occupants.')
+
                 #  Add total number of occupants to building
                 district_data[i][11] = int(nb_occ)
+
+    print('End of occupancy enrichment for district_data.')
 
 
 def estimate_occ_per_ap(prob_dist=[0.405, 0.345, 0.125, 0.092, 0.033]):

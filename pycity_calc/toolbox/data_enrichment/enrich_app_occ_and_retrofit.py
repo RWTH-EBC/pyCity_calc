@@ -361,9 +361,9 @@ if __name__ == '__main__':
     #  Load city district data set
     district_data = citgen.get_district_data_from_txt(path=file_path)
 
-    print('Total district data set:')
-    print(district_data)
-    print()
+    # print('Total district data set:')
+    # print(district_data)
+    # print()
 
     if check_input:
         #  Run district data input checker
@@ -375,4 +375,4 @@ if __name__ == '__main__':
 
     if enrich_occ:
         #  Run occupancy enrichment
-        pass
+        oen.add_occ_to_given_app(district_data=district_data)
