@@ -16,12 +16,9 @@ for city generator)
 from __future__ import division
 
 import os
-import random
-import warnings
-import numpy as np
 
 import pycity_calc.cities.scripts.city_generator.city_generator as citgen
-
+import pycity_calc.toolbox.data_enrichment.occupants.enrich_input_file as oen
 
 def check_district_data_set(district_data, check_sim_data=True):
     """
@@ -257,6 +254,7 @@ def enrich_apartments(district_data):
     where no number of apartments is given). Automatically sets single
     apartment/zone for non-residential buildings, if no number of buildings is
     defined.
+    Modifies district_data input parameter.
 
     Estimates nb. of apartments based on net floor area, according to
     statistics of TABULA:
@@ -273,6 +271,60 @@ def enrich_apartments(district_data):
         different parameter, see annotations)
     """
 
+    print('Start apartment enrichment')
+
+    # Check if district_data only holds one entry for single building
+    #  In this case, has to be processed differently
+    if district_data.ndim > 1:
+        multi_data = True
+    else:  # Only one entry (single building)
+        multi_data = False
+        #  If multi_data is false, loop below is going to be exited with
+        #  a break statement at the end.
+
+    #  Extract data
+    #  Loop over district_data
+    #  ############################################################
+    for i in range(len(district_data)):
+
+        if multi_data:
+            #  Extract data out of input file
+            curr_id = int(
+                district_data[i][0])  # id / primary key of building
+            curr_build_type = int(
+                district_data[i][3])  # building type nb (int)
+            curr_nfa = district_data[i][4]  # Net floor area in m2
+            curr_nb_of_apartments = district_data[i][
+                10]  # optional (Number of apartments)
+        else:  # Single entry
+            #  Extract data out of input file
+            curr_id = int(district_data[0])  # id / primary key of building
+            curr_build_type = int(
+                district_data[3])  # building type nb (int)
+            curr_nfa = district_data[4]  # Net floor area in m2
+            curr_nb_of_apartments = district_data[
+                10]  # optional (Number of apartments)
+
+        if curr_nb_of_apartments is None:
+
+            print('Building ' + str(curr_id) + ' has no number of apartments'
+                                               '. Going to enrich it.')
+
+            #  Check building type:
+            if curr_build_type == 0:
+                #  Estimate number of apartments
+                nb_app = oen.est_nb_apartments(net_floor_area=curr_nfa)
+                #  Set number of apartments
+                district_data[i][10] = nb_app
+                print('Added ' + str(nb_app) + ' apartments.')
+
+            else:  # Non-residential type
+                #  Set number of apartments/zones to 1
+                district_data[i][10] = 1
+                print('Added single apartment/zone to non-res. building.')
+
+    print('All buildings hold number of apartments, now.')
+    print()
 
 
 if __name__ == '__main__':
@@ -298,7 +350,9 @@ if __name__ == '__main__':
     #  is given
     enrich_apps = True
 
-
+    #  Enrich buildings with number of occupants, if no number of occupants
+    #  is given
+    enrich_occ = True
 
     #  End of user input
     #  ####################################################################
@@ -318,3 +372,7 @@ if __name__ == '__main__':
     if enrich_apps:
         #  Run apartment enrichment
         enrich_apartments(district_data=district_data)
+
+    if enrich_occ:
+        #  Run occupancy enrichment
+        pass
