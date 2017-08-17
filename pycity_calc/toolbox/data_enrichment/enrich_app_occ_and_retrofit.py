@@ -251,6 +251,30 @@ def check_district_data_set(district_data, check_sim_data=True):
     print()
 
 
+def enrich_apartments(district_data):
+    """
+    Enrich district_data set with number of apartments (for buildings,
+    where no number of apartments is given). Automatically sets single
+    apartment/zone for non-residential buildings, if no number of buildings is
+    defined.
+
+    Estimates nb. of apartments based on net floor area, according to
+    statistics of TABULA:
+    [Institut für Wohnen und Umwelt - IWU 2009] INSTITUT FÜR WOHNEN UND
+    UMWELT - IWU: TABULA Average Buildings: German residential building
+    stock. http://s2.building-typology.eu/abpdf/DE_N_01_EPISCOPE_
+    CaseStudy_TABULA_National.pdf. Version: 2009
+    with around 74 m2 per apartment
+
+    Parameters
+    ----------
+    district_data : ndarray
+        Numpy 2d-array with city district data (each column represents
+        different parameter, see annotations)
+    """
+
+
+
 if __name__ == '__main__':
     this_path = os.path.dirname(os.path.abspath(__file__))
 
@@ -270,6 +294,12 @@ if __name__ == '__main__':
     #  If True, runs input data checker
     #  If False, skips input data checker
 
+    #  Enrich buildings with number of apartments, if no number of apartments
+    #  is given
+    enrich_apps = True
+
+
+
     #  End of user input
     #  ####################################################################
 
@@ -284,3 +314,7 @@ if __name__ == '__main__':
     if check_input:
         #  Run district data input checker
         check_district_data_set(district_data=district_data)
+
+    if enrich_apps:
+        #  Run apartment enrichment
+        enrich_apartments(district_data=district_data)

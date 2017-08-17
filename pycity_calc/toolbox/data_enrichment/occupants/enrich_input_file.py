@@ -23,6 +23,38 @@ import numpy as np
 import pycity_calc.cities.scripts.city_generator.city_generator as citgen
 
 
+def est_nb_apartments(net_floor_area):
+    """
+    Estimates number of apartments based on net floor area, according to
+    statistics of TABULA:
+    [Institut für Wohnen und Umwelt - IWU 2009] INSTITUT FÜR WOHNEN UND
+    UMWELT - IWU: TABULA Average Buildings: German residential building
+    stock. http://s2.building-typology.eu/abpdf/DE_N_01_EPISCOPE_
+    CaseStudy_TABULA_National.pdf. Version: 2009
+    with around 74 m2 per apartment
+
+    Parameters
+    ----------
+    net_floor_area : float
+        Net floor area of building in m2
+
+    Returns
+    -------
+    nb_app : int
+        Number of apartments
+    """
+
+    assert net_floor_area > 0, 'Net floor area has to be larger than zero!'
+
+    nb_app = int(round(net_floor_area/74, 0))
+
+    #  Cover case, if nb_app is calculated to be zero
+    if nb_app == 0:
+        nb_app = 1
+
+    return nb_app
+
+
 def add_occ_to_given_app(district_data):
     """
     Add occupants to district data, where number of apartments is given

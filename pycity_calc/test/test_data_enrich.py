@@ -4,6 +4,7 @@
 
 """
 from __future__ import division
+
 import pycity_calc.toolbox.data_enrichment.occupants.enrich_input_file as en_in_file
 
 
@@ -42,3 +43,29 @@ class Test_DataEnrich():
         assert (len(list_3) / nb_loops - prob_dist[2]) < 0.01 * prob_dist[2]
         assert (len(list_4) / nb_loops - prob_dist[3]) < 0.01 * prob_dist[3]
         # assert (len(list_5) / nb_loops - prob_dist[4]) < 0.01 * prob_dist[4]
+
+    def test_est_nb_apartments(self):
+
+        nfa = 74
+        nb_app = en_in_file.est_nb_apartments(net_floor_area=nfa)
+        assert nb_app == 1
+
+        nfa = 10
+        nb_app = en_in_file.est_nb_apartments(net_floor_area=nfa)
+        assert nb_app == 1
+
+        nfa = 80
+        nb_app = en_in_file.est_nb_apartments(net_floor_area=nfa)
+        assert nb_app == 1
+
+        nfa = 74 * 2
+        nb_app = en_in_file.est_nb_apartments(net_floor_area=nfa)
+        assert nb_app == 2
+
+        nfa = 70 * 2
+        nb_app = en_in_file.est_nb_apartments(net_floor_area=nfa)
+        assert nb_app == 2
+
+        nfa = 74 * 3 - 74/2 + 1
+        nb_app = en_in_file.est_nb_apartments(net_floor_area=nfa)
+        assert nb_app == 3
