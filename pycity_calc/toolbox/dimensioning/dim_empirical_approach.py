@@ -292,9 +292,11 @@ def get_LDC(curve):
 
 
 def choose_device(dev_type, q_ideal):
-    # Source: BHKW-Kenndaten 2014, S.26
+    # Source: BHKW-Kenndaten 2014, S.26 - [eta_el, eta_th, p_nom, q_nom]
     chp_list = {'vai1':[0.263, 0.658, 1000, 2500], 'vai2':[0.25, 0.667, 3000, 8000], 'vai3':[0.247,0.658,4700,12500],
-                'vie':[0.27, 0.671, 6000, 14900], 'rmb':[0.263, 0.657, 7200, 18000]} # [eta_el, eta_th, p_nom, q_nom]
+                'vie':[0.27, 0.671, 6000, 14900], 'rmb7.2':[0.263, 0.657, 7200, 18000],'oet8':[0.268,0.633,8000,19000],
+                'xrgi9':[0.289,0.641,9000,20000],'rmb11.0':[0.289,0.632,11000,24000],'xrgi15':[0.307,0.613,15000,30000],
+                'asv1534':[0.306,0.694,15000,34000],'sb16':[0.314,0.72,16000,36700],'xrgi20':[0.32,0.64,20000,40000]}
 
     if dev_type == 'chp':
         specs = [0, 0, 0, 0]
@@ -303,7 +305,29 @@ def choose_device(dev_type, q_ideal):
             q_nom = dev[3]
             if abs(q_nom*eta_th-q_ideal) < abs(specs[3]*eta_th-q_ideal):       # q_nom * eta?!
                 specs = dev[:]
+    elif dev_type == 'hp':
+        # TODO: Methode schreiben die heatpumps mit charakteristica in dict speichert
+        hp_dict = [{'tAmbient':0,'qNominal':0,'pNominal':0,'cop':0,'tMax':0,'l_a_l':0},{'tAmbient':0,'qNominal':0,'pNominal':0,'cop':0,'tMax':0,'l_a_l':0}]
+
     return specs
+
+
+def get_chp_ann_op_time(eta_th, q_nom, th_LDC, chp_flh):
+
+    # CHP-Jahreslaufzeitberechnung (annual operation time) nach Krimmling(2011)
+    for q_m in th_LDC:
+        if q_m <= q_nom * eta_th:
+            t_x = th_LDC.index(q_m)  # find crossing point on LDC (Volllaststunden)
+            break
+    delta_a = 8760 * th_LDC[0]
+    for t in range(t_x, 8760):  # Punkt suchen an dem Dreicke gleichgroß (siehe Krimmling S.131, Abb.4-15)
+        a1 = q_m * (t - t_x) - sum(th_LDC[t_x:t])
+        a2 = sum(th_LDC[t:8760])
+        if delta_a <= abs(a2 - a1):
+            t_ann_operation = t - 1
+            return t_ann_operation, t_x
+        else:
+            delta_a = a2 - a1
 
 
 def dim_centralized(city, scenario):
@@ -332,9 +356,58 @@ def dim_centralized(city, scenario):
             # Dimensionierungsstrategie: 1.Anlage mit 1/2 mehr installierter Leistung als nötig für Speicher
 
             chp_flh = 7000 #best possible full-load-hours
-            # TODO: Validieren bzw. verändern mit Dimensionierung von Wärmespeicher
             q_chp = th_LDC[chp_flh]
             [eta_el, eta_th, p_nom, q_nom] = choose_device('chp', q_chp)
+
+            bafa = False
+
+            while not bafa:
+                (t_ann_op, t_x) = get_chp_ann_op_time(eta_th, q_nom, th_LDC, chp_flh) # (Jahreslaufzeit, Volllaststunden)
+
+                # Auslegung auf BAFA Förderung (60% Deckungsanteil aus KWK)
+                if t_ann_op >= 6000 and t_x >= 5000 and q_nom*eta_th*t_ann_op/q_total > 0.6: # Auslegung nur gültig, falls Bedingungen für aot und flh erfüllt sind
+                    print('BAFA Förderung möglich!')
+                    print('Gesamtdeckungsanteil CHP:', q_nom*eta_th*t_ann_op*100/sum(th_LDC),'%')
+                    print('Volllaststunden:',t_x,'h')
+                    print('Laufzeit CHP Anlage:', t_ann_op, 'h')
+                    bafa = True
+                else:
+                    chp_flh -= 20
+                    if chp_flh >= 5000:
+                        q_chp = th_LDC[chp_flh]
+                        [eta_el, eta_th, p_nom, q_nom] = choose_device('chp', q_chp)
+                    else:
+                        print('BAFA Förderung nicht möglich!')
+                        bafa = False
+                        #TODO: Wonach wird stattdessen ausgelegt? Zwischen 10%-20% von Qmax und flh > 5000
+                        # Mehrere Lösungen von Quartieren pro Szenario entwerfen und am Ende vergleichen!!
+                        break
+
+            # Alternative Auslegung falls BAFA-Förderung nicht möglich
+            if not bafa:
+                chp_flh = 5000
+                t_x = 0
+                t_ann_op = 0
+                while t_ann_op < 6000 or t_x < 5000:
+                    chp_flh += 20
+                    q_chp = th_LDC[chp_flh]
+                    [eta_el, eta_th, p_nom, q_nom] = choose_device('chp', q_chp)
+                    (t_ann_op, t_x) = get_chp_ann_op_time(eta_th, q_nom, th_LDC,
+                                                          chp_flh)  # (Jahreslaufzeit, Volllaststunden)
+                    if chp_flh > 7500:
+                        print('Fehler bei alternativer Auslegung')
+                        break
+                if q_chp/max(th_LDC) < 0.1:
+                    print('CHP ungeeignet für Szenario.')
+                    [eta_el, eta_th, p_nom, q_nom] = [0,0,0,0]
+                else:
+                    print('BAFA Förderung nicht möglich!')
+                    print('Gesamtdeckungsanteil CHP:', q_nom * eta_th * t_ann_op * 100 / sum(th_LDC), '%')
+                    print('Volllaststunden:', t_x, 'h')
+                    print('Laufzeit CHP Anlage:', t_ann_op, 'h')
+
+
+
             while q_nom*eta_th/max(th_curve) < 0.1: #falls leistungsanteil kleiner als 10%
                 chp_flh -= 50
                 q_chp = th_LDC[chp_flh]
