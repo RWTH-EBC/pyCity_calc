@@ -586,7 +586,7 @@ if __name__ == '__main__':
     #  ####################################################################
 
     #  Input and output filename
-    filename = 'city_3_buildings.txt'
+    filename = 'city_3_enrich.txt'
     file_out = filename[:-4] + '_enrich.txt'
 
     #  Input and output filepath
