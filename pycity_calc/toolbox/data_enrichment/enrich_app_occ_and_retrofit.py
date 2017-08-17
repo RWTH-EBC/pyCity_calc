@@ -97,7 +97,7 @@ def check_district_data_set(district_data, check_sim_data=True):
             curr_build_type = int(
                 district_data[i][3])  # building type nb (int)
             curr_nfa = district_data[i][4]  # Net floor area in m2
-            curr_build_year = district_data[i][5]  # Year of construction
+            curr_build_year = int(district_data[i][5])  # Year of construction
             curr_mod_year = district_data[i][
                 6]  # optional (last year of modernization)
             curr_th_e_demand = district_data[i][
@@ -144,7 +144,7 @@ def check_district_data_set(district_data, check_sim_data=True):
             curr_build_type = int(
                 district_data[3])  # building type nb (int)
             curr_nfa = district_data[4]  # Net floor area in m2
-            curr_build_year = district_data[5]  # Year of construction
+            curr_build_year = int(district_data[5])  # Year of construction
             curr_mod_year = district_data[
                 6]  # optional (last year of modernization)
             curr_th_e_demand = district_data[
@@ -326,6 +326,9 @@ def enrich_apartments(district_data):
                 district_data[i][10] = 1
                 print('Added single apartment/zone to non-res. building.')
 
+        else:
+            district_data[i][10] = int(curr_nb_of_apartments)
+
     print('All buildings hold number of apartments, now.')
     print()
 
@@ -371,7 +374,7 @@ def est_mod_year(district_data, environment):
             curr_build_type = int(
                 district_data[i][3])  # building type nb (int)
             curr_nfa = district_data[i][4]  # Net floor area in m2
-            curr_build_year = district_data[i][5]  # Year of construction
+            curr_build_year = int(district_data[i][5])  # Year of construction
             curr_mod_year = district_data[i][
                 6]  # optional (last year of modernization)
             curr_th_e_demand = district_data[i][
@@ -418,7 +421,7 @@ def est_mod_year(district_data, environment):
             curr_build_type = int(
                 district_data[3])  # building type nb (int)
             curr_nfa = district_data[4]  # Net floor area in m2
-            curr_build_year = district_data[5]  # Year of construction
+            curr_build_year = int(district_data[5])  # Year of construction
             curr_mod_year = district_data[
                 6]  # optional (last year of modernization)
             curr_th_e_demand = district_data[
@@ -458,9 +461,19 @@ def est_mod_year(district_data, environment):
             curr_method_4_nb = district_data[
                 22]  # optional  Method_4_nb (for usage of measured, annual non-res. el. profile
 
+        #  Integer conversion
+        if curr_mod_year is not None:
+            curr_mod_year = int(curr_mod_year)
+        if curr_nb_of_apartments is not None:
+            curr_nb_of_apartments = int(curr_nb_of_apartments)
+        if curr_nb_of_occupants is not None:
+            curr_nb_of_occupants = int(curr_nb_of_occupants)
+        if curr_nb_of_floors is not None:
+            curr_nb_of_floors = int(curr_nb_of_floors)
+
         if curr_mod_year is None and curr_th_e_demand is not None:
 
-            print('Estimate mod. year for building ' + str(curr_id))
+            print('Estimate mod. year for building with id ' + str(curr_id))
 
             #  Convert construction types from int to str
             if curr_construction_type == 0:

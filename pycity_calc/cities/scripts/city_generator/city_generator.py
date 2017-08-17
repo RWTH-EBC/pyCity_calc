@@ -297,8 +297,13 @@ def constrained_sum_sample_pos(n, total):
         List with result integers, which sum up to value 'total'
     """
 
-    dividers = sorted(random.sample(range(1, total), int(n - 1)))
-    return [a - b for a, b in zip(dividers + [total], [0] + dividers)]
+    dividers = sorted(random.sample(range(1, int(total)), int(n - 1)))
+    list_occ = [a - b for a, b in zip(dividers + [total], [0] + dividers)]
+
+    for i in range(len(list_occ)):
+        list_occ[i] = int(list_occ[i])
+
+    return list_occ
 
 
 def redistribute_occ(occ_list):
