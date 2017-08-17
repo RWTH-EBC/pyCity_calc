@@ -33,7 +33,7 @@ import pycity.classes.supply.HeatPump as HP
 import pycity.classes.supply.ElectricalHeater as ElectricalHeater
 import pycity.classes.supply.Inverter as Inverter
 import pycity.classes.supply.PV as PV
-import pycity.classes.supply.ThermalEnergyStorage as ThermalEnergyStorage
+import pycity_calc.energysystems.thermalEnergyStorage as TES
 import pycity.classes.demand.SpaceHeating as SpaceHeating
 
 
@@ -87,12 +87,9 @@ def run_approach(city):
 
     dhn_elig = get_eligibility_dhn(district_type, ekw, heating_net, building_con)
 
-    print('Eligibility: ', dhn_elig)
-    print('Ekw = ', ekw)
-
 #------------------------------------ Dimensionierung der Anlagen -------------------------------------------------
 
-    if dhn_elig > 3:
+    if dhn_elig >= 3:
         print('District Heating eligible!')
         for scenario in all_scenarios:
             if 'centralized' in scenario['type']:
@@ -103,19 +100,19 @@ def run_approach(city):
 
     elif dhn_elig < 3:
         print('District Heating not eligible!')
-        for scenario in all_scenarios:
-            if 'decentralized' in scenario['type']:
-                if approve_scenario(city, scenario, geothermal):
-                    solutions.append(dim_decentralized(deepcopy(city),scenario))
-
-    else:
-        print('District Heating solutions might be eligible...')
-        for scenario in all_scenarios:
-            if approve_scenario(city, scenario, geothermal):
-                if 'centralized' in scenario['type']:
-                    solutions.append(dim_centralized(deepcopy(city),scenario))
-                if 'decentralized' in scenario['type']:
-                    solutions.append(dim_decentralized(deepcopy(city),scenario))
+    #     for scenario in all_scenarios:
+    #         if 'decentralized' in scenario['type']:
+    #             if approve_scenario(city, scenario, geothermal):
+    #                 solutions.append(dim_decentralized(deepcopy(city),scenario))
+    #
+    # else:
+    #     print('District Heating solutions might be eligible...')
+    #     for scenario in all_scenarios:
+    #         if approve_scenario(city, scenario, geothermal):
+    #             if 'centralized' in scenario['type']:
+    #                 solutions.append(dim_centralized(deepcopy(city),scenario))
+    #             if 'decentralized' in scenario['type']:
+    #                 solutions.append(dim_decentralized(deepcopy(city),scenario))
 
     return solutions
 
@@ -137,27 +134,27 @@ def get_city_type(city):
 
     if num_buildings < 5:
         if density_index < 5:
-            print('small district')
+            print('Small District')
             return 'small'
         else:
-            print('medium sized district')
+            print('Medium Sized District')
             return 'medium'
     elif num_buildings >= 5 and num_buildings < 15:
         if density_index < 3:
-            print('small district')
+            print('Small District')
             return 'small'
         elif density_index >= 3 and density_index <= 7:
-            print('medium sized district')
+            print('Medium Sized District')
             return 'medium'
         elif density_index > 7:
-            print('big (city) district')
+            print('Big (city) District')
             return 'big'
     else:
         if density_index < 5:
-            print('medium sized district')
+            print('Medium Sized District')
             return 'medium'
         else:
-            print('considered a big (city) district')
+            print('Big (city) District')
             return 'big'
 
 
@@ -312,7 +309,7 @@ def choose_device(dev_type, q_ideal):
     return specs
 
 
-def get_chp_ann_op_time(eta_th, q_nom, th_LDC, chp_flh):
+def get_chp_ann_op_time(eta_th, q_nom, th_LDC):
 
     # CHP-Jahreslaufzeitberechnung (annual operation time) nach Krimmling(2011)
     for q_m in th_LDC:
@@ -358,29 +355,24 @@ def dim_centralized(city, scenario):
             chp_flh = 7000 #best possible full-load-hours
             q_chp = th_LDC[chp_flh]
             [eta_el, eta_th, p_nom, q_nom] = choose_device('chp', q_chp)
+            (t_ann_op, t_x) = get_chp_ann_op_time(eta_th, q_nom, th_LDC)  # (Jahreslaufzeit, Volllaststunden)
 
             bafa = False
-
             while not bafa:
-                (t_ann_op, t_x) = get_chp_ann_op_time(eta_th, q_nom, th_LDC, chp_flh) # (Jahreslaufzeit, Volllaststunden)
-
                 # Auslegung auf BAFA Förderung (60% Deckungsanteil aus KWK)
                 if t_ann_op >= 6000 and t_x >= 5000 and q_nom*eta_th*t_ann_op/q_total > 0.6: # Auslegung nur gültig, falls Bedingungen für aot und flh erfüllt sind
-                    print('BAFA Förderung möglich!')
-                    print('Gesamtdeckungsanteil CHP:', q_nom*eta_th*t_ann_op*100/sum(th_LDC),'%')
-                    print('Volllaststunden:',t_x,'h')
-                    print('Laufzeit CHP Anlage:', t_ann_op, 'h')
+                    print('CHP: BAFA Förderung möglich! Gesamtdeckungsanteil: '+str(round(q_nom*eta_th*t_ann_op*100/q_total,2))+'%')
                     bafa = True
                 else:
                     chp_flh -= 20
                     if chp_flh >= 5000:
                         q_chp = th_LDC[chp_flh]
                         [eta_el, eta_th, p_nom, q_nom] = choose_device('chp', q_chp)
+                        (t_ann_op, t_x) = get_chp_ann_op_time(eta_th, q_nom,
+                                                              th_LDC)  # (Jahreslaufzeit, Volllaststunden)
                     else:
-                        print('BAFA Förderung nicht möglich!')
+                        print('CHP: BAFA Förderung nicht möglich!')
                         bafa = False
-                        #TODO: Wonach wird stattdessen ausgelegt? Zwischen 10%-20% von Qmax und flh > 5000
-                        # Mehrere Lösungen von Quartieren pro Szenario entwerfen und am Ende vergleichen!!
                         break
 
             # Alternative Auslegung falls BAFA-Förderung nicht möglich
@@ -392,33 +384,24 @@ def dim_centralized(city, scenario):
                     chp_flh += 20
                     q_chp = th_LDC[chp_flh]
                     [eta_el, eta_th, p_nom, q_nom] = choose_device('chp', q_chp)
-                    (t_ann_op, t_x) = get_chp_ann_op_time(eta_th, q_nom, th_LDC,
-                                                          chp_flh)  # (Jahreslaufzeit, Volllaststunden)
+                    (t_ann_op, t_x) = get_chp_ann_op_time(eta_th, q_nom, th_LDC)  # (Jahreslaufzeit, Volllaststunden)
                     if chp_flh > 7500:
-                        print('Fehler bei alternativer Auslegung')
+                        print('CHP: Fehler bei alternativer Auslegung')
                         break
-                if q_chp/max(th_LDC) < 0.1:
+                if q_nom*eta_th/max(th_LDC) < 0.1:
                     print('CHP ungeeignet für Szenario.')
                     [eta_el, eta_th, p_nom, q_nom] = [0,0,0,0]
                 else:
-                    print('BAFA Förderung nicht möglich!')
-                    print('Gesamtdeckungsanteil CHP:', q_nom * eta_th * t_ann_op * 100 / sum(th_LDC), '%')
-                    print('Volllaststunden:', t_x, 'h')
-                    print('Laufzeit CHP Anlage:', t_ann_op, 'h')
+                    print('CHP: BAFA Förderung nicht möglich! Gesamtdeckungsanteil: '+str(q_nom * eta_th * t_ann_op * 100 / q_total)+'%')
 
 
-
-            while q_nom*eta_th/max(th_curve) < 0.1: #falls leistungsanteil kleiner als 10%
-                chp_flh -= 50
-                q_chp = th_LDC[chp_flh]
-                [eta_el, eta_th, p_nom, q_nom] = choose_device('chp', q_chp)
-
+            # Check ob EEWärmeG erfüllt wird. Ansonsten gesetzeskonforme Dimensionierung.
             if get_building_age(city) == 'new':
                 print('EEWärmeG beachten!')
                 eewg = False
                 count = 0
                 while not eewg:
-                    ee_ratio = q_chp / q_total
+                    ee_ratio = q_nom*eta_th*t_ann_op/q_total
                     if ee_ratio > 0.5:
                         #PEE berechnen
                         refeta_th = 0.85  # th. Referenzwirkungsgrad für Anlagen vor 2016, Dampf, Erdgas
@@ -435,34 +418,54 @@ def dim_centralized(city, scenario):
                                 print('EEWärmeG erfüllt. (<1MW)')
                                 eewg = True
                                 break
-                        if q_chp/q_total > 0.9:
-                            print('EEWärmeG nicht erfüllt: Unrealistische Werte! (Q_chp > 90% von Q_total)')
+                        if ee_ratio >= 1:
+                            print('EEWärmeG nicht erfüllt: Unrealistische Werte! (Q_chp >= Q_total)')
                             break
-                    q_chp = math.ceil(0.5*q_total+count*q_total/100) #Mindestwert 50% Deckung + 1% der Gesamtleistung je Durchlauf
+
+                    q_chp = 0.5*q_total/8760+count*q_total/(8760*100) #Mindestwert 50% Deckung + 1% der Gesamtleistung je Durchlauf
                     [eta_el, eta_th, p_nom, q_nom] = choose_device('chp', q_chp)
+                    (t_ann_op, t_x) = get_chp_ann_op_time(eta_th, q_nom, th_LDC)  # (Jahreslaufzeit, Volllaststunden)
                     count += 1
             else:
                 print('EEWärmeG muss aufgrund des Gebäudealters nicht beachtet werden.')
                 eewg = True
 
             enev = False
+            # TODO: EnEV hinzufügen
+
 
             chp = CHP.CHP(city.environment, p_nom, q_nom, eta_el+eta_th)
             bes.addDevice(chp)
-            # Volllaststunde hier nicht mehr genau chp_flh, da Leistung der Anlage verändert (choose_device())
-            print('CHP with Q_nom =', q_nom, ' W (', round(q_nom * 100 / max(th_curve),2), '%) ->', chp_flh, 'full-load hours.')
+            print('Added CHP: Q_nom = ' + str(q_nom/1000) + ' kW (' + str(
+                round(q_nom * eta_th * 100 / max(th_curve), 2)) + '% of Q_max) ->', t_x, 'full-load hours.')
 
 
+            # Pufferspeicher hinzufügen falls Leistung über 20% von Maximalverbrauch
+            if q_nom*eta_th/max(th_LDC) > 0.2:
+                v_tes = q_nom/1000*60 # Förderung von Speichern für Mini-BHKW durch BAFA bei Speichergrößen über 60 l/kW_th
+                if v_tes > 1600: # 1600 liter genügen für Förderung
+                    v_tes = 1600 + (q_nom/1000*60-1600)*0.2 # Schätzung um auch Anlagen >30kW mit Speicher zu versorgen
+
+                tes = TES.thermalEnergyStorageExtended(environment=city.environment,t_init=50,capacity=v_tes)
+                bes.addDevice(tes)
+                print('Added Thermal Energy Storage:', v_tes,'liter ')
+
+
+            # Wärmeerzeuger für Spitzenlast hinzufügen
             if 'boiler' in scenario['peak']:
-                q_boiler = max(th_LDC) - q_nom
+                q_boiler = max(th_LDC) - q_nom*eta_th
                 boiler = Boiler.Boiler(city.environment, q_boiler, 0.8)
                 bes.addDevice(boiler)
+                print('Added Boiler: Q_nom = '+str(round(q_boiler/1000,2))+' kW')
 
             if 'elHeater' in scenario['peak']:
-                q_elHeater = max(th_LDC) - q_nom
+                q_elHeater = max(th_LDC) - q_nom*eta_th
                 # TODO: Werte überprüfen
                 elHeater = ElectricalHeater.ElectricalHeater(city.environment, q_elHeater, 0.95, 100, 0.2)
                 bes.addDevice(elHeater)
+                print('Added elHeater: Q_nom = ' + str(round(q_elHeater / 1000, 2)) + ' kW')
+
+
 
         elif device == 'solar': # Regeln für Dimensionierung einführen!
             pv_area = 0
