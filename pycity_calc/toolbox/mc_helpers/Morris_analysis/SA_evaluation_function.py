@@ -378,25 +378,23 @@ def evaluate(City, values):
         ############################################
 
         time = 10  # Years
-        interest = row[59]  # Interest rate
+        interest = row[57]  # Interest rate
         print ('\n New interest: {}'.format(interest))
 
         price_ch_cap = row[43]
         price_ch_dem_gas = row[44]
         price_ch_dem_el = row[45]
         price_ch_op = row[46]
-        price_ch_proc_chp = row[47]
-        price_ch_proc_pv = row[48]
-        price_ch_EEG_Umlage_tax_chp = row[49]
-        price_ch_EEG_Umlage_tax_pv = row[50]
-        price_EEX_baseload_price = row[51]
-        price_ch_avoid_grid_usage = row[52]
-        price_ch_sub_chp = row[53]
-        price_ch_self_usage_chp = row[54]
-        price_ch_gas_disc_chp = row[55]
-        price_ch_sub_pv = row[56]
-        life_factor = row[57]
-        maintenance_factor = row[58]
+        price_ch_EEG_Umlage_tax_chp = row[47]
+        price_ch_EEG_Umlage_tax_pv = row[48]
+        price_EEX_baseload_price = row[49]
+        price_ch_avoid_grid_usage = row[50]
+        price_ch_sub_chp = row[51]
+        price_ch_self_usage_chp = row[52]
+        price_ch_gas_disc_chp = row[53]
+        price_ch_sub_pv = row[54]
+        life_factor = row[54]
+        maintenance_factor = row[56]
 
         print("Annuity calculation")
         Market_instance = Mark.GermanMarket()
@@ -405,8 +403,7 @@ def evaluate(City, values):
         print("Economic object generation")
         eco_inst = eco_calc.EconomicCalculation(time=time, germanmarket=Market_instance,  interest=interest, price_ch_cap=price_ch_cap,
                                                 price_ch_dem_gas=price_ch_dem_gas, price_ch_dem_el=price_ch_dem_el,
-                                                price_ch_op=price_ch_op, price_ch_proc_chp=price_ch_proc_chp,
-                                                price_ch_proc_pv=price_ch_proc_pv,
+                                                price_ch_op=price_ch_op,
                                                 price_ch_eeg_chp=price_ch_EEG_Umlage_tax_chp,
                                                 price_ch_eeg_pv=price_ch_EEG_Umlage_tax_pv,
                                                 price_ch_eex=price_EEX_baseload_price,

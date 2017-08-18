@@ -105,14 +105,15 @@ def gen_esys_unknown (building, recent_systems=True):
     # Battery
     if ex_building.bes.hasBattery == True:
         if recent_systems:
-            building.bes.battery.eta_charge = rd.uniform(0.8,0.9)
-            building.bes.battery.eta_discharge = rd.uniform(0.8,0.9)
-            building.bes.battery.self_discharge = rd.uniform(0.8,0.9)
+            building.bes.battery.eta_charge = rd.uniform(0.88,0.96)
+            building.bes.battery.eta_discharge = rd.uniform(0.88,0.96)
+            building.bes.battery.self_discharge = rd.uniform(0.88,0.96)
         else:
-            building.bes.battery.eta_charge = rd.uniform(0.8, 0.9)
-            building.bes.battery.eta_discharge = rd.uniform(0.8, 0.9)
-            building.bes.battery.self_discharge = rd.uniform(0.8, 0.9)
+            building.bes.battery.eta_charge = rd.uniform(0.8, 0.96)
+            building.bes.battery.eta_discharge = rd.uniform(0.8, 0.96)
+            building.bes.battery.self_discharge = rd.uniform(0.8, 0.96)
 
+    ''' Removed because of some bugs'''
     # Thermal storage
     #if ex_building.bes.hasTes == True:
         #if recent_systems:
@@ -152,38 +153,32 @@ def gen_esys_unknown (building, recent_systems=True):
     if building.bes.hasBoiler == True:
         print('rescale Boiler 1')
         if recent_systems:
-            building.bes.boiler.eta = rd.uniform(0.85,0.90)
-            #City.node[build]['entity'].bes.boiler.lower_activation_limit = rd.uniform(0.1,0.3)
-            #City.node[build]['entity'].bes.boiler.t_max = rd.uniform(80,100)
+            building.bes.boiler.eta = rd.uniform(0.85,0.91)
+
         else:
             building.bes.boiler.eta = rd.uniform(0.8, 0.90)
-            # City.node[build]['entity'].bes.boiler.lower_activation_limit = rd.uniform(0.1,0.3)
-            # City.node[build]['entity'].bes.boiler.t_max = rd.uniform(80,100)
+
 
     # Combined heat pump
     if building.bes.hasChp == True:
         if recent_systems:
             building.bes.chp.omega = rd.uniform(0.9,0.94)
-            #building.bes.chp.t_max = rd.uniform(80,100)
-            #building.bes.chp.lower_activation_limit = rd.uniform(0.1,0.3)
+
         else:
             building.bes.chp.omega = rd.uniform(0.88,0.93)
-            #building.bes.chp.t_max = rd.uniform(80,100)
-            #building.bes.chp.lower_activation_limit = rd.uniform(0.1,0.3)
 
     # Electrical heater
     if ex_building.bes.hasElectricalHeater == True:
         if recent_systems:
             building.bes.electricalHeater.eta = rd.uniform(0.9,0.99)
-            #building.bes.electricalHeater.t_max = rd.uniform(80,100)
+
         else:
             building.bes.electricalHeater.eta = rd.uniform(0.8, 0.99)
-            #building.bes.electricalHeater.t_max = rd.uniform(80, 100)
 
     # Heat pump
-    #if ex_building.bes.hasHeatpump == True:
+    if ex_building.bes.hasHeatpump == True:
 
-        #building.bes.heatpump.lower_activation_limit = rd.uniform(0.1,0.3)
+        building.bes.heatpump.lower_activation_limit = rd.uniform(0.1,0.3)
         #building.bes.heatpump.t_max = rd.uniform(80,100)
         #building.bes.heatpump.t_sink = rd.uniform(20,25)
 
@@ -197,12 +192,11 @@ def gen_esys_unknown (building, recent_systems=True):
         else:
 
             building.bes.pv.eta = rd.uniform(0.14,0.2 )
-            building.bes.pv.temperature_nominal = rd.uniform(18, 25)
 
         #building.bes.pv.alpha = rd.uniform(0.8, 0.9)
         building.bes.pv.beta = rd.uniform(0, 45)
         building.bes.pv.gamma = rd.uniform(-45,45 )
-        #building.bes.pv.tau_alpha = rd.uniform(0.8, 0.9)
+
 
     return building
 
@@ -252,7 +246,7 @@ def MC_new_esys_evaluation (building):
         #building.bes.tes.t_init = rd.normalvariate(mu= ex_building.bes.tes.t_init,sigma = 0.1)
         dict_build_esys_sampl['TES'] = {}
         dict_build_esys_sampl['TES']['TES_kloss'] = building.bes.tes.k_loss
-        dict_build_esys_sampl['TES']['TES_Tmax'] = building.bes.tes.t_min
+        #dict_build_esys_sampl['TES']['TES_Tmax'] = building.bes.tes.t_min
         #dict_build_esys_sampl['TES']['TES_Tmin'] = building.bes.tes.t_max
 
     if ex_building.bes.hasBoiler == True:
@@ -272,10 +266,8 @@ def MC_new_esys_evaluation (building):
 
     if ex_building.bes.hasChp == True:
         building.bes.chp.omega = rd.normalvariate(mu= ex_building.bes.chp.omega,sigma = 0.01)
-        #building.bes.chp.tMax = rd.normalvariate(mu= ex_building.bes.chp.tMax,sigma = 0.1)
-        #building.bes.chp.lowerActivationLimit = rd.normalvariate(mu= ex_building.bes.chp.lowerActivationLimit,
 
-        # Assert that their is no extrem values                                                      #sigma = 0.1)
+        # Assert that their is no extrem values
         if building.bes.chp.omega>1:
             building.bes.chp.omega = 0.9
 
@@ -299,14 +291,11 @@ def MC_new_esys_evaluation (building):
         dict_build_esys_sampl['EH']['EH_eta'] = building.bes.electricalHeater.eta
 
     if ex_building.bes.hasHeatpump == True:
-        #building.bes.heatpump.lower_activation_limit = rd.normalvariate(mu= ex_building.bes.heatpump.lower_activation_limit,
-                                                                        #sigma = 0.1)
-        #building.bes.heatpump.t_max = rd.normalvariate(mu= ex_building.bes.heatpump.t_max,
-                                                                        #sigma = 0.1)
-        #building.bes.heatpump.t_sink = rd.normalvariate(mu= ex_building.bes.heatpump.t_sink,
-                                                                        #sigma = 0.1)
+        building.bes.heatpump.lower_activation_limit = rd.normalvariate(mu= ex_building.bes.heatpump.lower_activation_limit,
+                                                                        sigma = 0.1)
+
         dict_build_esys_sampl['HP']={}
-        #dict_build_esys_sampl['HP']['HP_tmax'] = building.bes.heatpump.t_max
+        dict_build_esys_sampl['HP']['HP_lal'] = building.bes.heatpump.lower_activation_limit
         #dict_build_esys_sampl['HP']['HP_tsink'] = building.bes.heatpump.t_sink
 
 
@@ -321,24 +310,17 @@ def MC_new_esys_evaluation (building):
 
         # Assert that their is no extrem values
         if building.bes.pv.eta < 10 or building.bes.pv.eta > 25:
-            building.bes.pv.eta = 0.15
+            building.bes.pv.eta = 0.16
 
-        #building.bes.pv.temperature_nominal = rd.normalvariate(mu= ex_building.bes.pv.temperature_nominal,
-                                                                        #sigma = 0.05)
-        #building.bes.pv.alpha = rd.normalvariate(mu= ex_building.bes.pv.alpha,
-                                                                        #sigma = 0.01)
-        building.bes.pv.beta = rd.normalvariate(mu= ex_building.bes.pv.beta, sigma = 0.01)
+        building.bes.pv.beta = rd.normalvariate(mu= ex_building.bes.pv.beta, sigma = 0.5)
 
-        building.bes.pv.gamma = rd.normalvariate(mu= ex_building.bes.pv.gamma, sigma = 0.01)
-        building.bes.pv.tau_alpha = rd.normalvariate(mu= ex_building.bes.pv.tau_alpha, sigma = 0.01)
+        building.bes.pv.gamma = rd.normalvariate(mu= ex_building.bes.pv.gamma, sigma = 0.5)
+
 
         dict_build_esys_sampl['PV']={}
         dict_build_esys_sampl['PV']['eta'] =  building.bes.pv.eta
-        #dict_build_esys_sampl['PV']['tnominal'] = building.bes.pv.temperature_nominal
         dict_build_esys_sampl['PV']['beta'] = building.bes.pv.beta
         dict_build_esys_sampl['PV']['gamma'] = building.bes.pv.gamma
-        dict_build_esys_sampl['PV']['alpha'] = building.bes.pv.tau_alpha
-        dict_build_esys_sampl['PV']['alphPV'] = building.bes.pv.alpha
 
     return building,dict_build_esys_sampl
 
@@ -462,8 +444,6 @@ def gen_esys_for_city(city, list_data, size_esys = False, boiler_buffer_factor=1
                 print('Boiler size in kW:')
                 print(boiler_th_power / 1000)
 
-            #  Define empty entities list
-            list_entities = []
 
             boiler = boil.BoilerExtended(environment=city.environment,q_nominal=boiler_th_power,eta=0.85,
                                          lower_activation_limit=0)
@@ -553,11 +533,11 @@ def gen_esys_for_city(city, list_data, size_esys = False, boiler_buffer_factor=1
                 chp_th_power = pam*1000
                 chp_el_power = chp_pan*1000
 
-                print('Chp thermal power in kW:')
-                print(chp_th_power / 1000)
+                print('Chp thermal power in W:')
+                print(chp_th_power)
 
-                print('Chp electrical power in kW:')
-                print(chp_el_power / 1000)
+                print('Chp electrical power in W:')
+                print(chp_el_power)
 
             chp = chpsys.ChpExtended(environment=city.environment, q_nominal=chp_th_power,p_nominal=chp_el_power)
 
@@ -569,7 +549,7 @@ def gen_esys_for_city(city, list_data, size_esys = False, boiler_buffer_factor=1
             #  #-------------------------------------------------------------
             # pam --> Defines area of PV as float value
 
-            pv = PV.PV(environment=city.environment, area=pam, eta=0.15)
+            pv = PV.PV(environment=city.environment, area=pam, eta=0.16)
 
             print('Add PV system with area in m2: ', pam)
 
@@ -638,7 +618,6 @@ def gen_esys_for_city(city, list_data, size_esys = False, boiler_buffer_factor=1
             el_heater = ehsys.ElectricalHeaterExtended(environment=city.environment,
                                          q_nominal=eh_th_power)
 
-            list_entities = [el_heater]
 
             # Add devices to bes
             bes.addDevice(el_heater)
