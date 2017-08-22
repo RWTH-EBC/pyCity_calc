@@ -706,7 +706,38 @@ class EconomicCalculation(object):
 
         return cap_rel_annuity
 
-    def calc_cap_rel_annuity_city(self, city_object):
+    def calc_cost_spe(self, mean_spe=1.0 , sdev=0.1, max_val=1.5, min_val=0.5):
+        """
+        Performs cost specific factor sampling.
+        Reset values larger than max_val to 1
+
+        Parameters
+        ----------
+        mean_spe : float, optional
+            Mean of log normal distribution (default: 1)
+        sdev : float, optional
+            Standard deviation of log normal distribution (default: 0.1)
+        max_val : float, optional
+            Maximal allowed value for natural infiltration rate (default: 1.5)
+
+        Returns
+        -------
+        cost specific factor: float
+
+        """
+        factor = np.random.lognormal(mean=mean_spe, sigma=sdev)
+
+        #  Reset values larger than 1.5 to 1
+        if factor > max_val:
+            factor = 1
+
+        # Reset values lower than 0.5
+        elif factor < min_val:
+            factor = 1
+
+        return factor
+
+    def calc_cap_rel_annuity_city(self, city_object, cost_spe=False, tes_pow_ref = 10 ):
         """
         Calculate sum of all capital related annuities of city
 
@@ -749,6 +780,12 @@ class EconomicCalculation(object):
                                 cap_kWh = bes.battery.capacity / (3600 * 1000)
                                 #  In kWh
                                 bat_invest = bat_cost.calc_invest_cost_bat(cap=cap_kWh, method='carmen')
+
+                                # if specific investment uncertain: rescaled specific investment
+                                if cost_spe:
+                                    factor = self.calc_cost_spe()
+                                    bat_invest = factor*bat_invest
+
                                 cap_rel_ann += self.calc_capital_rel_annuity_with_type(invest=bat_invest, type='BAT')
                                 #  Add to lists
                                 list_invest.append(bat_invest)
@@ -758,6 +795,13 @@ class EconomicCalculation(object):
                                 q_nom = bes.boiler.qNominal / 1000  # in kW
                                 boil_invest = \
                                     boiler_cost.calc_abs_boiler_cost(q_nom=q_nom, method='spieker')
+
+                                # if specific investment uncertain: rescaled specific investment
+                                if cost_spe:
+                                    factor = self.calc_cost_spe(mean_spe=1.0 , sdev=0.1, max_val=1.5, min_val=0.5)
+                                    boil_invest = factor*boil_invest
+
+
                                 cap_rel_ann += self.calc_capital_rel_annuity_with_type(invest=boil_invest, type='B')
                                 #  Add to lists
                                 list_invest.append(boil_invest)
@@ -766,6 +810,12 @@ class EconomicCalculation(object):
                             if bes.hasChp:
                                 p_el_nom = bes.chp.pNominal / 1000  # in kW
                                 chp_invest = chp_cost.calc_invest_cost_chp(p_el_nom=p_el_nom, method='spieker')
+
+                                # if specific investment uncertain: rescaled specific investment
+                                if cost_spe:
+                                    factor = self.calc_cost_spe()
+                                    chp_invest = factor*chp_invest
+
                                 cap_rel_ann += self.calc_capital_rel_annuity_with_type(
                                         invest=chp_invest, type='CHP')
                                 #  Add to lists
@@ -776,6 +826,13 @@ class EconomicCalculation(object):
                                 q_eh = bes.electricalHeater.qNominal / 1000  # in kW
                                 eh_invest = \
                                     eh_cost.calc_abs_cost_eh(q_nom=q_eh, method='spieker')
+
+                                # if specific investment uncertain: rescaled specific investment
+                                if cost_spe:
+                                    factor = self.calc_cost_spe()
+                                    eh_invest = factor * eh_invest
+
+
                                 cap_rel_ann += self.calc_capital_rel_annuity_with_type(
                                         invest=eh_invest, type='EH')
                                 #  Add to lists
@@ -784,8 +841,15 @@ class EconomicCalculation(object):
 
                             if bes.hasHeatpump:
                                 q_hp = bes.heatpump.qNominal / 1000  # in kW
+
                                 hp_invest = \
                                     hp_cost.calc_invest_cost_hp(q_nom=q_hp, method='wolf')
+
+                                # if specific investment uncertain: rescaled specific investment
+                                if cost_spe:
+                                    factor = self.calc_cost_spe()
+                                    hp_invest = factor * hp_invest
+
                                 cap_rel_ann += self.calc_capital_rel_annuity_with_type(
                                         invest=hp_invest, type='HP')
                                 #  Add to lists
@@ -795,6 +859,12 @@ class EconomicCalculation(object):
                             if bes.hasPv:
                                 pv_area = bes.pv.area
                                 pv_invest = pv_cost.calc_pv_invest(area=pv_area, method='EuPD')
+
+                                # if specific investment uncertain: rescaled specific investment
+                                if cost_spe:
+                                    factor = self.calc_cost_spe()
+                                    pv_invest = factor * pv_invest
+
                                 cap_rel_ann += self.calc_capital_rel_annuity_with_type(
                                         invest=pv_invest, type='PV')
                                 #  Add to lists
@@ -805,6 +875,12 @@ class EconomicCalculation(object):
                                 tes_vol = bes.tes.capacity / 1000  # in m3
                                 tes_invest = \
                                     tes_cost.calc_invest_cost_tes(volume=tes_vol, method='spieker')
+
+                                # if specific investment uncertain: rescaled specific investment
+                                if cost_spe:
+                                    factor = self.calc_cost_spe()
+                                    tes_invest = factor * tes_invest
+
                                 cap_rel_ann += self.calc_capital_rel_annuity_with_type(
                                         invest=tes_invest, type='TES')
                                 #  Add to lists
@@ -839,15 +915,25 @@ class EconomicCalculation(object):
                             #  If entity is kind building
                             if city_object.node[n]['entity']._kind == 'building':
                                 build = city_object.node[n]['entity']
-                                th_pow = \
-                                    dimfunc.get_max_power_of_building(build,
-                                                                      with_dhw=False)
-                                list_th_pow.append(
-                                    th_pow / 1000)  # Convert W to kW
+                                th_pow = dimfunc.get_max_power_of_building(build,with_dhw=False)
 
-                # Calculate investment cost for lhn transmission statinos
+                                # lhn power have to be diffrent from zero
+                                if th_pow ==0:
+                                    th_pow = tes_pow_ref
+
+                                list_th_pow.append(th_pow / 1000)  # Convert W to kW
+
+                # Calculate investment cost for lhn transmission stations
                 invest_lhn_trans += \
                     lhn_cost.calc_invest_cost_lhn_stations(list_powers=list_th_pow)
+                #  Get diameter plus total length of LHN pipe
+                #  Use diameter and length to calculate lhn investment
+
+                # if specific investment uncertain: rescaled specific investment
+                if cost_spe:
+                    factor = self.calc_cost_spe()
+                    invest_lhn_trans = factor * invest_lhn_trans
+
 
                 #  Add to lists
                 list_invest.append(invest_lhn_trans)
@@ -1635,6 +1721,8 @@ class EconomicCalculation(object):
 
     #  # Total annuity
     #  #################################################################
+
+
     def calc_total_annuity(self, ann_capital, ann_demand, ann_op, ann_proc):
         """
         Calculate total annuity.
@@ -1668,7 +1756,7 @@ class EconomicCalculation(object):
         return ann_proc - (ann_capital + ann_demand + ann_op)
 
 
-    def calc_cap_and_op_rel_annuity_city(self, city_object):
+    def calc_cap_and_op_rel_annuity_city(self, city_object, cost_spe=False, tes_pow_ref = 10):
         """
         Calculate capital- and operation-related annuities of city
 
@@ -1685,12 +1773,13 @@ class EconomicCalculation(object):
         """
 
         #  Calculate capital-related annuities
-        (cap_rel_ann, list_invest, list_type) = self.calc_cap_rel_annuity_city(city_object=city_object)
+        (cap_rel_ann, list_invest, list_type) = self.calc_cap_rel_annuity_city(city_object=city_object, cost_spe=cost_spe, tes_pow_ref=tes_pow_ref)
 
         #  Calculate operation-related annuity
         op_rel_ann = self.calc_op_rel_annuity_multi_comp(list_invest=list_invest,list_types=list_type)
 
         return cap_rel_ann, op_rel_ann
+
 
 if __name__ == '__main__':
     time = 30

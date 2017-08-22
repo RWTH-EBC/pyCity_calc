@@ -267,8 +267,8 @@ def calc_sampling_el_demand_per_apartment(nb_samples, nb_persons, type,
     return list_el_demands
 
 
-def calc_sampling_dhw_per_person(nb_samples, pdf='equal', equal_diff=34,
-                                 mean=64, std=10):
+def calc_sampling_dhw_per_person(nb_samples, pdf='equal', equal_diff=25,
+                                 mean=55, std=10):
     """
 
     Perform domestic hot water sampling (hot water volume in liters per person

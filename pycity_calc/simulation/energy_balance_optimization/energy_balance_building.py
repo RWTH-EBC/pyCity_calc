@@ -1239,8 +1239,7 @@ class calculator(object):
                 Node['heat_demand_for_chp'] = total_heat_demand_for_chp # demand which has to be covered by chp, the actual supplied energy might be higher when LAL condition
 
             # #---------------------------------------------------------
-            if (Node['entity'].bes.hasBoiler) == True and (
-                        Node['entity'].bes.hasChp == False):
+            if (Node['entity'].bes.hasBoiler) == True and (Node['entity'].bes.hasChp == False):
                 ####print('################################### hasBoiler only')
                 # Script for Building with Boiler and Tes only
 
@@ -1668,8 +1667,7 @@ class calculator(object):
 
                             # pv electricity is very expensive and therefore more important to use than chp!
                             # Initialisation pv arrays
-                            supply_pv = self.city_object.node[dict_city_data[index]['Buildings in subcity'][i]]
-                            ['entity'].bes.pv.getPower()#TODO:'Buildings in subcity'
+                            supply_pv = self.city_object.node[dict_city_data[index]['Buildings in subcity'][i]]['entity'].bes.pv.getPower()#TODO:'Buildings in subcity'
                             pv_used = np.zeros(len(time_vector.time_vector()))
                             pv_sold = np.zeros(len(time_vector.time_vector()))
                             demand_after_pv = np.zeros(len(time_vector.time_vector()))
@@ -2095,7 +2093,7 @@ class calculator(object):
 
                             # Calculate intermediate variable
                             diff2_demand = general_demand - supply_chp
-
+                            print('supply chp', sum(supply_chp))
                             # Loop over timestep
                             for y in range(len(diff2_demand)):
 

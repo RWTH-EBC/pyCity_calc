@@ -110,7 +110,7 @@ def building_unc_sampling(exbuilding, nb_samples, max_retro_year=2014,
 
         # Net floor area sampling
         list_nf_area = bunc.calc_list_net_floor_area_sampling(nb_of_samples=nb_samples,
-                                                              sigma=(exbuilding.net_floor_area*0.1),
+                                                              sigma=(exbuilding.net_floor_area*0.01),
                                                               mean= exbuilding.net_floor_area)
         dict_samples['net_floor_area'] = list_nf_area
 
@@ -119,15 +119,16 @@ def building_unc_sampling(exbuilding, nb_samples, max_retro_year=2014,
         dict_samples['inf'] = list_inf
 
         # Average height of floor sampling
-        list_average_height_of_floor = bunc.calc_list_net_floor_area_sampling(nb_samples=nb_samples,
+        list_average_height_of_floor = bunc.calc_list_net_floor_area_sampling(nb_of_samples=nb_samples,
                                                                               sigma=(
                                                                               exbuilding.height_of_floors * 0.005),
-                                                                              mean=exbuilding.height_of_floor)
+                                                                              mean=exbuilding.height_of_floors)
         dict_samples['height_of_floor'] = list_average_height_of_floor
+
     else:
         # Net floor area sampling
         list_nf_area = bunc.calc_list_net_floor_area_sampling(nb_of_samples=nb_samples,
-                                                              sigma=(exbuilding.net_floor_area*0.01),
+                                                              sigma=(exbuilding.net_floor_area*0.005 ),
                                                               mean= exbuilding.net_floor_area)
         dict_samples['net_floor_area'] = list_nf_area
 
@@ -400,11 +401,11 @@ def mod_single_build_w_samples(exbuilding, dict_samples, list_wea, i , MC_analys
             print('attic: ', building.attic)
             building.cellar = dict_samples['cellar'][i]
             print('cellar :', building.cellar)
-            if dict_samples['const_type'][i] == 0:
-                building.construction_type = "heavy"
-            else:
-                building.construction_type = "light"
-            print('construction type: ', building.construction_type)
+            #if dict_samples['const_type'][i] == 0:
+                #building.construction_type = "heavy"
+            #else:
+                #building.construction_type = "light"
+            #print('construction type: ', building.construction_type)
 
         building.net_floor_area = dict_samples['net_floor_area'][i]
 
