@@ -10,17 +10,17 @@ import numpy as np
 import pycity_calc.toolbox.teaser_usage.teaser_use as tus
 import warnings
 import pycity_calc.buildings.building as build_ex
-import pycity.classes.demand.Apartment as Apartment
-import pycity.classes.demand.ElectricalDemand as ElectricalDemand
-import pycity.classes.demand.DomesticHotWater as dhwater
-import pycity.classes.demand.Occupancy as occ
-import pycity.classes.Weather as Weather
+import pycity_base.classes.demand.Apartment as Apartment
+import pycity_base.classes.demand.ElectricalDemand as ElectricalDemand
+import pycity_base.classes.demand.DomesticHotWater as dhwater
+import pycity_base.classes.demand.Occupancy as occ
+import pycity_base.classes.Weather as Weather
 import pycity_calc.environments.environment as env
 import pycity_calc.environments.co2emissions as co2
 import pycity_calc.environments.market as mark
 import pycity_calc.environments.timer as time
 import matplotlib.pyplot as plt
-import pycity.functions.changeResolution as chgr
+import pycity_base.functions.changeResolution as chgr
 
 
 def new_building_evaluation_mc(building, new_weather, max_retro_year=2014, time_sp_force_retro=40,

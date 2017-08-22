@@ -12,12 +12,14 @@ import pycity_calc.environments.timer as time
 import pycity_calc.environments.co2emissions as co2
 import pycity_calc.environments.environment as env
 
-import pycity.classes.Weather as weat
-import pycity.classes.demand.SpaceHeating as SpaceHeating
-import pycity.classes.demand.ElectricalDemand as ElDemand
-import pycity.classes.demand.Apartment as Apartment
+import pycity_base.classes.Weather as weat
+import pycity_base.classes.demand.SpaceHeating as SpaceHeating
+import pycity_base.classes.demand.ElectricalDemand as ElDemand
+import pycity_base.classes.demand.Apartment as Apartment
 import pycity_calc.buildings.building as build_ex
 import pycity_calc.cities.city as city
+import pycity_base.classes.demand.Occupancy as occu
+import pycity_base.classes.demand.DomesticHotWater as DomesticHotWater
 
 import pycity_calc.energysystems.battery as batt
 import pycity_calc.energysystems.chp as chp
@@ -27,6 +29,7 @@ import pycity_calc.energysystems.heatPumpSimple as hp
 import pycity_calc.energysystems.thermalEnergyStorage as tES
 
 import pycity_calc.extern_el_grid.PowerGrid as grid
+
 
 @pytest.fixture(scope='module')
 def fixture_environment(year=2010, timestep=900,
@@ -194,6 +197,61 @@ def fixture_building(fixture_environment, fixture_apartment):
     fixture_building.addEntity(entity=fixture_apartment)
 
     return fixture_building
+
+
+@pytest.fixture
+def fixture_detailed_building(fixture_environment):
+    #  Create demands (with standardized load profiles (method=1))
+    heat_demand = SpaceHeating.SpaceHeating(fixture_environment,
+                                            method=1,
+                                            profile_type='HEF',
+                                            livingArea=100,
+                                            specificDemand=130)
+
+    el_demand = ElDemand.ElectricalDemand(fixture_environment,
+                                          method=1,
+                                          annualDemand=3000,
+                                          profileType="H0")
+
+    dhw_annex42 = DomesticHotWater.DomesticHotWater(fixture_environment,
+                                                    tFlow=60,
+                                                    thermal=True,
+                                                    method=1,  # Annex 42
+                                                    dailyConsumption=100,
+                                                    supplyTemperature=25)
+
+    #  Create occupancy
+    occupancy_object = occu.Occupancy(fixture_environment, number_occupants=3)
+
+    #  Create apartment
+    apartment = Apartment.Apartment(fixture_environment)
+
+    #  Add demands to apartment
+    apartment.addMultipleEntities([heat_demand, el_demand, dhw_annex42,
+                                   occupancy_object])
+
+    #  Create extended building object
+    fixture_detailed_building = \
+        build_ex.BuildingExtended(fixture_environment,
+                                  build_year=1962,
+                                  mod_year=2003,
+                                  build_type=0,
+                                  roof_usabl_pv_area=30,
+                                  net_floor_area=150,
+                                  height_of_floors=3,
+                                  nb_of_floors=2,
+                                  neighbour_buildings=0,
+                                  residential_layout=0,
+                                  attic=0, cellar=1,
+                                  construction_type='heavy',
+                                  dormer=0)
+    #  BuildingExtended holds further, optional input parameters,
+    #  such as ground_area, nb_of_floors etc.
+
+    #  Add apartment to extended building
+    fixture_detailed_building.addEntity(entity=apartment)
+
+    return fixture_detailed_building
 
 
 @pytest.fixture

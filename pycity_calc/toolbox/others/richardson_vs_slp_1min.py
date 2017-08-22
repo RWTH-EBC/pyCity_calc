@@ -12,10 +12,10 @@ from scipy.interpolate import interp1d
 
 import ebc_ues_plot.line_plots as uesline
 
-import pycity.classes.demand.ElectricalDemand as elec
-import pycity.classes.demand.Occupancy as occ
-import pycity.classes.Weather as weath
-import pycity.functions.changeResolution as chres
+import pycity_base.classes.demand.ElectricalDemand as elec
+import pycity_base.classes.demand.Occupancy as occ
+import pycity_base.classes.Weather as weath
+import pycity_base.functions.changeResolution as chres
 
 import pycity_calc.environments.co2emissions as co2
 import pycity_calc.environments.environment as env

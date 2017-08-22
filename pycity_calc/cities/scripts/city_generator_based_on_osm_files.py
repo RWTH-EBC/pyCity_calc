@@ -62,15 +62,15 @@ import os.path
 import numpy
 import utm
 
-import pycity.classes.demand.Apartment as Apartment
+import pycity_base.classes.demand.Apartment as Apartment
 import pycity_calc.cities.scripts.city_generator.city_generator as citgen
-import pycity.classes.demand.Occupancy as occup
+import pycity_base.classes.demand.Occupancy as occup
 import pycity_calc.buildings.building as build_ex
 import uesgraphs.uesgraph as ues
 
 import pycity_calc.cities.scripts.osm_call as osm
 
-def main():
+def main():  # pragma: no cover
 
     """
     BEGINNING OF USER INPUT

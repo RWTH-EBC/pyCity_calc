@@ -5,10 +5,13 @@ example to show how to use Calc_Buildingoccupancy
 Uses a slightly modified version example_city to create a city
 """
 from __future__ import division
-import pycity.classes.Weather as Weather
-import pycity.classes.demand.Apartment as Apartment
-import pycity.classes.demand.ElectricalDemand as ElectricalDemand
-import pycity.classes.demand.SpaceHeating as SpaceHeating
+
+import shapely.geometry.point as point
+
+import pycity_base.classes.Weather as Weather
+import pycity_base.classes.demand.Apartment as Apartment
+import pycity_base.classes.demand.ElectricalDemand as ElectricalDemand
+import pycity_base.classes.demand.SpaceHeating as SpaceHeating
 import pycity_calc.buildings.building as build_ex
 import pycity_calc.cities.city as city
 import pycity_calc.environments.co2emissions as co2
@@ -16,8 +19,8 @@ import pycity_calc.environments.environment as env
 import pycity_calc.environments.market as mark
 import pycity_calc.environments.timer as time
 import pycity_calc.toolbox.dimensioning.dim_functions as dimfunc
-import shapely.geometry.point as point
-import toolbox.data_enrichment.occupants.Calc_Buildingoccupancy as Calc_occ
+import \
+    pycity_calc.toolbox.data_enrichment.occupants.old.Calc_Buildingoccupancy as Calc_occ
 
 
 def run_example(n_buildings=3, net_floor_area=150):
@@ -124,13 +127,13 @@ def run_example(n_buildings=3, net_floor_area=150):
     print('Smallest max. th. power value in W:')
     print(th_p)
 
-
     return city_object
+
 
 if __name__ == '__main__':
 
-    city_Object= run_example(n_buildings=10,
-                             net_floor_area=200)
+    city_Object = run_example(n_buildings=10,
+                              net_floor_area=200)
     # change n_buildings and net_floor_are to see influence
 
     # determine_apart_num(city_Object, environment, BuildingTypes, custom_p)
@@ -154,4 +157,5 @@ if __name__ == '__main__':
         print("Building", node, "has", apartments,
               'Apartments, with following numbers of occupants:', [occ_list])
         print("Each apartment has a net_floor_area of:",
-              city_Object.node[node]['entity'].apartments[ap].net_floor_area[0:1][0],"m^2")
+              city_Object.node[node]['entity'].apartments[ap].net_floor_area[
+              0:1][0], "m^2")

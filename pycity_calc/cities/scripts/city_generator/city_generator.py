@@ -12,12 +12,12 @@ import random
 import datetime
 import shapely.geometry.point as point
 
-import pycity.classes.Weather as weath
-import pycity.classes.demand.SpaceHeating as SpaceHeating
-import pycity.classes.demand.ElectricalDemand as ElectricalDemand
-import pycity.classes.demand.Apartment as Apartment
-import pycity.classes.demand.DomesticHotWater as DomesticHotWater
-import pycity.classes.demand.Occupancy as occup
+import pycity_base.classes.Weather as weath
+import pycity_base.classes.demand.SpaceHeating as SpaceHeating
+import pycity_base.classes.demand.ElectricalDemand as ElectricalDemand
+import pycity_base.classes.demand.Apartment as Apartment
+import pycity_base.classes.demand.DomesticHotWater as DomesticHotWater
+import pycity_base.classes.demand.Occupancy as occup
 
 import pycity_calc.environments.timer as time
 import pycity_calc.environments.market as price
@@ -32,7 +32,7 @@ import pycity_calc.toolbox.mc_helpers.user.user_unc_sampling as usunc
 
 try:
     import teaser.logic.simulation.VDI_6007.weather as vdiweather
-except:
+except:  # pragma: no cover
     msg = 'Could not import TEASER package. If you need to use it, install ' \
           'it via pip "pip install TEASER". Alternatively, you might have ' \
           'run into trouble with XML bindings in TEASER. This can happen ' \
@@ -297,8 +297,13 @@ def constrained_sum_sample_pos(n, total):
         List with result integers, which sum up to value 'total'
     """
 
-    dividers = sorted(random.sample(range(1, total), n - 1))
-    return [a - b for a, b in zip(dividers + [total], [0] + dividers)]
+    dividers = sorted(random.sample(range(1, int(total)), int(n - 1)))
+    list_occ = [a - b for a, b in zip(dividers + [total], [0] + dividers)]
+
+    for i in range(len(list_occ)):
+        list_occ[i] = int(list_occ[i])
+
+    return list_occ
 
 
 def redistribute_occ(occ_list):
@@ -318,7 +323,7 @@ def redistribute_occ(occ_list):
 
     occ_list_new = occ_list[:]
 
-    if sum(occ_list_new) / len(occ_list_new) > 5:
+    if sum(occ_list_new) / len(occ_list_new) > 5:  #  pragma: no cover
         msg = 'Average number of occupants per apartment is higher than 5.' \
               ' This is not valid for usage of Richardson profile generator.'
         raise AssertionError(msg)
@@ -367,7 +372,7 @@ def redistribute_occ(occ_list):
                     #  Return original list
                     return occ_list_new
 
-    if nb_occ_redist:
+    if nb_occ_redist:  #  pragma: no cover
         raise AssertionError('Not all occupants could be distributed.'
                              'Check inputs and/or redistribute_occ() call.')
 
@@ -492,7 +497,7 @@ def generate_res_building_single_zone(environment, net_floor_area,
     pv_use_area : float, optional
         Usable pv area in m2 (default: None)
     height_of_floors : float
-        average height of the floors
+        average height of single floor
     nb_of_floors : int
         Number of floors above the ground
     neighbour_buildings : int
@@ -1011,7 +1016,7 @@ def generate_res_building_multi_zone(environment,
 
     # Loop over apartments
     #  #---------------------------------------------------------------------
-    for i in range(nb_of_apartments):
+    for i in range(int(nb_of_apartments)):
 
         #  Dummy init of number of occupants
         curr_number_occupants = None
@@ -1490,7 +1495,8 @@ def calc_el_dem_ap(nb_occ, el_random, type):
     return el_dem
 
 
-def calc_dhw_dem_ap(nb_occ, dhw_random, type):
+def calc_dhw_dem_ap(nb_occ, dhw_random, type, delta_t=35, c_p_water=4182,
+                    rho_water=995):
     """
     Calculate hot water energy demand per apartment per year
     in kWh/a (residential buildings, only)
@@ -1509,6 +1515,12 @@ def calc_dhw_dem_ap(nb_occ, dhw_random, type):
         Options:
         - 'sfh' : Single family house
         - 'mfh' : Multi family house
+    delta_t : float, optional
+        Temperature split of heated up water in Kelvin (default: 35)
+    c_p_water : float, optional
+        Specific heat capacity of water in J/kgK (default: 4182)
+    rho_water : float, optional
+        Density of water in kg/m3 (default: 995)
 
     Returns
     -------
@@ -1522,10 +1534,14 @@ def calc_dhw_dem_ap(nb_occ, dhw_random, type):
 
     if dhw_random:
         #  Choose first entry of random sample list
-        dhw_dem = usunc.calc_sampling_el_demand_per_apartment(
+        #  DHW volume in liters per apartment and day
+        dhw_volume = usunc.calc_sampling_dhw_per_apartment(
             nb_samples=1,
             nb_persons=nb_occ,
-            type=type)[0]
+            b_type=type)[0]
+
+        dhw_dem = dhw_volume * 365 * rho_water * c_p_water * delta_t / \
+                  (1000 * 3600 * 1000)
     else:
         #  Choose average value depending on nb_occ
         #  Class D without hot water (Stromspiegel 2017)
@@ -1778,19 +1794,19 @@ def run_city_generator(generation_mode, timestep, year, location,
 
     assert eff_factor > 0, 'Efficiency factor has to be larger than zero.'
     assert eff_factor <= 1, 'Efficiency factor cannot increase value 1.'
-    if dhw_volumen is not None:
+    if dhw_volumen is not None:  # pragma: no cover
         assert dhw_volumen >= 0, 'Hot water volume cannot be below zero.'
 
-    if generation_mode == 1:
+    if generation_mode == 1: # pragma: no cover
         assert city_osm is not None, 'Generation mode 1 requires city object!'
 
-    if vdi_sh_manipulate is True and th_gen_method == 3:
+    if vdi_sh_manipulate is True and th_gen_method == 3: # pragma: no cover
         msg = 'Simulated profiles of VDI 6007 call (TEASER --> ' \
               'space heating) is going to be normalized with annual thermal' \
               ' space heating demand values given by user!'
         warnings.warn(msg)
 
-    if do_log:
+    if do_log: # pragma: no cover
         #  Write log file
         #  ################################################################
 
@@ -2086,7 +2102,7 @@ def run_city_generator(generation_mode, timestep, year, location,
             if curr_method_4_nb is not None:
                 curr_method_4_nb >= 0
 
-            if curr_build_type == 0 and curr_nb_of_apartments is None:
+            if curr_build_type == 0 and curr_nb_of_apartments is None:  # pragma: no cover
                 #  Define single apartment, if nb of apartments is unknown
                 msg = 'Building ' + str(curr_id) + ' is residential, but' \
                                                    ' does not have a number' \
@@ -2299,13 +2315,13 @@ def run_city_generator(generation_mode, timestep, year, location,
 
                 #  Get spec. demands and slp types according to building_type
                 curr_spec_th_demand = \
-                    spec_dem_and_slp_non_res[curr_build_type - 1][2]
+                    spec_dem_and_slp_non_res[curr_build_type - 2][2]
                 curr_spec_el_demand = \
-                    spec_dem_and_slp_non_res[curr_build_type - 1][3]
+                    spec_dem_and_slp_non_res[curr_build_type - 2][3]
                 curr_th_slp_type = \
-                    spec_dem_and_slp_non_res[curr_build_type - 1][4]
+                    spec_dem_and_slp_non_res[curr_build_type - 2][4]
                 curr_el_slp_type = \
-                    spec_dem_and_slp_non_res[curr_build_type - 1][5]
+                    spec_dem_and_slp_non_res[curr_build_type - 2][5]
 
                 #  Convert slp type integers into strings
                 curr_th_slp_type = convert_th_slp_int_and_str(curr_th_slp_type)
@@ -2591,7 +2607,7 @@ def run_city_generator(generation_mode, timestep, year, location,
                                           city=city_object,
                                           generate_Output=False)
 
-        if do_save:
+        if do_save:  # pragma: no cover
 
             if path_save_city is None:
                 if pickle_city_filename is None:
@@ -2611,7 +2627,7 @@ def run_city_generator(generation_mode, timestep, year, location,
             except:
                 warnings.warn('Could not pickle and save city object')
 
-        if do_log:
+        if do_log:  # pragma: no cover
 
             if pickle_city_filename is not None:
                 log_file.write('pickle_city_filename: ' +
@@ -2622,7 +2638,7 @@ def run_city_generator(generation_mode, timestep, year, location,
             log_file.close()
 
         # Visualize city
-        if show_city:
+        if show_city:  # pragma: no cover
             #  Plot city district
             try:
                 citvis.plot_city_district(city=city_object,
@@ -2703,7 +2719,7 @@ if __name__ == '__main__':
     do_normalization = True
 
     #  Randomize electrical demand value (residential buildings, only)
-    el_random = False
+    el_random = True
 
     #  Prevent usage of electrical heating and hot water devices in
     #  electrical load generation (only relevant if el_gen_method == 2)
@@ -2736,13 +2752,13 @@ if __name__ == '__main__':
     dhw_volumen = None  # Only relevant for residential buildings
 
     #  Randomize choosen dhw_volume reference value by selecting new value
-    dhw_random = False
+    dhw_random = True
 
     #  Input file names and pathes
     #  ######################################################
     #  Define input data filename
 
-    filename = 'city_3_buildings_mixed.txt'
+    filename = 'city_3_buildings.txt'
     # filename = 'city_clust_simple.txt'
     # filename = 'aachen_forsterlinde_mod_6.txt'
     # filename = 'aachen_frankenberg_mod_6.txt'

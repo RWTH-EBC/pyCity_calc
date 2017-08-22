@@ -5,12 +5,12 @@ Example script of Nadine Lermer for pypower usage with pycity
 from __future__ import division
 __author__ = 'jsc-nle'
 
-import pycity.classes.Weather as Weather
-import pycity.classes.Environment as Environment
-import pycity.classes.Prices as Prices
+import pycity_base.classes.Weather as Weather
+import pycity_base.classes.Environment as Environment
+import pycity_base.classes.Prices as Prices
 import pycity_calc.buildings.building as Building
-import pycity.classes.demand.ElectricalDemand as ElectricalDemand
-import pycity.classes.demand.Apartment as Apartment
+import pycity_base.classes.demand.ElectricalDemand as ElectricalDemand
+import pycity_base.classes.demand.Apartment as Apartment
 
 import pycity_calc.extern_el_grid.PowerGrid as PowerGrid
 import pycity_calc.environments.timer as Timer
@@ -112,23 +112,25 @@ def run_example_1():
     #   power flow calculation
     results = power_grid.power_flow_calculation(save=False, start=25, end=45)
 
-    print('Evaluate power flow results')
-    print('###########################################')
-    print()
+    # print('Evaluate power flow results')
+    # print('###########################################')
+    # print()
 
-    #   power flow evaluation
-    res_city_district = power_grid.power_flow_evaluation(results)
+    #  FIXME: Not working, any more
 
+    # #   power flow evaluation
+    # res_city_district = power_grid.power_flow_evaluation(results)
+    #
+    #
+    # #   check results for off-limit conditions
+    # power_grid.check_off_limit_conditions(res_city_district)
+    #
+    # print('Start power flow visualization')
+    # print('###########################################')
+    # print()
 
-    #   check results for off-limit conditions
-    power_grid.check_off_limit_conditions(res_city_district)
-
-    print('Start power flow visualization')
-    print('###########################################')
-    print()
-
-    #   animation
-    power_grid.power_flow_animation(res_city_district)
+    # #   animation
+    # power_grid.power_flow_animation(res_city_district)
 
     print("END")
 
