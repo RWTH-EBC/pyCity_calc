@@ -14,7 +14,7 @@ import ebc_ues_plot.line_plots as uesline
 
 if __name__ == '__main__':
     #  City pickle filename
-    city_file = 'aachen_forsterlinde_5.pkl'
+    city_file = 'aachen_forsterlinde_mod_new_1.pkl'
 
     print('Analyse city file: ', city_file)
 
