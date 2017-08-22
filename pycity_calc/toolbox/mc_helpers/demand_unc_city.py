@@ -160,7 +160,7 @@ if __name__ == '__main__':
 
     #  User Inputs
     #  ##############################
-    nb_samples = 5
+    nb_samples = 2
     time_sp_force_retro = 50
     max_retro_year = 2014
     weather_region = 5
@@ -174,7 +174,10 @@ if __name__ == '__main__':
     #city_f_name = 'aachen_preusweg_mod_6.pkl'
     #city_f_name = 'aachen_tuerme_mod_6.pkl'
 
-    city_f_name = 'city_3_buildings_mixed.pkl'
+    # city_f_name = 'city_3_buildings_mixed.pkl'
+
+    city_f_name = 'city_innenstadt_mod_new_1.pkl'
+    # city_f_name = 'city_rheinbaben_sued_mod_new_1.pkl'
 
     save_f_name = city_f_name[:-4] + '_mc_city_samples_' + str(nb_samples) + '.pkl'
 
