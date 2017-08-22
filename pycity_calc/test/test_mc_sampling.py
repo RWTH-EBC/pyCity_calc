@@ -362,3 +362,28 @@ class Test_MC_Sampling():
                                          weather_region=5,
                                          weather_year=2010,
                                          nb_occ_unc=True)
+
+    def test_mc_non_res(self, fixture_building):
+
+        building = copy.deepcopy(fixture_building)
+
+        building.build_type = 2
+
+        nb_samples = 2
+
+        (list_sh, list_el) = mc_build.non_res_build_unc_sampling(
+            exbuilding=building, nb_samples=nb_samples, sh_unc=True,
+            el_unc=True, th_factor=0.5, el_factor=0.5)
+
+        assert len(list_sh) == 2
+        assert len(list_el) == 2
+
+        sh_dem = building.get_annual_space_heat_demand()
+        el_dem = building.get_annual_el_demand()
+
+        for i in range(len(list_sh)):
+            sh_sample = list_sh[i]
+            el_sample = list_el[i]
+
+            assert abs(sh_sample - sh_dem) <= 0.5001 * sh_dem
+            assert abs(el_sample - el_dem) <= 0.5001 * el_dem
