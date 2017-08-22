@@ -341,9 +341,9 @@ if __name__ == '__main__':
     #  Generate environment
     year = 2010
     timestep = 3600  # Timestep in seconds
-    # location = (51.529086, 6.944689)  # (latitude, longitude) of Bottrop
-    location = (50.775346, 6.083887)  # (latitude, longitude) of Aachen
-    altitude = 266  # Altitude of location in m (Aachen)
+    location = (51.529086, 6.944689)  # (latitude, longitude) of Bottrop
+    # location = (50.775346, 6.083887)  # (latitude, longitude) of Aachen
+    altitude = 55  # Altitude of location in m (Aachen)
 
     #  Weather path
     try_path = None
@@ -393,7 +393,7 @@ if __name__ == '__main__':
     do_normalization = True
 
     #  Randomize electrical demand value (residential buildings, only)
-    el_random = True
+    el_random = False
 
     #  Prevent usage of electrical heating and hot water devices in
     #  electrical load generation
@@ -427,7 +427,7 @@ if __name__ == '__main__':
 
     #  Randomize choosen dhw_volume reference value by selecting new value
     #  from gaussian distribution with 20 % standard deviation
-    dhw_random = True
+    dhw_random = False
 
     #  Input file names and pathes
     #  ######################################################
@@ -439,10 +439,10 @@ if __name__ == '__main__':
     eff_factor = 0.85
 
     #  Define city district input data filename
-    filename = 'city_clust_simple.txt'
+    filename = 'wm_res_east_7.txt'
 
     #  Define ouput data filename (pickled city object)
-    city_f_out_name = 'city_clust_simple.pkl'
+    city_f_out_name = 'wm_res_east_7_richardsonpy.pkl'
 
     #  Pickle and dump city object instance?
     do_save = True
@@ -479,8 +479,8 @@ if __name__ == '__main__':
     #   If True, Windows are merged into wall resistances.
 
     #  Names of street node and edge files
-    str_node_filename = 'street_nodes_cluster_simple.csv'
-    str_edge_filename = 'street_edges_cluster_simple.csv'
+    str_node_filename = 'street_nodes_wm_res_east.csv'
+    str_edge_filename = 'street_edges_wm_res_east.csv'
 
     #  Load street data from csv
     this_path = os.path.dirname(os.path.abspath(__file__))
