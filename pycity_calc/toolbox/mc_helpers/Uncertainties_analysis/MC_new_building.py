@@ -192,29 +192,6 @@ def new_building_evaluation_mc(building, new_weather, max_retro_year=2014, time_
     print('############################################################')
     print()
 
-    #for j in range(len(new_building.apartments)):
-        #elcurve = chgr.changeResolution(new_building.apartments[j].power_el.loadcurve,
-                                        #oldResolution = len(new_building.apartments[j].power_el.loadcurve),
-                                        #newResolution=8760 )
-
-        #new_building.apartments[j].power_el.loadcurve = elcurve
-
-        #print(len(new_building.apartments[j].power_el.loadcurve))
-
-        #space_heating = chgr.changeResolution(values = new_building.apartments[j].demandSpaceheating.loadcurve,
-                                                                 #oldResolution = len(new_building.apartments[j].demandSpaceheating.loadcurve),
-                                                                 #newResolution=8760 )
-        #new_building.apartments[j].demandSpaceheating.loadcurve = space_heating
-        #dhwapp = chgr.changeResolution(values = new_building.apartments[j].demandDomesticHotWater.loadcurve,
-                                                                 #oldResolution=len(new_building.apartments[j].demandDomesticHotWater.loadcurve),
-                                                                 #newResolution=8760)
-
-        #new_building.apartments[j].demandDomesticHotWater.loadcurve = dhwapp
-
-    print(new_building.get_electric_power_curve())
-    print(new_building.get_space_heating_power_curve())
-    print(new_building.get_dhw_power_curve())
-
     return new_building,  dict_problem, el_demand, dhw_energy, sum_heat
 
 if __name__ == '__main__':

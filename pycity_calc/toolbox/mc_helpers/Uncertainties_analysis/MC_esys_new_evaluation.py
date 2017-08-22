@@ -105,13 +105,13 @@ def gen_esys_unknown (building, recent_systems=True):
     # Battery
     if ex_building.bes.hasBattery == True:
         if recent_systems:
-            building.bes.battery.eta_charge = rd.uniform(0.88,0.96)
-            building.bes.battery.eta_discharge = rd.uniform(0.88,0.96)
-            building.bes.battery.self_discharge = rd.uniform(0.88,0.96)
+            building.bes.battery.eta_charge = rd.uniform(0.90,0.96)
+            building.bes.battery.eta_discharge = rd.uniform(0.90,0.96)
+            building.bes.battery.self_discharge = rd.uniform(0.90,0.96)
         else:
-            building.bes.battery.eta_charge = rd.uniform(0.8, 0.96)
-            building.bes.battery.eta_discharge = rd.uniform(0.8, 0.96)
-            building.bes.battery.self_discharge = rd.uniform(0.8, 0.96)
+            building.bes.battery.eta_charge = rd.uniform(0.85, 0.96)
+            building.bes.battery.eta_discharge = rd.uniform(0.85, 0.96)
+            building.bes.battery.self_discharge = rd.uniform(0.85, 0.96)
 
     ''' Removed because of some bugs'''
     # Thermal storage
@@ -153,10 +153,10 @@ def gen_esys_unknown (building, recent_systems=True):
     if building.bes.hasBoiler == True:
         print('rescale Boiler 1')
         if recent_systems:
-            building.bes.boiler.eta = rd.uniform(0.85,0.91)
+            building.bes.boiler.eta = rd.uniform(0.9,0.95)
 
         else:
-            building.bes.boiler.eta = rd.uniform(0.8, 0.90)
+            building.bes.boiler.eta = rd.uniform(0.85, 0.95)
 
 
     # Combined heat pump
@@ -165,20 +165,20 @@ def gen_esys_unknown (building, recent_systems=True):
             building.bes.chp.omega = rd.uniform(0.9,0.94)
 
         else:
-            building.bes.chp.omega = rd.uniform(0.88,0.93)
+            building.bes.chp.omega = rd.uniform(0.88,0.94)
 
     # Electrical heater
     if ex_building.bes.hasElectricalHeater == True:
         if recent_systems:
-            building.bes.electricalHeater.eta = rd.uniform(0.9,0.99)
+            building.bes.electricalHeater.eta = rd.uniform(0.95,0.99)
 
         else:
-            building.bes.electricalHeater.eta = rd.uniform(0.8, 0.99)
+            building.bes.electricalHeater.eta = rd.uniform(0.9, 0.99)
 
     # Heat pump
-    if ex_building.bes.hasHeatpump == True:
+    #if ex_building.bes.hasHeatpump == True:
 
-        building.bes.heatpump.lower_activation_limit = rd.uniform(0.1,0.3)
+        #building.bes.heatpump.lower_activation_limit = rd.uniform(0.1,0.3)
         #building.bes.heatpump.t_max = rd.uniform(80,100)
         #building.bes.heatpump.t_sink = rd.uniform(20,25)
 
@@ -186,8 +186,8 @@ def gen_esys_unknown (building, recent_systems=True):
     if ex_building.bes.hasPv == True:
         if recent_systems:
 
-            building.bes.pv.eta = rd.uniform(0.17,0.2)
-            building.bes.pv.temperature_nominal = rd.uniform(18,25)
+            building.bes.pv.eta = rd.uniform(0.15,0.2)
+            #building.bes.pv.temperature_nominal = rd.uniform(18,25)
 
         else:
 
@@ -196,7 +196,6 @@ def gen_esys_unknown (building, recent_systems=True):
         #building.bes.pv.alpha = rd.uniform(0.8, 0.9)
         building.bes.pv.beta = rd.uniform(0, 45)
         building.bes.pv.gamma = rd.uniform(-45,45 )
-
 
     return building
 
@@ -238,14 +237,14 @@ def MC_new_esys_evaluation (building):
         dict_build_esys_sampl['battery']['Battery_eta_discharge']=building.bes.battery.eta_discharge
         dict_build_esys_sampl['battery']['Battery_self_discharge']=building.bes.battery.self_discharge
 
-    if ex_building.bes.hasTes == True:
+    #if ex_building.bes.hasTes == True:
         #building.bes.tes.tMax = rd.normalvariate(mu= ex_building.bes.tes.t_max,sigma = 0.1)
         #building.bes.tes.t_min = rd.normalvariate(mu= ex_building.bes.tes.t_min,sigma = 0.1)
         #building.bes.tes.t_surroundings = rd.normalvariate(mu= ex_building.bes.tes.t_surroundings ,sigma = 0.1)
         #building.bes.tes.k_loss = rd.normalvariate(mu= ex_building.bes.tes.k_loss,sigma = 0.1)
         #building.bes.tes.t_init = rd.normalvariate(mu= ex_building.bes.tes.t_init,sigma = 0.1)
-        dict_build_esys_sampl['TES'] = {}
-        dict_build_esys_sampl['TES']['TES_kloss'] = building.bes.tes.k_loss
+        #dict_build_esys_sampl['TES'] = {}
+        #dict_build_esys_sampl['TES']['TES_kloss'] = building.bes.tes.k_loss
         #dict_build_esys_sampl['TES']['TES_Tmax'] = building.bes.tes.t_min
         #dict_build_esys_sampl['TES']['TES_Tmin'] = building.bes.tes.t_max
 
@@ -257,8 +256,8 @@ def MC_new_esys_evaluation (building):
         if building.bes.boiler.eta < 0.70:
             building.bes.boiler.eta = 0.85
 
-        elif building.bes.boiler.eta > 0.90:
-            building.bes.boiler.eta = 0.85
+        elif building.bes.boiler.eta > 0.96:
+            building.bes.boiler.eta = 0.9
 
         print('Rescaleboiler',building.bes.boiler.eta )
         dict_build_esys_sampl['boiler']={}
@@ -287,15 +286,15 @@ def MC_new_esys_evaluation (building):
 
         #building.bes.electricalHeater.t_max = rd.normalvariate(mu= ex_building.bes.electricalHeater.t_max,
                                                                         #sigma = 0.1)
-        dict_build_esys_sampl['EH']={}
-        dict_build_esys_sampl['EH']['EH_eta'] = building.bes.electricalHeater.eta
+        #dict_build_esys_sampl['EH']={}
+        #dict_build_esys_sampl['EH']['EH_eta'] = building.bes.electricalHeater.eta
 
-    if ex_building.bes.hasHeatpump == True:
-        building.bes.heatpump.lower_activation_limit = rd.normalvariate(mu= ex_building.bes.heatpump.lower_activation_limit,
-                                                                        sigma = 0.1)
+    #if ex_building.bes.hasHeatpump == True:
+        #building.bes.heatpump.lower_activation_limit = rd.normalvariate(mu= ex_building.bes.heatpump.lower_activation_limit,
+                                                                        #sigma = 0.1)
 
-        dict_build_esys_sampl['HP']={}
-        dict_build_esys_sampl['HP']['HP_lal'] = building.bes.heatpump.lower_activation_limit
+        #dict_build_esys_sampl['HP']={}
+        #dict_build_esys_sampl['HP']['HP_lal'] = building.bes.heatpump.lower_activation_limit
         #dict_build_esys_sampl['HP']['HP_tsink'] = building.bes.heatpump.t_sink
 
 
