@@ -13,7 +13,8 @@ import warnings
 import numpy as np
 
 
-def save_city_data_to_file(city, save_path, with_esys=False):
+def save_city_data_to_file(city, save_path, with_esys=False,
+                           use_german=False):
     """
     Saves city object data to output file.
 
@@ -26,6 +27,9 @@ def save_city_data_to_file(city, save_path, with_esys=False):
     with_esys : bool, optional
         Defines, if information about energy systems should be saved, too.
         (default: False)
+    use_german : bool, optional
+        Defines, if English or German language should be used
+        (default: False). If False, uses English language.
     """
 
     if with_esys is False:
@@ -154,15 +158,29 @@ def save_city_data_to_file(city, save_path, with_esys=False):
                         pass
 
     # Define header
-    header = 'id\tX\tY\tbuilding_type\ttab_ease_building_net_floor_area' \
-             '\ttab_ease_building_build_year\ttab_ease_building_mod_year' \
-             '\tAnnual space heat e demand in kWh' \
-             '\tAnnual electr. E demand in kWh\tUsable pv roof area in m2' \
-             '\tNumber of apartments\tTotal number of occupants' \
-             '\tNumber of floors\tHeight of floors\twith ahu' \
-             '\tresidential layout\tneighbour buildings\tattic\tcellar' \
-             '\tdormer\tconstruction type\tdhw e demand in kWh\t' \
-             'ground area in m2'
+    if use_german:
+        header = u'ID\tX-Koordinate in m\tY-Koordinate in m\tGebäudetyp' \
+                 u'\tNettogrundfläche in m2' \
+                 u'\tBaujahr\tLetztes Sanierungsjahr' \
+                 u'\tJährlicher Nutzenergiebedarf Raumwärme in kWh' \
+                 u'\tJährlicher elektrischer Energiebedarf (ohne Warmwasser) in kWh' \
+                 u'\tNutzbare Photovoltaik Dachfläche in m2' \
+                 u'\tAnzahl Apartments\tAnzahl Bewohner' \
+                 u'\tAnzahl Geschosse\tMittlere Geschosshöhe\tMit Klimaanlage' \
+                 u'\tWohngebäudelayout\tNachbargebäude\tTyp Dach\tTyp Keller' \
+                 u'\tDachgauben\tArt der Konstruktion\tWarmwasserbedarf in kWh\t' \
+                 u'Bebaute Grundfläche in m2'
+
+    else:
+        header = 'id\tX\tY\tbuilding_type\ttab_ease_building_net_floor_area' \
+                 '\ttab_ease_building_build_year\ttab_ease_building_mod_year' \
+                 '\tAnnual space heat e demand in kWh' \
+                 '\tAnnual electr. E demand in kWh\tUsable pv roof area in m2' \
+                 '\tNumber of apartments\tTotal number of occupants' \
+                 '\tNumber of floors\tHeight of floors\twith ahu' \
+                 '\tresidential layout\tneighbour buildings\tattic\tcellar' \
+                 '\tdormer\tconstruction type\tdhw e demand in kWh\t' \
+                 'ground area in m2'
 
     #  Replace all None with np.nan to prevent saving errors
     for i in range(len(data_array)):
@@ -254,6 +272,9 @@ if __name__ == '__main__':
     #  City file name (to
     city_f_name = 'city_clust_simple.p'
 
+    use_german = False
+    with_esys = False
+
     #  Path to load city object
     city_path = os.path.join(this_path, 'input', city_f_name)
     # city_path = os.path.join(src_path, 'cities', 'scripts', 'input_osm',
@@ -272,7 +293,8 @@ if __name__ == '__main__':
     city = pickle.load(open(city_path, mode='rb'))
 
     #  Extract and save city object data
-    save_city_data_to_file(city=city, save_path=out_path, with_esys=False)
+    save_city_data_to_file(city=city, save_path=out_path, with_esys=with_esys,
+                           use_german=use_german)
 
     #  Extract all building load profiles and write them to file
     #  extract_and_save_building_load_profiles(city=city, save_path=out_path)
