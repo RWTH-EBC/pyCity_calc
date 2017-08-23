@@ -3,10 +3,7 @@
 
 # But not these files...
 !.gitignore
-MC_esys_new_evaluation.py
-MC_new_building.py
-MC_new_cities_evaluation.py
-Uncertainties_script.py
+!.mc_results.txt
 
 # ...even if they are in subdirectories
 !*/

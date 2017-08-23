@@ -121,7 +121,7 @@ def building_unc_sampling(exbuilding, nb_samples, max_retro_year=2014,
         # Average height of floor sampling
         list_average_height_of_floor = bunc.calc_list_net_floor_area_sampling(nb_of_samples=nb_samples,
                                                                               sigma=(
-                                                                              exbuilding.height_of_floors * 0.005),
+                                                                              exbuilding.height_of_floors * 0.01),
                                                                               mean=exbuilding.height_of_floors)
         dict_samples['height_of_floor'] = list_average_height_of_floor
 

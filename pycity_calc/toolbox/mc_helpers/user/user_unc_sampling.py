@@ -9,7 +9,7 @@ import numpy as np
 from scipy.stats import nakagami
 
 
-def calc_set_temp_samples(nb_samples, mean=20, sdev=2):
+def calc_set_temp_samples(nb_samples, mean=20, sdev=2.5):
     """
     Calculate list of indoor set temperature values from gaussian distribution.
 

@@ -48,11 +48,7 @@ price_ch_op	0.9	1.1
 price_ch_EEG_Umlage_tax_chp	0.9	1.1
 price_ch_EEG_Umlage_tax_pv	0.9	1.1
 price_EEX_baseload_price	0.9	1.1
-price_ch_avoid_grid_usage	0.9	1.1
-price_ch_sub_chp	0.9	1.1
-price_ch_self_usage_chp	0.9	1.1
-price_ch_gas_disc_chp	0.9	1.1
-price_ch_sub_pv	0.9	1.1
+specific_cost	0.8	1.2
 life_factor	0.3	1.3
 maintenance_factor	0.5	1.5
-interest	0.001	0.2
+interest	0.001	0.1

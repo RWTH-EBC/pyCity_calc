@@ -105,9 +105,9 @@ def gen_esys_unknown (building, recent_systems=True):
     # Battery
     if ex_building.bes.hasBattery == True:
         if recent_systems:
-            building.bes.battery.eta_charge = rd.uniform(0.90,0.96)
-            building.bes.battery.eta_discharge = rd.uniform(0.90,0.96)
-            building.bes.battery.self_discharge = rd.uniform(0.90,0.96)
+            building.bes.battery.eta_charge = rd.uniform(0.9,0.96)
+            building.bes.battery.eta_discharge = rd.uniform(0.9,0.96)
+            building.bes.battery.self_discharge = rd.uniform(0.9,0.96)
         else:
             building.bes.battery.eta_charge = rd.uniform(0.85, 0.96)
             building.bes.battery.eta_discharge = rd.uniform(0.85, 0.96)
@@ -151,21 +151,20 @@ def gen_esys_unknown (building, recent_systems=True):
 
     # Boiler
     if building.bes.hasBoiler == True:
-        print('rescale Boiler 1')
         if recent_systems:
-            building.bes.boiler.eta = rd.uniform(0.9,0.95)
+            building.bes.boiler.eta = rd.uniform(0.85,0.95)
 
         else:
-            building.bes.boiler.eta = rd.uniform(0.85, 0.95)
+            building.bes.boiler.eta = rd.uniform(0.80, 0.95)
 
 
     # Combined heat pump
     if building.bes.hasChp == True:
         if recent_systems:
-            building.bes.chp.omega = rd.uniform(0.9,0.94)
+            building.bes.chp.omega = rd.uniform(0.88,0.93)
 
         else:
-            building.bes.chp.omega = rd.uniform(0.88,0.94)
+            building.bes.chp.omega = rd.uniform(0.85,0.93)
 
     # Electrical heater
     if ex_building.bes.hasElectricalHeater == True:
@@ -191,7 +190,7 @@ def gen_esys_unknown (building, recent_systems=True):
 
         else:
 
-            building.bes.pv.eta = rd.uniform(0.14,0.2 )
+            building.bes.pv.eta = rd.uniform(0.12,0.2 )
 
         #building.bes.pv.alpha = rd.uniform(0.8, 0.9)
         building.bes.pv.beta = rd.uniform(0, 45)
@@ -311,9 +310,9 @@ def MC_new_esys_evaluation (building):
         if building.bes.pv.eta < 10 or building.bes.pv.eta > 25:
             building.bes.pv.eta = 0.16
 
-        building.bes.pv.beta = rd.normalvariate(mu= ex_building.bes.pv.beta, sigma = 0.5)
+        building.bes.pv.beta = rd.normalvariate(mu= ex_building.bes.pv.beta, sigma = 1)
 
-        building.bes.pv.gamma = rd.normalvariate(mu= ex_building.bes.pv.gamma, sigma = 0.5)
+        building.bes.pv.gamma = rd.normalvariate(mu= ex_building.bes.pv.gamma, sigma = 1)
 
 
         dict_build_esys_sampl['PV']={}
@@ -410,19 +409,6 @@ def gen_esys_for_city(city, list_data, size_esys = False, boiler_buffer_factor=1
         # #-------------------------------------------------------------
         if type == 1:  # Boiler
         #  #-------------------------------------------------------------
-
-            '''#  Check if chosen node_id building is connected via lhn to
-            #  other buildings
-            n_list = city.neighbors(node_id)
-
-            if n_list != []:
-                for nei in n_list:
-                    if 'network_type' in city.edge[node_id][nei]:
-                        if (city.edge[node_id][nei]['network_type'] == 'heating' or
-                                    city.edge[node_id][nei]['network_type'] == 'heating_and_deg'):
-                            raise AssertionError('Building ' + str(node_id) +
-                                                 ' should not be connected ' +
-                                                 'to lhn!')'''
 
             #  Size boiler with max. building th. power load
             if size_esys:

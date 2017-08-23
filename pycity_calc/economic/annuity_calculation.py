@@ -706,7 +706,7 @@ class EconomicCalculation(object):
 
         return cap_rel_annuity
 
-    def calc_cost_spe(self, mean_spe=1.0 , sdev=0.1, max_val=1.5, min_val=0.5):
+    def calc_cost_spe(self, mean_spe=(-0.048) , sdev=0.095, max_val=1.5, min_val=0.5):
         """
         Performs cost specific factor sampling.
         Reset values larger than max_val to 1
@@ -727,17 +727,18 @@ class EconomicCalculation(object):
         """
         factor = np.random.lognormal(mean=mean_spe, sigma=sdev)
 
-        #  Reset values larger than 1.5 to 1
+        #  Reset values larger than 1.5 to 1.1
         if factor > max_val:
-            factor = 1
-
+            factor = factor/2
+            if factor > max_val:
+                factor = 1.1
         # Reset values lower than 0.5
         elif factor < min_val:
-            factor = 1
-
+            factor = 0.9
+        print(factor, '---------------------------------------------------------------------------------')
         return factor
 
-    def calc_cap_rel_annuity_city(self, city_object, cost_spe=False, tes_pow_ref = 10 ):
+    def calc_cap_rel_annuity_city(self, city_object, cost_spe=False, th_pow_ref = None ):
         """
         Calculate sum of all capital related annuities of city
 
@@ -745,6 +746,10 @@ class EconomicCalculation(object):
         ----------
         city_object : object
             City object
+        cost_spe : Boolean
+            Declare if specific costs should be considered has uncertain and be rescaled
+        th_pow_ref: dict
+            If different from None: Take this maximum thermal power to calculate lhn specific costs
 
         Returns
         -------
@@ -918,8 +923,8 @@ class EconomicCalculation(object):
                                 th_pow = dimfunc.get_max_power_of_building(build,with_dhw=False)
 
                                 # lhn power have to be diffrent from zero
-                                if th_pow ==0:
-                                    th_pow = tes_pow_ref
+                                if th_pow_ref is not None:
+                                    th_pow = th_pow_ref[str(n)]
 
                                 list_th_pow.append(th_pow / 1000)  # Convert W to kW
 
@@ -1756,7 +1761,7 @@ class EconomicCalculation(object):
         return ann_proc - (ann_capital + ann_demand + ann_op)
 
 
-    def calc_cap_and_op_rel_annuity_city(self, city_object, cost_spe=False, tes_pow_ref = 10):
+    def calc_cap_and_op_rel_annuity_city(self, city_object, cost_spe=False, tes_pow_ref = None):
         """
         Calculate capital- and operation-related annuities of city
 
@@ -1770,10 +1775,17 @@ class EconomicCalculation(object):
         tup_ann : tuple (of floats)
             Tuple with capital- and operation-related annuities (floats) in Euro
             (cap_rel_ann, op_rel_ann)
+        cost_spe : Boolean
+            Declare if specific costs should be considered has uncertain and be rescaled
+        th_pow_ref: dict
+            If different from None: Take this maximum thermal power to calculate lhn specific costs
+
         """
 
         #  Calculate capital-related annuities
-        (cap_rel_ann, list_invest, list_type) = self.calc_cap_rel_annuity_city(city_object=city_object, cost_spe=cost_spe, tes_pow_ref=tes_pow_ref)
+        (cap_rel_ann, list_invest, list_type) = self.calc_cap_rel_annuity_city(city_object=city_object,
+                                                                               cost_spe=cost_spe,
+                                                                               th_pow_ref=tes_pow_ref)
 
         #  Calculate operation-related annuity
         op_rel_ann = self.calc_op_rel_annuity_multi_comp(list_invest=list_invest,list_types=list_type)

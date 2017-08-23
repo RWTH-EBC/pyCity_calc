@@ -378,7 +378,7 @@ def evaluate(City, values):
         ############################################
 
         time = 10  # Years
-        interest = row[57]  # Interest rate
+        interest = row[53]  # Interest rate
         print ('\n New interest: {}'.format(interest))
 
         price_ch_cap = row[43]
@@ -388,13 +388,9 @@ def evaluate(City, values):
         price_ch_EEG_Umlage_tax_chp = row[47]
         price_ch_EEG_Umlage_tax_pv = row[48]
         price_EEX_baseload_price = row[49]
-        price_ch_avoid_grid_usage = row[50]
-        price_ch_sub_chp = row[51]
-        price_ch_self_usage_chp = row[52]
-        price_ch_gas_disc_chp = row[53]
-        price_ch_sub_pv = row[54]
-        life_factor = row[54]
-        maintenance_factor = row[56]
+        specific_cost = row[50]
+        life_factor = row[51]
+        maintenance_factor = row[52]
 
         print("Annuity calculation")
         Market_instance = Mark.GermanMarket()
@@ -406,12 +402,7 @@ def evaluate(City, values):
                                                 price_ch_op=price_ch_op,
                                                 price_ch_eeg_chp=price_ch_EEG_Umlage_tax_chp,
                                                 price_ch_eeg_pv=price_ch_EEG_Umlage_tax_pv,
-                                                price_ch_eex=price_EEX_baseload_price,
-                                                price_ch_grid_use=price_ch_avoid_grid_usage,
-                                                price_ch_chp_sub=price_ch_sub_chp,
-                                                price_ch_chp_self=price_ch_self_usage_chp,
-                                                price_ch_chp_tax_return=price_ch_gas_disc_chp,
-                                                price_ch_pv_sub=price_ch_sub_pv)
+                                                price_ch_eex=price_EEX_baseload_price)
 
         # Modification lifetime and maintenance
         for key1 in eco_inst.dict_lifetimes.keys():
@@ -430,7 +421,7 @@ def evaluate(City, values):
         total_proc_annuity = eco_inst.calc_proc_annuity_multi_comp_city(City)
         cap_rel_ann, op_rel_ann = eco_inst.calc_cap_and_op_rel_annuity_city(City)
 
-        total_annuity = eco_inst.calc_total_annuity(ann_capital=cap_rel_ann,
+        total_annuity = eco_inst.calc_total_annuity(ann_capital=cap_rel_ann*specific_cost,
                                                          ann_demand=dem_rel_annuity,
                                                          ann_op=op_rel_ann,
                                                          ann_proc=total_proc_annuity)

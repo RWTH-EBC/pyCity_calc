@@ -466,7 +466,7 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
     print("Annuity calculations")
     dem_rel_annuity = eco_inst.calc_dem_rel_annuity_city(City,)
     total_proc_annuity = eco_inst.calc_proc_annuity_multi_comp_city(City)
-    cap_rel_ann, op_rel_ann = eco_inst.calc_cap_and_op_rel_annuity_city(City, cost_spe=True)
+    cap_rel_ann, op_rel_ann = eco_inst.calc_cap_and_op_rel_annuity_city(City, cost_spe=False)
 
     total_annuity_ref = eco_inst.calc_total_annuity(ann_capital=cap_rel_ann,
                                                     ann_demand=dem_rel_annuity,
@@ -548,7 +548,7 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
 
     Th_results, Gas_results, El_results, Annuity_results, GHG_results, \
            GHG_spe_results, el_results2, dict_city_pb, Nboiler_rescaled, NEH_rescaled, Lal_rescaled, Tes_rescaled,\
-           Annuity_results_h, Annuity_results_m= \
+           Annuity_results_h, Annuity_results_m, Annuity_results_ec1, Annuity_results_ec2, Annuity_results_ec3= \
         newcity.new_city_evaluation_monte_carlo(City, dict_par_unc)
 
     # Get specific Annuity
@@ -608,7 +608,7 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
     print()
 
     # Annuity, eco0, interest fixed low
-    print('Annuity analysis ref')
+    print('Annuity analysis low interest')
     print('----------------')
     print('unit: Euro/year')
 
@@ -633,7 +633,7 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
 
 
     # Annuity, interest medium
-    print('Annuity analysis eco1')
+    print('Annuity analysis medium')
     print('----------------')
     print('unit: Euro/year')
 
@@ -660,7 +660,7 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
     print()
 
     # Annuity, interest fixed high
-    print('Annuity analysis eco2')
+    print('Annuity analysis high')
     print('----------------')
     print('unit: Euro/year')
 
@@ -737,6 +737,22 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
     print('second quantil :', second_quantil_spe_GHG)
     print('third quantil : ', third_quantil_spe_GHG)
     print ()
+
+    # Specific costs analysis
+    mean_annuity_spe_l = sum(specific_annuity_l) / len(specific_annuity_l)
+    sigma_annuity_spe_l = np.std(a=specific_annuity_l)
+    confident_inter_a_spe_l = stats.norm.interval(Confident_intervall_pourcentage / 100, loc=mean_annuity_spe_l,
+                                              scale=sigma_annuity_spe_l)
+
+    mean_annuity_spe_m = sum(specific_annuity_m) / len(specific_annuity_m)
+    sigma_annuity_spe_m = np.std(a=specific_annuity_m)
+    confident_inter_a_spe_m = stats.norm.interval(Confident_intervall_pourcentage / 100, loc=mean_annuity_spe_m,
+                                                  scale=sigma_annuity_spe_m)
+
+    mean_annuity_spe_h = sum(specific_annuity_h) / len(specific_annuity_h)
+    sigma_annuity_spe_h = np.std(a=specific_annuity_h)
+    confident_inter_a_spe_h = stats.norm.interval(Confident_intervall_pourcentage / 100, loc=mean_annuity_spe_h,
+                                                  scale=sigma_annuity_spe_h)
 
     print ('Number of simulations with rescaled boiler : ', Nboiler_rescaled)
     print('Number of simulations with rescaled EH : ', NEH_rescaled)
@@ -867,7 +883,7 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
                 Nsamples)) + '\n')
         write_results.write('reference:' + str(total_annuity_ref) + '\n')
 
-        write_results.write('\n Annuity ec2 \n')
+        write_results.write('\n Annuity high \n')
         write_results.write('\n -------\n')
         write_results.write('unit : Euro/year \n')
         write_results.write('median : ' + str(median_a_h) + '\n')
@@ -930,38 +946,57 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
         feuill1 = book.add_sheet('i_low_ec0')
         feuill2 = book.add_sheet('i_high_eco0')
         feuill3 = book.add_sheet('i_medium_eco0')
+        feuill4 = book.add_sheet('i_medium_others')
 
         # ajout des en-tête
         feuill1.write(0,0,'el_demand')
         feuill1.write(0,1,'gas_demand')
         feuill1.write(0,2,'Annuity')
         feuill1.write(0,3,'GHG')
+        feuill1.write(0, 4, 'specific Annuity')
         feuill2.write(0, 0, 'Annuity')
         feuill2.write(0, 1, 'specific Annuity')
         feuill3.write(0, 0, 'Annuity')
         feuill3.write(0, 1, 'specific Annuity')
 
+        feuill4.write(0, 0, 'ec1')
+        feuill4.write(0, 1, 'ec2')
+        feuill4.write(0, 2, 'ec3')
+
         # write results
-        feuill1.write(0, 10, 'mean')
+        feuill1.write(0, 10, 'mean low i')
         feuill1.write(1, 10, str(mean_annuity))
-        feuill1.write(0, 11, 'sigma')
+        feuill1.write(0, 11, 'sigma low i')
         feuill1.write(1, 11, str(sigma_annuity))
+        feuill1.write(5, 10, 'mean specific annuity')
+        feuill1.write(6, 10, str(mean_annuity_spe_l))
+        feuill1.write(5, 11, 'sigma specific annuity')
+        feuill1.write(6, 11, str(sigma_annuity_spe_l))
 
         feuill2.write(0, 10, 'mean')
         feuill2.write(1, 10, str(mean_annuity_m))
         feuill2.write(0, 11, 'sigma')
         feuill2.write(1, 11, str(sigma_annuity_m))
+        feuill2.write(5, 10, 'mean specific annuity')
+        feuill2.write(6, 10, str(mean_annuity_spe_m))
+        feuill2.write(5, 11, 'sigma specific annuity')
+        feuill2.write(6, 11, str(sigma_annuity_spe_m))
 
         feuill3.write(0, 10, 'mean')
         feuill3.write(1, 10, str(mean_annuity_h))
         feuill3.write(0, 11, 'sigma')
         feuill3.write(1, 11, str(sigma_annuity_h))
+        feuill3.write(5, 10, 'mean specific annuity')
+        feuill3.write(6, 10, str(mean_annuity_spe_h))
+        feuill3.write(5, 11, 'sigma specific annuity')
+        feuill3.write(6, 11, str(sigma_annuity_spe_h))
 
         for value in range(len(El_results)):
             feuill1.write(value+1,0,str(El_results[value]))
             feuill1.write(value+1,1, str(Gas_results[value]))
             feuill1.write(value+1,2, str(Annuity_results[value]))
             feuill1.write(value+1,3, str(GHG_results[value]))
+            feuill1.write(value+1, 4, str(specific_annuity_l[value]))
 
         for value in range(len(El_results)):
             feuill2.write(value+1,0,str(Annuity_results_m[value]))
@@ -970,6 +1005,12 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
         for value in range(len(El_results)):
             feuill3.write(value+1,0,str(Annuity_results_h[value]))
             feuill3.write(value + 1, 1, str(specific_annuity_h[value]))
+
+        for value in range(len(El_results)):
+            feuill4.write(value+1, 0,str(Annuity_results_ec1[value]))
+            feuill4.write(value + 1, 1, str(Annuity_results_ec2[value]))
+            feuill4.write(value + 1, 2, str(Annuity_results_ec3[value]))
+
 
         # creation materielle du fichier
         book.save(os.path.join(save_path_mc,results_excel_name))
@@ -985,11 +1026,11 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
     fig, ((ax1,ax2), (ax3,ax4)) = plt.subplots(2, 2, figsize=(17,9))
 
     ax1.hist(El_results,50, normed=1)
-    ax1.set_title('Final electrical demand in kWh')
-
+    ax1.set_title('Final annual electrical demand in kWh')
+    ax1.xlabel('Final annual electrical demand in kWh')
     ax2.hist(Gas_results,50 , normed=1)
-    ax2.set_title('Gas demand in kWh')
-
+    ax2.set_title('Final annual gas demand in kWh')
+    ax2.xlabel('Final annual electrical demand in kWh')
     ax3.hist(Annuity_results, 50, normed=1)
     ax3.set_title('Annuity in  Euro/year')
 
@@ -1014,28 +1055,68 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
     ax8.boxplot(GHG_spe_results, showmeans=True, whis=99)
     ax8.set_title('GHG specific emission in kg/kWh/year')
     ax8.grid(color='b', alpha=0.5, linestyle='dashed', linewidth=0.5)
-    fig2.savefig(os.path.join(save_path_mc,'boxplot.pdf'))
+    fig2.savefig(os.path.join(save_path_mc,'boxplot1.pdf'))
+
 
     fig3,((ax11,ax12), (ax13,ax14)) = plt.subplots(2, 2, figsize=(17,9))
     ax12.hist(Th_results, 50)
-    ax12.set_title('Thermal demand')
+    ax12.set_title('Annual thermal demand in kWh')
     ax11.hist(El_results, 50)
-    ax11.set_title('Electrical demand after EBB')
+    ax11.set_title('Annual electrical demand after energy balance in kWh')
     ax13.hist(el_results2, 50)
-    ax13.set_title('Electrical demand for EBB')
+    ax13.set_title('Annual electrical demand for energy balance in kWh')
     ax14.hist(Gas_results, 50)
-    ax14.set_title('Gas demand')
+    ax14.set_title('Annual final gas demand in kWh')
     fig3.savefig(os.path.join(save_path_mc,'Energy_demand.pdf'))
 
     fig4, ((ax21, ax22), (ax23, ax24)) = plt.subplots(2, 2, figsize=(17,9))
     ax22.hist(Annuity_results, 50)
-    ax22.set_title('Annuity_results_m')
+    ax22.set_title('Annuity results low interest')
     ax21.hist(Annuity_results_m, 50)
-    ax21.set_title('Annuity_results low interest')
+    ax21.set_title('Annuity results medium interest')
     ax23.hist(Annuity_results_h, 50)
-    ax23.set_title('Annuity_results_h')
+    ax23.set_title('Annuity results high interest')
 
     fig4.savefig(os.path.join(save_path_mc,'Annuity_interest.pdf'))
+
+    # Box plot:
+    fig6, ((ax65, ax66), (ax67, ax68)) = plt.subplots(2, 2, figsize=(17, 9))
+
+    ax65.boxplot(specific_annuity_l, showmeans=True, whis=99)
+    ax65.set_title('specific annuity - low interest')
+    ax65.grid(color='b', alpha=0.5, linestyle='dashed', linewidth=0.5)
+    ax66.boxplot(specific_annuity_m, showmeans=True, whis=99)
+    ax66.set_title('specific annuity - medium interest')
+    ax66.grid(color='b', alpha=0.5, linestyle='dashed', linewidth=0.5)
+    ax67.boxplot(specific_annuity_h, showmeans=True, whis=99)
+    ax67.set_title('specific annuity - high interest')
+    ax67.grid(color='b', alpha=0.5, linestyle='dashed', linewidth=0.5)
+    fig6.savefig(os.path.join(save_path_mc, 'boxplot2.pdf'))
+
+    # Box plot:
+    fig7, ((ax75, ax76), (ax77, ax78)) = plt.subplots(2, 2, figsize=(17, 9))
+
+    ax75.boxplot(Annuity_results, showmeans=True, whis=99)
+    ax75.set_title('Annuity - low interest')
+    ax75.grid(color='b', alpha=0.5, linestyle='dashed', linewidth=0.5)
+    ax76.boxplot(Annuity_results_m, showmeans=True, whis=99)
+    ax76.set_title('Annuity - medium interest')
+    ax76.grid(color='b', alpha=0.5, linestyle='dashed', linewidth=0.5)
+    ax77.boxplot(Annuity_results_h, showmeans=True, whis=99)
+    ax77.set_title('Annuity - high interest')
+    ax77.grid(color='b', alpha=0.5, linestyle='dashed', linewidth=0.5)
+    fig7.savefig(os.path.join(save_path_mc, 'boxplot2.pdf'))
+
+
+    fig5, ((ax31, ax32), (ax33, ax34)) = plt.subplots(2, 2, figsize=(17, 9))
+    ax32.hist(specific_annuity_l, 50)
+    ax32.set_title('Specific annuity results - low interest')
+    ax31.hist(specific_annuity_m, 50)
+    ax31.set_title('Specific annuity results - medium interest')
+    ax33.hist(specific_annuity_h, 50)
+    ax33.set_title('Specific Annuity results - high interest')
+
+    fig5.savefig(os.path.join(save_path_mc, 'specific_Annuity_interest.pdf'))
 
     #plt.show()
 
@@ -1053,6 +1134,6 @@ if __name__ == '__main__':
                             MC_analyse_total=True, Confident_intervall_pourcentage=90, save_result=True,
                             save_path_mc='D:\jsc-les\\test_lolo\\Results',
                             results_name='mc_results.txt', results_excel_name='mesresultats',
-                            Is_k_building_parameters=False, esys_filename='City_lolo_esys_7build_ref.txt',
+                            Is_k_building_parameters=True, esys_filename='City_lolo_esys_7build_ref.txt',
                             gen_e_net=True, network_filename='lolo_networks_7.txt',
                             city_pickle_name='wm_res_east_7_richardsonpy.pkl')
