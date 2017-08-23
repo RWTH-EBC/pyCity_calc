@@ -735,7 +735,7 @@ class EconomicCalculation(object):
         # Reset values lower than 0.5
         elif factor < min_val:
             factor = 0.9
-        print(factor, '---------------------------------------------------------------------------------')
+
         return factor
 
     def calc_cap_rel_annuity_city(self, city_object, cost_spe=False, th_pow_ref = None ):

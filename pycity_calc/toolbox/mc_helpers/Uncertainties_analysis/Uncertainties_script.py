@@ -1027,10 +1027,10 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
 
     ax1.hist(El_results,50, normed=1)
     ax1.set_title('Final annual electrical demand in kWh')
-    ax1.xlabel('Final annual electrical demand in kWh')
+
     ax2.hist(Gas_results,50 , normed=1)
     ax2.set_title('Final annual gas demand in kWh')
-    ax2.xlabel('Final annual electrical demand in kWh')
+
     ax3.hist(Annuity_results, 50, normed=1)
     ax3.set_title('Annuity in  Euro/year')
 
