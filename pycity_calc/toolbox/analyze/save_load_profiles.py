@@ -363,7 +363,8 @@ def extract_build_profiles(city, id, file_path, do_plot=False,
 
 
 def extract_city_base_data(city, out_file_path, do_plot=False,
-                           use_german=False, save_tikz=False):
+                           use_german=False, save_tikz=False,
+                           save_as_xlsx=True):
     """
     Extract and save basic city data
 
@@ -380,6 +381,9 @@ def extract_city_base_data(city, out_file_path, do_plot=False,
         (default: False). If False, uses English language.
     save_tikz : bool, optional
         Define, if figure should be saved as tikz (default: False)
+    save_as_xlsx : bool, optional
+        Define, if load curves should also be saved as xlsx files
+        (default: True)
     """
 
     #  Extract basic city data to path (.txt)
@@ -766,7 +770,7 @@ def extract_city_data(city, out_path, do_plot=False, use_german=False,
 
     #  Extract data into single file
     if use_german:
-        save_path = os.path.join(city_path, 'stadt_gebaeudedaten.txt')
+        save_path = os.path.join(city_path, 'Stadt_Gebaeudedaten.txt')
         x_label = 'X-Koordinate in m'
         y_label = 'Y-Koordinate in m'
 
@@ -776,7 +780,8 @@ def extract_city_data(city, out_path, do_plot=False, use_german=False,
         y_label = 'y-coordinate in m'
 
     savcit.save_city_data_to_file(city=city, save_path=save_path,
-                                  use_german=use_german)
+                                  use_german=use_german,
+                                  save_as_xlsx=save_as_xlsx)
 
     #  Generate plot with ids and save it to out_path
     citvis.plot_city_district(city=city,
