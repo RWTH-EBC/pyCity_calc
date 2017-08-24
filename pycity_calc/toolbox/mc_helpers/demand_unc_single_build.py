@@ -791,7 +791,7 @@ if __name__ == '__main__':
 
     #  User inputs for Monte-Carlo Simulation
     #  ###############################################################
-    nb_samples = 1000
+    nb_samples = 10000
     time_sp_force_retro = 50  # years
     max_retro_year = 2014
     weather_region = 5
@@ -814,7 +814,7 @@ if __name__ == '__main__':
     #  Decide, if you want to load a city object and extract a building or
     #  ir you want to load a pickled building object or
     #  if you want to generate a new building object instance
-    use_build_mode = 2
+    use_build_mode = 0
     #  use_build_mode == 0: Load city object and extract specific building
     #  use_build_mode == 1: Load pickled building object   w
     #  use_build_mode == 2: Generate own building object instance
@@ -833,23 +833,23 @@ if __name__ == '__main__':
     if use_build_mode == 0:
 
         #  City object pickle file, which should be loaded
-        # city_f_name = 'aachen_forsterlinde_5.pkl'
-        # city_f_name = 'aachen_frankenberg_5.pkl'
-        # city_f_name = 'aachen_kronenberg_5.pkl'
-        # city_f_name = 'aachen_preusweg_5b.pkl'
-        # city_f_name = 'aachen_tuerme_osm_extr_enriched.pkl'
-        city_f_name = 'aachen_kronenberg_3_mfh_ref_1.pkl'
+        #city_f_name = 'aachen_forsterlinde_mod_new_1.pkl'
+        city_f_name = 'aachen_frankenberg_mod_new_1.pkl'
+        # city_f_name = 'aachen_kronenberg_mod_new_1.pkl'
+        # city_f_name = 'aachen_preusweg_mod_new_1.pkl'
+        #city_f_name = 'aachen_tuerme_mod_new_1.pkl'
+        # city_f_name = 'aachen_huenefeld_mod_new_1.pkl'
 
         #  Building node number, which should be used to extract building data
-        # build_node_nb = 1011  # Forsterlinde
-        # build_node_nb = 1020   # Frankenberg
+        #build_node_nb = 1011  # Forsterlinde
+        build_node_nb = 1020   # Frankenberg
         # build_node_nb = 1002  # Kronenberg
         # build_node_nb = 1092  # Preusweg
         # build_node_nb = 1010  # Tuerme
-        build_node_nb = 1001  # Huenefeld
+        #build_node_nb = 1001  # Huenefeld
 
         #  Path to load city file
-        load_city_path = os.path.join(this_path, 'output', city_f_name)
+        load_city_path = os.path.join(this_path, 'input', city_f_name)
 
         #  Load city object instance
         city = pickle.load(open(load_city_path, mode='rb'))
