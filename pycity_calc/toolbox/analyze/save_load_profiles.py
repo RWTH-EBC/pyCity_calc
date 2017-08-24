@@ -11,6 +11,14 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 
+try:
+    import openpyxl
+except:
+    msg = 'Could not import openpyxl. Which is required, if you want to' \
+          ' save profiles directly into xlsx files. Please install via ' \
+          'pip or set save_as_xlsx to False.'
+    warnings.warn(msg)
+
 import pycity_calc.visualization.city_visual as citvis
 import pycity_calc.cities.scripts.city_generator.city_generator as citgen
 import pycity_calc.toolbox.analyze.save_city_data as savcit
@@ -196,7 +204,8 @@ def extract_build_base_data(city, id, file_path, use_german=False):
 
 
 def extract_build_profiles(city, id, file_path, do_plot=False,
-                           use_german=False, save_tikz=False):
+                           use_german=False, save_tikz=False,
+                           save_as_xlsx=True):
     """
     Extract and save building profiles to file
 
@@ -215,6 +224,9 @@ def extract_build_profiles(city, id, file_path, do_plot=False,
         (default: False). If False, uses English language.
     save_tikz : bool, optional
         Define, if figure should be saved as tikz (default: False)
+    save_as_xlsx : bool, optional
+        Define, if load curves should also be saved as xlsx files
+        (default: True)
     """
 
     #  Building pointer
@@ -250,6 +262,39 @@ def extract_build_profiles(city, id, file_path, do_plot=False,
 
     # Save numpy array to txt
     np.savetxt(fname=file_path, X=res_array, delimiter='\t', header=header)
+
+    if save_as_xlsx:
+        #  Get workbook
+        wb = openpyxl.Workbook()
+
+        #  Get worksheet
+        ws = wb.active
+
+        if use_german:
+            ws['A1'].value = 'Zeit in Sekunden'
+            ws['B1'].value = u'Thermische Leistung Raumwärme in Watt'
+            ws['C1'].value = u'Elektrische Leistung in Watt'
+            ws['D1'].value = u'Leistung Warmwasser in Watt'
+
+            xlsx_filename = str(id) + '_Lastgang.xlsx'
+        else:
+            ws['A1'].value = 'Time in seconds'
+            ws['B1'].value = 'Net space heating power in Watt'
+            ws['C1'].value = 'Electric power in Watt'
+            ws['D1'].value = 'Net hot water power in Watt'
+
+            xlsx_filename = str(id) + '_profiles.xlsx'
+
+        # Loop over columns
+        for j in range(len(res_array[0])):
+            #  Loop over rows
+            for i in range(len(res_array)):
+                ws.cell(row=i + 2, column=j + 1, value=res_array[i][j])
+
+        workbook_path = os.path.join(os.path.dirname(file_path),
+                                     xlsx_filename)
+
+        wb.save(workbook_path)
 
     if do_plot:
 
@@ -518,7 +563,7 @@ def extract_city_base_data(city, out_file_path, do_plot=False,
 
 
 def extract_city_profiles(city, city_path, do_plot, use_german=False,
-                          save_tikz=False):
+                          save_tikz=False, save_as_xlsx=True):
     """
 
     Parameters
@@ -534,6 +579,9 @@ def extract_city_profiles(city, city_path, do_plot, use_german=False,
         (default: False). If False, uses English language
     save_tikz : bool, optional
         Define, if figure should be saved as tikz (default: False)
+    save_as_xlsx : bool, optional
+        Define, if load curves should also be saved as xlsx files
+        (default: True)
     """
     #  Get power curves
     sh_profile = city.get_aggr_space_h_power_curve()
@@ -572,6 +620,38 @@ def extract_city_profiles(city, city_path, do_plot, use_german=False,
 
     #  Save numpy array to txt
     np.savetxt(fname=data_f_path, X=res_array, delimiter='\t', header=header)
+
+    if save_as_xlsx:
+        #  Get workbook
+        wb = openpyxl.Workbook()
+
+        #  Get worksheet
+        ws = wb.active
+
+        if use_german:
+            ws['A1'].value = 'Zeit in Sekunden'
+            ws['B1'].value = u'Thermische Leistung Raumwärme in Watt'
+            ws['C1'].value = u'Elektrische Leistung in Watt'
+            ws['D1'].value = u'Leistung Warmwasser in Watt'
+
+            xlsx_filename = 'Stadt_Profile.xlsx'
+        else:
+            ws['A1'].value = 'Time in seconds'
+            ws['B1'].value = 'Net space heating power in Watt'
+            ws['C1'].value = 'Electric power in Watt'
+            ws['D1'].value = 'Net hot water power in Watt'
+
+            xlsx_filename = 'city_profiles.xlsx'
+
+        # Loop over columns
+        for j in range(len(res_array[0])):
+            #  Loop over rows
+            for i in range(len(res_array)):
+                ws.cell(row=i + 2, column=j + 1, value=res_array[i][j])
+
+        workbook_path = os.path.join(city_path, xlsx_filename)
+
+        wb.save(workbook_path)
 
     if do_plot:
         #  Plot city profiles to path
@@ -642,7 +722,7 @@ def extract_city_profiles(city, city_path, do_plot, use_german=False,
 
 
 def extract_city_data(city, out_path, do_plot=False, use_german=False,
-                      save_tikz=False):
+                      save_tikz=False, save_as_xlsx=True):
     """
     Extract and save city data to file.
 
@@ -659,6 +739,9 @@ def extract_city_data(city, out_path, do_plot=False, use_german=False,
         (default: False). If False, uses English language.
     save_tikz : bool, optional
         Define, if figure should be saved as tikz (default: False)
+    save_as_xlsx : bool, optional
+        Define, if load curves should also be saved as xlsx files
+        (default: True)
     """
 
     if use_german:
@@ -718,11 +801,12 @@ def extract_city_data(city, out_path, do_plot=False, use_german=False,
 
     #  Extract and save city profiles
     extract_city_profiles(city=city, city_path=city_path, do_plot=do_plot,
-                          use_german=use_german, save_tikz=save_tikz)
+                          use_german=use_german, save_tikz=save_tikz,
+                          save_as_xlsx=save_as_xlsx)
 
 
 def extract_city_n_build_data(city, out_path, use_german=False,
-                              save_tikz=False):
+                              save_tikz=False, save_as_xlsx=True):
     """
 
     Parameters
@@ -736,13 +820,17 @@ def extract_city_n_build_data(city, out_path, use_german=False,
         (default: False). If False, uses English language.
     save_tikz : bool, optional
         Define, if figure should be saved as tikz (default: False)
+    save_as_xlsx : bool, optional
+        Define, if load curves should also be saved as xlsx files
+        (default: True)
     """
     #  Get all building nodes
     list_ids = city.get_list_build_entity_node_ids()
 
     #  Extract city data
     extract_city_data(city=city, out_path=out_path, do_plot=True,
-                      use_german=use_german, save_tikz=save_tikz)
+                      use_german=use_german, save_tikz=save_tikz,
+                      save_as_xlsx=save_as_xlsx)
 
     #  Extract building data
     for n in list_ids:
@@ -774,7 +862,7 @@ def extract_city_n_build_data(city, out_path, use_german=False,
 
         extract_build_profiles(city=city, id=n, file_path=data_f_path,
                                do_plot=True, use_german=use_german,
-                               save_tikz=save_tikz)
+                               save_tikz=save_tikz, save_as_xlsx=save_as_xlsx)
 
 
 if __name__ == '__main__':
@@ -788,6 +876,7 @@ if __name__ == '__main__':
 
     use_german = False
     save_tikz = True
+    save_as_xlsx = True
 
     #  Make out_path, if not existent
     gen_path_if_not_existent(out_path)
@@ -801,4 +890,5 @@ if __name__ == '__main__':
         save_tikz = False
 
     extract_city_n_build_data(city=city, out_path=out_path,
-                              use_german=use_german, save_tikz=save_tikz)
+                              use_german=use_german, save_tikz=save_tikz,
+                              save_as_xlsx=save_as_xlsx)
