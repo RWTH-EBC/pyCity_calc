@@ -467,7 +467,7 @@ def MC_new_economic_evaluation(City, time=10, interest=0.05, scenario='scenario_
         el_change = rd.uniform(0.95, 1.05)
         # gas +/-5%
         gas_change = rd.uniform(0.95, 1.05)
-        price_ch_sub_pv = 0,997
+
 
     elif scenario=='scenario_eco1':
         # New_price change factor
@@ -538,7 +538,7 @@ def MC_new_economic_evaluation(City, time=10, interest=0.05, scenario='scenario_
     price_ch_sub_chp = 1
     price_ch_self_usage_chp = 1
     price_ch_gas_disc_chp = 1
-
+    price_ch_sub_pv = 0.997
 
     # change factor follow eex market trend
     price_EEX_baseload_price = eex_change
