@@ -22,20 +22,28 @@ Create your feature branch: `git checkout -b issueXY_explanation`
 ## Installation
 
 pyCity_calc requires the following EBC Python packages:
+- richardsonpy
 - uesgraphs
 - pyCity
+- TEASER
 
-uesgraph is available under [https://github.com/RWTH-EBC/uesgraphs](https://github.com/RWTH-EBC/uesgraphs)
+richardsonpy is available via [https://github.com/RWTH-EBC/richardsonpy](https://github.com/RWTH-EBC/richardsonpy)
 
-pyCity is available under [https://github.com/RWTH-EBC/pyCity](https://github.com/RWTH-EBC/pyCity)
+uesgraph is available via [https://github.com/RWTH-EBC/uesgraphs](https://github.com/RWTH-EBC/uesgraphs)
+
+pyCity is available via [https://github.com/RWTH-EBC/pyCity](https://github.com/RWTH-EBC/pyCity)
+
+TEASER is available  via[https://github.com/RWTH-EBC/TEASER](https://github.com/RWTH-EBC/TEASER)
 
 Both can be installed into your system Python path via pip:
 
-`pip install -e 'your_path_to_uesgraph_setup'`
+`pip install -e 'your_path_to_richardsonpy_setup_folder'`
+
+`pip install -e 'your_path_to_uesgraph_setup_folder'`
 
 and
 
-`pip install -e 'your_path_to_pycity_setup'`
+`pip install -e 'your_path_to_pycity_setup_folder'`
 
 In your current Python path does not point at your Python installation, you 
 can directly call your Python interpreter and install the packages via pip, e.g.:
@@ -43,13 +51,18 @@ can directly call your Python interpreter and install the packages via pip, e.g.
     "<path_to_your_python_distribution>\Python.exe" -m pip install -e <your_path_to_uesgraph_setup>
 
 You can check if installation / adding packages to python has been successful
-by adding new .py file and trying to import uesgraphs and pycity.
+by adding new .py file and trying to import richardsonpy, uesgraphs and pycity.
+
+`import richardsonpy`
 
 `import uesgraphs`
 
 `import pycity_base`
 
 Import should be possible without errors.
+
+TEASER can be installed the same way (recommended, if you want to actively work on TEASER code) or
+directly via pip `pip install teaser` (if you only want to use TEASER).
 
 Further required packages are:
 
@@ -60,8 +73,7 @@ Further required packages are:
 - pytest
 - shapely (for uesgraphs integration)
 - pyproj (for uesgraphs integration)
-- Optional (but strongly recommended): 
-TEASER [https://github.com/RWTH-EBC/TEASER](https://github.com/RWTH-EBC/TEASER)
+
 
 ### Shapely installation on Windows machine
 
