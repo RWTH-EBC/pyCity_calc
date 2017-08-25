@@ -766,6 +766,9 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
     if save_result:
         #  Write results file
 
+        if not os.path.exists(save_path_mc):
+            os.makedirs(save_path_mc)
+
         #  Log file path
         #this_path = os.path.dirname(os.path.abspath(__file__))
         results_path = os.path.join(save_path_mc, results_name)
