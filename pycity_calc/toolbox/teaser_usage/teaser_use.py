@@ -1444,6 +1444,8 @@ if __name__ == '__main__':
     # above 15 degree Celsius(lowers set temperature)
     # - 2 - No heating required for days with average outdoor temperature
     # above 12 degree Celsius(lowers set temperature)
+    #  Caution: Mode 1 and 2 might lead to very high thermal peak loads
+    #  if building cools down and heating season starts again!
 
     air_vent_mode = 1
     #  int; Define mode for air ventilation rate generation
