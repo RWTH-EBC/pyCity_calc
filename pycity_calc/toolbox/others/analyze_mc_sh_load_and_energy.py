@@ -820,7 +820,7 @@ def analyze_demands_hist(mc_res, key, mode, output_path, dpi=1000,
                                              )
 
 
-def analyze_sh_powers_hist(mc_res, key, output_path):
+def analyze_sh_powers_hist(mc_res, key, output_path, mc_city):
     """
 
     Parameters
@@ -828,6 +828,7 @@ def analyze_sh_powers_hist(mc_res, key, output_path):
     mc_res
     key
     output_path
+    mc_city
 
     Returns
     -------
@@ -836,7 +837,10 @@ def analyze_sh_powers_hist(mc_res, key, output_path):
 
     #  Extract space heating load curves
     #  ##################################################################
-    list_sh_curves = mc_res.get_results(key=key)[1]
+    if mc_city:
+        list_sh_curves = mc_res.get_results_mc_city(key=key)[1]
+    else:
+        list_sh_curves = mc_res.get_results_mc_build(key=key)[1]
 
     list_sh_power = []
     for power in list_sh_curves:
@@ -845,14 +849,21 @@ def analyze_sh_powers_hist(mc_res, key, output_path):
     # Extract reference space heating power
     #  ##################################################################
     city = mc_res.get_city(key=key)
-    node_id = mc_res.dict_build_ids[key]
 
-    curr_build = city.node[node_id]['entity']
+    if mc_city:
 
-    #  Get reference space heating nominal power
-    q_sh_ref = dimfunc.get_max_power_of_building(building=curr_build,
-                                                 get_therm=True,
-                                                 with_dhw=False) / 1000
+        q_sh_ref = city.get_max_p_of_city(city_object=city)
+
+    else:
+
+        node_id = mc_res.dict_build_ids[key]
+
+        curr_build = city.node[node_id]['entity']
+
+        #  Get reference space heating nominal power
+        q_sh_ref = dimfunc.get_max_power_of_building(building=curr_build,
+                                                     get_therm=True,
+                                                     with_dhw=False) / 1000
     dict_v_lines = {}
     dict_v_lines['Reference'] = q_sh_ref
 
@@ -2191,7 +2202,7 @@ if __name__ == '__main__':
     #  User input
     #  ###############################################
 
-    mc_city = False
+    mc_city = True
     all_cities = True  # all cities / all buildings or only specific key
 
     with_outliners = True
@@ -2216,7 +2227,7 @@ if __name__ == '__main__':
 
     else:
         #  For single analysis (only one district)
-        key = u'Preusweg'
+        key = u'Türme'
         if mc_city:
             #  For single district
             name_an = '_s_city'
@@ -2231,7 +2242,7 @@ if __name__ == '__main__':
     gen_path(output_path)
     #############################
 
-    # # calc_sh_coverage_cities(mc_res=mc_res, build=not mc_city)
+    # calc_sh_coverage_cities(mc_res=mc_res, build=not mc_city)
     # get_ref_sh_nom_powers(mc_res=mc_res, build=not mc_city)
 
     if all_cities is False:
@@ -2251,10 +2262,11 @@ if __name__ == '__main__':
         #                      output_path=output_path, dpi=dpi,
         #                      mc_city=mc_city, fontsize=fontsize)
         #
-        # # #  Perform space heating power analysis for single district
-        # # #  #####################################################################
-        # # analyze_sh_powers_hist(mc_res=mc_res, key=key, output_path=output_path)
-        #
+        # #  Perform space heating power analysis for single district
+        # #  #####################################################################
+        # analyze_sh_powers_hist(mc_res=mc_res, key=key, output_path=output_path,
+        #                        mc_city=mc_city)
+
         # #  Perform electric energy analysis for single district
         # #  #####################################################################
         # analyze_demands_hist(mc_res=mc_res, key=key, mode='el',
