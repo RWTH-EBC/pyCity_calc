@@ -68,11 +68,11 @@ if __name__ == '__main__':
 
     #  User input
     #  ###################################################################
-    el_dem = 525000  # El. energy demand for rescaling in kWh/a
+    el_dem = 530000  # El. energy demand for rescaling in kWh/a
 
-    city_f_name = 'aachen_tuerme_mod_7.pkl'
+    city_f_name = 'aachen_tuerme_mod_new_1.pkl'
 
-    save_f_name = city_f_name[:-4] + '_el_resc_2.pkl'
+    save_f_name = city_f_name[:-4] + '_el_resc_530_MWh.pkl'
 
     #  ###################################################################
 
@@ -92,7 +92,7 @@ if __name__ == '__main__':
 
     #  #########################################################
     air_vent_mode = 0
-    vent_factor = 0.5
+    vent_factor = 0.75
 
     print('City space heating net energy demand in kWh/a before conversion:')
     print(city.get_annual_space_heating_demand())
