@@ -834,19 +834,19 @@ if __name__ == '__main__':
 
         #  City object pickle file, which should be loaded
         #city_f_name = 'aachen_forsterlinde_mod_new_1.pkl'
-        city_f_name = 'aachen_frankenberg_mod_new_1.pkl'
-        # city_f_name = 'aachen_kronenberg_mod_new_1.pkl'
-        # city_f_name = 'aachen_preusweg_mod_new_1.pkl'
+        #city_f_name = 'aachen_frankenberg_mod_new_1.pkl'
+        #city_f_name = 'aachen_kronenberg_mod_new_1.pkl'
+        #city_f_name = 'aachen_preusweg_mod_new_1.pkl'
         #city_f_name = 'aachen_tuerme_mod_new_1.pkl'
-        # city_f_name = 'aachen_huenefeld_mod_new_1.pkl'
+        city_f_name = 'aachen_huenefeld_mod_new_1.pkl'
 
         #  Building node number, which should be used to extract building data
         #build_node_nb = 1011  # Forsterlinde
-        build_node_nb = 1020   # Frankenberg
-        # build_node_nb = 1002  # Kronenberg
-        # build_node_nb = 1092  # Preusweg
-        # build_node_nb = 1010  # Tuerme
-        #build_node_nb = 1001  # Huenefeld
+        #build_node_nb = 1020   # Frankenberg
+        #build_node_nb = 1002  # Kronenberg
+        #build_node_nb = 1092  # Preusweg
+        #build_node_nb = 1010  # Tuerme
+        build_node_nb = 1003  # Huenefeld
 
         #  Path to load city file
         load_city_path = os.path.join(this_path, 'input', city_f_name)

@@ -2065,8 +2065,8 @@ if __name__ == '__main__':
     #  Add results of mc analyses
     #  ####################################################################
 
-    filename_city = 'aachen_forsterlinde_mod_7_mc_city_samples_10000.pkl'
-    filename_b = 'aachen_forsterlinde_mod_7_single_b_100001011.pkl'
+    filename_city = 'aachen_forsterlinde_mod_new_1_mc_city_samples_10000.pkl'
+    filename_b = 'aachen_forsterlinde_mod_new_1_single_b_new_dhw_1011.pkl'
     output_city = filename_city[:-4]
     output_b = filename_b[:-4]
     key = 'Forsterlinde'
@@ -2074,8 +2074,8 @@ if __name__ == '__main__':
     dict_files_city[key] = filename_city
     dict_files_build[key] = filename_b
 
-    filename_city = 'aachen_frankenberg_mod_6_mc_city_samples_10000.pkl'
-    filename_b = 'aachen_frankenberg_mod_6_single_b_100001020.pkl'
+    filename_city = 'aachen_frankenberg_mod_new_1_mc_city_samples_10000.pkl'
+    filename_b = 'aachen_frankenberg_mod_new_1_single_b_new_dhw_1020.pkl'
     output_city = filename_city[:-4]
     output_b = filename_b[:-4]
     key = 'Frankenberg'
@@ -2083,8 +2083,8 @@ if __name__ == '__main__':
     dict_files_city[key] = filename_city
     dict_files_build[key] = filename_b
 
-    filename_city = 'aachen_kronenberg_mod_6_mc_city_samples_10000.pkl'
-    filename_b = 'aachen_kronenberg_mod_6_single_b_100001002.pkl'
+    filename_city = 'aachen_kronenberg_mod_new_1_mc_city_samples_10000.pkl'
+    filename_b = 'aachen_kronenberg_mod_new_1_single_b_new_dhw_1002.pkl'
     output_city = filename_city[:-4]
     output_b = filename_b[:-4]
     key = 'Kronenberg'
@@ -2092,8 +2092,8 @@ if __name__ == '__main__':
     dict_files_city[key] = filename_city
     dict_files_build[key] = filename_b
 
-    filename_city = 'aachen_preusweg_mod_6_mc_city_samples_10000.pkl'
-    filename_b = 'aachen_preusweg_mod_6_single_b_100001092.pkl'
+    filename_city = 'aachen_preusweg_mod_new_1_mc_city_samples_10000.pkl'
+    filename_b = 'aachen_preusweg_mod_new_1_single_b_new_dhw_1092.pkl'
     output_city = filename_city[:-4]
     output_b = filename_b[:-4]
     key = 'Preusweg'
@@ -2101,9 +2101,9 @@ if __name__ == '__main__':
     dict_files_city[key] = filename_city
     dict_files_build[key] = filename_b
 
-    filename_city = 'aachen_tuerme_mod_7_mc_city_samples_10000.pkl'
+    filename_city = 'aachen_tuerme_mod_new_1_mc_city_samples_10000.pkl'
     #filename_city = 'aachen_tuerme_mod_7_mc_city_samples_10000_with_retro_person_data.pkl'
-    filename_b = 'aachen_tuerme_mod_6_single_b_100001010.pkl'
+    filename_b = 'aachen_tuerme_mod_new_1_single_b_new_dhw_1010.pkl'
     #filename_b = 'aachen_tuerme_mod_7_single_b_10000_fix_year_occ_1010.pkl'
     output_city = filename_city[:-4]
     output_b = filename_b[:-4]
@@ -2112,8 +2112,8 @@ if __name__ == '__main__':
     dict_files_city[key] = filename_city
     dict_files_build[key] = filename_b
 
-    filename_city = 'aachen_huenefeld_mod_6_mc_city_samples_10000.pkl'
-    filename_b = 'aachen_huenefeld_mod_6_single_b_100001003.pkl'
+    filename_city = 'aachen_huenefeld_mod_new_1_mc_city_samples_10000.pkl'
+    filename_b = 'aachen_huenefeld_mod_new_1_single_b_new_dhw_1003.pkl'
     output_city = filename_city[:-4]
     output_b = filename_b[:-4]
     key = u'Hünefeld'
@@ -2141,37 +2141,37 @@ if __name__ == '__main__':
     dict_b_node_nb = {}
 
     #  City object pickle file, which should be loaded
-    city_f_name = 'aachen_forsterlinde_mod_7.pkl'
+    city_f_name = 'aachen_forsterlinde_mod_new_1.pkl'
     key = 'Forsterlinde'
     build_node_nb = 1011  # Forsterlinde
     dict_city_f_names[key] = city_f_name
     dict_b_node_nb[key] = build_node_nb
 
-    city_f_name = 'aachen_frankenberg_mod_8_el_resc.pkl'
+    city_f_name = 'aachen_frankenberg_mod_new_1.pkl'
     key = 'Frankenberg'
     build_node_nb = 1020  # Frankenberg
     dict_city_f_names[key] = city_f_name
     dict_b_node_nb[key] = build_node_nb
 
-    city_f_name = 'aachen_kronenberg_mod_8.pkl'
+    city_f_name = 'aachen_kronenberg_mod_new_1.pkl'
     key = 'Kronenberg'
     build_node_nb = 1002  # Kronenberg
     dict_city_f_names[key] = city_f_name
     dict_b_node_nb[key] = build_node_nb
 
-    city_f_name = 'aachen_preusweg_mod_9.pkl'
+    city_f_name = 'aachen_preusweg_mod_new_1.pkl'
     key = 'Preusweg'
     build_node_nb = 1092  # Preusweg
     dict_city_f_names[key] = city_f_name
     dict_b_node_nb[key] = build_node_nb
 
-    city_f_name = 'aachen_tuerme_mod_7_el_resc_2_dhw_resc.pkl'
+    city_f_name = 'aachen_tuerme_mod_new_1.pkl'
     key = u'Türme'
     build_node_nb = 1010  # Tuerme
     dict_city_f_names[key] = city_f_name
     dict_b_node_nb[key] = build_node_nb
 
-    city_f_name = 'aachen_huenefeld_mod_7.pkl'
+    city_f_name = 'aachen_huenefeld_mod_new_1.pkl'
     key = u'Hünefeld'
     build_node_nb = 1003  # Huenefeld
     dict_city_f_names[key] = city_f_name
