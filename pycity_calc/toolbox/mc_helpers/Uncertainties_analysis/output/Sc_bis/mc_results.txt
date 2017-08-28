@@ -1,0 +1,123 @@
+ ---------- Monte Carlo Analysis ---------- 
+  Number of sampling :1
+
+############## Uncertain parameters ##############
+user behaviour: True
+energy systems parameters: True
+buildings parameters: True
+interest_fix: 0.05
+network: True
+
+############## City reference ##############
+Generation mode: load City from pickle file
+pickle file path :  d:\jsc-les\pycity_calc_github\pycity_calc\toolbox\mc_helpers\Uncertainties_analysis\City_generation\input\aachen_kronenberg_3_mfh_ref_1.pkl
+
+############################Esys #########################
++++++++++++++++++++ 
+energy systems type: [(1001, 1, 11.0, 0.0), (1001, 2, 4042.0, 0.0), (1001, 3, 30.6, 13.1), (1002, 1, 11.0, 0.0), (1002, 2, 4042.0, 0.0), (1002, 3, 30.6, 13.1), (1003, 1, 11.0, 0.0), (1003, 2, 4042.0, 0.0), (1003, 3, 30.6, 13.1)]
++++++++++++++++++++ 
+
+############################Results #########################
+
+ gas demand
+
+ ----------
+unit : kWh/year 
+median : 417705.4658
+first quantil : 417705.4658
+second quantil :417705.4658
+third quantil :417705.4658
+mean : 417705.4658
+sigma : 0.0
+confident interval 90(nan, nan)
+0.00% of the means are in confident interval
+reference:314716.78314
+
+ electrical demand
+
+ -----------------
+unit : kWh/year 
+median : 30781.2228
+first quantil : 30781.2228
+second quantil :30781.2228
+third quantil :30781.2228
+mean : 30781.2228
+sigma : 0.0
+confident interval 90(nan, nan)
+0.00% of the means are in confident interval
+reference:34073.5884943
+
+ Annuity low 
+
+ -------
+unit : Euro/year 
+median : -62079.4767
+first quantil : -62079.4767
+second quantil :-62079.4767
+third quantil :-62079.4767
+mean : -62079.4767
+sigma : 0.0
+confident interval 90(nan, nan)
+0.00% of the means are in confident interval
+reference:-52426.599358
+
+ Annuity medium 
+
+ -------
+unit : Euro/year 
+median : -56216.7805
+first quantil : -56216.7805
+second quantil :-56216.7805
+third quantil :-56216.7805
+mean : -56216.7805
+sigma : 0.0
+confident interval 90(nan, nan)
+0.00% of the means are in confident interval
+reference:-52426.599358
+
+ Annuity high 
+
+ -------
+unit : Euro/year 
+median : -55349.4966
+first quantil : -55349.4966
+second quantil :-55349.4966
+third quantil :-55349.4966
+mean : -55349.4966
+sigma : 0.0
+confident interval 90(nan, nan)
+0.00% of the means are in confident interval
+reference:-52426.599358
+
+ GHG Emissions
+
+ -------------
+unit : kg/year 
+median : 46654.0402
+first quantil : 46654.0402
+second quantil :46654.0402
+third quantil :46654.0402
+mean : 46654.0402
+sigma : 0.0
+confident interval 90(nan, nan)
+0.00% of the means are in confident interval
+
+ Specific GHG Emissions
+
+ ----------------------
+unit : kg/kWh/year 
+reference: user energy demand
+median : 0.1888
+first quantil : 0.1888
+second quantil :0.1888
+third quantil :0.1888
+mean : 0.1888
+sigma : 0.0
+confident interval 90(nan, nan)
+0.00% of the means are in confident interval
+reference:38259.2642638
+
+ Nboiler Lal rescaled: 0
+ Nboiler rescaled0
+ NEH rescaled0
+ Tes rescaled0
