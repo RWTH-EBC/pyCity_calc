@@ -36,11 +36,11 @@ def new_evaluation_building(building, parameters):
                         3: dormer - float [0-2]
                         4: attic - float [0-4]
                         5: cellar - float [0-4]
-                        6: construction type - float [-1-1]
-                        7: total_number_occupants - float [0-5]
-                        8: Annual_el_e_dem - percent of modification
-                        9: dhw_Tflow - float - new flow temperature
-                        10: dhw_Tsupply - float - new supply temperature
+                        6: total_number_occupants - float [0-5]
+                        7: Annual_el_e_dem - percent of modification
+                        8: dhw_Tflow - float - new flow temperature
+                        9: dhw_Tsupply - float - new supply temperature
+                        10: Specific dhw - percent of modification
 
          Return :   Building: object
                     Building Extended object from pycity_calc
@@ -115,13 +115,13 @@ def new_evaluation_building(building, parameters):
         building.cellar = 3
         print('building has heated cellar')
 
-    # Construction type
+    '''# Construction type
     if parameters[6]>0:
         building.construction_type = 'heavy'
         print ('construction type: heavy')
     else:
         building.construction_type = 'light'
-        print ('construction type: light')
+        print ('construction type: light')'''
 
 
 
@@ -143,32 +143,34 @@ def new_evaluation_building(building, parameters):
 
         # ## Rescale electrical curve (to do: analysis of appliances, light, season_mod)
 
-        curr_occupants = int(parameters[7])
+        curr_occupants = int(parameters[6])
         print('curr nb occupants', curr_occupants)
         print('ref nb occupants', ref_appart_occupants)
         #print()
 
         temp = ref_el_demand_curve * curr_occupants / ref_appart_occupants
         print('ref annual el dem', ref_annual_el_demand)
-        print('annual el dem', ref_annual_el_demand*(1-parameters[8]))
+        print('annual el dem', ref_annual_el_demand*(1-parameters[7]))
 
         # parameter 8: user annual electrical consumption
-        building.apartments[appart].power_el.loadcurve = temp * (1-parameters[8])
+        building.apartments[appart].power_el.loadcurve = temp * (1-parameters[7])
         #print('building el curve', building.apartments[appart].power_el.loadcurve)
         #print('ref el curve', ref_el_demand_curve)
 
         # ## Rescaling domestic hot water
 
-        tFlow = parameters[9]
-        Tsupply = parameters[10]
+        tFlow = parameters[8]
+        Tsupply = parameters[9]
         t_diff_ref = ref_building.apartments[appart].demandDomesticHotWater.tFlow - 25
 
         # stochastic generation of domestic hot water: rescale with new water temperature difference
         # otherwise impact on the sensitivity analysis
         ref_dhw = ref_building.apartments[appart].demandDomesticHotWater.get_power(currentValues=False,
                                                                                    returnTemperature=False)
-
-        building.apartments[appart].demandDomesticHotWater.loadcurve = ref_dhw*(tFlow-Tsupply)/t_diff_ref
+        # user annual DHW consumption
+        spec_dhw_variation = (1-parameters [10])*curr_occupants / ref_appart_occupants
+        # Add to building
+        building.apartments[appart].demandDomesticHotWater.loadcurve =spec_dhw_variation*ref_dhw*(tFlow-Tsupply)/t_diff_ref
         #print ('\nNew dhw curve generation')
         #print('DHW', building.apartments[appart].demandDomesticHotWater)
 

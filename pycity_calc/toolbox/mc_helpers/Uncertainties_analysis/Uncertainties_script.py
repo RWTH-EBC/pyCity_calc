@@ -1134,6 +1134,6 @@ if __name__ == '__main__':
                             MC_analyse_total=True, Confident_intervall_pourcentage=90, save_result=True,
                             save_path_mc='D:\jsc-les\\test_lolo\\Results',
                             results_name='mc_results.txt', results_excel_name='mesresultats',
-                            Is_k_building_parameters=True, esys_filename='City_lolo_esys_7build_ref.txt',
-                            gen_e_net=True, network_filename='lolo_networks_7.txt',
-                            city_pickle_name='wm_res_east_7_richardsonpy.pkl')
+                            Is_k_building_parameters=True, esys_filename='City_lolo_esys_ref.txt',
+                            gen_e_net=True, network_filename='lolo_networks.txt',
+                            city_pickle_name='aachen_kronenberg_3_mfh_ref_1.pkl')

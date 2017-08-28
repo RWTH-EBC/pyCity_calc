@@ -223,7 +223,7 @@ def evaluate(City, values):
 
         #  Generate energy systems
 
-        City = esysmod.new_evaluation_esys(City, parameters=row[18: 43])
+        City = esysmod.new_evaluation_esys(City, parameters=row[18: 37])
 
         ############################################
 
@@ -378,19 +378,19 @@ def evaluate(City, values):
         ############################################
 
         time = 10  # Years
-        interest = row[53]  # Interest rate
+        interest = row[47]  # Interest rate
         print ('\n New interest: {}'.format(interest))
 
-        price_ch_cap = row[43]
-        price_ch_dem_gas = row[44]
-        price_ch_dem_el = row[45]
-        price_ch_op = row[46]
-        price_ch_EEG_Umlage_tax_chp = row[47]
-        price_ch_EEG_Umlage_tax_pv = row[48]
-        price_EEX_baseload_price = row[49]
-        specific_cost = row[50]
-        life_factor = row[51]
-        maintenance_factor = row[52]
+        price_ch_cap = row[37]
+        price_ch_dem_gas = row[38]
+        price_ch_dem_el = row[39]
+        price_ch_op = row[40]
+        price_ch_EEG_Umlage_tax_chp = row[41]
+        price_ch_EEG_Umlage_tax_pv = row[42]
+        price_EEX_baseload_price = row[43]
+        specific_cost = row[44]
+        life_factor = row[45]
+        maintenance_factor = row[46]
 
         print("Annuity calculation")
         Market_instance = Mark.GermanMarket()

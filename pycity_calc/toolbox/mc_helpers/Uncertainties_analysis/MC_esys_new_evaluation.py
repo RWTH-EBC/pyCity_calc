@@ -73,10 +73,11 @@ def MC_rescale_esys(City, esys_unknown=True, recent_systems=True):
         if esys_unknown:  # generate aleatory energy systems
             building = gen_esys_unknown(building, recent_systems=recent_systems)
 
-        building, dict_build_esys_sampl = MC_new_esys_evaluation(building)
-        # rescale it to take into account real conditions of use
+        else:
+            building, dict_build_esys_sampl = MC_new_esys_evaluation(building)
+            # rescale it to take into account real conditions of use
 
-        dict_city_esys_sampl[str(id_building)]=dict_build_esys_sampl
+            dict_city_esys_sampl[str(id_building)]=dict_build_esys_sampl
 
     return City, dict_city_esys_sampl
 
@@ -107,7 +108,7 @@ def gen_esys_unknown (building, recent_systems=True):
         if recent_systems:
             building.bes.battery.eta_charge = rd.uniform(0.9,0.96)
             building.bes.battery.eta_discharge = rd.uniform(0.9,0.96)
-            building.bes.battery.self_discharge = rd.uniform(0.9,0.96)
+            building.bes.battery.self_discharge = rd.uniform(0.01,0.03)
         else:
             building.bes.battery.eta_charge = rd.uniform(0.85, 0.96)
             building.bes.battery.eta_discharge = rd.uniform(0.85, 0.96)
@@ -164,33 +165,38 @@ def gen_esys_unknown (building, recent_systems=True):
             building.bes.chp.omega = rd.uniform(0.88,0.93)
 
         else:
-            building.bes.chp.omega = rd.uniform(0.85,0.93)
+            building.bes.chp.omega = rd.uniform(0.80,0.93)
 
     # Electrical heater
     if ex_building.bes.hasElectricalHeater == True:
         if recent_systems:
-            building.bes.electricalHeater.eta = rd.uniform(0.95,0.99)
+            building.bes.electricalHeater.eta = rd.uniform(0.98,1)
 
         else:
-            building.bes.electricalHeater.eta = rd.uniform(0.9, 0.99)
+            building.bes.electricalHeater.eta = rd.uniform(0.95, 0.99)
 
     # Heat pump
-    #if ex_building.bes.hasHeatpump == True:
+    if ex_building.bes.hasHeatpump == True:
 
         #building.bes.heatpump.lower_activation_limit = rd.uniform(0.1,0.3)
         #building.bes.heatpump.t_max = rd.uniform(80,100)
-        #building.bes.heatpump.t_sink = rd.uniform(20,25)
-
+        building.bes.heatpump.quality_grade = \
+            (1-rd.normalvariate(mu = 0, sigma = 0.3 ))* ex_building.bes.heatpump.quality_grade
+        print ('--------------------',building.bes.heatpump.quality_grade )
     # photovoltaic
     if ex_building.bes.hasPv == True:
+
+        # rescale pv timer
+        building.bes.pv.environment.weather.timer = building.environment.timer
+
         if recent_systems:
 
-            building.bes.pv.eta = rd.uniform(0.15,0.2)
+            building.bes.pv.eta = rd.uniform(0.15,0.21)
             #building.bes.pv.temperature_nominal = rd.uniform(18,25)
 
         else:
 
-            building.bes.pv.eta = rd.uniform(0.12,0.2 )
+            building.bes.pv.eta = rd.uniform(0.10,0.2 )
 
         #building.bes.pv.alpha = rd.uniform(0.8, 0.9)
         building.bes.pv.beta = rd.uniform(0, 45)
@@ -228,9 +234,9 @@ def MC_new_esys_evaluation (building):
     ex_building = copy.deepcopy(building)
 
     if ex_building.bes.hasBattery == True:
-        building.bes.battery.eta_charge = rd.normalvariate(mu= ex_building.bes.battery.eta_charge,sigma = 0.01)
-        building.bes.battery.eta_discharge = rd.normalvariate(mu= ex_building.bes.battery.eta_discharge,sigma = 0.01)
-        building.bes.battery.self_discharge = rd.normalvariate(mu= ex_building.bes.battery.self_discharge,sigma = 0.01)
+        building.bes.battery.eta_charge = rd.normalvariate(mu= ex_building.bes.battery.eta_charge,sigma = 0.005)
+        building.bes.battery.eta_discharge = rd.normalvariate(mu= ex_building.bes.battery.eta_discharge,sigma = 0.005)
+        building.bes.battery.self_discharge = rd.normalvariate(mu= ex_building.bes.battery.self_discharge,sigma = 0.005)
         dict_build_esys_sampl['battery']={}
         dict_build_esys_sampl['battery']['Battery_eta_charge']= building.bes.battery.eta_charge
         dict_build_esys_sampl['battery']['Battery_eta_discharge']=building.bes.battery.eta_discharge
@@ -248,8 +254,8 @@ def MC_new_esys_evaluation (building):
         #dict_build_esys_sampl['TES']['TES_Tmin'] = building.bes.tes.t_max
 
     if ex_building.bes.hasBoiler == True:
-        print('Rescale Boiler 2')
-        building.bes.boiler.eta = rd.normalvariate(mu= ex_building.bes.boiler.eta,sigma = 0.01)
+        #print('Rescale Boiler 2')
+        building.bes.boiler.eta = rd.normalvariate(mu= ex_building.bes.boiler.eta,sigma = 0.005)
 
         # Assert that their is no extrem values
         if building.bes.boiler.eta < 0.70:
@@ -263,10 +269,10 @@ def MC_new_esys_evaluation (building):
         dict_build_esys_sampl['boiler']['eta'] = building.bes.boiler.eta
 
     if ex_building.bes.hasChp == True:
-        building.bes.chp.omega = rd.normalvariate(mu= ex_building.bes.chp.omega,sigma = 0.01)
+        building.bes.chp.omega = rd.normalvariate(mu= ex_building.bes.chp.omega,sigma = 0.005)
 
         # Assert that their is no extrem values
-        if building.bes.chp.omega>1:
+        if building.bes.chp.omega > 1:
             building.bes.chp.omega = 0.9
 
         elif  building.bes.chp.omega<0.8:
@@ -276,9 +282,9 @@ def MC_new_esys_evaluation (building):
         dict_build_esys_sampl['CHP']['CHP_omega'] = building.bes.chp.omega
 
     if ex_building.bes.hasElectricalHeater == True:
-        building.bes.electricalHeater.eta = rd.normalvariate(mu= ex_building.bes.electricalHeater.eta,sigma = 0.01)
+        building.bes.electricalHeater.eta = rd.normalvariate(mu= ex_building.bes.electricalHeater.eta,sigma = 0.005)
         # Assert that their is no extrem values
-        if building.bes.electricalHeater.eta < 0.90 :
+        if building.bes.electricalHeater.eta < 0.95 :
             building.bes.electricalHeater.eta = 0.99
         elif building.bes.electricalHeater.eta > 1:
             building.bes.electricalHeater.eta = 0.99
@@ -288,9 +294,8 @@ def MC_new_esys_evaluation (building):
         #dict_build_esys_sampl['EH']={}
         #dict_build_esys_sampl['EH']['EH_eta'] = building.bes.electricalHeater.eta
 
-    #if ex_building.bes.hasHeatpump == True:
-        #building.bes.heatpump.lower_activation_limit = rd.normalvariate(mu= ex_building.bes.heatpump.lower_activation_limit,
-                                                                        #sigma = 0.1)
+    if ex_building.bes.hasHeatpump == True:
+        building.bes.heatpump.quality_grade = rd.normalvariate(mu=ex_building.bes.heatpump.quality_grade, sigma=0.005)
 
         #dict_build_esys_sampl['HP']={}
         #dict_build_esys_sampl['HP']['HP_lal'] = building.bes.heatpump.lower_activation_limit
@@ -303,7 +308,7 @@ def MC_new_esys_evaluation (building):
         building.bes.pv.environment.weather.timer = building.environment.timer
 
 
-        building.bes.pv.eta = rd.normalvariate(mu= ex_building.bes.pv.eta,sigma = 0.01)
+        building.bes.pv.eta = rd.normalvariate(mu= ex_building.bes.pv.eta,sigma = 0.005)
         print('pv eta',building.bes.pv.eta )
 
         # Assert that their is no extrem values
