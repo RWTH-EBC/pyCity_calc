@@ -79,7 +79,7 @@ def new_evaluation_esys(City, parameters):
             City.node[build]['entity'].bes.boiler.t_max = parameters[5]
 
         if Cityref.node[build]['entity'].bes.hasChp == True:
-            City.node[build]['entity'].bes.chp.eta = parameters[6]
+            City.node[build]['entity'].bes.chp.omega = parameters[6]
             City.node[build]['entity'].bes.chp.t_max = parameters[7]
             City.node[build]['entity'].bes.chp.lower_activation_limit = parameters[8]
 
