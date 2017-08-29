@@ -48,7 +48,7 @@ class BuildingExtended(build.Building):
         ground_area : float, optional
             Building ground floor area in m^2 (default: None)
         height_of_floors : int, optional
-            Average height of the floors in m (default: None)
+            Average height of single floor in m (default: None)
         nb_of_floors : int, optional
             Building number of floors (default: None)
         neighbour_buildings : int, optional

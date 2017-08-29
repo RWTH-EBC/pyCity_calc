@@ -309,9 +309,9 @@ class calculator(object):
                         #  Define max. possible input/output power of tes
                         #print ('first calcul of max in and out power')
                         q_out_max_tes = Bes.tes.calc_storage_q_out_max(
-                            t_ambient=20, q_in=0)
+                            t_ambient=20, q_in=0, eps=0.11)
                         q_in_max_tes = Bes.tes.calc_storage_q_in_max(
-                            t_ambient=20, q_out=0)
+                            t_ambient=20, q_out=0, eps=0.11)
 
                         # for numerical reasons
                         if Bes.tes.tMax - Bes.tes.t_current < 0.01:
@@ -815,9 +815,9 @@ class calculator(object):
                     #          '#######timestep: ', ii)
 
                     q_out_max_tes = Bes.tes.calc_storage_q_out_max(
-                        t_ambient=20, q_in=0)
+                        t_ambient=20, q_in=0, eps=0.11)
                     q_in_max_tes = Bes.tes.calc_storage_q_in_max(
-                        t_ambient=20, q_out=0)
+                        t_ambient=20, q_out=0, eps=0.11)
 
                     # for numerical reasons
                     if Bes.tes.tMax - Bes.tes.t_current < 0.1:
@@ -1270,9 +1270,9 @@ class calculator(object):
                               ####'#######timestep: ', ii)
 
                         q_out_max_tes = Bes.tes.calc_storage_q_out_max(
-                            t_ambient=20, q_in=0)
+                            t_ambient=20, q_in=0, eps=0.11)
                         q_in_max_tes = Bes.tes.calc_storage_q_in_max(
-                            t_ambient=20, q_out=0)
+                            t_ambient=20, q_out=0, eps=0.11)
                         # for numerical reasons
                         if Bes.tes.tMax - Bes.tes.t_current < 0.01:
                             q_in_max_tes = 0

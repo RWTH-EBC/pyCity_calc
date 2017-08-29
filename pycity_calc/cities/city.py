@@ -6,7 +6,7 @@ from __future__ import division
 
 try:
     import pycity_base
-except:
+except:  # pragma: no cover
     ImportError('Package pycity_base is not found. Please install pycity first.' +
                 'https://github.com/RWTH-EBC/pyCity')
 
@@ -62,8 +62,8 @@ class City(citydist.CityDistrict):
             Number of node
         """
 
-        if self.environment is None:
-            self.environment = extended_building.environment
+        if self.environment is None:  # pragma: no cover
+            self.environment = extended_building.environment  # pragma: no cover
 
         node_number = self.addEntity(entity=extended_building,
                                      position=position, name=name,

@@ -160,8 +160,10 @@ def calc_sampling_occ_per_app(nb_samples, method='destatis',
         statistics from 2015
     min_occ : int, optional
         Minimal possible number of occupants per apartment (default: 1)
+        Only relevant for method == 'equal'
     max_occ : int, optional
         Maximal possible number of occupants per apartment (default: 5)
+        Only relevant for method == 'equal'
 
     Returns
     -------
@@ -379,6 +381,12 @@ def calc_sampling_dhw_per_apartment(nb_samples, nb_persons,
     std : float, optional
         Standard deviation of domestic hot water volume per person and day
         in liter for gaussian distribution (default: 10)
+    delta_t : float, optional
+        Temperature split of heated up water in Kelvin (default: 35)
+    c_p_water : float, optional
+        Specific heat capacity of water in J/kgK (default: 4182)
+    rho_water : float, optional
+        Density of water in kg/m3 (default: 995)
 
     Returns
     -------
@@ -425,11 +433,49 @@ def calc_sampling_dhw_per_apartment(nb_samples, nb_persons,
                                                  std=std)[0]
             list_dhw_vol.append(dhw_value)
 
+    elif method == 'stromspiegel_2017':
+
+        if nb_persons > 5:
+            nb_persons = 5
+
+        #  Dictionaries holding min/max dhw energy demand values in kWh per
+        #  capital and year (for apartments)
+        dict_sfh = {1: [200, 1000],
+                    2: [400, 1400],
+                    3: [400, 2100],
+                    4: [600, 2100],
+                    5: [700, 3400]}
+
+        dict_mfh = {1: [400, 800],
+                    2: [700, 1100],
+                    3: [900, 1700],
+                    4: [900, 2000],
+                    5: [1300, 3300]}
+
+        for i in range(nb_samples):
+            if b_type == 'sfh':
+                dhw_range = dict_sfh[nb_persons]
+                dhw_energy = rd.randrange(start=dhw_range[0],
+                                          stop=dhw_range[1])
+            elif b_type == 'mfh':
+                dhw_range = dict_mfh[nb_persons]
+                dhw_energy = rd.randrange(start=dhw_range[0],
+                                          stop=dhw_range[1])
+
+            #  DHW volume in liter per apartment and day
+            dhw_value = dhw_energy * 3600 * 1000 * 1000 \
+                        / (rho_water * c_p_water * delta_t * 365)
+
+            list_dhw_vol.append(dhw_value)
+
     return list_dhw_vol
 
 
 if __name__ == '__main__':
+
     nb_samples = 100000
+
+    import matplotlib.pyplot as plt
 
     #  Get samples of set temperatures within building
     list_set_temp = calc_set_temp_samples(nb_samples=nb_samples)
@@ -438,7 +484,6 @@ if __name__ == '__main__':
     print(list_set_temp)
     print()
 
-    import matplotlib.pyplot as plt
 
     fig = plt.figure()
     # the histogram of the data
@@ -459,7 +504,7 @@ if __name__ == '__main__':
     # the histogram of the data
     plt.hist(list_usr_airx, bins='auto')
     plt.xlabel('User air exchange rates in 1/h')
-    plt.ylabel('Number of values�')
+    plt.ylabel('Number of values')
     plt.show()
     plt.close()
 
@@ -511,42 +556,35 @@ if __name__ == '__main__':
     plt.show()
     plt.close()
 
-    list_dhw = calc_sampling_dhw_per_person(nb_samples=nb_samples)
+    # list_dhw = calc_sampling_dhw_per_person(nb_samples=nb_samples)
+    #
+    # fig = plt.figure()
+    # # the histogram of the data
+    # plt.hist(list_dhw, bins='auto')
+    # plt.xlabel('Hot water volumes per person and day in liters')
+    # plt.ylabel('Number of values')
+    # plt.show()
+    # plt.close()
 
-    fig = plt.figure()
-    # the histogram of the data
-    plt.hist(list_dhw, bins='auto')
-    plt.xlabel('Hot water volumes per person and day in liters')
-    plt.ylabel('Number of values')
-    plt.show()
-    plt.close()
-
-    method = 'nb_occ_dep'
-    pdf = 'equal'
-    equal_diff = 34
+    nb_persons = 5
 
     list_dhw_per_app = calc_sampling_dhw_per_apartment(nb_samples=nb_samples,
-                                                       nb_persons=3,
-                                                       method=method,
-                                                       pdf=pdf,
-                                                       equal_diff=equal_diff)
+                                                       nb_persons=nb_persons)
 
     fig = plt.figure()
     # the histogram of the data
     plt.hist(list_dhw_per_app, bins='auto')
     plt.xlabel('Hot water volumes per apartment and day in liters')
     plt.ylabel('Number of values')
-    plt.title('Hot water volumes per person and day for 3 person apartment')
+    plt.title('Hot water volumes per person and day for ' + str(nb_persons)
+              + ' person apartment')
     plt.show()
     plt.close()
 
     list_dhw_per_app_2 = []
     for nb_occ in list_occ_in_app:
         sample_dhw = calc_sampling_dhw_per_apartment(nb_samples=1,
-                                                     nb_persons=nb_occ,
-                                                     method=method,
-                                                     pdf=pdf,
-                                                     equal_diff=equal_diff)[0]
+                                                     nb_persons=nb_occ)[0]
         list_dhw_per_app_2.append(sample_dhw)
 
     fig = plt.figure()
