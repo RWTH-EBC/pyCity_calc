@@ -2,3 +2,8 @@
 
 !.gitignore
 !city_clust_simple_with_esys.pkl
+!city_clust_simple.txt
+!city_clust_simple_enersys.txt
+!city_clust_simple_networks.txt
+!street_edges_cluster_simple.csv
+!street_nodes_cluster_simple.csv
