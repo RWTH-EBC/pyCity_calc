@@ -270,7 +270,7 @@ def calc_sampling_el_demand_per_apartment(nb_samples, nb_persons, type,
 
 
 def calc_sampling_dhw_per_person(nb_samples, pdf='equal', equal_diff=25,
-                                 mean=55, std=10):
+                                 mean=64, std=10):
     """
 
     Perform domestic hot water sampling (hot water volume in liters per person
@@ -350,7 +350,8 @@ def calc_dhw_ref_volume_for_multiple_occ(nb_occ, ref_one_occ=64):
 
 def calc_sampling_dhw_per_apartment(nb_samples, nb_persons,
                                     method='nb_occ_dep', pdf='equal',
-                                    equal_diff=34, mean=64, std=10):
+                                    equal_diff=34, mean=64, std=10,  b_type ='sfh', rho_water=995, c_p_water=4182,
+                                    delta_t=35):
     """
     Perform domestic hot water sampling (hot water volume in liters per
     apartment and day; temperature split of 35 Kelvin, according to
@@ -394,7 +395,7 @@ def calc_sampling_dhw_per_apartment(nb_samples, nb_persons,
         List of hot water volumes per apartment and day in liters
     """
 
-    assert method in ['nb_occ_dep', 'indep']
+    assert method in ['nb_occ_dep', 'indep', 'stromspiegel_2017']
     assert pdf in ['equal', 'gaussian']
 
     list_dhw_vol = []
@@ -583,8 +584,7 @@ if __name__ == '__main__':
 
     list_dhw_per_app_2 = []
     for nb_occ in list_occ_in_app:
-        sample_dhw = calc_sampling_dhw_per_apartment(nb_samples=1,
-                                                     nb_persons=nb_occ)[0]
+        sample_dhw = calc_sampling_dhw_per_apartment(nb_samples=1, nb_persons=nb_occ)[0]
         list_dhw_per_app_2.append(sample_dhw)
 
     fig = plt.figure()
