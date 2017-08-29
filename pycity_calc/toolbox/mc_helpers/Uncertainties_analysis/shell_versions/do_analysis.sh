@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
-python uncertainties_script_Sc7.py
+python Uncertainties_script_Sc1.py
 
-python uncertainties_script_Sc8.py
+python Uncertainties_script_Sc8.py
+python Uncertainties_script_bis.py
+python Uncertainties_script_bis1.py
+python Uncertainties_script_bis2.py
 
