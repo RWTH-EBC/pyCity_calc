@@ -70,7 +70,7 @@ import uesgraphs.uesgraph as ues
 
 import pycity_calc.cities.scripts.osm_call as osm
 
-def main():
+def main():  # pragma: no cover
 
     """
     BEGINNING OF USER INPUT

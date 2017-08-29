@@ -284,7 +284,7 @@ def gen_city_with_street_network_from_csvfile(timestep, year, location,
     strgen.add_street_network_to_city(city_object, name_list, pos_list,
                                       edge_list)
 
-    if do_save:
+    if do_save: # pragma: no cover
 
         if path_save_city is None:
             this_path = os.path.dirname(os.path.abspath(__file__))
@@ -297,7 +297,7 @@ def gen_city_with_street_network_from_csvfile(timestep, year, location,
     return city_object
 
 
-def save_pickle_city_file(city, path_to_save):
+def save_pickle_city_file(city, path_to_save): # pragma: no cover
     """
     Saves city object as pickle file.
 
@@ -316,7 +316,7 @@ def save_pickle_city_file(city, path_to_save):
         warnings.warn('Could not pickle and save city object')
 
 
-def load_pickled_city_file(path_to_file):
+def load_pickled_city_file(path_to_file): # pragma: no cover
     """
     Returns city object by loading pickled city file.
 

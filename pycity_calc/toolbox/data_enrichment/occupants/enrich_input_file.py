@@ -14,12 +14,45 @@ found
 
 """
 from __future__ import division
+
 import os
 import random
 import warnings
 import numpy as np
 
 import pycity_calc.cities.scripts.city_generator.city_generator as citgen
+
+
+def est_nb_apartments(net_floor_area):
+    """
+    Estimates number of apartments based on net floor area, according to
+    statistics of TABULA:
+    [Institut für Wohnen und Umwelt - IWU 2009] INSTITUT FÜR WOHNEN UND
+    UMWELT - IWU: TABULA Average Buildings: German residential building
+    stock. http://s2.building-typology.eu/abpdf/DE_N_01_EPISCOPE_
+    CaseStudy_TABULA_National.pdf. Version: 2009
+    with around 74 m2 per apartment
+
+    Parameters
+    ----------
+    net_floor_area : float
+        Net floor area of building in m2
+
+    Returns
+    -------
+    nb_app : int
+        Number of apartments
+    """
+
+    assert net_floor_area > 0, 'Net floor area has to be larger than zero!'
+
+    nb_app = int(round(net_floor_area/74, 0))
+
+    #  Cover case, if nb_app is calculated to be zero
+    if nb_app == 0:
+        nb_app = 1
+
+    return nb_app
 
 
 def add_occ_to_given_app(district_data):
@@ -63,37 +96,51 @@ def add_occ_to_given_app(district_data):
     (optional)
     """
 
+    print('Start occupancy enrichment for district_data.')
+
     #  Loop over district_data
     for i in range(len(district_data)):
+        curr_id = int(district_data[i][0])  # id / primary key of building
+        curr_build_type = int(district_data[i][3])  # building type nb (int)
         curr_nb_of_apartments = district_data[i][10]
         curr_nb_of_occupants = district_data[i][11]
 
-        #  Check if apartment number is set
-        if curr_nb_of_apartments is None:
-            msg = str('Nb. of apartments of building ' + str(i) + ' is None!'
-                      ' Thus, could not add occupants!')
-            warnings.warn(msg)
+        if curr_build_type == 0:  # Residential
 
-        else:  # Number of apartments is set
-            curr_nb_of_apartments > 0, 'Number of apartments has to be > 0!'
+            #  Check if apartment number is set
+            if curr_nb_of_apartments is None:
+                msg = str('Nb. of apartments of building ' + str(i) + ' is None!'
+                          ' Thus, could not add occupants!')
+                warnings.warn(msg)
 
-            #  Number of occupants is already defined
-            if curr_nb_of_occupants is not None:
-                print('\nNb. of occupants for building ' + str(i) + ' is '
-                      'already defined to ' + str(curr_nb_of_occupants))
-                print('Thus, going to skip this building.\n')
+            else:  # Number of apartments is set
+                assert curr_nb_of_apartments > 0, \
+                    'Number of apartments has to be > 0!'
 
-            else:  # Number of occupants is None
+                #  Number of occupants is already defined
+                if curr_nb_of_occupants is not None:
+                    print('\nNb. of occupants for building ' + str(i) + ' is '
+                          'already defined to ' + str(curr_nb_of_occupants))
+                    print('Thus, going to skip this building.\n')
 
-                nb_occ = 0
+                else:  # Number of occupants is None
 
-                #  Loop over apartments
-                for j in range(int(curr_nb_of_apartments)):
-                    #  Execute adding of occupants (per apartment)
-                    nb_occ += estimate_occ_per_ap()
+                    print('Building ' + str(curr_id) + ' has no occupants.'
+                                                       ' Going to enrich it.')
 
-                #  Add total number of occupants to building
-                district_data[i][11] = int(nb_occ)
+                    nb_occ = 0
+
+                    #  Loop over apartments
+                    for j in range(int(curr_nb_of_apartments)):
+                        #  Execute adding of occupants (per apartment)
+                        nb_occ += estimate_occ_per_ap()
+
+                    print('Going to add ' + str(nb_occ) + ' occupants.')
+
+                    #  Add total number of occupants to building
+                    district_data[i][11] = int(nb_occ)
+
+    print('End of occupancy enrichment for district_data.')
 
 
 def estimate_occ_per_ap(prob_dist=[0.405, 0.345, 0.125, 0.092, 0.033]):
