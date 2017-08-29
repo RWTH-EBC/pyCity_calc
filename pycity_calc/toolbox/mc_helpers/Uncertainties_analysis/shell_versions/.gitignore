@@ -3,6 +3,12 @@
 
 # But not these files...
 !.gitignore
+!Uncertainties_script_Sc8.py
+!Uncertainties_script_Sc1.py
+!Uncertainties_script_bis.py
+!Uncertainties_script_bis1.py
+!Uncertainties_script_bis2.py
+!do_analysis.sh
 
 # ...even if they are in subdirectories
 !*/
