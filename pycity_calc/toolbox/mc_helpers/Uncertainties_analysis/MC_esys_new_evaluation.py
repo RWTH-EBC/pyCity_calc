@@ -484,7 +484,7 @@ def gen_esys_for_city(city, list_data, size_esys = False, boiler_buffer_factor=1
                 print(mass_tes)
                 print()
 
-            storage = tes.thermalEnergyStorageExtended(environment=city.environment,t_init=20, capacity=mass_tes)
+            storage = tes.thermalEnergyStorageExtended(environment=city.environment,t_init=30, capacity=mass_tes)
 
             # Add devices to bes
             bes.addDevice(storage)
