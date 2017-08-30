@@ -189,7 +189,7 @@ def calc_sampling_occ_per_app(nb_samples, method='destatis',
 
     elif method == 'destatis':
         for i in range(nb_samples):
-            rand_nb = rd.randint(0, 100)
+            rand_nb = rd.randint(0, 1000000) / 10000
 
             #  Destatis values from 2015 about nb. of occupants per apartment
             if rand_nb <= 41.4:
