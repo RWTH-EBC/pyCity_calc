@@ -119,8 +119,8 @@ def run_approach(city):
 
 
 def get_building_age(city): #alternativ immer exaktes Alter abfragen. Wie sähe ein Neubau aus? build_year = 2017?
-    for house in city.node.values():
-        if house['entity'].build_year >= 2009: # abhängig von Inkrafttreten des EEWärmeG (01.01.2009)
+    for building_node in city.nodelist_building:
+        if city.node[building_node]['entity'].build_year >= 2009: # abhängig von Inkrafttreten des EEWärmeG (01.01.2009)
             return 'new'
     return 'old'
 
@@ -288,6 +288,17 @@ def get_LDC(curve):
     return sorted(curve, reverse=True)
 
 
+def get_t_demand_list(temp_curve, th_curve):
+    '''
+    Sorts thermal energy demand based on values of ambient temperatures.
+
+    :param temp_curve: curve of ambient temperatures
+    :param th_curve: curve of thermal energy demand
+    :return: thermal energy curve sorted based on ambient temperature values
+    '''
+    return [th_demand for _, th_demand in sorted(zip(temp_curve, th_curve))]
+
+
 def choose_device(dev_type, q_ideal):
     # Source: BHKW-Kenndaten 2014, S.26 - [eta_el, eta_th, p_nom, q_nom]
     chp_list = {'vai1':[0.263, 0.658, 1000, 2500], 'vai2':[0.25, 0.667, 3000, 8000], 'vai3':[0.247,0.658,4700,12500],
@@ -334,6 +345,10 @@ def dim_centralized(city, scenario):
     :return: scenario with sizes of devices - in welcher form? city_object
     '''
     # TODO: Netzverluste korrekt integrieren (-> Wolff & Jagnow S.20)
+    # Abstand zwischen Häusern und Wärmezentrale herausfinden
+    #
+
+
     eta_transmission = 0.9  # richtigen Faktor suchen
     [el_curve, th_c] = city.get_power_curves(current_values=False)
     th_curve = th_c/eta_transmission
@@ -410,12 +425,12 @@ def dim_centralized(city, scenario):
                         pee = (1 - 1 / ((eta_th / refeta_th) + (eta_el / refeta_el))) * 100
                         if p_nom >= 1000000:
                             if pee >= 10:
-                                print('EEWärmeG erfüllt. (>=1MW)')
+                                print('Anlage (>=1MW) ist hocheffizient -> EEWärmeG erfüllt.')
                                 eewg = True
                                 break
                         else:
                             if pee > 0:
-                                print('EEWärmeG erfüllt. (<1MW)')
+                                print('Anlage (<1MW) ist hocheffizient -> EEWärmeG erfüllt.')
                                 eewg = True
                                 break
                         if ee_ratio >= 1:
@@ -434,6 +449,7 @@ def dim_centralized(city, scenario):
             # TODO: EnEV hinzufügen
 
 
+
             chp = CHP.CHP(city.environment, p_nom, q_nom, eta_el+eta_th)
             bes.addDevice(chp)
             print('Added CHP: Q_nom = ' + str(q_nom/1000) + ' kW (' + str(
@@ -445,7 +461,7 @@ def dim_centralized(city, scenario):
                 v_tes = q_nom/1000*60 # Förderung von Speichern für Mini-BHKW durch BAFA bei Speichergrößen über 60 l/kW_th
                 if v_tes > 1600: # 1600 liter genügen für Förderung
                     v_tes = 1600 + (q_nom/1000*60-1600)*0.2 # Schätzung um auch Anlagen >30kW mit Speicher zu versorgen
-
+                    # TODO: Wie sieht die Dimensionierung für KWK-Anlagen über 30 kW aus? Sind die 20% realistisch?
                 tes = TES.thermalEnergyStorageExtended(environment=city.environment,t_init=50,capacity=v_tes)
                 bes.addDevice(tes)
                 print('Added Thermal Energy Storage:', v_tes,'liter ')
@@ -485,7 +501,43 @@ def dim_centralized(city, scenario):
             # TODO: sind Vor- und Rücklauftemperaturen in city_object gegeben? Sonst über Diagramm aus KVS-Klimatechnik bestimmen (Bild 1.1a, S.11)
 
 
+            if max(th_curve) < 60000:
+                print('Katalogauswahl Wärmepumpe!')
 
+            else:
+                if 'elHeater' in scenario['peak']:
+                    print('Dimplex LA60TU auswählen + Restleistung elHeater.')
+                elif scenario['peak'] is []:
+                    print('Heat pumps in monovalent operation mode are not suitable for heat demand > 60 kW_th!')
+                    return None
+                elif 'boiler' in scenario['peak']:
+                    t_demand_list = get_t_demand_list(city.environment.weather.tAmbient, th_curve)
+                    cop = {-20:1.54,-15:1.73,-7:2.22,2:2.56,7:2.8,10:3.08,12:3.15,20:3.61}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            # TODO: Speicherdimensionierung für Wärmepumpe
 
 
 
@@ -718,18 +770,23 @@ def calc_annuity(city):
 
 
 
-
 if __name__ == '__main__':
 
+    #Choose example city_object
+    ex_city = 2
+
     this_path = os.path.dirname(os.path.abspath(__file__))
-
-    city_f_name = 'aachen_kronenberg_3_mfh_ref_1.pkl'
-
-    city_path = os.path.join(this_path, 'input', city_f_name)
-
     #  Run program
-    city = pickle.load(open(city_path, mode='rb'))
-    #city = pickle.load(open('/Users/jules/PycharmProjects/Masterarbeit/Beispielquartier/aachen_kronenberg_3_mfh_ref_1.pkl', mode='rb'))
-    print('District: Aachen Kronenberg')
+    if ex_city == 1:
+        city_f_name = 'aachen_kronenberg_3_mfh_ref_1.pkl'
+        city_path = os.path.join(this_path, 'input', city_f_name)
+        city = pickle.load(open(city_path, mode='rb'))
+        #city = pickle.load(open('/Users/jules/PycharmProjects/Masterarbeit/Beispielquartier/aachen_kronenberg_3_mfh_ref_1.pkl', mode='rb'))
+        print('District: Aachen Kronenberg')
+    elif ex_city == 2:
+        city_f_name = 'wm_res_east_7_th_mod_el_stoch_dhw_stoch.p'
+        city_path = os.path.join(this_path, 'input', city_f_name)
+        city = pickle.load(open(city_path, mode='rb'))
+        print("District: 7 MFH, Bottrop")
 
     run_approach(city)
