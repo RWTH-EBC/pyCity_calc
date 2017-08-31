@@ -300,7 +300,7 @@ class thermalEnergyStorageExtended(TES.ThermalEnergyStorage):
 
         return tes_energy
 
-    def calc_storage_q_out_max(self, t_ambient=None, q_in=0, eps=0.1):
+    def calc_storage_q_out_max(self, t_ambient=None, q_in=0):
         """
         Returns maximum thermal discharging power over next timestep
         (without going below reference temperature)
@@ -314,10 +314,6 @@ class thermalEnergyStorageExtended(TES.ThermalEnergyStorage):
         q_in : float, optional
             Thermal input power in W
             (default: 0 W)
-        eps : float, optional
-            Tolerance value in Watt (default: 0.1). Tolerance is subtracted
-            from q_out_max. In case of negative values, q_out_max is re-set
-            to 0.
 
         Returns
         ------
@@ -342,14 +338,9 @@ class thermalEnergyStorageExtended(TES.ThermalEnergyStorage):
             self.t_current - t_u) + unitcon.con_kwh_to_joule(tes_energy) \
                                     / self.environment.timer.timeDiscretization
 
-        q_out_max -= eps
-
-        if q_out_max < 0:
-            q_out_max = 0
-
         return q_out_max
 
-    def calc_storage_q_in_max(self, t_ambient=None, q_out=0, eps=0.1):
+    def calc_storage_q_in_max(self, t_ambient=None, q_out=0):
         """
         Returns maximum thermal charging power over next time step
         (without going above maximal temperature)
@@ -363,10 +354,6 @@ class thermalEnergyStorageExtended(TES.ThermalEnergyStorage):
         q_out : float, optional
             Thermal input power in W
             (default: 0 W)
-        eps : float, optional
-            Tolerance value in Watt (default: 0.1). Tolerance is subtracted
-            from q_in_max. In case of negative values, q_in_max is re-set
-            to 0.
 
         Returns
         ------
@@ -393,11 +380,6 @@ class thermalEnergyStorageExtended(TES.ThermalEnergyStorage):
                        self.tMax - self.t_min) - unitcon.con_kwh_to_joule(
                        tes_energy)) \
                    / self.environment.timer.timeDiscretization
-
-        q_in_max -= eps
-
-        if q_in_max < 0:
-            q_in_max = 0
 
         return q_in_max
 
