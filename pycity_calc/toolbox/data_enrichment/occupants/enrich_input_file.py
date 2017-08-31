@@ -143,7 +143,7 @@ def add_occ_to_given_app(district_data):
     print('End of occupancy enrichment for district_data.')
 
 
-def estimate_occ_per_ap(prob_dist=[0.405, 0.345, 0.125, 0.092, 0.033]):
+def estimate_occ_per_ap(prob_dist=[0.414, 0.342, 0.121, 0.09, 0.032]):
     """
     Randomly generates a number of occupants between 1 and 5
 
@@ -152,14 +152,19 @@ def estimate_occ_per_ap(prob_dist=[0.405, 0.345, 0.125, 0.092, 0.033]):
     prob_dist : list (of floats), optional
         Defines probability distribution of occupants per apartment
         Default: [0.405, 0.345, 0.125, 0.092, 0.033]
-        Based on data of Statistisches Bundesamt (2012)
-        https://www.destatis.de/DE/ZahlenFakten/Indikatoren/LangeReihen/Bevoelkerung/lrbev05.html;jsessionid=4AACC10D2225591EC88C40EDEFB5EDAC.cae2
+        Based on data of Statistisches Bundesamt (Destatis) (2017): Bevoelkerung in Deutschland.
+    Online verfuegbar unter
+    https://www.destatis.de/DE/ZahlenFakten/Indikatoren/LangeReihen/
+    Bevoelkerung/lrbev05.html;jsessionid=4AACC10D2225591EC88C40EDEFB5EDAC.cae2,
+    zuletzt geprueft am 05.04.2017.
 
     Returns
     -------
     nb_occ : int
         Number of occupants within one apartment
     """
+
+    assert sum(prob_dist) - 1 < 0.001
 
     #  Generate random float between 0 and 1 (0 and 1 included!)
     rand_val = random.randint(0, 100000) / 100000
