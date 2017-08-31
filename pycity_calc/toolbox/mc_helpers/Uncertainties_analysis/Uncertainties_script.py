@@ -790,6 +790,9 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
             generation_mode = 'load City from pickle file'
             write_results.write('Generation mode: ' + generation_mode+ '\n')
             write_results.write('pickle file path :  ' + str(load_path)+ '\n')
+
+
+
         else:
             generation_mode = 'generation of a city with City_generator'
             write_results.write('Generation mode: ' + generation_mode)
@@ -821,6 +824,15 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
             write_results.write('dhw_volumen: ' + str(dhw_volumen) + '\n')
             write_results.write(
                 'Do random dhw. normalization: ' + str(dhw_random) + '\n')
+
+        write_results.write('\n##############  reference values ##############\n')
+
+        write_results.write('electrical demand before energy balance: ' + str(SaveCity.get_annual_el_demand()) + 'kWh/year'+ '\n')
+        write_results.write('thermal demand before energy balance : ' + str( SaveCity.get_total_annual_th_demand()) + 'kWh/year' + '\n')
+        write_results.write('Gas demand aflter energy balance:' + str(gas_dem_ref) + 'kWh/year' +'\n')
+        write_results.write('electrical demand after energy balance :' + str(el_dem_ref) + 'kWh/year' + '\n')
+        write_results.write('Annuity:' + str(total_annuity_ref) + 'Euro/year' +'\n')
+        write_results.write('GHG emissions :' + str(GHG_Emission_ref) + 'kg/year' +'\n')
 
         write_results.write('\n############################Esys #########################\n')
 
@@ -947,8 +959,8 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
 
         #creation feuille1
         feuill1 = book.add_sheet('i_low_ec0')
-        feuill2 = book.add_sheet('i_high_eco0')
-        feuill3 = book.add_sheet('i_medium_eco0')
+        feuill2 = book.add_sheet('i_medium_eco0')
+        feuill3 = book.add_sheet('i_high_eco0')
         feuill4 = book.add_sheet('i_medium_others')
 
         # ajout des en-tête
@@ -956,6 +968,7 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
         feuill1.write(0,1,'gas_demand')
         feuill1.write(0,2,'Annuity')
         feuill1.write(0,3,'GHG')
+        feuill1.write(0, 5, 'specific_GHG')
         feuill1.write(0, 4, 'specific Annuity')
         feuill2.write(0, 0, 'Annuity')
         feuill2.write(0, 1, 'specific Annuity')
@@ -1000,6 +1013,7 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
             feuill1.write(value+1,2, str(Annuity_results[value]))
             feuill1.write(value+1,3, str(GHG_results[value]))
             feuill1.write(value+1, 4, str(specific_annuity_l[value]))
+            feuill1.write(value + 1, 5, str(GHG_spe_results[value]))
 
         for value in range(len(El_results)):
             feuill2.write(value+1,0,str(Annuity_results_m[value]))
@@ -1132,7 +1146,7 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
 
 if __name__ == '__main__':
 
-    do_uncertainty_analysis(Nsamples=10, time=10, Is_k_esys_parameters=True, time_sp_force_retro=40,
+    do_uncertainty_analysis(Nsamples=1, time=10, Is_k_esys_parameters=True, time_sp_force_retro=40,
                             max_retro_year=2014, Is_k_user_parameters=True, interest_fix=0.05,
                             MC_analyse_total=True, Confident_intervall_pourcentage=90, save_result=True,
                             save_path_mc='D:\jsc-les\\test_lolo\\Results',
