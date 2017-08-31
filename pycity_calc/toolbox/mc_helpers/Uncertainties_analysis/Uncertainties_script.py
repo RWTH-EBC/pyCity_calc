@@ -969,6 +969,8 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
         feuill1.write(0,2,'Annuity')
         feuill1.write(0,3,'GHG')
         feuill1.write(0, 5, 'specific_GHG')
+        feuill1.write(0, 6, 'electrical demand before EBB')
+        feuill1.write(0, 7, 'thermal demand before EBB')
         feuill1.write(0, 4, 'specific Annuity')
         feuill2.write(0, 0, 'Annuity')
         feuill2.write(0, 1, 'specific Annuity')
@@ -1014,6 +1016,8 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
             feuill1.write(value+1,3, str(GHG_results[value]))
             feuill1.write(value+1, 4, str(specific_annuity_l[value]))
             feuill1.write(value + 1, 5, str(GHG_spe_results[value]))
+            feuill1.write(value + 1, 6, str(el_results2[value]))
+            feuill1.write(value + 1, 6, str(Th_results[value]))
 
         for value in range(len(El_results)):
             feuill2.write(value+1,0,str(Annuity_results_m[value]))
