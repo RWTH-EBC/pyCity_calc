@@ -6,13 +6,13 @@
 
 import shapely.geometry.point as point
 
-import pycity.classes.Timer as time
-import pycity.classes.Weather as weath
-import pycity.classes.Prices as price
-import pycity.classes.Environment as env
-import pycity.classes.demand.SpaceHeating as SpaceHeating
-import pycity.classes.demand.ElectricalDemand as ElectricalDemand
-import pycity.classes.demand.Apartment as Apartment
+import pycity_base.classes.Timer as time
+import pycity_base.classes.Weather as weath
+import pycity_base.classes.Prices as price
+import pycity_base.classes.Environment as env
+import pycity_base.classes.demand.SpaceHeating as SpaceHeating
+import pycity_base.classes.demand.ElectricalDemand as ElectricalDemand
+import pycity_base.classes.demand.Apartment as Apartment
 
 import pycity_calc.buildings.building as build_ex
 import pycity_calc.toolbox.clustering.clustering as clust

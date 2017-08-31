@@ -8,20 +8,20 @@ import numpy as np
 import warnings
 import copy
 
-import pycity.classes.Weather as Weather
-import pycity.classes.demand.Occupancy as occ
-import pycity.classes.demand.ElectricalDemand as eldem
-import pycity.classes.demand.Apartment as Apartment
-import pycity.classes.demand.SpaceHeating as spheat
-import pycity.functions.changeResolution as chres
+import pycity_base.classes.Weather as Weather
+import pycity_base.classes.demand.Occupancy as occ
+import pycity_base.classes.demand.ElectricalDemand as eldem
+import pycity_base.classes.demand.Apartment as Apartment
+import pycity_base.classes.demand.SpaceHeating as spheat
+import pycity_base.functions.changeResolution as chres
 
 import pycity_calc.buildings.building as build_ex
 import pycity_calc.environments.co2emissions as co2
 import pycity_calc.environments.environment as env
 import pycity_calc.environments.market as mark
 import pycity_calc.environments.timer as time
-
 import pycity_calc.toolbox.user.user_air_exchange as usair
+import pycity_calc.toolbox.dimensioning.heat_days as hday
 
 try:
     from teaser.project import Project
@@ -44,7 +44,8 @@ except:
           ' branch. Look for issue297_vdi_core branch.'
     raise ImportError(msg)
 
-def create_teaser_project(load_data=True, name=None, merge_windows=True):
+
+def create_teaser_project(load_data=True, name=None, merge_windows=False):
     """
     Creates a new teaser Project and sets the calculation method to "vdi"
 
@@ -72,6 +73,8 @@ def create_teaser_project(load_data=True, name=None, merge_windows=True):
 
     if merge_windows is True:
         project.merge_windows_calc = True
+    else:
+        project.merge_windows_calc = False
 
     return project
 
@@ -137,7 +140,7 @@ def create_teaser_typebld(project, BuildingExtended, name="example",
         assert BuildingExtended.construction_type == "heavy" or \
                BuildingExtended.construction_type == "light"
 
-    #  Assert statements (residential)
+    # Assert statements (residential)
     if BuildingExtended.build_type == 0:
         if BuildingExtended.residential_layout is not None:
             assert 0 <= BuildingExtended.residential_layout <= 1
@@ -150,14 +153,14 @@ def create_teaser_typebld(project, BuildingExtended, name="example",
         if BuildingExtended.dormer is not None:
             assert BuildingExtended.dormer == 0 or BuildingExtended.dormer == 1
 
-    #  Assert statements (Office)
+    # Assert statements (Office)
     if BuildingExtended.build_type == 1:
         if BuildingExtended.office_layout is not None:
             assert 0 <= BuildingExtended.office_layout <= 3
         if BuildingExtended.window_layout is not None:
             assert 0 <= BuildingExtended.window_layout <= 3
 
-    #  General parameters
+    # General parameters
     year_constr = BuildingExtended.build_year
     year_mod = BuildingExtended.mod_year
     number_of_floors = BuildingExtended.nb_of_floors
@@ -408,13 +411,89 @@ def extract_build_data_dict(type_build, alphaowo=25, aowo=0.9, epso=0.1,
     return dict_data
 
 
+def calc_set_temps(mode=0, t_set_heat=20, t_night=16, outdoor_temp=None,
+                   days=365, timestep=3600):
+    """
+    Calculate set temperatures (in KELVIN!) for every timestep
+
+    Parameters
+    ----------
+    mode : int, optional
+        Set temperature generation mode (default: 0)
+        Options:
+        - 0 - Day and night set-temperatures are constant over the year
+        (from 23:00 - 6:00 night set back)
+        - 1 - No heating required for days with average outdoor temperature
+        above 15 degree Celsius (lowers set temperature)
+        - 2 - No heating required for days with average outdoor temperature
+        above 12 degree Celsius (lowers set temperature)
+    t_set_heat : float, optional
+        Heating set temperature in degree Celsius. If temperature drops below
+        t_set_heat, model is going to be heated up. (default: 20)
+        (Related to constraints for res. buildings in DIN V 18599)
+    t_night : float, optional
+        Night set back temperature in degree Celsius (default: 16)
+        (Related to constraints for res. buildings in DIN V 18599)
+    outdoor_temp : array-like, optional
+        Array or list holding outdoor temperature values in degree Celsius
+        (default: None)
+    days : int, optional
+        Number of days (default: 365)
+    timestep : int, optional
+        Time discretization (default: 3600)
+
+    Returns
+    -------
+    array_t_set_heat : np.array
+        Numpy array holding set temperature for every timestep in Kelvin
+    """
+
+    assert mode in [0, 1, 2]
+
+    # Day and night set back temperatures are constant over year
+    t_set_heat_day = \
+        np.array([t_night, t_night, t_night, t_night, t_night, t_night,
+                  t_set_heat, t_set_heat, t_set_heat, t_set_heat,
+                  t_set_heat, t_set_heat, t_set_heat, t_set_heat,
+                  t_set_heat, t_set_heat, t_set_heat, t_set_heat,
+                  t_set_heat, t_set_heat, t_set_heat, t_set_heat,
+                  t_set_heat, t_night]) + 273.15
+
+    array_t_set_heat = np.tile(t_set_heat_day, days)
+
+    if mode == 1 or mode == 2:  # Use heating limit temperature
+
+        assert outdoor_temp is not None
+
+        if mode == 1:
+            temp_limit = 15
+        elif mode == 2:
+            temp_limit = 12
+
+        # Get heating on/off states (0/1)
+        heat_states = hday.calc_heat_timesteps(outdoor_temp=outdoor_temp,
+                                               days=days, timestep=timestep,
+                                               temp_heat_lim=temp_limit)
+
+        #  Convert to desired set-temperatures
+        for i in range(len(heat_states)):
+
+            curr_state = heat_states[i]
+            assert curr_state in [0, 1]
+
+            if curr_state == 0:
+                array_t_set_heat[i] = 0
+
+    return array_t_set_heat
+
+
 def calc_th_load__build_vdi6007(type_build, temp_out, rad,
                                 occ_profile, el_load, array_vent_rate=None,
                                 vent_factor=0.5,
                                 t_set_heat=20, t_set_cool=70, t_night=16,
                                 timestep=3600, imax=100,
                                 alpha_rad=None, heat_lim_val=10000000,
-                                cool_lim_val=10000000):
+                                cool_lim_val=10000000, mode_set_temp=0):
     """
     Calculate thermal space heating load of building with TEASER, according
     to VDI 6007 standard.
@@ -463,6 +542,15 @@ def calc_th_load__build_vdi6007(type_build, temp_out, rad,
     cool_lim_val : float, optional
         Upper limit for cooler power (default: 10.000.000 W). Here, positive
         value is used. Within VDI 6007 core in TEASER, values is negated.
+    mode_set_temp : int, optional
+        Set temperature generation mode (default: 0)
+        Options:
+        - 0 - Day and night set-temperatures are constant over the year
+        (from 23:00 - 6:00 night set back)
+        - 1 - No heating required for days with average outdoor temperature
+        above 15 degree Celsius (lowers set temperature)
+        - 2 - No heating required for days with average outdoor temperature
+        above 12 degree Celsius (lowers set temperature)
 
     Returns
     -------
@@ -478,6 +566,19 @@ def calc_th_load__build_vdi6007(type_build, temp_out, rad,
         q_out_wall : array-like
             Heat flow through outer wall in W
     """
+
+    #  Make copy of typebuilding and merge windows (see issue #56)
+    #  Necessary to call VDI 6007 TEASER core, but prevent merging of windows
+    #  into walls on typebuilding object, as it might be used for Modelica or
+    #  FMU simulations
+    type_build = copy.deepcopy(type_build)
+
+    type_build.calc_building_parameter(merge_windows=True)
+
+    if timestep != 3600:
+        msg = 'Currently, VDI 6007 Python simulation core only supports ' \
+              'timestep of 3600 seconds.'
+        raise AssertionError(msg)
 
     if max(temp_out) >= 70:
         warnings.warn('Temperature inputs seems to be too high. '
@@ -566,15 +667,11 @@ def calc_th_load__build_vdi6007(type_build, temp_out, rad,
     source_igRad = np.zeros(int(timesteps))
     krad = 1
 
-    t_set_heat_day = \
-        np.array([t_night, t_night, t_night, t_night, t_night, t_night,
-                  t_set_heat, t_set_heat, t_set_heat,
-                  t_set_heat, t_set_heat, t_set_heat, t_set_heat, t_set_heat,
-                  t_set_heat, t_set_heat, t_set_heat, t_set_heat, t_set_heat,
-                  t_set_heat, t_set_heat, t_set_heat, t_set_heat, t_night]) \
-        + 273.15
-
-    array_t_set_heat = np.tile(t_set_heat_day, 365)
+    #  Get set temperature for every timestep
+    array_t_set_heat = calc_set_temps(mode=mode_set_temp,
+                                      t_set_heat=t_set_heat,
+                                      t_night=t_night, outdoor_temp=temp_out,
+                                      days=365, timestep=timestep)
 
     #  Dummy value for initial temperature for VDI 6007 core
     temp_init = t_set_heat + 0.1 + 273.15
@@ -626,7 +723,9 @@ def calc_th_load_build_vdi6007_ex_build(exbuild, add_th_load=False,
                                         project_name='project',
                                         build_name='build_name',
                                         heat_lim_val=10000000,
-                                        cool_lim_val=10000000):
+                                        cool_lim_val=10000000,
+                                        merge_windows=False,
+                                        mode_set_temp=0):
     """
     Calculates thermal space heating load of building object of PyCity_Calc
     according to VDI 6007 within TEASER.
@@ -672,6 +771,19 @@ def calc_th_load_build_vdi6007_ex_build(exbuild, add_th_load=False,
     cool_lim_val : float, optional
         Upper limit for cooler power (default: 10.000.000 W). Here, positive
         value is used. Within VDI 6007 core in TEASER, values is negated.
+    merge_windows : bool, optional
+        Defines TEASER project setting for merge_windows_calc
+        (default: False). If set to False, merge_windows_calc is set to False.
+        If True, Windows are merged into wall resistances.
+    mode_set_temp : int, optional
+        Set temperature generation mode (default: 0)
+        Options:
+        - 0 - Day and night set-temperatures are constant over the year
+        (from 23:00 - 6:00 night set back)
+        - 1 - No heating required for days with average outdoor temperature
+        above 15 degree Celsius (lowers set temperature)
+        - 2 - No heating required for days with average outdoor temperature
+        above 12 degree Celsius (lowers set temperature)
 
     Returns
     -------
@@ -696,10 +808,10 @@ def calc_th_load_build_vdi6007_ex_build(exbuild, add_th_load=False,
         assert apartment.occupancy is not None, 'Apartment has no occupants!'
 
     # Pointer to timestep
-    timestep = exbuild.environment.timer.timeDiscretization
+    timestep_org = exbuild.environment.timer.timeDiscretization
 
     #  Number of timesteps per year
-    nb_timesteps = 365 * 24 * 3600 / timestep
+    nb_timesteps = 365 * 24 * 3600 / timestep_org
 
     #  #  Create TEASER weather
     #  #####################################################################
@@ -713,7 +825,7 @@ def calc_th_load_build_vdi6007_ex_build(exbuild, add_th_load=False,
         beta=beta, gamma=gamma,
         altitude=exbuild.environment.weather.altitude,
         location=exbuild.environment.location,
-        timestep=timestep,
+        timestep=timestep_org,
         do_sun_rad=False)
     # do_sun_rad=True)
 
@@ -725,19 +837,45 @@ def calc_th_load_build_vdi6007_ex_build(exbuild, add_th_load=False,
     teaser_weather.rad_earth = exbuild.environment.weather.rad_earth
 
     #  Re-calculate sun radiation values
-    teaser_weather.calc_sun_rad(timestep=timestep, nb_timesteps=nb_timesteps)
+    teaser_weather.calc_sun_rad(timestep=timestep_org,
+                                nb_timesteps=nb_timesteps)
+
+    if timestep_org != 3600:
+        #  Currently, VDI 6007 core can only handle 3600 seconds timestep.
+        msg = 'Timestep is not equal to 3600 seconds. Thus, input profiles' \
+              ' are going to be changed to 3600 seconds timestep to perform' \
+              ' VDI 6007 simulation. Going to be re-converted after thermal ' \
+              'simulation.'
+        warnings.warn(msg)
+    # Set timestep to 3600 seconds
+    timestep = 3600
 
     #  Outdoor temperature pointer
     t_out = teaser_weather.temp[:]
+    t_out = chres.changeResolution(t_out, oldResolution=timestep_org,
+                                   newResolution=timestep)
 
     #  Get radiation values
-    rad = np.transpose(teaser_weather.sun_rad)
+    rad = np.transpose(teaser_weather.sun_rad)[:]
 
-    #  #  Create TEASER project and type building
+    if timestep_org != 3600:
+        #  Convert all 6 radiation directions with new timestep
+        new_rad = np.zeros((8760, len(rad[0])))
+        for i in range(len(rad[0])):
+            new_rd = chres.changeResolution(copy.copy(rad[:, i]),
+                                            oldResolution=timestep_org,
+                                            newResolution=timestep)
+            new_rad[:, i] = new_rd
+        use_rad = new_rad
+    else:
+        use_rad = rad
+
+    # #  Create TEASER project and type building
     #  #####################################################################
 
     #  Create TEASER project
-    teas_proj = create_teaser_project(name=project_name)
+    teas_proj = create_teaser_project(name=project_name,
+                                      merge_windows=merge_windows)
 
     #  Create TEASER typebuilding
     (teas_proj, type_b) = \
@@ -768,12 +906,26 @@ def calc_th_load_build_vdi6007_ex_build(exbuild, add_th_load=False,
                                          oldResolution=org_res,
                                          newResolution=timestep)
 
+    # Convert array_vent_rate
+    if array_vent_rate is None:
+        array_vent_rate_res = np.zeros(len(el_load)) + \
+                              (type_b.thermal_zones[
+                                   0].volume * vent_factor / 3600)
+    else:
+        array_vent_rate_res = array_vent_rate[:]
+
+    if timestep != timestep_org:
+        array_vent_rate_res = chres.changeResolution(array_vent_rate_res,
+                                                     oldResolution=timestep_org,
+                                                     newResolution=timestep)
+
+    # Perform VDI 6007 thermal simulation
     (temp_in, q_heat_cool, q_in_wall, q_out_wall) = \
         calc_th_load__build_vdi6007(type_build=type_b, temp_out=t_out,
-                                    rad=rad,
+                                    rad=use_rad,
                                     occ_profile=occ_profile,
                                     el_load=el_load,
-                                    array_vent_rate=array_vent_rate,
+                                    array_vent_rate=array_vent_rate_res,
                                     vent_factor=vent_factor,
                                     t_set_heat=t_set_heat,
                                     t_set_cool=t_set_cool,
@@ -781,7 +933,23 @@ def calc_th_load_build_vdi6007_ex_build(exbuild, add_th_load=False,
                                     timestep=timestep,
                                     alpha_rad=alpha_rad,
                                     heat_lim_val=heat_lim_val,
-                                    cool_lim_val=cool_lim_val)
+                                    cool_lim_val=cool_lim_val,
+                                    mode_set_temp=mode_set_temp)
+
+    #  Reconvert from timestep to timestep_org
+    temp_in = chres.changeResolution(temp_in, oldResolution=timestep,
+                                     newResolution=timestep_org)
+    q_heat_cool = chres.changeResolution(q_heat_cool,
+                                         oldResolution=timestep,
+                                         newResolution=timestep_org)
+    q_in_wall = chres.changeResolution(q_in_wall,
+                                       oldResolution=timestep,
+                                       newResolution=timestep_org)
+    q_out_wall = chres.changeResolution(q_out_wall,
+                                        oldResolution=timestep,
+                                        newResolution=timestep_org)
+    #  Reset timestep to timestep_org
+    # timestep = timestep_org
 
     if add_th_load:
         #  Add th. load curve to apartment(s)
@@ -831,7 +999,8 @@ def calc_and_add_vdi_6007_loads_to_city(city,
                                         heat_lim_val=10000000,
                                         cool_lim_val=10000000,
                                         use_exist_tbuild=False,
-                                        requ_profiles=True):
+                                        requ_profiles=True,
+                                        mode_set_temp=0):
     """
     Calculates and adds vdi 6007 space heating loads for every building
     within city object. Uses attributes of extended building to generate
@@ -885,13 +1054,22 @@ def calc_and_add_vdi_6007_loads_to_city(city,
         for VDI usage (default: True).
         If set to True: Requires profile on every building
         If set to False: Set user profile and el. load profiles to zero
+    mode_set_temp : int, optional
+        Set temperature generation mode (default: 0)
+        Options:
+        - 0 - Day and night set-temperatures are constant over the year
+        (from 23:00 - 6:00 night set back)
+        - 1 - No heating required for days with average outdoor temperature
+        above 15 degree Celsius (lowers set temperature)
+        - 2 - No heating required for days with average outdoor temperature
+        above 12 degree Celsius (lowers set temperature)
     """
 
     #  Pointer to timestep
-    timestep = city.environment.timer.timeDiscretization
+    timestep_org = city.environment.timer.timeDiscretization
 
     #  Number of timesteps per year
-    nb_timesteps = 365 * 24 * 3600 / timestep
+    nb_timesteps = 365 * 24 * 3600 / timestep_org
 
     #  Geneate new teaser project
     teaser_project = create_teaser_project(name=project_name)
@@ -941,19 +1119,48 @@ def calc_and_add_vdi_6007_loads_to_city(city,
     teaser_weather.rad_earth = city.environment.weather.rad_earth
 
     #  Re-calculate sun radiation values
-    teaser_weather.calc_sun_rad(timestep=timestep, nb_timesteps=nb_timesteps)
+    teaser_weather.calc_sun_rad(timestep=timestep_org,
+                                nb_timesteps=nb_timesteps)
+
+    if timestep_org != 3600:
+        #  Currently, VDI 6007 core can only handle 3600 seconds timestep.
+        msg = 'Timestep is not equal to 3600 seconds. Thus, input profiles' \
+              ' are going to be changed to 3600 seconds timestep to perform' \
+              ' VDI 6007 simulation. Going to be re-converted after thermal ' \
+              'simulation.'
+        warnings.warn(msg)
+    # Set timestep to 3600 seconds
+    timestep = 3600
 
     #  Outdoor temperature pointer
     t_out = teaser_weather.temp[:]
+    t_out = chres.changeResolution(t_out, oldResolution=(
+    365 * 24 * 3600 / len(t_out)),
+                                   newResolution=timestep)
 
     #  Get radiation values
-    rad = np.transpose(teaser_weather.sun_rad)
+    rad = np.transpose(teaser_weather.sun_rad)[:]
 
-    #  Perform VDI 6007 simulation for every building
+    if timestep_org != 3600:
+        #  Convert all 6 radiation directions with new timestep
+        new_rad = np.zeros((8760, len(rad[0])))
+        for i in range(len(rad[0])):
+            new_rd = chres.changeResolution(copy.copy(rad[:, i]),
+                                            oldResolution=(
+                                            365 * 24 * 3600 / len(rad)),
+                                            newResolution=timestep)
+            new_rad[:, i] = new_rd
+        use_rad = new_rad
+    else:
+        use_rad = rad
+
+    # Perform VDI 6007 simulation for every building
     #  #####################################################################
     for n in list_build:
 
+        print()
         print('Process (VDI 6007 calculation) building node with id: ', n)
+        print('###########################################################')
 
         #  Check that building type is residential or office
         assert city.node[n]['entity'].build_type in [0, 1]
@@ -971,13 +1178,11 @@ def calc_and_add_vdi_6007_loads_to_city(city,
             year = curr_build.mod_year
         inf_rate = usair.get_inf_rate(year)
 
-        #  Define pointer to outdoor temperature
-        temp_out = city.environment.weather.tAmbient
-
         if air_vent_mode == 0 or requ_profiles is False:  # Use constant value
             array_vent = None  # If array_vent is None, use constant
             print('Use constant air exchange rate.')
             # default value
+            air_vent_mode = 0
 
         elif air_vent_mode == 1:  # Use deterministic, temp-dependent profile
 
@@ -996,7 +1201,7 @@ def calc_and_add_vdi_6007_loads_to_city(city,
                     #  Create dummy occupancy profile with single
                     occ_profile = np.ones(len(t_out))
 
-                if len(occ_profile) != nb_timesteps:
+                if len(occ_profile) != (365 * 24 * 3600 / timestep):
                     #  Change resolution to timestep of environment
                     org_res = 365 * 24 * 3600 / len(occ_profile)
 
@@ -1004,19 +1209,19 @@ def calc_and_add_vdi_6007_loads_to_city(city,
                                                          oldResolution=org_res,
                                                          newResolution=timestep)
 
-                #  Sum up air exchange rates of all apartments
+                # Sum up air exchange rates of all apartments
                 array_vent += \
                     usair.gen_det_air_ex_rate_temp_dependend(occ_profile=
                                                              occ_profile,
                                                              temp_profile=
-                                                             temp_out,
+                                                             t_out,
                                                              inf_rate=0)
 
-            #  Finally, add infiltration rate of building
+            # Finally, add infiltration rate of building
             array_vent += inf_rate
 
             #  Divide by apartment number (because of normalizing
-			#  air exchange to total building volume)
+            #  air exchange to total building volume)
             array_vent /= len(curr_build.apartments)
 
         elif air_vent_mode == 2:
@@ -1036,7 +1241,7 @@ def calc_and_add_vdi_6007_loads_to_city(city,
                     #  Create dummy occupancy profile with single
                     occ_profile = np.ones(len(t_out))
 
-                if len(occ_profile) != nb_timesteps:
+                if len(occ_profile) != (365 * 24 * 3600 / timestep):
                     #  Change resolution to timestep of environment
                     org_res = 365 * 24 * 3600 / len(occ_profile)
 
@@ -1044,20 +1249,20 @@ def calc_and_add_vdi_6007_loads_to_city(city,
                                                          oldResolution=org_res,
                                                          newResolution=timestep)
 
-                #  Sum up air exchange rate profiles
+                # Sum up air exchange rate profiles
                 #  Get ventilation rate (in 1/h, related to building air volume)
                 array_vent += \
                     usair.gen_user_air_ex_rate(
                         occ_profile=occ_profile,
-                        temp_profile=temp_out,
+                        temp_profile=t_out,
                         b_type='res',
                         inf_rate=0)
 
-            #  Finally, add infiltration rate of building
+            # Finally, add infiltration rate of building
             array_vent += inf_rate
 
             #  Divide by apartment number (because of normalizing
-			#  air exchange to total building volume)
+            #  air exchange to total building volume)
             array_vent /= len(curr_build.apartments)
 
         if air_vent_mode == 1 or air_vent_mode == 2:
@@ -1071,21 +1276,31 @@ def calc_and_add_vdi_6007_loads_to_city(city,
         #  ##################################################################
 
         #  Get overall occupancy profile of building
-        occupancy_profil = curr_build.get_occupancy_profile()[:]
+        if requ_profiles:
+            #  Extract occupancy profile
+            occupancy_profile = curr_build.get_occupancy_profile()[:]
+        else:
+            #  Create dummy occupancy profile with single
+            occupancy_profile = np.ones(len(t_out))
+        org_res = 365 * 24 * 3600 / len(occupancy_profile)
+
+        occupancy_profile = chres.changeResolution(occupancy_profile,
+                                                   oldResolution=org_res,
+                                                   newResolution=timestep)
 
         if requ_profiles:
             # Extract electrical load
             el_load = curr_build.get_electric_power_curve()[:]
         else:
             #  Generate dummy el. load profile with zeros
-            el_load = np.zeros(len(temp_out))
+            el_load = np.zeros(len(t_out))
 
-        if len(el_load) != nb_timesteps:
+        if len(el_load) != (365 * 24 * 3600 / timestep):
             #  Change resolution to timestep of environment
-            org_res = 365 * 24 * 3600 / len(el_load)
+            res_el = 365 * 24 * 3600 / len(el_load)
 
             el_load = chres.changeResolution(el_load,
-                                             oldResolution=org_res,
+                                             oldResolution=res_el,
                                              newResolution=timestep)
 
         # #  Perform VDI 6007 simulation
@@ -1094,8 +1309,8 @@ def calc_and_add_vdi_6007_loads_to_city(city,
         # Do simulation
         (temp_in, q_heat_cool, q_in_wall, q_out_wall) = \
             calc_th_load__build_vdi6007(type_build=curr_type_b,
-                                        temp_out=t_out, rad=rad,
-                                        occ_profile=occupancy_profil,
+                                        temp_out=t_out, rad=use_rad,
+                                        occ_profile=occupancy_profile,
                                         el_load=el_load,
                                         array_vent_rate=array_vent,
                                         vent_factor=vent_factor,
@@ -1105,7 +1320,22 @@ def calc_and_add_vdi_6007_loads_to_city(city,
                                         timestep=timestep,
                                         alpha_rad=alpha_rad,
                                         heat_lim_val=heat_lim_val,
-                                        cool_lim_val=cool_lim_val)
+                                        cool_lim_val=cool_lim_val,
+                                        mode_set_temp=mode_set_temp)
+
+        #  Reconvert results to original timestep
+        #  ##################################################################
+        temp_in = chres.changeResolution(temp_in, oldResolution=timestep,
+                                         newResolution=timestep_org)
+        q_heat_cool = chres.changeResolution(q_heat_cool,
+                                             oldResolution=timestep,
+                                             newResolution=timestep_org)
+        q_in_wall = chres.changeResolution(q_in_wall,
+                                           oldResolution=timestep,
+                                           newResolution=timestep_org)
+        q_out_wall = chres.changeResolution(q_out_wall,
+                                            oldResolution=timestep,
+                                            newResolution=timestep_org)
 
         # #  Add space heating power curves to apartments
         #  ##################################################################
@@ -1138,6 +1368,8 @@ def calc_and_add_vdi_6007_loads_to_city(city,
             apartment.addEntity(space_heating)
 
         print('Finished VDI calculation for building node with id: ', n)
+        print('###########################################################')
+        print()
 
 
 def add_kfw_retrofit_to_city(city, material=None, thickness=None):
@@ -1202,6 +1434,18 @@ if __name__ == '__main__':
     t_set_heat = 20  # Heating set temperature in degree Celsius
     t_set_night = 16  # Night set back temperature in degree Celsius
     t_set_cool = 70  # Cooling set temperature in degree Celsius
+
+    mode_set_temp = 0
+    # Set temperature generation mode(default: 0)
+    # Options:
+    # - 0 - Day and night set - temperatures are constant over the year
+    # (from 23: 00 - 6:00 night set back)
+    # - 1 - No heating required for days with average outdoor temperature
+    # above 15 degree Celsius(lowers set temperature)
+    # - 2 - No heating required for days with average outdoor temperature
+    # above 12 degree Celsius(lowers set temperature)
+    #  Caution: Mode 1 and 2 might lead to very high thermal peak loads
+    #  if building cools down and heating season starts again!
 
     air_vent_mode = 1
     #  int; Define mode for air ventilation rate generation
@@ -1420,7 +1664,8 @@ if __name__ == '__main__':
                                     t_set_cool=t_set_cool,
                                     timestep=timestep,
                                     alpha_rad=None,
-                                    t_night=t_set_night)
+                                    t_night=t_set_night,
+                                    mode_set_temp=mode_set_temp)
 
     #  #  Results
     #  #####################################################################

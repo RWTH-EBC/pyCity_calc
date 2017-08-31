@@ -1,147 +1,291 @@
+#!/usr/bin/env python
+# coding=utf-8
 """
 Script to extend pycity market object
 """
-
-import os
-import numpy as np
+from __future__ import division
 import warnings
 
-import pycity.classes.Market as Market
+import pycity_calc.environments.market as market
 
 
-class Germanmarket(Market.Market):
+class GermanMarket(market.Market):
     """
-    Germanmarket class of pycity_calculator. Extends market object of pycity.
-    Contains different taxes and subsidy payments from German law for CHP and
-    PV usage
-
-    Attributes:
-    -----------
-    EEG_Umlage_tax
-        #  TODO
-    EEX_baseload_price
-        #  TODO
-    avoid_grid_usage: 'float', payment for avoided grid usage for sold chp electricity according to KWKG2016.
-        in €/kWh
-    sub_chp: 'list', subsidiy payments for sold chp electricity according to KWKG2016.
-        sub_chp[0] - pNom < 50kW in €/kWh
-        sub_chp[1] - 50kW < pNom < 100kW  in €/kWh
-    self_demand_usage_chp: 'list', subsidiy payments for self used chp electricity according to KWKG2016.
-        sub_chp[0] - pNom < 50kW  in €/kWh
-        sub_chp[1] - 50kW < pNom < 100kW  in €/kWh
-    gas_disc_chp: 'float', discount on used gas with highly efficient Energysystems according to german Energy tax law.
-    sub_pv: 'list', subsidiy payments for sold pv electricity according to EEG2017.
-        sub_pv[0] - kWpeak < 10kW  in €/kWh
-        sub_pv[1] - 10kW < kWpeak < 40kW  in €/kWh
-        sub_pv[2] - 40kW < kWpeak < 100kW  in €/kWh
+    GermanMarket class of pycity_calculator.
+    Extends pycity_calc market class with specific regulations for German
+    market, such as CHP subsidies (German CHP law / KWK Gesetz) and renewable
+    energy regulations (Renewable energy law / EEG), EEX baseload prices,
+    grid avoidance fee.
     """
 
-    def __init__(self, reset_pycity_default_values=True):
+    def __init__(self, reset_pycity_default_values=True,
+                 chp_tax_return=0.0055, eeg_pay=0.0688,
+                 eex_baseload=[0.02479 ,0.02826 ,0.0376 ,0.04132],
+                 grid_av_fee=0.0055, hp_day_tarif=0.2, hp_night_tarif=0.18):
         """
-        Constructor of germanmarket object instance
+        Constructor of GermanMarket object instance
 
         Parameters
         ----------
         reset_pycity_default_values : bool, optional
-            #  TODO
+            Boolean to define, if pycity default values should be set to None.
+            (default: True)
+            True - Set all default values to None
+            False - Keep pycity default market values
+        chp_tax_return : float, optional
+            CHP tax return on gas usage in Euro/kWh (default: 0.0055)
+        eeg_pay : float, optional
+            EEG payment in Euro/kWh (default: 0.0688)
+        eex_baseload : list (of floats), optional
+            List with quarterly EEX baseload prices in Euro/kWh
+            (default: [0.02479 ,0.02826 ,0.0376 ,0.04132])
+        grid_av_fee : float, optional
+            Grid usage avoidance fee in Euro/kWh
+            (default: 0.0055)
+        hp_day_tarif : float, optional
+            Heat pump day tarif in Euro/kWh
+            (default: 0.2)
+        hp_night_tarif : float, optional
+            Heat pump night tarif in Euro/kWh
+            (default: 0.18)
         """
 
-        super(Germanmarket, self).__init__(reset_pycity_default_values=
+        super(GermanMarket, self).__init__(reset_pycity_default_values=
                                            reset_pycity_default_values)
 
-        #TODO: get the values from somewere
-        self.EEG_Umlage_tax=[0.05,0.04]
-        self.EEX_baseload_price=1
-        self.avoid_grid_usage=0.07
-        self.sub_chp=[0.08,0.06,0.05,0.044,0.031]
-        self.self_demand_usage_chp=[0.04,0.03,0]
-        self.gas_disc_chp=0.0055
-        self.sub_pv=[0.123,0.1196,0.1069]
+        #  List of CHP subsidies for fed-in electric energy
+        self._sub_chp = [0.08, 0.06, 0.05, 0.044, 0.031]
 
-    def get_EEG_Umlage_tax(self, year):
-        return self.EEG_Umlage_tax
-    def get_EEX_baseload_price(self, year):
-        return self.EEX_baseload_price
-    def get_avoid_grid_usage(self, year):
-        return self.avoid_grid_usage
+        #  List of CHP subsidies for self-consumed electric energy
+        self._sub_chp_self = [0.04, 0.03, 0]
 
-    def get_sub_chp(self, year, pNom):
-        '''
-        return the subsidy payment for sold chp electritiy
+        #  List of PV subsidies
+        self._sub_pv = [0.123, 0.1196, 0.1069, 0.0851]
 
-        -----------
-        Parameters:
-        year: 'int', reference year
-        pNom: 'float', nominal electrical CHP power
-        --------
-        Returns:
-        sub_chp: 'float', subsidiy payments for sold chp electricity according to KWKG2016.
-        '''
+        #  CHP tax return on gas
+        self.chp_tax_return = chp_tax_return
 
-        if pNom <= 50000:
-            sub_chp = self.sub_chp[0]
-        elif pNom > 50000 and pNom <= 100000:
-            sub_chp = self.sub_chp[1]
-        elif pNom > 100000 and pNom <= 250000:
-            sub_chp = self.sub_chp[2]
-        elif pNom > 250000 and pNom <= 2000000:
-            sub_chp = self.sub_chp[3]
+        #  HP tarifs
+        self.hp_day_tarif = hp_day_tarif
+        self.hp_night_tarif = hp_night_tarif
+
+        #  EEX baseload prices
+        self.eex_baseload = eex_baseload
+
+        #  Grid usage avoidance fee
+        self.grid_av_fee = grid_av_fee
+
+        #  EEG payment
+        self.eeg_pay = eeg_pay
+
+        #  Dict with EEG payment on self consumed energy (status quo: 2017)
+        self._dict_eeg_self = {'pv': 0.4 * eeg_pay, 'chp': 0.4 * eeg_pay}
+
+    def get_sub_chp(self, p_nom):
+        """
+        Returns CHP subsidy payment per kWh feed in el. energy, depending
+        on nominal el. CHP power
+
+        Parameters
+        ----------
+        p_nom : float
+            Nominal electrical CHP power in W
+
+        Returns
+        -------
+        sub_chp : float
+            CHP subsidies payment in Euro/kWh for fed-in electric energy
+        """
+
+        for i in range(len(self._sub_chp) - 1):
+            if self._sub_chp[i + 1] > self._sub_chp[i]:
+                msg = 'self._sub_chp list seems to hold higher subsidies for' \
+                      'larger CHP units. Check if this has been done ' \
+                      'intentionally. According to German CHP law, subsidies' \
+                      ' are higher for smaller CHP sizes.'
+                warnings.warn(msg)
+
+        if p_nom <= 50000:
+            sub_chp = self._sub_chp[0]
+        elif p_nom <= 100000:
+            sub_chp = self._sub_chp[1]
+        elif p_nom <= 250000:
+            sub_chp = self._sub_chp[2]
+        elif p_nom <= 2000000:
+            sub_chp = self._sub_chp[3]
         else:
-            sub_chp = self.sub_chp[4]
+            sub_chp = self._sub_chp[4]
 
         return sub_chp
 
-    def get_self_demand_usage_chp(self, year,pNom):
-        '''
-        return the subsidy payment for self used chp electritiy
+    def get_sub_chp_self(self, p_nom):
+        """
+        Returns CHP subsidy payment for self consumed electric energy in
+        Euro/kWh.
 
-        -----------
-        Parameters:
-        year: 'int', reference year
-        pNom: 'float', nominal electrical CHP power
-        --------
-        Returns:
-        self_demand_usage_chp: 'float', subsidiy payments for sold chp electricity according to KWKG2016.
-        '''
-        if pNom <= 50000:
-            self_demand_usage_chp = self.self_demand_usage_chp[0]
-        elif pNom > 50000 and pNom <= 100000:
-            self_demand_usage_chp = self.self_demand_usage_chp[1]
-        else:
-            self_demand_usage_chp = self.self_demand_usage_chp[2]
-        return self_demand_usage_chp
-    def get_gas_disc_chp(self, year):
-        return self.gas_disc_chp
-    def get_sub_pv(self, year, peakload):
-        '''
-        return the subsidy payment for sold pv electritiy
+        Parameters
+        ----------
+        p_nom : float
+            Nominal electrical CHP power in W
 
-        -----------
-        Parameters:
-        year: 'int', reference year
-        peakload: 'float', installed PV Peakload in W
-        --------
-        Returns:
-        sub_pv: 'float', subsidiy payments for sold pv electricity according to EEG2017.
-        '''
-        if peakload <= 10000:
-            # max 10kWp
-            sub_pv = self.sub_pv[0]
-        elif 10000 < peakload and peakload <= 40000:
-            # from 10 to 40kWp
-            sub_pv = self.sub_pv[1]
-        elif peakload <= 100000:
-            # maximum 100kWp
-            sub_pv = self.sub_pv[2]
+        Returns
+        -------
+        sub_chp : float
+            CHP subsidies payment in Euro/kWh for self-consumed electric energy
+        """
+        for i in range(len(self._sub_chp_self) - 1):
+            if self._sub_chp_self[i + 1] > self._sub_chp_self[i]:
+                msg = 'self._sub_chp_self list seems to hold higher subsidies ' \
+                      'for larger CHP units. Check if this has been done ' \
+                      'intentionally. According to German CHP law, subsidies' \
+                      ' are higher for smaller CHP sizes.'
+                warnings.warn(msg)
+
+        if p_nom <= 50000:
+            sub_chp = self._sub_chp_self[0]
+        elif p_nom <= 100000:
+            sub_chp = self._sub_chp_self[1]
         else:
-            # TODO: there are some exception from the 100kWp maximum in the EEG
-            # TODO: implement a case for more than 100kWp
-            warnings.warn('PV System hast more than 100kWp. The implemented EEG subsidy payments \n'
-                          'method is not valid for this case. sub_pv set to 0.1109')
-            sub_pv = self.sub_pv[2]
+            sub_chp = self._sub_chp_self[2]
+
+        return sub_chp
+
+    def get_sub_pv(self, pv_peak_load, is_res=True):
+        """
+        Returns the subsidy payment for sold pv electricity
+
+        Parameters
+        ----------
+        pv_peak_load : float
+            PV peak load in Watt
+        is_res : bool, optional
+            Defines, if PV is installed on residential building (default: True)
+            If True, PV is installed on residential building.
+            If False, PV is installed on non-residential building with
+            lower subsidies.
+
+        Returns
+        -------
+        sub_pv : float
+            Subsidy payment for sold PV el. energy in Euro/kWh
+        """
+
+        if is_res:
+
+            if pv_peak_load <= 10000:
+                # max 10kWp
+                sub_pv = self._sub_pv[0]
+            elif pv_peak_load <= 40000:
+                # from 10 to 40kWp
+                sub_pv = self._sub_pv[1]
+            elif pv_peak_load <= 100000:
+                # maximum 100kWp
+                sub_pv = self._sub_pv[2]
+            else:
+                msg = 'PV System hast more than 100kWp.\nThe implemented EEG' \
+                      ' subsidy payments method is not valid for this case.\n' \
+                      ' sub_pv set to ' + str(self._sub_pv[3] * 0.7) + '.\n ' \
+                      'Consider adding own PV subsidy value!'
+                warnings.warn(msg)
+                sub_pv = self._sub_pv[2] * 0.7
+
+        else:
+            if pv_peak_load <= 100000:
+                sub_pv = self._sub_pv[3]
+            else:
+                msg = 'PV System hast more than 100kWp.\nThe implemented EEG' \
+                      ' subsidy payments method is not valid for this case.\n' \
+                      ' sub_pv set to ' + str(self._sub_pv[3] * 0.7) + '.\n ' \
+                      'Consider adding own PV subsidy value!'
+                warnings.warn(msg)
+                sub_pv = self._sub_pv[3] * 0.7
+
         return sub_pv
 
-    def load_pricing_data(self):
-        #TODO: get the values from somewere
-        #TODO: think about structure of the input data. On which values do the prices depent? Year? Demand?
-        print('nothing here yet')
+    def get_eeg_payment(self, type):
+        """
+        Returns EEG payment on self-produced and consumed el. energy of CHP
+        or PV system.
+
+        Parameters
+        ----------
+        type : str
+            Defines system type. Options:
+            - 'chp' : CHP system
+            - 'pv' : PV system
+
+        Returns
+        -------
+        eeg_pay : float
+            Specific EEG payment in Euro/kWh
+        """
+
+        assert type in ['chp', 'pv'], 'Type is invalid (must be PV or CHP)'
+
+        if type == 'chp':
+            eeg_pay = self._dict_eeg_self['chp']
+        elif type == 'pv':
+            eeg_pay = self._dict_eeg_self['pv']
+
+        return eeg_pay
+
+if __name__ == '__main__':
+
+    #  Initialize GermanMarket object instance
+    germanmarket = GermanMarket()
+
+    chp_nom_el_p = 30000  # El. CHP power in Watt
+    chp_nom_el_p_2 = 100000  # El. CHP power in Watt
+
+    #  Get CHP subsidies of CHP fed-in el. energy
+    chp_sub = germanmarket.get_sub_chp(p_nom=chp_nom_el_p)
+
+    #  Get CHP subsidies of CHP for self consumed el. energy
+    chp_sub_self = germanmarket.get_sub_chp_self(p_nom=chp_nom_el_p)
+
+    print('Get CHP subsidies for CHP of size ' + str(chp_nom_el_p / 1000) +
+          ' kW:')
+    print('CHP subsidy for fed-in el. energy in Euro/kWh:')
+    print(chp_sub)
+    print('CHP subsidy for self consumed el. energy in Euro/kWh:')
+    print(chp_sub_self)
+    print()
+
+    #  Get CHP subsidies of CHP fed-in el. energy
+    chp_sub2 = germanmarket.get_sub_chp(p_nom=chp_nom_el_p_2)
+
+    #  Get CHP subsidies of CHP for self consumed el. energy
+    chp_sub_self2 = germanmarket.get_sub_chp_self(p_nom=chp_nom_el_p_2)
+
+    print('Get CHP subsidies for CHP of size ' + str(chp_nom_el_p_2 / 1000) +
+          ' kW:')
+    print('CHP subsidy for fed-in el. energy in Euro/kWh:')
+    print(chp_sub2)
+    print('CHP subsidy for self consumed el. energy in Euro/kWh:')
+    print(chp_sub_self2)
+    print()
+
+    #  PV subsidies
+    #  ###################################################################
+    pv_peak_power = 30000  # in Watt
+
+    pv_sub_res = germanmarket.get_sub_pv(pv_peak_load=pv_peak_power,
+                                         is_res=True)
+
+    pv_sub_nonres = germanmarket.get_sub_pv(pv_peak_load=pv_peak_power,
+                                            is_res=False)
+
+    print('PV subsidy payment in Euro/kWh for PV module with peak load '
+          + str(pv_peak_power / 1000) + ' kW on residential building:')
+    print(pv_sub_res)
+
+    print('PV subsidy payment in Euro/kWh for PV module with peak load '
+          + str(pv_peak_power / 1000) + ' kW on non-residential building:')
+    print(pv_sub_nonres)
+
+    #  Get EEG payment on self-produced and consumed CHP el. energy
+    #  ###################################################################
+    eeg_pay = germanmarket.get_eeg_payment(type='chp')
+
+    print('EEG payment on self-consumed CHP el. energy in Euro/kWh:')
+    print(eeg_pay)

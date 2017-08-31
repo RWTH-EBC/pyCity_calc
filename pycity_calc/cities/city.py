@@ -5,12 +5,12 @@ Pycity_calc city class (as inheritance from citydistrict class of pycity)
 from __future__ import division
 
 try:
-    import pycity
-except:
-    ImportError('Package pycity is not found. Please install pycity first.' +
+    import pycity_base
+except:  # pragma: no cover
+    ImportError('Package pycity_base is not found. Please install pycity first.' +
                 'https://github.com/RWTH-EBC/pyCity')
 
-import pycity.classes.CityDistrict as citydist
+import pycity_base.classes.CityDistrict as citydist
 
 
 class City(citydist.CityDistrict):
@@ -29,10 +29,10 @@ class City(citydist.CityDistrict):
 
         Example
         -------
-        >>> import pycity.classes.Timer as time
-        >>> import pycity.classes.Weather as weath
-        >>> import pycity.classes.Prices as price
-        >>> import pycity.classes.Environment as env
+        >>> import pycity_base.classes.Timer as time
+        >>> import pycity_base.classes.Weather as weath
+        >>> import pycity_base.classes.Prices as price
+        >>> import pycity_base.classes.Environment as env
         >>> timer = time.Timer()
         >>> weather = weath.Weather(timer)
         >>> prices = price.Prices()
@@ -62,8 +62,8 @@ class City(citydist.CityDistrict):
             Number of node
         """
 
-        if self.environment is None:
-            self.environment = extended_building.environment
+        if self.environment is None:  # pragma: no cover
+            self.environment = extended_building.environment  # pragma: no cover
 
         node_number = self.addEntity(entity=extended_building,
                                      position=position, name=name,

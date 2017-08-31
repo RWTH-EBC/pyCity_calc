@@ -2,8 +2,8 @@
 """
 Script to extend pycity environment class
 """
-
-import pycity.classes.Environment as Env
+from __future__ import division
+import pycity_base.classes.Environment as Env
 
 
 class EnvironmentExtended(Env.Environment):

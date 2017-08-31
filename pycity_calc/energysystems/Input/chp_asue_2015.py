@@ -6,7 +6,7 @@ Arbeitsgemeinschaft für sparsamen und umweltfreundlichen
 Energieverbrauch e.V., BHKW-Kenndaten 2014/15, Essen, 2015.
 (following functions  are only valid for gas-CHP systems!)
 """
-
+from __future__ import division
 #  #------------------------------------------------------------------------------------------------------------------
 #  From th. power --> el. efficiency th. efficiency --> --> el. power
 

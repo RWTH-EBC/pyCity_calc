@@ -5,16 +5,13 @@ Script to generate uncertain sets of building/building physics uncertain
 parameters
 """
 
-
 import random as rd
 import numpy as np
 import matplotlib.pyplot as plt
 
 
 def calc_list_mod_years_single_build(nb_samples, year_of_constr, max_year,
-                                     time_sp_force_retro=40,
-                                     list_teaser_mod_y=[1982, 1995, 2002,
-                                                        2009]):
+                                     time_sp_force_retro=40):
     """
     Calculate list of modification years for single building. Assumes
     equal distribution of mod. year probability density function.
@@ -37,9 +34,6 @@ def calc_list_mod_years_single_build(nb_samples, year_of_constr, max_year,
         Timespan to force retrofit (default: 40). If value is set, forces
         retrofit within its time span. If set to None, time span is not
         considered.
-    list_teaser_mod_y : list (of ints)
-        List holding possible TEASER retrofit boundary years (with change in
-        U-values etc.) (default: [1982, 1995, 2002, 2009]
 
     Returns
     -------
@@ -48,6 +42,9 @@ def calc_list_mod_years_single_build(nb_samples, year_of_constr, max_year,
     """
 
     list_mod_years = []
+
+    #  Currently unused: List with TEASER years of modernization
+    list_teaser_mod_y = [1982, 1995, 2002, 2009]
 
     #  Calc min_year
     if time_sp_force_retro is not None:
@@ -58,9 +55,8 @@ def calc_list_mod_years_single_build(nb_samples, year_of_constr, max_year,
     else:
         min_year = int(year_of_constr + 1)
 
-    #  Do sampling
+    # Do sampling
     for i in range(nb_samples):
-
         chosen_year = rd.randint(min_year, max_year)
 
         list_mod_years.append(chosen_year)
@@ -98,7 +94,6 @@ def calc_inf_samples(nb_samples, mean=0, sdev=1, max_val=3):
     Gebäude & Gesundheit: Innenraumhygiene, Raumluftqualität und
     Energieeinsparung. Ergebnisse des 7, S. 263–271.
     """
-
     list_inf = np.random.lognormal(mean=mean, sigma=sdev, size=nb_samples)
 
     list_inf /= 6
@@ -109,6 +104,63 @@ def calc_inf_samples(nb_samples, mean=0, sdev=1, max_val=3):
             list_inf[i] = 0.26
 
     return list_inf
+
+
+def calc_list_net_floor_area_sampling(mean, sigma, nb_of_samples):
+    """
+
+    Parameters
+    ----------
+    mean
+    sigma
+    nb_of_samples
+
+    Returns
+    -------
+
+    """
+
+    list_of_net_floor_area = np.random.normal(loc=mean, scale=sigma,
+                                              size=nb_of_samples)
+
+    return list_of_net_floor_area
+
+
+def calc_list_dormer_samples(nb_samples):
+    """
+     Performs building component sampling based on uniform distribution
+    distribution.
+
+    Parameters:
+        nb samples: int
+        Number of samples
+
+    Returns:    tuples of integers lists
+                list_dormer,list_attic,list_cellar,list_const
+
+    """
+
+    list_dormer = np.random.random_integers(0, 1, size=nb_samples)
+    # 0: No dormer
+    # 1: Dormer
+
+    list_attic = np.random.random_integers(0, 3, size=nb_samples)
+    # 0: no attic
+    # 1: Roof no n heated
+    # 2: Roof partially heated
+    # 3: Roof fully heated
+
+    list_cellar = np.random.random_integers(0, 3, size=nb_samples)
+    # 0: No basement
+    # 1: Non heated cellar
+    # 2: Partially heated basement
+    # 3: Fully heated cellar
+
+    list_const = np.random.random_integers(0, 1, size=nb_samples)
+    # 0: heavy construction
+    # 1: light construction
+
+    return list_dormer, list_attic, list_cellar, list_const
 
 
 if __name__ == '__main__':
@@ -133,7 +185,7 @@ if __name__ == '__main__':
         assert year > year_of_constr
         assert year <= max_year
         if time_sp_force_retro is not None:
-            year >= (max_year - time_sp_force_retro)
+            assert year >= (max_year - time_sp_force_retro)
 
     fig = plt.figure()
     plt.hist(x=list_mod)
@@ -171,7 +223,7 @@ if __name__ == '__main__':
         if inf <= 0.1:
             below_01 += 1
 
-    #  Reference Muenzberg
+    # Reference Muenzberg
     #  20 % below 0.1
     #  50 % below 0.18
     #  85 % below 0.4
@@ -201,6 +253,7 @@ if __name__ == '__main__':
     print(max(list_inf))
 
     import matplotlib.pyplot as plt
+
     count, bins, ignored = plt.hist(list_inf, 500, normed=False, align='mid')
     # x = np.linspace(min(bins), max(bins), 10000)
     # pdf = (np.exp(-(np.log(x) - mean) ** 2 / (2 * sdev ** 2)) /
@@ -210,3 +263,34 @@ if __name__ == '__main__':
     plt.ylabel('Number of values')
     plt.axis('tight')
     plt.show()
+
+    #   Building components
+    #  ################################################################
+
+    list_dormer, list_attic, list_cellar, list_const = calc_list_dormer_samples(
+        nb_samples)
+
+    fig2, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+    ax1.hist(x=list_dormer)
+    ax1.set_title('Dormer')
+    ax2.hist(x=list_attic)
+    ax2.set_title('Attic')
+    ax3.hist(x=list_cellar)
+    ax3.set_title('Cellar')
+    ax4.hist(x=list_const)
+    ax4.set_title('Construction type')
+    plt.show()
+    plt.close()
+
+    #   Net floor area sampling analysis
+    #  ################################################################
+
+    list_net_floor_area = \
+        calc_list_net_floor_area_sampling(mean=500,
+                                          sigma=0.5,
+                                          nb_of_samples=nb_samples)
+
+    plt.hist(list_net_floor_area)
+    plt.xlabel('Net floor area sampling')
+    plt.show()
+    plt.close()

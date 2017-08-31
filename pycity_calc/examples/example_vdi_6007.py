@@ -12,13 +12,13 @@ Steps:
 - Generate building and add apartment
 - Run VDI simulation with building
 """
-
+from __future__ import division
 import numpy as np
 
-import pycity.classes.Weather as Weather
-import pycity.classes.demand.Occupancy as occ
-import pycity.classes.demand.ElectricalDemand as eldem
-import pycity.classes.demand.Apartment as Apartment
+import pycity_base.classes.Weather as Weather
+import pycity_base.classes.demand.Occupancy as occ
+import pycity_base.classes.demand.ElectricalDemand as eldem
+import pycity_base.classes.demand.Apartment as Apartment
 
 import pycity_calc.buildings.building as build_ex
 import pycity_calc.environments.co2emissions as co2
@@ -45,7 +45,7 @@ except:
                       'console and open another one. Then try again.')
 
 
-def run_example_vdi_6007():
+def run_example_vdi_6007(plot_res=False):
     #  Define simulation settings
     build_year = 1962  # Year of construction
     mod_year = 2014  # Year of retrofit
@@ -210,42 +210,50 @@ def run_example_vdi_6007():
         elif q_heat_cool[i] < 0:
             q_cool[i] = q_heat_cool[i]
 
-    print('Sum of heating energy in kWh:')
-    print(sum(q_heat) / 1000)
+    sh_energy = sum(q_heat) * (timestep / 3600) / 1000
 
-    print('Sum of cooling energy in kWh:')
-    print(-sum(q_cool) / 1000)
+    print('Sum of net space heating heating energy in kWh:')
+    print(sh_energy)
 
-    import matplotlib.pyplot as plt
+    print('Specific net space heating energy demand in kWh/m2:')
+    print(sh_energy / extended_building.net_floor_area)
 
-    fig = plt.figure()
-    if air_vent_mode != 2:
-        fig.add_subplot(311)
-        plt.plot(environment.weather.tAmbient)
-        plt.ylabel('Outdoor air\ntemperature in\ndegree Celsius')
-        fig.add_subplot(312)
-        plt.plot(temp_in)
-        plt.ylabel('Indoor air\ntemperature in\ndegree Celsius')
-        fig.add_subplot(313)
-        plt.plot(q_heat_cool / 1000)
-        plt.ylabel('Heating/cooling\npower (+/-)\nin kW')
-        plt.xlabel('Time in hours')
-    else:
-        fig.add_subplot(411)
-        plt.plot(environment.weather.tAmbient)
-        plt.ylabel('Outdoor air\ntemperature in\ndegree Celsius')
-        fig.add_subplot(412)
-        plt.plot(temp_in)
-        plt.ylabel('Indoor air\ntemperature in\ndegree Celsius')
-        fig.add_subplot(413)
-        plt.plot(q_heat_cool / 1000)
-        plt.ylabel('Heating/cooling\npower (+/-)\nin kW')
-        fig.add_subplot(414)
-        plt.plot(array_vent)
-        plt.ylabel('Air\nexchange\nrate in 1/h')
-        plt.xlabel('Time in hours')
-    plt.show()
-    plt.close()
+    if sum(q_cool) < 0:
+        print('Sum of cooling energy in kWh:')
+        print(-sum(q_cool) * (timestep / 3600)  / 1000)
+
+    if plot_res:
+        import matplotlib.pyplot as plt
+
+        fig = plt.figure()
+        if air_vent_mode != 2:
+            fig.add_subplot(311)
+            plt.plot(environment.weather.tAmbient)
+            plt.ylabel('Outdoor air\ntemperature in\ndegree Celsius')
+            fig.add_subplot(312)
+            plt.plot(temp_in)
+            plt.ylabel('Indoor air\ntemperature in\ndegree Celsius')
+            fig.add_subplot(313)
+            plt.plot(q_heat_cool / 1000)
+            plt.ylabel('Heating/cooling\npower (+/-)\nin kW')
+            plt.xlabel('Time in hours')
+        else:
+            fig.add_subplot(411)
+            plt.plot(environment.weather.tAmbient)
+            plt.ylabel('Outdoor air\ntemperature in\ndegree Celsius')
+            fig.add_subplot(412)
+            plt.plot(temp_in)
+            plt.ylabel('Indoor air\ntemperature in\ndegree Celsius')
+            fig.add_subplot(413)
+            plt.plot(q_heat_cool / 1000)
+            plt.ylabel('Heating/cooling\npower (+/-)\nin kW')
+            fig.add_subplot(414)
+            plt.plot(array_vent)
+            plt.ylabel('Air\nexchange\nrate in 1/h')
+            plt.xlabel('Time in hours')
+        plt.tight_layout()
+        plt.show()
+        plt.close()
 
 if __name__ == '__main__':
-    run_example_vdi_6007()
+    run_example_vdi_6007(True)

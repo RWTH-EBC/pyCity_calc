@@ -26,7 +26,7 @@ def run_overall_gen_and_dim(timestep, year, location, th_gen_method,
                             gen_esys,
                             esys_path,
                             use_dhw=False,
-                            dhw_method=1,
+                            dhw_method=2,
                             dhw_dim_esys=False,
                             try_path=None,
                             generation_mode=0,
@@ -35,7 +35,7 @@ def run_overall_gen_and_dim(timestep, year, location, th_gen_method,
                             show_city=False,
                             altitude=55,
                             do_normalization=True,
-                            dhw_volumen=64,
+                            dhw_volumen=None,
                             plot_pycity_calc=False,
                             slp_manipulate=True,
                             call_teaser=False,
@@ -48,7 +48,8 @@ def run_overall_gen_and_dim(timestep, year, location, th_gen_method,
                             t_night=16,
                             vdi_sh_manipulate=False,
                             el_random=False, dhw_random=False,
-                            prev_heat_dev=True, season_mod=None):
+                            prev_heat_dev=True, season_mod=None,
+                            merge_windows=False, new_try=False):
     """
     Peform overall generation and dimensioning of city object with
     street networks, energy networks and energy systems.
@@ -67,6 +68,7 @@ def run_overall_gen_and_dim(timestep, year, location, th_gen_method,
         2 - Load Modelica simulation output profile (only residential)
             Method 2 is only used for residential buildings. For non-res.
             buildings, SLPs are generated instead
+        3 - Uses TEASER VDI 6007 simulation core. Requires TEASER installation
     el_gen_method : int
         Electrical generation method
         1 - Use SLP
@@ -92,7 +94,7 @@ def run_overall_gen_and_dim(timestep, year, location, th_gen_method,
         Defines if domestic hot water profiles should be generated
         within city generator (default: False)
     dhw_method : int, optional
-        Defines method for dhw profile generation (default: 1)
+        Defines method for dhw profile generation (default: 2)
         Only relevant if use_dhw=True. Options:
         - 1: Generate profiles via Annex 42
         - 2: Generate stochastic dhw profiles
@@ -109,6 +111,8 @@ def run_overall_gen_and_dim(timestep, year, location, th_gen_method,
         generation_mode = 0: Load data from csv/txt file (tab seperated)
     eff_factor : float, optional
          Efficiency factor of thermal boiler system (default: 0.85)
+         Only necessary, if final energy is used as input within input txt to
+         reconvert it to net thermal energy.
     save_path : str, optional
         Defines name of output file (default: None). If set to None,
         city file is not saved. If not None, file is pickled under given name
@@ -124,7 +128,9 @@ def run_overall_gen_and_dim(timestep, year, location, th_gen_method,
         annualDemand
     dhw_volumen : float, optional
         Volume of domestic hot water in liter per capita and day
-        (default: 64). Only relevant for dhw method=1 (Annex 42)
+        (default: None).
+    plot_pycity_calc : bool, optional
+        Defines, if city district should be visualized (default: False)
     slp_manipulate : bool, optional
         Defines, if thermal space heating SLP profile should be modified
         (default: True). Only used for residential buildings!
@@ -156,7 +162,7 @@ def run_overall_gen_and_dim(timestep, year, location, th_gen_method,
         2 : Use stochastic, user-dependent profile
     vent_factor : float, optional
         Ventilation rate factor in 1/h (default: 0.5). Only used, if
-        array_vent_rate is None (otherwise, array_vent_rate array is used)
+        array_vent_rate is 0
     t_set_heat : float, optional
         Heating set temperature in degree Celsius. If temperature drops below
         t_set_heat, model is going to be heated up. (default: 20)
@@ -193,6 +199,16 @@ def run_overall_gen_and_dim(timestep, year, location, th_gen_method,
         with cosine wave to increase winter usage and decrease summer usage.
         Reference is maximum lighting power (default: None). If set to None,
         do NOT perform rescaling with cosine wave
+    merge_windows : bool, optional
+        Defines TEASER project setting for merge_windows_calc
+        (default: False). If set to False, merge_windows_calc is set to False.
+        If True, Windows are merged into wall resistances.
+    new_try : bool, optional
+        Defines, if TRY dataset have been generated after 2017 (default: False)
+        If False, assumes that TRY dataset has been generated before 2017.
+        If True, assumes that TRY dataset has been generated after 2017 and
+        belongs to the new TRY classes. This is important for extracting
+        the correct values from the TRY dataset!
 
     Returns
     -------
@@ -230,7 +246,10 @@ def run_overall_gen_and_dim(timestep, year, location, th_gen_method,
                                              el_random=el_random,
                                              dhw_random=dhw_random,
                                              prev_heat_dev=prev_heat_dev,
-                                             season_mod=season_mod)
+                                             season_mod=season_mod,
+                                             merge_windows=merge_windows,
+                                             new_try=new_try,
+                                             do_save=False)
 
     #  Generate street networks
     if gen_str:
@@ -296,6 +315,9 @@ if __name__ == '__main__':
     try_path = None
     #  If None, used default TRY (region 5, 2010)
 
+    new_try = False
+    #  new_try has to be set to True, if you want to use TRY data of 2017
+    #  or newer! Else: new_try = False
 
     #  Space heating load generation
     #  ######################################################
@@ -367,7 +389,7 @@ if __name__ == '__main__':
     dhw_method = 2  # Only relevant for residential buildings
 
     #  Define dhw volume per person and day (use_dhw=True)
-    dhw_volumen = 64  # Only relevant for residential buildings
+    dhw_volumen = None  # Only relevant for residential buildings
 
     #  Randomize choosen dhw_volume reference value by selecting new value
     #  from gaussian distribution with 20 % standard deviation
@@ -412,6 +434,12 @@ if __name__ == '__main__':
     #  Use TEASER to generate typebuildings?
     call_teaser = False
     teaser_proj_name = filename[:-4]
+
+    merge_windows = False
+    # merge_windows : bool, optional
+    # Defines TEASER project setting for merge_windows_calc
+    # (default: False). If set to False, merge_windows_calc is set to False.
+    # If True, Windows are merged into wall resistances.
 
     #  Log file for city_generator
     do_log = True  # True, generate log file
@@ -488,4 +516,6 @@ if __name__ == '__main__':
                             el_random=el_random,
                             dhw_random=dhw_random,
                             prev_heat_dev=prev_heat_dev,
-                            season_mod=season_mod)
+                            season_mod=season_mod,
+                            merge_windows=merge_windows,
+                            new_try=new_try)

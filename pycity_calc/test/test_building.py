@@ -3,7 +3,9 @@
 Pytest script for BuildingExtended
 """
 
+from __future__ import division
 import pycity_calc.buildings.building as build_ex
+import pycity_base.classes.demand.DomesticHotWater as DHW
 
 from pycity_calc.test.pycity_calc_fixtures import fixture_th_demand, \
     fixture_environment, fixture_el_demand, fixture_apartment, fixture_building
@@ -145,3 +147,69 @@ class Test_BuildingExtended():
         nfa = building.get_net_floor_area_of_building()
 
         nfa == 250
+
+    def test_get_annual_space_heat_demand(self, fixture_building):
+        """
+
+        Parameters
+        ----------
+        fixture_building : object
+            Fixture building object
+        """
+        assert abs(fixture_building.get_annual_space_heat_demand() - 13000) \
+               / 13000 <= 0.001
+
+    def test_get_annual_el_demand(self, fixture_building):
+        """
+
+        Parameters
+        ----------
+        fixture_building : object
+            Fixture building object
+        """
+        assert abs(fixture_building.get_annual_el_demand() - 3000) \
+               / 3000 <= 0.001
+
+    def test_get_annual_dhw_demand(self, fixture_building):
+        """
+
+        Parameters
+        ----------
+        fixture_building : object
+            Fixture building object
+        """
+        t_high = 60
+        t_low = 25
+
+        #  Generate dhw object
+        dhw_obj = \
+            DHW.DomesticHotWater(environment=fixture_building.environment,
+                                 tFlow=t_high,
+                                 thermal=True,
+                                 method=1,  # Annex 42
+                                 dailyConsumption=100,
+                                 supplyTemperature=t_low)
+
+        ref_energy = 100 * 4180 * (t_high - t_low) / (3600 * 1000) * 365
+
+        #  Add dhw object to bulding
+        fixture_building.apartments[0].addEntity(dhw_obj)
+
+        assert abs(fixture_building.get_annual_dhw_demand() - ref_energy) \
+               / ref_energy <= 0.001
+
+    def test_get_build_total_height(self, fixture_building):
+        """
+
+        Parameters
+        ----------
+        fixture_building : object
+            Fixture building object
+        """
+
+        assert fixture_building.get_build_total_height() is None
+
+        fixture_building.nb_of_floors = 2
+        fixture_building.height_of_floors = 3
+
+        assert fixture_building.get_build_total_height() == 6

@@ -4,12 +4,13 @@ Extended building class (inheritance from building class of pycity).
 BuildingExtended holds further attributes, which are necessary for
 TEASER usage.
 """
-
+from __future__ import division
+from __future__ import division
 from __future__ import division
 import warnings
 import numpy as np
 
-import pycity.classes.Building as build
+import pycity_base.classes.Building as build
 import pycity_calc.toolbox.unit_conversion as unitcon
 
 
@@ -47,7 +48,7 @@ class BuildingExtended(build.Building):
         ground_area : float, optional
             Building ground floor area in m^2 (default: None)
         height_of_floors : int, optional
-            Average height of the floors in m (default: None)
+            Average height of single floor in m (default: None)
         nb_of_floors : int, optional
             Building number of floors (default: None)
         neighbour_buildings : int, optional
@@ -105,10 +106,10 @@ class BuildingExtended(build.Building):
 
         Examples
         --------
-        >>> import pycity.classes.Timer as time
-        >>> import pycity.classes.Weather as weath
-        >>> import pycity.classes.Prices as price
-        >>> import pycity.classes.Environment as env
+        >>> import pycity_base.classes.Timer as time
+        >>> import pycity_base.classes.Weather as weath
+        >>> import pycity_base.classes.Prices as price
+        >>> import pycity_base.classes.Environment as env
         >>> timer = time.Timer()
         >>> weather = weath.Weather(timer)
         >>> prices = price.Prices()

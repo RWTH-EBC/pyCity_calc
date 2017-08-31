@@ -1,6 +1,6 @@
 # coding=utf-8
 """
-PyCity_Calc: Python package addon for pyCity
+pyCity_Calc: Python package addon for pyCity
 
 The MIT License
 
@@ -25,29 +25,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from __future__ import print_function
-from setuptools import setup, find_packages
-from setuptools.command.test import test as TestCommand
-import io
-import codecs
-import os
-import sys
-
-import pycity_calc
-
-here = os.path.abspath(os.path.dirname(__file__))
-
-
-class PyTest(TestCommand):
-    def finalize_options(self):
-        TestCommand.finalize_options(self)
-        self.test_args = []
-        self.test_suite = True
-
-    def run_tests(self):
-        import pytest
-        errcode = pytest.main(self.test_args)
-        sys.exit(errcode)
+from setuptools import setup
 
 
 setup(name='pycity_calc',
@@ -60,7 +38,6 @@ setup(name='pycity_calc',
       license='MIT License',
       packages=['pycity_calc'],
       setup_requires=['numpy', 'matplotlib', 'networkx', 'shapely',
-                      'xlrd', 'pytest', 'pypower'],
+                      'xlrd', 'pytest', 'pypower', 'utm'],
       install_requires=['numpy', 'matplotlib', 'networkx', 'shapely',
-                      'xlrd', 'pytest', 'pypower'],
-      cmdclass={'test': PyTest})
+                      'xlrd', 'pytest', 'pypower', 'utm'])

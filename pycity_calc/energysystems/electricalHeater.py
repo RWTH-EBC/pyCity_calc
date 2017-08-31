@@ -1,8 +1,10 @@
+#!/usr/bin/env python
+# coding=utf-8
 """
 Extended electricalHeater class (based on electricalHeater object of pycity)
 """
-
-import pycity.classes.supply.ElectricalHeater as EHeat
+from __future__ import division
+import pycity_base.classes.supply.ElectricalHeater as EHeat
 import warnings
 
 
