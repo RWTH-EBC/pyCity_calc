@@ -66,55 +66,7 @@ def gen_th_slp(environment, living_area=150, spec_dem=100):
     return slp_object
 
 
-def calc_av_daily_temp(timestep, outdoor_temp):
-    """
-    Calculate average daily temperatures in degree Celsius.
-
-    Parameters
-    ----------
-    timestep : int
-        Time discretization
-    outdoor_temp : array-like
-        Array with outdoor temperature in degree Celsius
-
-    Returns
-    -------
-    temp_average_array : np.array
-        Numpy array with average, daily temperature in degree Celsius
-    """
-
-    #  Number of hourly timesteps
-    nb_timesteps = len(outdoor_temp) * timestep / 3600
-
-    assert nb_timesteps % 24 == 0, 'outdoor_temp does not hold' \
-                                   ' 24 hours for each day.'
-
-    #  Calculate average, daily temperatures
-    temp_average_array = np.zeros(int(nb_timesteps / 24))
-    count_hour = 0
-
-    #  Loop over days
-    for i in range(len(temp_average_array)):
-
-        temp_sum = 0
-
-        #  Loop over timesteps in one day
-        for h in range(int(24 * 3600 / timestep)):
-            #  Sum up values
-            temp_sum += outdoor_temp[count_hour + h]
-
-        # and divide by 24 hours
-        temp_average = temp_sum / (24 * 3600 / timestep)
-
-        temp_average_array[i] = temp_average
-
-        #  Count up day counter
-        count_hour += int(24 * 3600 / timestep)
-
-    return temp_average_array
-
-
-def slp_th_manipulator(timestep, th_slp_curve, temp_array, temp_av_cut=15):
+def slp_th_manipulator(timestep, th_slp_curve, temp_array, temp_av_cut=12):
     """
 
     Parameters
@@ -126,8 +78,7 @@ def slp_th_manipulator(timestep, th_slp_curve, temp_array, temp_av_cut=15):
     temp_array : array-like
         Annual outdoor temperature array in °C (per timestep)
     temp_av_cut : float, optional
-        Average daily temperature in °C, where power is cut of (default: 15),
-        related to DIN 4108 T6 and VDI 2067
+        Average daily temperature in °C, where power is cut of (default: 12)
 
     Returns
     -------
@@ -140,9 +91,27 @@ def slp_th_manipulator(timestep, th_slp_curve, temp_array, temp_av_cut=15):
 
     slp_org_th_energy = sum(th_slp_curve) * timestep / (3600 * 1000)  # kWh
 
-    # #  Calculate average, daily temperatures
-    temp_average_array = calc_av_daily_temp(timestep=timestep,
-                                            outdoor_temp=temp_array)
+    #  Calculate average, daily temperatures
+    temp_average_array = np.zeros(365)
+    count_hour = 0
+
+    #  Loop over days
+    for i in range(len(temp_average_array)):
+
+        temp_average = 0
+
+        #  Loop over hours
+        for h in range(24):
+            #  Sum up values
+            temp_average += temp_array[count_hour + h]
+
+        # and divide by 24 hours
+        temp_average /= 24
+
+        temp_average_array[i] = temp_average
+
+        #  Count up day counter
+        count_hour += 24
 
     slp_mod_curve = np.zeros(len(th_slp_curve))
 
@@ -156,21 +125,21 @@ def slp_th_manipulator(timestep, th_slp_curve, temp_array, temp_av_cut=15):
         if curr_av_temp >= temp_av_cut:  # Set power in timeframe to zero
 
             #  Loop over hours
-            for h in range(int(24 * 3600 / timestep)):
+            for h in range(24):
                 slp_mod_curve[count_hour + h] = 0  # Set to zero
 
         else:  # Set slp_mod values to th_slp_curve values
 
             #  Loop over hours
-            for h in range(int(24 * 3600 / timestep)):
+            for h in range(24):
                 slp_mod_curve[count_hour + h] = th_slp_curve[count_hour + h]
 
         # Count up day counter
-        count_hour += int(24 * 3600 / timestep)
+        count_hour += 24
 
     # Rescale to original energy demand
     con_factor = slp_org_th_energy / (
-        sum(slp_mod_curve) * timestep / (3600 * 1000))
+    sum(slp_mod_curve) * timestep / (3600 * 1000))
     slp_mod_curve *= con_factor
 
     return slp_mod_curve
