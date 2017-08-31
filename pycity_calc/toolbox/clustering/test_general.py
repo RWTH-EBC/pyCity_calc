@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-import pycity.classes.CityDistrict as cd
+import pycity_base.classes.CityDistrict as cd
 import os
 import pycity_calc.cities.scripts.complex_city_generator as cocity
 import pycity_calc.toolbox.clustering.ba_clustering as bacl

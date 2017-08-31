@@ -1,19 +1,19 @@
 #!/usr/bin/env python
 # coding=utf-8
 """
-Test script for city_modifier.py
+Test script for mod_city_geo_pos.py
 """
-
-import pycity_calc.toolbox.city_modifier as citymod
+from __future__ import division
+import pycity_calc.toolbox.modifiers.mod_city_geo_pos as citymod
 
 # import sympy.geometry.point as point
 import shapely.geometry.point as point
 
 import pycity_calc.cities.scripts.city_generator.city_generator as citgen
 
-import pycity.classes.demand.SpaceHeating as SpaceHeating
-import pycity.classes.demand.ElectricalDemand as ElectricalDemand
-import pycity.classes.demand.Apartment as Apartment
+import pycity_base.classes.demand.SpaceHeating as SpaceHeating
+import pycity_base.classes.demand.ElectricalDemand as ElectricalDemand
+import pycity_base.classes.demand.Apartment as Apartment
 import pycity_calc.buildings.building as build_ex
 import pycity_calc.cities.city as cit
 

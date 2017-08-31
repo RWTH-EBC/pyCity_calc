@@ -5,11 +5,11 @@ Created on Tue Feb 10 14:25:16 2015
 
 @author: tsz
 """
-
+from __future__ import division
 from __future__ import division
 import numpy as np
 import pycity_calc.energysystems.chp as CHP
-import pycity.classes.Weather as Weather
+import pycity_base.classes.Weather as Weather
 import pycity_calc.environments.co2emissions as co2
 import pycity_calc.environments.environment as env
 import pycity_calc.environments.market as mark

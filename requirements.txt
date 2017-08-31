@@ -1,0 +1,11 @@
+numpy
+scipy
+networkx
+xlrd
+utm
+pypower
+shapely
+pyproj
+pytest
+coveralls
+flake8

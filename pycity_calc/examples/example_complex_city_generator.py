@@ -4,7 +4,7 @@
 Example for complex_city_generator. Creates a City with 32 buildings and
 several streets. Also adds a LHN connecting to specific buildings.
 """
-
+from __future__ import division
 import os
 import matplotlib.pyplot as plt
 
@@ -67,10 +67,7 @@ def run_example(printcitydata=False):
     dhw_method = 1  # Only relevant for residential buildings
 
     #  Define dhw volume per capita and day (dhw_method = 1 and use_dhw=True)
-    dhw_volumen = 64  # Only relevant for residential buildings
-
-    #  Plot city district with pycity_calc visualisation
-    plot_pycity_calc = True
+    dhw_volumen = None  # Only relevant for residential buildings
 
     #  Efficiency factor of thermal energy systems
     #  Used to convert input values (final energy demand) to net energy demand
@@ -117,7 +114,7 @@ def run_example(printcitydata=False):
             str_edge_path=str_edge_path,
             generation_mode=0,
             eff_factor=eff_factor,
-            save_city=save_city,
+            do_save=False,
             altitude=altitude,
             do_normalization=do_normalization,
             dhw_volumen=dhw_volumen,
@@ -143,7 +140,7 @@ def run_example(printcitydata=False):
                            plot_stepwise=False)
 
     # Plot the City
-    if plot_pycity_calc:
+    if printcitydata:
         citvis.plot_city_district(city=city_object, plot_street=True,
                                   plot_lhn=True, offset=None,
                                   plot_build_labels=True,
@@ -153,7 +150,6 @@ def run_example(printcitydata=False):
                                   y_label='y-Position in m',
                                   show_plot=True)
 
-    if printcitydata:
         aggr_sp_heat = city_object.get_aggr_space_h_power_curve()
         aggr_dhw = city_object.get_aggr_dhw_power_curve()
 

@@ -3,14 +3,14 @@
 """
 Created on Tue Feb 10 14:37:31 2015
 """
-
+from __future__ import division
 from __future__ import division
 import numpy as np
 import matplotlib.pyplot as plt
 
 import pycity_calc.energysystems.thermalEnergyStorage as TES
 
-import pycity.classes.Weather as Weather
+import pycity_base.classes.Weather as Weather
 import pycity_calc.environments.co2emissions as co2
 import pycity_calc.environments.environment as env
 import pycity_calc.environments.market as mark
@@ -190,7 +190,7 @@ def run_example_tes2(print_results=False):
 
     #  Generate tes object
     my_tes = TES.thermalEnergyStorageExtended(environment, t_init=20,
-                                              capacity=200)
+                                              capacity=500)
 
     #  Generate time array from environment
     timestep = environment.timer.timeDiscretization
@@ -240,7 +240,7 @@ def run_example_tes3(print_results=False):
 
     #  Generate tes object
     my_tes = TES.thermalEnergyStorageExtended(environment, t_init=80,
-                                              capacity=200)
+                                              capacity=500)
 
     #  Generate time array from environment
     timestep = environment.timer.timeDiscretization
@@ -306,7 +306,7 @@ def run_example_tes4(print_results=False):
 
     #  Generate tes object (use outdoor temperature for loss calculation)
     my_tes = TES.thermalEnergyStorageExtended(environment, t_init=60,
-                                              capacity=200,
+                                              capacity=2000,
                                               use_outside_temp=True)
 
     #  Generate time array from environment
@@ -325,7 +325,7 @@ def run_example_tes4(print_results=False):
         #  Temperature of storage
         temp_current = my_tes.t_current
 
-        temp_new = my_tes.calc_storage_temp_for_next_timestep(q_in=50, q_out=0,
+        temp_new = my_tes.calc_storage_temp_for_next_timestep(q_in=150, q_out=0,
                                                               t_prior=temp_current,
                                                               t_ambient=t_outside,
                                                               set_new_temperature=True,
@@ -338,7 +338,7 @@ def run_example_tes4(print_results=False):
 
     if print_results:
         plt.plot(time_array / (3600 * 24), temp_storage_array)
-        plt.annotate('Q_dot_input = 50 Watt', xy=(1, 60), xytext=(11, 55),
+        plt.annotate('Q_dot_input = 150 Watt', xy=(1, 60), xytext=(11, 55),
                      arrowprops=dict(facecolor='black',
                                      shrink=0.05))
         plt.annotate('Position outdoor (losses active)', xy=(2, 32),

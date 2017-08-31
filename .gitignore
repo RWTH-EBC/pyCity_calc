@@ -35,6 +35,9 @@
 #####################
 .cache/
 __pycache__/
+htmlcov/
+coverage_html_report/
+.coverage
 
 #pip install #
 #####################
@@ -45,3 +48,4 @@ __pycache__/
 /dist
 /build
 
+pycity_calc_key

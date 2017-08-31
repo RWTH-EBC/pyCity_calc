@@ -5,7 +5,7 @@ Created on Thu May 21 13:44:16 2015
 
 @author: Thomas
 """
-
+from __future__ import division
 from __future__ import division
 
 import numpy as np
@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 
 import pycity_calc.energysystems.heatPumpSimple as HP
 
-import pycity.classes.Weather as Weather
+import pycity_base.classes.Weather as Weather
 import pycity_calc.environments.co2emissions as co2
 import pycity_calc.environments.environment as env
 import pycity_calc.environments.market as mark

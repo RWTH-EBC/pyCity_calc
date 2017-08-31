@@ -3,11 +3,11 @@
 Example script for usage of BuildingExtended class.
 (inheritance of building object of pycity)
 """
-
-import pycity.classes.Weather as Weather
-import pycity.classes.demand.SpaceHeating as SpaceHeating
-import pycity.classes.demand.ElectricalDemand as ElectricalDemand
-import pycity.classes.demand.Apartment as Apartment
+from __future__ import division
+import pycity_base.classes.Weather as Weather
+import pycity_base.classes.demand.SpaceHeating as SpaceHeating
+import pycity_base.classes.demand.ElectricalDemand as ElectricalDemand
+import pycity_base.classes.demand.Apartment as Apartment
 
 import pycity_calc.buildings.building as build_ex
 import pycity_calc.environments.co2emissions as co2

@@ -10,9 +10,9 @@ import copy
 import numpy as np
 import matplotlib.pyplot as plt
 
-import pycity.classes.Weather as Weather
-import pycity.classes.demand.Occupancy as occup
-import pycity.classes.demand.DomesticHotWater as DomesticHotWater
+import pycity_base.classes.Weather as Weather
+import pycity_base.classes.demand.Occupancy as occup
+import pycity_base.classes.demand.DomesticHotWater as DomesticHotWater
 
 import pycity_calc.environments.co2emissions as co2
 import pycity_calc.environments.environment as env

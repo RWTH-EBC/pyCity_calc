@@ -109,30 +109,43 @@ def run_mc_sh_uncertain_city(city, nb_samples,
             #  Get list of space heating demand samples for each building
             curr_b = city.node[n]['entity']
 
-            #  Extract single sample dict for each parameter
-            dict_samples = \
-                mcb.building_unc_sampling(exbuilding=curr_b,
-                                          nb_samples=1,
-                                          max_retro_year=max_retro_year,
-                                          time_sp_force_retro=time_sp_force_retro,
-                                          nb_occ_unc=nb_occ_unc)
+            if curr_b.build_type == 0:  # Residential building
+                #  TODO: Add office simulation building type
 
-            #  Perform MC simulation for single building with single sample
-            #  parameter --> Only one entry per list, as dict_samples list
-            #  only hold a single entry (nb_samples=1 in building_unc_sampling)
-            (list_sh, list_sh_curves, list_el, list_dhw) = \
-                mcb.mc_call_single_building(exbuilding=curr_b,
-                                            dict_samples=dict_samples,
-                                            list_wea=curr_list_wea)
+                #  Extract single sample dict for each parameter
+                dict_samples = \
+                    mcb.building_unc_sampling(exbuilding=curr_b,
+                                              nb_samples=1,
+                                              max_retro_year=max_retro_year,
+                                              time_sp_force_retro=time_sp_force_retro,
+                                              nb_occ_unc=nb_occ_unc)
 
-            #  Add single building demand values to city demand values
-            sh_city += list_sh[0]
-            el_city += list_el[0]
-            dhw_city += list_dhw[0]
+                #  Perform MC simulation for single building with single sample
+                #  parameter --> Only one entry per list, as dict_samples list
+                #  only hold a single entry (nb_samples=1 in building_unc_sampling)
+                (list_sh, list_sh_curves, list_el, list_dhw, dict_problem) = \
+                    mcb.mc_call_single_building(exbuilding=curr_b,
+                                                dict_samples=dict_samples,
+                                                list_wea=curr_list_wea)
 
-            #  Sum up each space heating power value
-            for t in range(len(sh_city_curve)):
-                sh_city_curve[t] += list_sh_curves[0][t]
+                #  Add single building demand values to city demand values
+                sh_city += list_sh[0]
+                el_city += list_el[0]
+                dhw_city += list_dhw[0]
+
+                #  Sum up each space heating power value
+                for t in range(len(sh_city_curve)):
+                    sh_city_curve[t] += list_sh_curves[0][t]
+
+            elif curr_b.build_type > 1:  # Non-res and non-office sim building
+
+                (list_sh, list_el) = \
+                    mcb.non_res_build_unc_sampling(exbuilding=curr_b,
+                                               nb_samples=nb_samples)
+
+                #  Add single building demand values to city demand values
+                sh_city += list_sh[0]
+                el_city += list_el[0]
 
         #  Add single city sample to sample lists
         list_sh_city.append(sh_city)
@@ -147,21 +160,23 @@ if __name__ == '__main__':
 
     #  User Inputs
     #  ##############################
-    nb_samples = 2000
+    nb_samples = 5
     time_sp_force_retro = 50
     max_retro_year = 2014
     weather_region = 5
     weather_year = 2010
     nb_occ_unc = True
 
-    # city_f_name = 'aachen_forsterlinde_5.pkl'
-    # city_f_name = 'aachen_frankenberg_5.pkl'
-    # city_f_name = 'aachen_kronenberg_5.pkl'
-    # city_f_name = 'aachen_preusweg_5b.pkl'
-    # city_f_name = 'huenefeld_5.pkl'
-    city_f_name = 'aachen_tuerme_osm_extr_enriched.pkl'
+    #city_f_name = 'aachen_forsterlinde_mod_6.pkl'
+    #city_f_name = 'aachen_frankenberg_mod_6.pkl'
+    #city_f_name = 'aachen_huenefeld_mod_6.pkl'
+    #city_f_name = 'aachen_kronenberg_mod_6.pkl'
+    #city_f_name = 'aachen_preusweg_mod_6.pkl'
+    #city_f_name = 'aachen_tuerme_mod_6.pkl'
 
-    save_f_name = city_f_name[:-4] + '_mc_city_2000_new_dhw_' + str(nb_samples) + '.pkl'
+    city_f_name = 'city_3_buildings_mixed.pkl'
+
+    save_f_name = city_f_name[:-4] + '_mc_city_samples_' + str(nb_samples) + '.pkl'
 
     #  Define, if older years of construction should be set to enable a larger
     #  variation of modernization years

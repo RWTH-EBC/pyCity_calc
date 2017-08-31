@@ -2,7 +2,7 @@
 """
 Example script for extended timer class
 """
-
+from __future__ import division
 import pycity_calc.environments.timer as time
 
 

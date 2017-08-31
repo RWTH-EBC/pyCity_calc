@@ -3,7 +3,7 @@
 """
 Script to calculate heat pump investment cost
 """
-
+from __future__ import division
 
 def calc_spec_cost_hp(q_nom, method='wolf', hp_type='aw'):
     """
@@ -20,6 +20,8 @@ def calc_spec_cost_hp(q_nom, method='wolf', hp_type='aw'):
         Based on :
         S. Wolf, U. Fahl, M. Blesl, A. Voß, Analyse des Potenzials von
         Industriewärmepumpen in Deutschland, 2014.
+        - 'stinner':
+        #  Fixme: Add reference
     hp_type : str, optional
         Type of heat pump (default 'aw')
         Options:
@@ -33,9 +35,16 @@ def calc_spec_cost_hp(q_nom, method='wolf', hp_type='aw'):
         Specific cost for heat pump in Euro/kW
     """
 
-    assert method in ['wolf'], 'Unkown heat pump method. Check input.'
+    assert method in ['wolf', 'stinner'], 'Unkown heat pump method. ' \
+                                               'Check ' \
+                                          'input.'
     assert hp_type in ['aw', 'ww', 'bw'], 'Unknown heat pump type. Check input'
     assert q_nom > 0, 'Heat pump nominal power has to be larger than zero!'
+
+    if method == 'stinner':
+        if hp_type != 'aw':
+            msg = 'Method stinner can only handle air water heat pump costs.'
+            raise AssertionError(msg)
 
     if method == 'wolf':
 
@@ -51,10 +60,16 @@ def calc_spec_cost_hp(q_nom, method='wolf', hp_type='aw'):
 
             spec_cost_hp = 2610.2 * q_nom ** (-0.558)
 
+    if method == 'stinner':
+
+        if hp_type == 'aw':  # Air/water heat pump
+
+            spec_cost_hp = 495.4 * q_nom**(0.9154-1) + 7888/q_nom
+
     return spec_cost_hp
 
 def calc_invest_cost_hp(q_nom, method='wolf', hp_type='aw',
-                        with_source_cost=True):
+                        with_source_cost=True, with_inst=True):
     """
     Calculate investment cost of heat pump in Euro.
 
@@ -69,6 +84,8 @@ def calc_invest_cost_hp(q_nom, method='wolf', hp_type='aw',
         Based on :
         S. Wolf, U. Fahl, M. Blesl, A. Voß, Analyse des Potenzials von
         Industriewärmepumpen in Deutschland, 2014.
+        - 'stinner':
+        #  Fixme: Add reference
     hp_type : str, optional
         Type of heat pump (default 'aw')
         Options:
@@ -88,31 +105,35 @@ def calc_invest_cost_hp(q_nom, method='wolf', hp_type='aw',
     #  Get specific cost
     spec_cost = calc_spec_cost_hp(q_nom=q_nom, method=method, hp_type=hp_type)
 
-    if with_source_cost is True and hp_type != 'aw':
+    if method == 'wolf':
+        if with_source_cost is True and hp_type != 'aw':
 
-        if hp_type == 'bw':
-            #  According to
-            #  M. Platt, S. Exner, R. Bracke, Analyse des deutschen
-            #  Wärmepumpenmarktes: Bestandsaufnahme und Trends, 2010.
-            hp_invest = spec_cost * q_nom / 0.5
-        elif hp_type == 'ww':
-            #  According to
-            #  M. Platt, S. Exner, R. Bracke, Analyse des deutschen
-            #  Wärmepumpenmarktes: Bestandsaufnahme und Trends, 2010.
-            hp_invest = spec_cost * q_nom / 0.8
+            if hp_type == 'bw':
+                #  According to
+                #  M. Platt, S. Exner, R. Bracke, Analyse des deutschen
+                #  Wärmepumpenmarktes: Bestandsaufnahme und Trends, 2010.
+                hp_invest = spec_cost * q_nom / 0.5
+            elif hp_type == 'ww':
+                #  According to
+                #  M. Platt, S. Exner, R. Bracke, Analyse des deutschen
+                #  Wärmepumpenmarktes: Bestandsaufnahme und Trends, 2010.
+                hp_invest = spec_cost * q_nom / 0.8
 
-    else:
-        hp_invest = spec_cost * q_nom
+        else:
+            hp_invest = spec_cost * q_nom
+
+    elif method == 'stinner':
+        hp_invest = spec_cost * q_nom + with_inst * 2361
 
     return hp_invest
 
 
 if __name__ == '__main__':
 
-    hp_th_pow = 20000  # Heat pump thermal power in Watt
-    method = 'wolf'
-    hp_type = 'bw'  # Brine/water
-    with_source_cost = True  # With/Without cost for heat source preparation
+    hp_th_pow = 10000  # Heat pump thermal power in Watt
+    method = 'stinner'
+    hp_type = 'aw'  # Brine/water
+    with_source_cost = False  # With/Without cost for heat source preparation
 
     hp_kw = hp_th_pow / 1000  # in kW
 
@@ -125,6 +146,7 @@ if __name__ == '__main__':
     #  Calculate heat pump investment cost
     invest_hp = calc_invest_cost_hp(q_nom=hp_kw, method=method,
                                     hp_type=hp_type,
-                                    with_source_cost=with_source_cost)
+                                    with_source_cost=with_source_cost,
+                                    with_inst=True)
     print('Investment cost for heat pump in Euro:')
     print(round(invest_hp, 2))

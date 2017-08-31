@@ -3,7 +3,7 @@
 """
 Script to analyze pickle city file
 """
-
+from __future__ import division
 import os
 import pickle
 import warnings
@@ -14,6 +14,7 @@ import pycity_calc.toolbox.dimensioning.dim_functions as dimfunc
 import pycity_calc.visualization.city_visual as citvis
 import pycity_calc.toolbox.teaser_usage.teaser_use as tusage
 import pycity_calc.toolbox.networks.network_ops as netop
+import pycity_calc.cities.scripts.city_generator.city_generator as citgen
 
 
 
@@ -447,6 +448,12 @@ def check_single_building_consistency(exbuild, id=None, check_sh=True,
 
     timestep = exbuild.environment.timer.timeDiscretization
 
+    print('Check building with id: ', id)
+    print('Building type number: ', exbuild.build_type)
+
+    build_name = citgen.conv_build_type_nb_to_name(exbuild.build_type)
+    print('Building type explanation: ', build_name)
+
     if check_base_par:
         # Check existence of base parameters of
         #  ##############################################################
@@ -514,19 +521,20 @@ def check_single_building_consistency(exbuild, id=None, check_sh=True,
             warnings.warn(msg)
             b_is_correct = False
 
-        if sh_building_kwh < 3000:
-            msg = 'Building ' + str(id) + ' has very low space heating ' \
-                                          'energy demand of ' + str(
-                sh_building_kwh) + ' kWh'
-            warnings.warn(msg)
-            b_is_correct = False
+        if exbuild.build_type == 0:
+            if sh_building_kwh < 3000:
+                msg = 'Building ' + str(id) + ' has very low space heating ' \
+                                              'energy demand of ' + str(
+                    sh_building_kwh) + ' kWh'
+                warnings.warn(msg)
+                b_is_correct = False
 
-        elif sh_building_kwh > 50000:
-            msg = 'Building ' + str(id) + ' has very high space heating ' \
-                                          'energy demand of ' + str(
-                sh_building_kwh) + ' kWh'
-            warnings.warn(msg)
-            b_is_correct = False
+            elif sh_building_kwh > 50000:
+                msg = 'Building ' + str(id) + ' has very high space heating ' \
+                                              'energy demand of ' + str(
+                    sh_building_kwh) + ' kWh'
+                warnings.warn(msg)
+                b_is_correct = False
 
         if exbuild.net_floor_area is not None and exbuild.net_floor_area != 0:
             if sh_building_kwh/exbuild.net_floor_area < 50:
@@ -570,19 +578,20 @@ def check_single_building_consistency(exbuild, id=None, check_sh=True,
             warnings.warn(msg)
             b_is_correct = False
 
-        if el_building_kwh < 2000 and exbuild.build_type == 0:
-            msg = 'Building ' + str(id) + ' has very low electrical ' \
-                                          'energy demand of ' + str(
-                el_building_kwh) + ' kWh'
-            warnings.warn(msg)
-            b_is_correct = False
+        if exbuild.build_type == 0:
+            if el_building_kwh < 1000 and exbuild.build_type == 0:
+                msg = 'Building ' + str(id) + ' has very low electrical ' \
+                                              'energy demand of ' + str(
+                    el_building_kwh) + ' kWh'
+                warnings.warn(msg)
+                b_is_correct = False
 
-        elif el_building_kwh > 25000 and exbuild.build_type == 0:
-            msg = 'Building ' + str(id) + ' has very high electrical ' \
-                                          'energy demand of ' + str(
-                el_building_kwh) + ' kWh'
-            warnings.warn(msg)
-            b_is_correct = False
+            elif el_building_kwh > 40000 and exbuild.build_type == 0:
+                msg = 'Building ' + str(id) + ' has very high electrical ' \
+                                              'energy demand of ' + str(
+                    el_building_kwh) + ' kWh'
+                warnings.warn(msg)
+                b_is_correct = False
 
         if exbuild.net_floor_area is not None and exbuild.net_floor_area != 0:
             if el_building_kwh/exbuild.net_floor_area < 10:
@@ -603,46 +612,47 @@ def check_single_building_consistency(exbuild, id=None, check_sh=True,
     if check_dhw:
         #  Checks existence of hot water object(s)
         #  ##############################################################
-        for ap in exbuild.apartments:
-            dhw_curve = ap.get_dhw_power_curve(current_values=False)
-            dhw_energy_kwh = sum(dhw_curve) * timestep / (1000 * 3600)
+        if exbuild.build_type == 0:
+            for ap in exbuild.apartments:
+                dhw_curve = ap.get_dhw_power_curve(current_values=False)
+                dhw_energy_kwh = sum(dhw_curve) * timestep / (1000 * 3600)
 
-            if dhw_energy_kwh == 0:
-                msg = 'Apartment of building ' + str(id) + \
-                      ' has zero hot water demand!'
-                warnings.warn(msg)
-                b_is_correct = False
+                if dhw_energy_kwh == 0:
+                    msg = 'Apartment of building ' + str(id) + \
+                          ' has zero hot water demand!'
+                    warnings.warn(msg)
+                    b_is_correct = False
 
-            elif dhw_energy_kwh < 0:
-                raise AssertionError('Apartment of building ' + str(id) +
-                                     ' has negative hot water!')
+                elif dhw_energy_kwh < 0:
+                    raise AssertionError('Apartment of building ' + str(id) +
+                                         ' has negative hot water!')
 
-        dhw_building_kwh = exbuild.get_annual_dhw_demand()
-        if dhw_building_kwh == 0:
-            msg = 'Building ' + str(id) + \
-                  ' has zero hot water!'
-            warnings.warn(msg)
-            b_is_correct = False
-
-        water_mass = dhw_building_kwh * 3600 * 1000 / (4200 * 35)
-        volume_per_day = water_mass / 365
-
-        if exbuild.get_number_of_occupants() is not None:
-            volume_per_person_and_day = \
-                volume_per_day / exbuild.get_number_of_occupants()
-
-            if volume_per_person_and_day < 64 - 24:
+            dhw_building_kwh = exbuild.get_annual_dhw_demand()
+            if dhw_building_kwh == 0:
                 msg = 'Building ' + str(id) + \
-                      ' has low hot water volume per person and day of: ' \
-                      '' + str(volume_per_person_and_day) + ' liters.'
+                      ' has zero hot water!'
                 warnings.warn(msg)
                 b_is_correct = False
-            elif volume_per_person_and_day > 64 + 24:
-                msg = 'Building ' + str(id) + \
-                      ' has high hot water volume per person and day of: ' \
-                      '' + str(volume_per_person_and_day) + ' liters.'
-                warnings.warn(msg)
-                b_is_correct = False
+
+            water_mass = dhw_building_kwh * 3600 * 1000 / (4200 * 35)
+            volume_per_day = water_mass / 365
+
+            if exbuild.get_number_of_occupants() is not None:
+                volume_per_person_and_day = \
+                    volume_per_day / exbuild.get_number_of_occupants()
+
+                if volume_per_person_and_day < 10:
+                    msg = 'Building ' + str(id) + \
+                          ' has low hot water volume per person and day of: ' \
+                          '' + str(volume_per_person_and_day) + ' liters.'
+                    warnings.warn(msg)
+                    b_is_correct = False
+                elif volume_per_person_and_day > 80:
+                    msg = 'Building ' + str(id) + \
+                          ' has high hot water volume per person and day of: ' \
+                          '' + str(volume_per_person_and_day) + ' liters.'
+                    warnings.warn(msg)
+                    b_is_correct = False
 
     if check_occ and exbuild.build_type == 0:
         #  Checks existence of occupancy object(s) for residential buildings
@@ -784,7 +794,7 @@ def run_c_file_an(city_object):
     """
 
     print('Timestep of environment: ')
-    print(city.environment.timer.timeDiscretization)
+    print(city_object.environment.timer.timeDiscretization)
     print()
 
     #  Get building nodes and entities
@@ -798,13 +808,13 @@ def run_c_file_an(city_object):
                               plot_build_labels=True)
 
     #  Get infos about city and building space heating thermal power levels
-    get_min_max_th_sh_powers(city, print_out=True)
+    get_min_max_th_sh_powers(city_object, print_out=True)
 
     #  Get annual energy demands of city
-    get_ann_energy_demands(city, print_out=True)
+    get_ann_energy_demands(city_object, print_out=True)
 
     #  Get annual power load curves of city
-    get_power_curves(city, print_out=True)
+    get_power_curves(city_object, print_out=True)
 
 
 if __name__ == '__main__':

@@ -3,7 +3,7 @@
 """
 Script to calculate annuities of city district
 """
-
+from __future__ import division
 import pycity_calc.toolbox.dimensioning.dim_functions as dimfunc
 import pycity_calc.toolbox.networks.network_ops as netop
 
@@ -171,7 +171,7 @@ def calc_cap_rel_annuity_city(city, eco_calc):
                             list_th_pow.append(
                                 th_pow / 1000)  # Convert W to kW
 
-            # Calculate investment cost for lhn transmission statinos
+            # Calculate investment cost for lhn transmission stations
             invest_lhn_trans += \
                 lhn_cost.calc_invest_cost_lhn_stations(list_powers=list_th_pow)
 

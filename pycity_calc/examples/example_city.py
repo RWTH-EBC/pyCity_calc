@@ -2,13 +2,14 @@
 """
 Example script for usage of city class.
 """
+from __future__ import division
 
 import shapely.geometry.point as point
 
-import pycity.classes.Weather as Weather
-import pycity.classes.demand.SpaceHeating as SpaceHeating
-import pycity.classes.demand.ElectricalDemand as ElectricalDemand
-import pycity.classes.demand.Apartment as Apartment
+import pycity_base.classes.Weather as Weather
+import pycity_base.classes.demand.SpaceHeating as SpaceHeating
+import pycity_base.classes.demand.ElectricalDemand as ElectricalDemand
+import pycity_base.classes.demand.Apartment as Apartment
 
 import pycity_calc.buildings.building as build_ex
 import pycity_calc.cities.city as city
@@ -16,7 +17,7 @@ import pycity_calc.environments.co2emissions as co2
 import pycity_calc.environments.environment as env
 import pycity_calc.environments.market as mark
 import pycity_calc.environments.timer as time
-import pycity_calc.toolbox.dimensioning.dim_functions as dimfunc
+# import pycity_calc.toolbox.dimensioning.dim_functions as dimfunc
 
 
 def run_example():
@@ -98,30 +99,27 @@ def run_example():
     print('\nGet list of node ids with building objects:')
     print(city_object.get_list_build_entity_node_ids())
 
-    print('\nGet power curves of all buildings')
-    print(city_object.get_power_curves())
-
     print('\nGet annual space heating demand of all buildings')
     print(city_object.get_annual_space_heating_demand())
 
-    print('\nGet thermal annual load duration curve')
-    print(dimfunc.get_ann_load_dur_curve(city_object))
+    # print('\nGet thermal annual load duration curve')
+    # print(dimfunc.get_ann_load_dur_curve(city_object))
 
     print('\nNode ids of original city district')
     print(city_object.nodes(data=False))
     print('With data:')
     print(city_object.nodes(data=True))
 
-    print('\nGet max. th. power of city district (space heating + dhw) in W:')
-    print(dimfunc.get_max_p_of_city(city_object, get_thermal=True,
-                                    with_dhw=True))
+    # print('\nGet max. th. power of city district (space heating + dhw) in W:')
+    # print(dimfunc.get_max_p_of_city(city_object, get_thermal=True,
+    #                                 with_dhw=True))
 
-    (id, th_p) = dimfunc.get_id_max_th_power(city=city_object, with_dhw=True,
-                                             find_max=False, return_value=True)
-    print('\nGet id of building with smallest max. th. power value:')
-    print(id)
-    print('Smallest max. th. power value in W:')
-    print(th_p)
+    # (id, th_p) = dimfunc.get_id_max_th_power(city=city_object, with_dhw=True,
+    #                                          find_max=False, return_value=True)
+    # print('\nGet id of building with smallest max. th. power value:')
+    # print(id)
+    # print('Smallest max. th. power value in W:')
+    # print(th_p)
 
     return city_object
 
