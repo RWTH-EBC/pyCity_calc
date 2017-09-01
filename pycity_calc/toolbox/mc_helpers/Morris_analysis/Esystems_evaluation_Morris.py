@@ -56,9 +56,10 @@ def new_evaluation_esys(City, parameters):
     for build in list_build:
 
         if Cityref.node[build]['entity'].bes.hasBattery == True:
-            City.node[build]['entity'].bes.battery.eta_charge = parameters[0]
-            City.node[build]['entity'].bes.battery.eta_discharge = parameters[1]
-            City.node[build]['entity'].bes.battery.self_discharge = parameters[2]
+
+            City.node[build]['entity'].bes.battery.etaCharge = parameters[0]
+            City.node[build]['entity'].bes.battery.etaDischarge = parameters[1]
+            City.node[build]['entity'].bes.battery.selfDischarge = parameters[2]
 
         #if Cityref.node[build]['entity'].bes.hasTes == True:
             #print ('new t_max', parameters[3])

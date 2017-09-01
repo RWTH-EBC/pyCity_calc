@@ -548,7 +548,8 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
 
     Th_results, Gas_results, El_results, Annuity_results, GHG_results, \
            GHG_spe_results, el_results2, dict_city_pb, Nboiler_rescaled, NEH_rescaled, Lal_rescaled, Tes_rescaled,\
-           Annuity_results_h, Annuity_results_m, Annuity_results_ec1, Annuity_results_ec2, Annuity_results_ec3= \
+           Annuity_results_h, Annuity_results_m, Annuity_results_ec1, Annuity_results_ec2, Annuity_results_ec3, \
+            EH_small_rescale, EH_total_rescale= \
         newcity.new_city_evaluation_monte_carlo(City, dict_par_unc)
 
     # Get specific Annuity
@@ -947,8 +948,10 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
 
         write_results.write('\n Nboiler Lal rescaled: ' + str(Lal_rescaled))
         write_results.write('\n Nboiler rescaled' + str(Nboiler_rescaled))
-        write_results.write('\n NEH rescaled' + str(NEH_rescaled))
+        write_results.write('\n NEH rescaled medium' + str(NEH_rescaled))
         write_results.write('\n Tes rescaled' + str(Tes_rescaled))
+        write_results.write('\n EH rescaled small' + str(EH_small_rescale))
+        write_results.write('\n EH rescaled total' + str(EH_total_rescale))
         write_results.close()
 
 

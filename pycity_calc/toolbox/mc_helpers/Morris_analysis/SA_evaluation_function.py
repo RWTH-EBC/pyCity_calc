@@ -377,11 +377,12 @@ def evaluate(City, values):
 
         ############################################
 
-        time = 10  # Years
+        time = 50  # Years
         interest = row[47]  # Interest rate
         print ('\n New interest: {}'.format(interest))
 
         price_ch_cap = row[37]
+        print(price_ch_cap, 'cappppp')
         price_ch_dem_gas = row[38]
         price_ch_dem_el = row[39]
         price_ch_op = row[40]
@@ -397,7 +398,8 @@ def evaluate(City, values):
 
         #  Generate economic calculator object
         print("Economic object generation")
-        eco_inst = eco_calc.EconomicCalculation(time=time, germanmarket=Market_instance,  interest=interest, price_ch_cap=price_ch_cap,
+        eco_inst = eco_calc.EconomicCalculation(time=time, germanmarket=Market_instance,  interest=interest,
+                                                price_ch_cap=price_ch_cap,
                                                 price_ch_dem_gas=price_ch_dem_gas, price_ch_dem_el=price_ch_dem_el,
                                                 price_ch_op=price_ch_op,
                                                 price_ch_eeg_chp=price_ch_EEG_Umlage_tax_chp,

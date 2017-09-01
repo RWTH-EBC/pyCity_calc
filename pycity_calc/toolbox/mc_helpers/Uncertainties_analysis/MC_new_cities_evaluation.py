@@ -88,9 +88,11 @@ def new_city_evaluation_monte_carlo(ref_City, dict_sample):
     Nloop = dict_sample['Nsamples']
 
     Nboiler_rescaled = 0# number of boiler rescaled (thermal demand to high)
-    NEH_rescaled = 0 # number of electrical heater rescaled (thermal demand to high)
+    NEH_rescaled = 0 # number of electrical heater rescaled (thermal demand to high) medium
     Lal_rescaled = 0 # Number of city with rescaled boiler lal
     Tes_rescale = 0 # Number of City with rescaled thermal storage
+    EH_small_rescale = 0 #Number of City with rescaled Electrical heater small
+    EH_total_rescale = 0 #Number of City with rescaled electrcial heater total
     Gas_results = np.zeros(Nloop)  # array of annual gas demand
     El_results = np.zeros(Nloop)  # array of annual electrical demand after energy balance
     Th_results = np.zeros(Nloop) # array of annual space heating demand
@@ -212,7 +214,7 @@ def new_city_evaluation_monte_carlo(ref_City, dict_sample):
         ############################################
 
         # Energy balance calculations
-        el_dem, gas_dem, rescale_boiler, rescale_EH, Lal_recaled, Rescale_tes = MC_EBB_calc(City)
+        el_dem, gas_dem, rescale_boiler, rescale_EH, Lal_recaled, Rescale_tes , Rescale_eh_small, Rescal_eh_total = MC_EBB_calc(City)
 
         # Counter of rescaled energy systems during EBB
         if rescale_boiler:
@@ -223,6 +225,12 @@ def new_city_evaluation_monte_carlo(ref_City, dict_sample):
             Lal_rescaled += 1
         if Rescale_tes:
             Tes_rescale +=1
+        if Rescale_eh_small:
+            EH_small_rescale +=1
+
+        if Rescal_eh_total:
+            EH_total_rescale +=1
+
 
         print()
         print('loop n°:  ', loop)
@@ -280,11 +288,15 @@ def new_city_evaluation_monte_carlo(ref_City, dict_sample):
         El_results[loop] = round(el_dem,4)
         Th_results[loop] = round(annual_th_dem, 4)
 
-        # If tes rescaled don't take Annuity in account (crazy values)
+        # If tes rescaled don't take Annuity and GHG in account (crazy values)
+
         if Rescale_tes:
             Annuity_results[loop] = Annuity_results[loop-1]
             Annuity_results_h[loop] = Annuity_results_h[loop - 1]
             Annuity_results_m[loop] = Annuity_results_m[loop - 1]
+            GHG_results[loop] = GHG_results[loop -1]
+            GHG_spe_results[loop] = GHG_spe_results[loop -1]
+
 
             Annuity_results_ec1[loop] = Annuity_results_ec1[loop - 1]
             Annuity_results_ec2[loop] = Annuity_results_ec2[loop - 1]
@@ -299,9 +311,10 @@ def new_city_evaluation_monte_carlo(ref_City, dict_sample):
             Annuity_results_ec2[loop] = round(total_annuity_ec2, 4)
             Annuity_results_ec3[loop] = round(total_annuity_ec3, 4)
 
-        # Add GHG  to array results
-        GHG_results[loop] = round(GHG_Emission,4)
-        GHG_spe_results[loop] = round(GHG_Emission / (annual_sph_dem + annual_dhw_dem + annual_el_dem),4)
+            # Add GHG  to array results
+            GHG_results[loop] = round(GHG_Emission,4)
+            GHG_spe_results[loop] = round(GHG_Emission / (annual_sph_dem + annual_dhw_dem + annual_el_dem),4)
+
 
         # Keep track of electrical demand for EBB
         el_results2[loop] = round(sum(el_city_list),2)
@@ -316,7 +329,7 @@ def new_city_evaluation_monte_carlo(ref_City, dict_sample):
 
     return Th_results, Gas_results, El_results, Annuity_results, GHG_results, \
            GHG_spe_results, el_results2, dict_city_pb, Nboiler_rescaled, NEH_rescaled, Lal_rescaled, Tes_rescale,\
-           Annuity_results_h, Annuity_results_m, Annuity_results_ec1, Annuity_results_ec2, Annuity_results_ec3
+           Annuity_results_h, Annuity_results_m, Annuity_results_ec1, Annuity_results_ec2, Annuity_results_ec3, EH_small_rescale, EH_total_rescale
 
 
 
@@ -653,6 +666,8 @@ def MC_EBB_calc (City):
     rescale_EH=False
     LaL_boiler_rescaled = False
     Rescale_tes = False
+    rescale_EH_small = False
+    rescale_EH_total = False
 
     # Loop over energy systems
     try:
@@ -680,7 +695,7 @@ def MC_EBB_calc (City):
                         bes.electricalHeater.eta
 
 
-                rescale_EH = True
+                rescale_EH_small = True
 
                 print()
                 print('Rescale EH first round (10%)')
@@ -795,7 +810,7 @@ def MC_EBB_calc (City):
                 City.node[build]['entity'].bes.boiler.qNominal = \
                     City.node[build]['entity'].bes.boiler.qNominal * 1.1/City.node[build]['entity'].bes.boiler.eta
 
-                #rescale_boiler = True
+                #rescale_boiler_small = True
 
                 print()
                 print('Rescale boiler first round 10%')
@@ -807,7 +822,7 @@ def MC_EBB_calc (City):
                     City.node[build]['entity'].bes.electricalHeater.qNominal*1.1\
                     /City.node[build]['entity'].bes.electricalHeater.eta
 
-                rescale_EH = True
+                rescale_EH_small = True
 
                 print()
                 print('Rescale EH first round 10%')
@@ -924,7 +939,7 @@ def MC_EBB_calc (City):
                                         City.node[build]['entity'].bes.electricalHeater.qNominal = \
                                             City.node[build]['entity'].bes.electricalHeater.qNominal * 10
 
-                                        rescale_EH = True
+                                        rescale_EH_total = True
 
                                         print()
                                         print('Rescale EH totally')
@@ -954,7 +969,8 @@ def MC_EBB_calc (City):
                         gas_dem += sum(City.node[n]['fuel demand']) * \
                                    City.environment.timer.timeDiscretization / 1000 / 3600
 
-    return el_dem, gas_dem, rescale_boiler, rescale_EH, LaL_boiler_rescaled, Rescale_tes
+    return el_dem, gas_dem, rescale_boiler, rescale_EH, LaL_boiler_rescaled, Rescale_tes, \
+           rescale_EH_small, rescale_EH_total
 
 if __name__ == '__main__':
 
@@ -1052,7 +1068,7 @@ if __name__ == '__main__':
     #  Perform MC analysis for whole city
     ( Th_results, Gas_results, El_results, Annuity_results, GHG_results, \
            GHG_spe_results, el_results2, dict_city_pb, Nboiler_rescaled, NEH_rescaled, Lal_rescaled, Tes_rescale,\
-           Annuity_results_h, Annuity_results_m, Annuity_results_ec1, Annuity_results_ec2, Annuity_results_ec3) = \
+           Annuity_results_h, Annuity_results_m, Annuity_results_ec1, Annuity_results_ec2, Annuity_results_ec3, EH_small_rescale, EH_total_rescale) = \
         new_city_evaluation_monte_carlo(ref_City=city, dict_sample=dict_pam)
 
     #  Results
