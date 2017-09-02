@@ -2,24 +2,17 @@
 """
 Script for energy balance calculation. Holds calculator class.
 """
+from __future__ import division
 
 __author__ = 'tsh-dor'
 
 import os
 import pickle
-import copy
-import time as ti
 import itertools
 import numpy as np
-import matplotlib.pyplot as plt
 import pycity_calc.toolbox.networks.network_ops as netop
 import pycity_calc.environments.timer as time
 import pycity_calc.visualization.city_visual as citvis
-import pycity_calc.toolbox.dimensioning.dim_networks as dimnet
-import pycity_calc.toolbox.dimensioning.dhw_manipulator as dhwman
-import pycity_calc.energysystems.thermalEnergyStorage as tes
-import operator
-import warnings
 
 # define invalid Individual Error.
 class invalidind(Exception):
@@ -1662,8 +1655,7 @@ class calculator(object):
 
                             # pv electricity is very expensive and therefore more important to use than chp!
                             # Initialisation pv arrays
-                            supply_pv = self.city_object.node[dict_city_data[index]['Buildings in subcity'][i]]
-                            # ['entity'].bes.pv.getPower()#TODO:'Buildings in subcity'
+                            supply_pv = self.city_object.node[dict_city_data[index]['Buildings in subcity'][i]]['entity'].bes.pv.getPower(currentValues=False, updatePower=False)#TODO:'Buildings in subcity'
                             pv_used = np.zeros(len(time_vector.time_vector()))
                             pv_sold = np.zeros(len(time_vector.time_vector()))
                             demand_after_pv = np.zeros(len(time_vector.time_vector()))
@@ -1877,7 +1869,7 @@ class calculator(object):
 
                             # Initialisation pv arrays
                             supply_pv = self.city_object.node[dict_city_data[index]['Buildings in subcity'][i]][
-                                'entity'].bes.pv.getPower()#TODO:'Buildings in subcity'
+                                'entity'].bes.pv.getPower(currentValues=False, updatePower=False)#TODO:'Buildings in subcity'
                             pv_used = np.zeros(len(time_vector.time_vector()))
                             pv_sold = np.zeros(len(time_vector.time_vector()))
                             demand_after_pv = np.zeros(len(time_vector.time_vector()))
@@ -2054,7 +2046,7 @@ class calculator(object):
 
                             # pv electricity is very expensive and therefore more important to use than chp!
                             supply_pv = self.city_object.node[dict_city_data[index]['Buildings in subcity'][
-                                    i]]['entity'].bes.pv.getPower()#TODO:'Buildings in subcity'
+                                    i]]['entity'].bes.pv.getPower(currentValues=False, updatePower=False)#TODO:'Buildings in subcity'
 
                             # Initialisation
                             pv_sold = np.zeros(len(time_vector.time_vector()))
