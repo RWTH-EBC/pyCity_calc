@@ -11,7 +11,7 @@ import pickle
 import pycity_calc.toolbox.networks.network_ops as netop
 
 
-def check_eb_requirements(city):
+def check_eb_requirements(city, pycity_deap=False):
     """
     Check, if city fulfills all requirements to be used in energy balance
     calculation (such as thermal energy supply of all buildings, either
@@ -22,6 +22,8 @@ def check_eb_requirements(city):
     ----------
     city : object
         City object of pyCity_calc
+    pycity_deap : bool, optional
+        Check pycity_deap requirements (all buildings need to hold bes!)
     """
 
     #  Get list of all building ids
@@ -47,6 +49,13 @@ def check_eb_requirements(city):
                 status_okay = True
             if build.bes.hasElectricalHeater is True:
                 status_okay = True
+
+        else:
+            if pycity_deap:
+                msg = 'Building with id ' + str(id) + ' has no bes' \
+                                                      ' which is required' \
+                                                      ' for pycity deap!'
+                raise AssertionError(msg)
 
         #  Check, if building is connected to heating network
         #  This part is not included into else statement, as buildings
@@ -119,6 +128,9 @@ if __name__ == '__main__':
     import pycity_calc.cities.scripts.overall_gen_and_dimensioning as overall
 
     this_path = os.path.dirname(os.path.abspath(__file__))
+
+    #  Check requirements for pycity_deap
+    pycity_deap = False
 
     try:
         #  Try loading city pickle file
@@ -356,4 +368,4 @@ if __name__ == '__main__':
         file_path = os.path.join(this_path, 'input', filename)
         pickle.dump(city_object, open(file_path, mode='wb'))
 
-    check_eb_requirements(city=city_object)
+    check_eb_requirements(city=city_object, pycity_deap=pycity_deap)
