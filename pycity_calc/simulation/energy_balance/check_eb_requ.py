@@ -70,12 +70,13 @@ def check_eb_requirements(city, pycity_deap=False):
 
         #  Check, if at least one edge is of type
         for i in list_neigh:
-            if (city.edge[i][id]['network_type'] == 'heating' or
-                city.edge[id][i]['network_type'] == 'heating' or
-                city.edge[i][id]['network_type'] == 'heating_and_deg' or
-                city.edge[id][i]['network_type'] == 'heating_and_deg'):
-                status_okay = True
-                found_lhn = True
+            if 'network_type' in city.edge[i][id]:
+                if (city.edge[i][id]['network_type'] == 'heating' or
+                    city.edge[id][i]['network_type'] == 'heating' or
+                    city.edge[i][id]['network_type'] == 'heating_and_deg' or
+                    city.edge[id][i]['network_type'] == 'heating_and_deg'):
+                    status_okay = True
+                    found_lhn = True
 
         if status_okay is False:
             msg = 'Building with id ' + str(id) + ' has no thermal energy' \
@@ -120,6 +121,8 @@ def check_eb_requirements(city, pycity_deap=False):
                     msg = 'LHN network has no feeder node (LHN network ' \
                           'with node ids ' + str(list_lhn) + '.'
                     raise AssertionError(msg)
+
+    print('Energy balance input check has been sucessful')
 
 
 if __name__ == '__main__':

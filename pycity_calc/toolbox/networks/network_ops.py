@@ -1110,6 +1110,58 @@ def get_list_with_energy_net_con_node_ids(city, network_type='heating',
     return list_conn_nodes
 
 
+def get_list_build_without_energy_network(city):
+    """
+    Returns list of building entity nodes, which are neither connected to a
+    heating nor to an decentralized electrical network.
+
+    Parameters
+    ----------
+    city : object
+        City object of pyCity_calc
+
+    Returns
+    -------
+    list_single_build : list
+        List holding building entity node ids (int) of buildings, which are
+        neither connected to a heating nor to an decentralized electrical
+        network
+    """
+
+    #  Get list of all building entities
+    list_b_entities = city.get_list_build_entity_node_ids()
+
+    #  Identify all single buildings (in city, but not LHN or DEG
+    #  connected
+    list_single_build = []
+
+    for n in list_b_entities:
+        #  Add all buildings without graph neighbours
+        if len(city.neighbors(n)) == 0:
+            list_single_build.append(n)
+        # If buildings are connected to graph, check network_type
+        else:
+            valid_net = True
+            for k in city.neighbors(n):
+                if 'network_type' in city.edge[k][n]:
+                    net_type = city.edge[k][n]['network_type']
+                    if (net_type == 'heating' or
+                                net_type == 'heating_and_deg' or
+                                net_type == 'electricity'):
+                        valid_net = False
+                        break
+                if 'network_type' in city.edge[n][k]:
+                    net_type = city.edge[n][k]['network_type']
+                    if (net_type == 'heating' or
+                                net_type == 'heating_and_deg' or
+                                net_type == 'electricity'):
+                        valid_net = False
+                        break
+
+            if valid_net:
+                list_single_build.append(n)
+
+
 def remove_str_nodes_degree_one(city, nodelist):
     """
     Remove all nodes of degree 1, which are not part of nodelist.
