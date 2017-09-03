@@ -11,6 +11,7 @@ import warnings
 
 import pycity_calc.simulation.energy_balance.check_eb_requ as check_eb
 
+
 class EnergyBalanceException(Exception):
     def __init__(self, message):
         """
@@ -25,8 +26,51 @@ class EnergyBalanceException(Exception):
         super().__init__(message)
 
 
+def get_tes_status(tes, buffer_low, buffer_high):
+    """
+    Returns tes status:
+    1 - No further power input allowed
+    2 - Only thermal input of efficient devices (e.g. CHP, HP) allowed
+    3 - All devices can provide energy
+
+    Parameters
+    ----------
+    tes : object
+        Thermal energy storage object of pyCity_calc
+    buffer_low : float
+        Defines factor of relative storage buffer (relative to max state of
+        charge), when only CHP and HP are allowed to save energy to tes.
+        Below buffer_low * soc_max also boiler and el. heater can be used.
+        E.g. 0.1 means 10 % of soc_max.
+    buffer_high : float
+        Defines factor of relative storage buffer (relative to max state of
+        charge), when no further thermal power input into tes is allowed.
+        Below buffer_low * soc_max usage of CHP and/or HP is allowed.
+        E.g. 0.98 means 98 % of soc_max.
+
+    Returns
+    -------
+    tes_status : int
+        TES status as integer number:
+        1 - No further power input allowed
+        2 - Only thermal input of efficient devices (e.g. CHP, HP) allowed
+        3 - All devices can provide energy
+    """
+
+    #  Get current state of charge (soc)
+    curr_soc = tes.calc_curr_state_of_charge()
+
+    if curr_soc < buffer_low:
+        return 3
+    elif curr_soc < buffer_high:
+        return 2
+    else:
+        return 1
+
+
 def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
-                        eh_full_pl=True, id=None):
+                        eh_full_pl=True, buffer_low=0.1, buffer_high=0.98,
+                        id=None):
     """
     Calculate building thermal energy balance. Requires extended building
     object with loads and thermal energy supply system.
@@ -44,6 +88,16 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
     eh_full_pl : bool, optional
         Defines, if electrical heater should be set to full part load ability
         (default: True)
+    buffer_low : float, optional
+        Defines factor of relative storage buffer (relative to max state of
+        charge), when only CHP and HP are allowed to save energy to tes.
+        Below buffer_low * soc_max also boiler and el. heater can be used.
+        (default: 0.1). E.g. 0.1 means 10 % of soc_max.
+    buffer_high : float, optional
+        Defines factor of relative storage buffer (relative to max state of
+        charge), when no further thermal power input into tes is allowed.
+        Below buffer_low * soc_max usage of CHP and/or HP is allowed.
+        (default: 0.98). E.g. 0.98 means 98 % of soc_max.
     id : int, optional
         Building id (default: None)
     """
@@ -98,7 +152,7 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
         t_min = build.bes.tes.t_min
         t_max = build.bes.tes.tMax
 
-        t_init_new = soc_init (t_max - t_min) + t_min
+        t_init_new = soc_init(t_max - t_min) + t_min
 
         if build.bes.tes.tInit != t_init_new:
             msg = 'Current tes initial temperature is different from ' \
@@ -106,14 +160,16 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                   ' ' + str(build.bes.tes.tInit) + ' degree Celsius. The new' \
                                                    ' one is ' \
                                                    '' + str(t_init_new) + '' \
-                                                   ' degree Celsius.'
+                                                                          ' degree Celsius.'
             warnings.warn(msg)
             build.bes.tes.tInit = t_init_new
 
-    #  Get building thermal load curves
+    # Get building thermal load curves
     #  #################################################################
     sh_p_array = build.get_space_heating_power_curve()
     dhw_p_array = build.get_dhw_power_curve()
+
+    #  TODO: Differentiate between building with and without HP
 
     #  Perform energy balance calculation for different states
     #  #################################################################
@@ -121,7 +177,198 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
         #  Energy balance calculation with thermal storage
         #  #################################################################
 
-        pass
+        #  Loop over power values
+        for i in range(len(sh_p_array)):
+
+            #  Calculate tes status
+            #  ##############################################################
+            tes_status = get_tes_status(tes=build.bes.tes,
+                                        buffer_low=buffer_low,
+                                        buffer_high=buffer_high)
+            #  TES status as integer number:
+            # 1 - No further power input allowed
+            # 2 - Only thermal input of efficient devices (CHP, HP) allowed
+            # 3 - All devices can provide energy
+
+            #  The following merrit order is defined for thermal power supply
+            #  1. CHP
+            #  2. TES (tried to be supplied by CHP and HP)
+            #  3. Boiler
+            #  4. Electrical heater
+
+            #  Get required thermal power values
+            sh_power = sh_p_array[i]
+            dhw_power = dhw_p_array[i]
+
+            #  Remaining thermal power values
+            sh_pow_remain = sh_power + 0.0
+            dhw_pow_remain = dhw_power + 0.0
+
+            if tes_status == 1:
+                #  #########################################################
+                #  Do not load tes any further. Use esys only to supply
+                #  thermal power
+
+                if has_chp:
+                    #  #####################################################
+                    #  Use CHP
+
+                    #  chp pointer
+                    chp = build.bes.chp
+
+                    #  Get nominal chp power
+                    q_nom_chp = chp.qNominal
+
+                    if (sh_pow_remain + dhw_pow_remain) >= q_nom_chp:
+                        #  Cover part of power with full CHP load
+                        chp.th_op_calc_all_results(control_signal=q_nom_chp,
+                                                   time_index=i)
+
+                        #  Calculate remaining thermal power
+                        if sh_pow_remain - q_nom_chp > 0:
+                            sh_pow_remain -= q_nom_chp
+                        elif sh_pow_remain == q_nom_chp:
+                            sh_pow_remain = 0
+                        elif sh_pow_remain - q_nom_chp < 0:
+                            dhw_pow_remain -= (q_nom_chp - sh_pow_remain)
+                            sh_pow_remain = 0
+
+                    elif (sh_pow_remain + dhw_pow_remain) < q_nom_chp:
+                        #  Try to use CHP, depending on part load
+
+                        chp_lal = chp.lowerActivationLimit
+
+                        if (sh_pow_remain + dhw_pow_remain) < chp_lal * q_nom_chp:
+                            #  Required power is below part load performance,
+                            #  thus, chp cannot be used
+                            chp.th_op_calc_all_results(control_signal=0,
+                                                       time_index=i)
+                        else:
+                            #  CHP can operate in part load
+                            chp.th_op_calc_all_results(control_signal=sh_pow_remain + dhw_pow_remain,
+                                                       time_index=i)
+
+                            sh_pow_remain = 0
+                            dhw_pow_remain = 0
+
+                # if has_hp:
+                #     #  ##################################################
+                #
+                #     #  hp pointer
+                #     hp = build.bes.heatpump
+                #
+                #     #  Get nominal hp power
+                #     q_nom_hp = hp.qNominal
+                #
+                #     #  Get heat pump source temperature
+                #     if hp.hp_type == 'aw':
+                #         #  Use outdoor temperature
+                #         temp_source = build.environment.weather.tAmbient[i]
+                #     elif hp.hp_type == 'ww':
+                #         temp_source = build.environment.temp_ground
+                #
+                #     if sh_pow_remain >= q_nom_hp:
+                #         #  Cover part of power with full HP load
+                #         hp.calc_hp_all_results(
+                #             control_signal=q_nom_hp,
+                #             t_source=temp_source,
+                #             time_index=i)
+                #
+                #         sh_pow_remain -= q_nom_hp
+                #
+                #     else:
+                #         #  sh_pow_remain < q_nom_hp
+                #         #  Try using hp in part load
+                #
+                #         hp_lal = hp.lowerActivationLimit
+                #
+                #         if sh_pow_remain < hp_lal * q_nom_hp:
+                #             #  Required power is below part load performance,
+                #             #  thus, hp cannot be used
+                #             hp.calc_hp_all_results(
+                #                 control_signal=0,
+                #                 t_source=temp_source,
+                #                 time_index=i)
+                #         else:
+                #             #  HP can operate in part load
+                #             hp.th_op_calc_all_results(
+                #                 control_signal=sh_pow_remain,
+                #                 time_index=i)
+                #
+                #             sh_pow_remain = 0
+
+
+                #  Use TES
+                #  #####################################################
+
+                #  TES pointer
+                tes = build.bes.tes
+
+                #  Get info about max tes power output
+                q_out_max = tes.calc_storage_q_out_max()
+
+                t_prior = tes.t_current
+
+                if (sh_pow_remain + dhw_pow_remain) >= q_out_max:
+                    #  Cover part of remaining th. demand with full storage
+                    #  load
+
+                    tes.calc_storage_temp_for_next_timestep(q_in=0,
+                                                            q_out=q_out_max,
+                                                            t_prior=t_prior,
+                                                            t_ambient=None,
+                                                            set_new_temperature=True,
+                                                            save_res=True,
+                                                            time_index=i)
+
+                    #  Calculate remaining thermal power
+                    if sh_pow_remain - q_out_max > 0:
+                        sh_pow_remain -= q_out_max
+                    elif sh_pow_remain == q_out_max:
+                        sh_pow_remain = 0
+                    elif sh_pow_remain - q_out_max < 0:
+                        dhw_pow_remain -= (q_out_max - sh_pow_remain)
+                        sh_pow_remain = 0
+
+                else:
+                    #  Cover remaining demand with storage load
+
+                    tes.calc_storage_temp_for_next_timestep(q_in=0,
+                                                            q_out=sh_pow_remain + dhw_pow_remain,
+                                                            t_prior=t_prior,
+                                                            t_ambient=None,
+                                                            set_new_temperature=True,
+                                                            save_res=True,
+                                                            time_index=i)
+
+                    sh_pow_remain = 0
+                    dhw_pow_remain = 0
+
+                if has_boiler:
+
+                    #  if sh_pow_remain > 0 or dhw_pow_remain > 0, use boiler
+                    pass
+
+                if has_eh:
+
+                    #  if sh_pow_remain > 0 or dhw_pow_remain > 0, use boiler
+                    pass
+
+                if sh_pow_remain > 0 or dhw_pow_remain > 0:
+                    msg = 'Could not solve thermal energy balance in ' \
+                          'building' + str(id) + ' at timestep ' + str(i) + '.'
+                    raise EnergyBalanceException(msg)
+
+            elif tes_status == 2:
+                #  #########################################################
+
+                pass
+
+            elif tes_status == 3:
+                #  #########################################################
+
+                pass
+
 
 
     else:  # Has no TES
@@ -154,13 +401,13 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                                                    time_index=i)
                     th_pow_remain -= q_nom_boi
 
-                else:  #  Cover total thermal power demand with boiler
+                else:  # Cover total thermal power demand with boiler
 
                     boiler.calc_boiler_all_results(control_signal=th_power,
                                                    time_index=i)
                     th_pow_remain = 0
 
-            #  If not enough, use EH, if existent
+            # If not enough, use EH, if existent
             if has_eh:
 
                 #  EH pointer
@@ -175,7 +422,7 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                                              time_index=i)
                     th_pow_remain -= q_nom_eh
 
-                else:  #  Cover total thermal power demand with eh
+                else:  # Cover total thermal power demand with eh
 
                     eh.calc_el_h_all_results(control_signal=th_pow_remain,
                                              time_index=i)
@@ -186,8 +433,8 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                       '' + str(i) + ' at building ' + str(id)
                 EnergyBalanceException(msg)
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     this_path = os.path.dirname(os.path.abspath(__file__))
 
     city_name = 'city_clust_simple_with_esys.pkl'
@@ -222,4 +469,3 @@ if __name__ == '__main__':
     plt.legend()
     plt.show()
     plt.close()
-
