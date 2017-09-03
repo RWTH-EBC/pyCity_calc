@@ -1,180 +1,120 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Script checks, if city object fulfills all energy balance requirements
+Script holds class to calculate energy balance of whole city district
 """
 from __future__ import division
 
 import os
+import copy
 import pickle
+import warnings
 
+import pycity_calc.simulation.energy_balance.check_eb_requ as check_eb
 import pycity_calc.toolbox.networks.network_ops as netop
+import pycity_calc.simulation.energy_balance.building_eb_calc as beb
 
 
-def check_eb_build_requ(build):
-    """
-    Check requirements for energy balance for single building.
-    Raises AssertionError, if requirements are not fulfilled.
+class CityEBCalculator(object):
+    def __init__(self, city, copy_city=False, check_city=True):
+        """
+        Constructor of city energy balance
+        Parameters
+        ----------
+        city : object
+            City object of pyCity_calc
+        copy_city : bool, optional
+            Defines, if original city should be used for energy balance run
+            or if city should be copied (default: False). If True, copies
+            city. Chosen city object is going to be modified by energy
+            balance
+        check_city : bool, optional
+            Check, if city object fulfills requirements for energy balance
+            calculation (default: True)
+        """
 
-    Parameters
-    ----------
-    build : object
-        Extended building object of pyCity_calc
-    """
+        if check_city:
+            check_eb.check_eb_requirements(city=city)
 
-    #  Dummy value for status (assumes missing thermal supply, until
-    #  thermal supply or lhn is found)
-    status_okay = False
-
-    #  Dummy value for TES (assumes correct TES usage)
-    tes_okay = True
-
-    #  Check if building has bes
-    if build.hasBes is True:
-
-        #  Check, if at least one thermal energy supply system exists
-        if build.bes.hasBoiler is True:
-            status_okay = True
-
-        if build.bes.hasChp is True:
-            status_okay = True
-            if build.bes.hasTes is False:
-                tes_okay = False
-
-        if build.bes.hasHeatpump is True:
-            status_okay = True
-            if build.bes.hasTes is False:
-                tes_okay = False
-
-        if build.bes.hasElectricalHeater is True:
-            status_okay = True
-
-    if status_okay is False:
-        msg = 'Building has no thermal energy' \
-              ' supply! Cannot run' \
-              ' energy balance!'
-        raise AssertionError(msg)
-
-    if tes_okay is False:
-        msg = 'Building has CHP or HP, but no TES, which is required for ' \
-              'energy balance calculation!'
-        raise AssertionError(msg)
-
-def check_eb_requirements(city, pycity_deap=False):
-    """
-    Check, if city fulfills all requirements to be used in energy balance
-    calculation (such as thermal energy supply of all buildings, either
-    provided by heating network and/or energy supply unit...),
-    Raises AssertionError, if requirements are not met.
-
-    Parameters
-    ----------
-    city : object
-        City object of pyCity_calc
-    pycity_deap : bool, optional
-        Check pycity_deap requirements (all buildings need to hold bes!)
-    """
-
-    #  Get list of all building ids
-    list_build_ids = city.get_list_build_entity_node_ids()
-
-    #  Loop over all buildings
-    for id in list_build_ids:
-        build = city.node[id]['entity']
-
-        #  Dummy value for status (assumes missing thermal supply, until
-        #  thermal supply or lhn is found)
-        status_okay = False
-
-        #  Check if building has bes
-        if build.hasBes is True:
-
-            #  Check, if at least one thermal energy supply system exists
-            if build.bes.hasBoiler is True:
-                status_okay = True
-            if build.bes.hasChp is True:
-                status_okay = True
-            if build.bes.hasHeatpump is True:
-                status_okay = True
-            if build.bes.hasElectricalHeater is True:
-                status_okay = True
-
+        if copy_city:
+            self.city = copy.deepcopy(city)
         else:
-            if pycity_deap:
-                msg = 'Building with id ' + str(id) + ' has no bes' \
-                                                      ' which is required' \
-                                                      ' for pycity deap!'
-                raise AssertionError(msg)
+            self.city = city
 
-        #  Check, if building is connected to heating network
-        #  This part is not included into else statement, as buildings
-        #  might hold BES without having any thermal supply system (and
-        #  they still might be connected to an lhn system)
+        self._list_lists_lhn_ids = None
+        self._list_lists_lhn_ids_build = None
+        self._list_lists_deg_ids = None
+        self._list_lists_deg_ids_build = None
+        self._list_single_build = None
 
-        #  Get neighbour nodes, if existent
-        list_neigh = city.neighbors(id)
+        #  Get list of sub-cities
+        self.set_subcity_lists()
 
-        #  Dummy value (assumes no LHN existence)
-        found_lhn = False
+    def set_subcity_lists(self):
+        """
+        Calculate values subcity lists:
+        _list_lists_lhn_ids
+        _list_lists_lhn_ids_build
+        _list_lists_deg_ids
+        _list_lists_deg_ids_build
+        _list_single_build
+        """
 
-        #  Check, if at least one edge is of type
-        for i in list_neigh:
-            if 'network_type' in city.edge[i][id]:
-                if (city.edge[i][id]['network_type'] == 'heating' or
-                    city.edge[id][i]['network_type'] == 'heating' or
-                    city.edge[i][id]['network_type'] == 'heating_and_deg' or
-                    city.edge[id][i]['network_type'] == 'heating_and_deg'):
-                    status_okay = True
-                    found_lhn = True
+        #  List of lists of local heating network connected nodes
+        self._list_lists_lhn_ids = \
+            netop.get_list_with_energy_net_con_node_ids(city=self.city,
+                                                        network_type='heating')
 
-        if status_okay is False:
-            msg = 'Building with id ' + str(id) + ' has no thermal energy' \
-                                                  ' supply! Cannot run' \
-                                                  ' energy balance!'
-            raise AssertionError(msg)
+        #  List of lists of building interconnected nodes (heating)
+        self._list_lists_lhn_ids_build = \
+            netop.get_list_with_energy_net_con_node_ids(city=self.city,
+                                                        network_type='heating',
+                                                        build_node_only=True)
 
-        if found_lhn:
-            #  Check, if each LHN network has, at least, one feeder node
+        #  List of lists of electricity network connected nodes
+        self._list_lists_deg_ids = \
+            netop.get_list_with_energy_net_con_node_ids(city=self.city,
+                                                        network_type='electricity')
 
-            #  Dummy value (assumes, that no feeder exists in LHN)
-            lhn_status = False
+        #  List of lists of building interconnected nodes (electricity)
+        self._list_lists_deg_ids_build = \
+            netop.get_list_with_energy_net_con_node_ids(city=self.city,
+                                                        network_type='electricity',
+                                                        build_node_only=True)
 
-            #  Get list of lists of lhn connected buildings
-            list_lists_lhn = \
-                netop.get_list_with_energy_net_con_node_ids(city=city,
-                                                            build_node_only=True)
+        #  Get list of single building ids (not connected to energy networks)
+        self._list_single_build = \
+            netop.get_list_build_without_energy_network(city=self.city)
 
-            for list_lhn in list_lists_lhn:
-                for n in list_lhn:
-                    build = city.node[n]['entity']
+    def calc_city_energy_balance(self):
+        """
+        Calculate energy balance of whole city. Save results on city object
+        """
 
-                    #  Check if building has bes
-                    if build.hasBes is True:
+        #  Loop over buildings, which are not connected to energy networks
+        for n in self._list_single_build:
+            building = self.city.node[n]['entity']
 
-                        #  Check, if at least one thermal energy supply system
-                        #  exists
-                        if build.bes.hasBoiler is True:
-                            lhn_status = True
-                            break
-                        if build.bes.hasChp is True:
-                            lhn_status = True
-                            break
-                        if build.bes.hasHeatpump is True:
-                            lhn_status = True
-                            break
-                        if build.bes.hasElectricalHeater is True:
-                            lhn_status = True
-                            break
+            #  Calculate single building thermal energy balance
+            beb.calc_build_therm_eb(build=building)
 
-                if lhn_status is False:
-                    msg = 'LHN network has no feeder node (LHN network ' \
-                          'with node ids ' + str(list_lhn) + '.'
-                    raise AssertionError(msg)
+            #  Calculate single building electrical energy balance
 
-    print('Energy balance input check has been sucessful')
+
+
+
+        #  Loop over subcities (energy network interconnected buildings)
+
+            #  Start with buildings without own thermal energy supply units
+
+            #  Estimate energy network losses
+
+        #  Electrical energy balance of subcity
 
 
 if __name__ == '__main__':
+
+    this_path = os.path.dirname(os.path.abspath(__file__))
 
     import pycity_calc.cities.scripts.city_generator.city_generator as citygen
     import pycity_calc.cities.scripts.overall_gen_and_dimensioning as overall
@@ -420,4 +360,5 @@ if __name__ == '__main__':
         file_path = os.path.join(this_path, 'input', filename)
         pickle.dump(city_object, open(file_path, mode='wb'))
 
-    check_eb_requirements(city=city_object, pycity_deap=pycity_deap)
+    # Construct energy balance
+    energy_balance = CityEBCalculator(city=city_object)
