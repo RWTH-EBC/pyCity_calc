@@ -95,6 +95,20 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
         has_tes = True
 
         # Set initial soc to soc_init * soc_max
+        t_min = build.bes.tes.t_min
+        t_max = build.bes.tes.tMax
+
+        t_init_new = soc_init (t_max - t_min) + t_min
+
+        if build.bes.tes.tInit != t_init_new:
+            msg = 'Current tes initial temperature is different from ' \
+                  'chosen one (via soc_init). The old initial temperature is' \
+                  ' ' + str(build.bes.tes.tInit) + ' degree Celsius. The new' \
+                                                   ' one is ' \
+                                                   '' + str(t_init_new) + '' \
+                                                   ' degree Celsius.'
+            warnings.warn(msg)
+            build.bes.tes.tInit = t_init_new
 
     #  Get building thermal load curves
     #  #################################################################
@@ -108,6 +122,7 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
         #  #################################################################
 
         pass
+
 
     else:  # Has no TES
         #  Run thermal simulation, if no TES is existent (only relevant for
