@@ -63,7 +63,7 @@ def run_test():
 
     #  Calculate and save all important results of el. heater
     (th_power, el_power_in) = heater.calc_el_h_all_results(
-        contro_signal=control_signal, time_index=0)
+        control_signal=control_signal, time_index=0)
 
     print('Thermal power output in W: ', th_power)
     print('El. power input in W: ', el_power_in)

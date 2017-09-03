@@ -2767,20 +2767,20 @@ if __name__ == '__main__':
                                                       merge_windows=merge_windows,
                                                       new_try=new_try)
 
-        for n in city_object.nodes():
-            #  Workaround: To prevent AssertionError with non-existent BES,
-            #  BES are added to all buildings
-            if 'entity' in city_object.node[n]:
-                build = city_object.node[n]['entity']
-
-                if build.hasBes == False:
-                    bes = BES.BES(environment=city_object.environment)
-                    build.addEntity(bes)
-
         #  Save new pickle file
         filename = 'city_clust_simple_with_esys.pkl'
         file_path = os.path.join(this_path, 'input', filename)
         pickle.dump(city_object, open(file_path, mode='wb'))
+
+    for n in city_object.nodes():
+        #  Workaround: To prevent AssertionError with non-existent BES,
+        #  BES are added to all buildings
+        if 'entity' in city_object.node[n]:
+            build = city_object.node[n]['entity']
+
+            if build.hasBes == False:
+                bes = BES.BES(environment=city_object.environment)
+                build.addEntity(bes)
 
     citvis.plot_city_district(city=city_object, plot_lhn=True, plot_deg=True,
                               plot_esys=True)
