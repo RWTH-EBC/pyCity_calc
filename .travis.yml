@@ -15,8 +15,6 @@ install:
   - pip install sklearn
   - pip install shapely
   - pip install pyproj
-  - pip install mako
-  - pip install pyxb
   - pip install -e git+git@github.com:RWTH-EBC/TEASER.git@issue297_vdi_core_dev_jsc#egg=teaser
   - pip install -e git+git@github.com:RWTH-EBC/uesgraphs.git#egg=uesgraphs
   - pip install -e git+git@github.com:RWTH-EBC/richardsonpy.git#egg=richardsonpy
