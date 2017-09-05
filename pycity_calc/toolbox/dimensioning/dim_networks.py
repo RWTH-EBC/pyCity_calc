@@ -11,6 +11,8 @@ If you want to have a heating_and_deg network via street routing, use
 add_lhn_to_city with street routing and heating_and_deg as network type.
 """
 
+from __future__ import division
+
 import os
 import math
 import pickle
@@ -633,3 +635,33 @@ if __name__ == '__main__':
     print()
     print('List heating network nodes: ', list_heat_nodes)
     print('Number of heating nodes: ', len(list_heat_nodes))
+
+def add_max_p_to_nodes(city, with_dhw=False):
+    """
+    Add maximum thermal power of each building as attribute
+    'max_demand_heating' (in Watt) to each building node
+
+    Parameters
+    ----------
+    city : object
+        City object of pyCity_calc
+    with_dhw : bool, optional
+        Defines, if hot water is used to identify max. thermal power.
+        (default: False). If False, only uses space heating. If True,
+        uses space heating and hot water
+    """
+
+    #  Get list of building entity node ids
+    list_b_ids = city.get_list_build_entity_node_ids()
+
+    for n in list_b_ids:
+        #  Get building entity pointer
+        build = city.node[n]['entity']
+
+        #  Get maximal thermal power
+        p_th_max = dimfunc.get_max_power_of_building(building=build,
+                                                     get_therm=True,
+                                                     with_dhw=with_dhw)
+
+        #  Save to building node
+        city.node[n]['max_demand_heating'] = p_th_max
