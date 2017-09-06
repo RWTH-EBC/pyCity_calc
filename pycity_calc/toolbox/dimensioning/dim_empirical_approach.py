@@ -368,11 +368,11 @@ def choose_device(dev_type, q_ideal):
     return specs
 
 
-def get_chp_ann_op_time(eta_th, q_nom, th_LDC):
+def get_chp_ann_op_time(q_nom, th_LDC):
 
     # CHP-Jahreslaufzeitberechnung (annual operation time) nach Krimmling(2011)
     for q_m in th_LDC:
-        if q_m <= q_nom * eta_th:
+        if q_m <= q_nom:
             t_x = th_LDC.index(q_m)  # find crossing point on LDC (Volllaststunden)
             break
     delta_a = 8760 * th_LDC[0]
@@ -400,7 +400,7 @@ def dim_centralized(city, scenario):
     eg_enev = {
         'boiler': {100: 1.08, 150: 1.07, 200: 1.07, 300: 1.06, 500: 1.05, 750: 1.05, 1000: 1.05, 1500: 1.04, 2500: 1.04,
                    5000: 1.03, 10000: 1.03}, 'hp_air': 0.37, 'hp_soil': 0.27, 'elHeater': 1}
-    pef_enev = {'gas': 1.1, 'chp': 0.7, 'el': 1.8} #für Nahwärme-KWK nur für einen Versorgungsanteil von 70%
+    pef_enev = {'gas': 1.1, 'el_chp_out': 2.7, 'el_in': 1.8} # el_chp_out = Verdrängungsstrommix für KWK
     qPEF = []
 
     eta_transmission = 0.9  # richtigen Faktor suchen
@@ -424,20 +424,20 @@ def dim_centralized(city, scenario):
             chp_flh = 7000 #best possible full-load-hours
             q_chp = th_LDC[chp_flh]
             [eta_el, eta_th, p_nom, q_nom] = choose_device('chp', q_chp)
-            (t_ann_op, t_x) = get_chp_ann_op_time(eta_th, q_nom, th_LDC)  # (Jahreslaufzeit, Volllaststunden)
+            (t_ann_op, t_x) = get_chp_ann_op_time(q_nom, th_LDC)  # (Jahreslaufzeit, Volllaststunden)
 
             bafa = False
             while not bafa:
                 # Auslegung auf BAFA Förderung (60% Deckungsanteil aus KWK)
-                if t_ann_op >= 6000 and t_x >= 5000 and q_nom*eta_th*t_ann_op/q_total > 0.6: # Auslegung nur gültig, falls Bedingungen für aot und flh erfüllt sind
-                    print('CHP: BAFA Förderung möglich! Gesamtdeckungsanteil: '+str(round(q_nom*eta_th*t_ann_op*100/q_total,2))+'%')
+                if t_ann_op >= 6000 and t_x >= 5000 and q_nom*t_ann_op/q_total > 0.6: # Auslegung nur gültig, falls Bedingungen für aot und flh erfüllt sind
+                    print('CHP: BAFA Förderung möglich! Gesamtdeckungsanteil: '+str(round(q_nom*t_ann_op*100/q_total,2))+'%')
                     bafa = True
                 else:
                     chp_flh -= 20
                     if chp_flh >= 5000:
                         q_chp = th_LDC[chp_flh]
                         [eta_el, eta_th, p_nom, q_nom] = choose_device('chp', q_chp)
-                        (t_ann_op, t_x) = get_chp_ann_op_time(eta_th, q_nom,
+                        (t_ann_op, t_x) = get_chp_ann_op_time(q_nom,
                                                               th_LDC)  # (Jahreslaufzeit, Volllaststunden)
                     else:
                         bafa = False
@@ -452,15 +452,15 @@ def dim_centralized(city, scenario):
                     chp_flh += 20
                     q_chp = th_LDC[chp_flh]
                     [eta_el, eta_th, p_nom, q_nom] = choose_device('chp', q_chp)
-                    (t_ann_op, t_x) = get_chp_ann_op_time(eta_th, q_nom, th_LDC)  # (Jahreslaufzeit, Volllaststunden)
+                    (t_ann_op, t_x) = get_chp_ann_op_time(q_nom, th_LDC)  # (Jahreslaufzeit, Volllaststunden)
                     if chp_flh > 7500:
                         print('CHP: Fehler bei alternativer Auslegung')
                         break
-                if q_nom*eta_th/max(th_LDC) < 0.1:
+                if q_nom/max(th_LDC) < 0.1:
                     print('CHP ungeeignet für Szenario.')
                     [eta_el, eta_th, p_nom, q_nom] = [0,0,0,0]
                 else:
-                    print('CHP: BAFA Förderung nicht möglich! Gesamtdeckungsanteil: '+str(q_nom * eta_th * t_ann_op * 100 / q_total)+'%')
+                    print('CHP: BAFA Förderung nicht möglich! Gesamtdeckungsanteil: '+str(q_nom * t_ann_op * 100 / q_total)+'%')
 
 
             # Check ob EEWärmeG erfüllt wird. Ansonsten gesetzeskonforme Dimensionierung.
@@ -469,7 +469,7 @@ def dim_centralized(city, scenario):
                 eewg = False
                 count = 0
                 while not eewg:
-                    ee_ratio = q_nom*eta_th*t_ann_op/q_total
+                    ee_ratio = q_nom*t_ann_op/q_total
                     if ee_ratio > 0.5:
                         #PEE berechnen
                         refeta_th = 0.85  # th. Referenzwirkungsgrad für Anlagen vor 2016, Dampf, Erdgas
@@ -492,7 +492,7 @@ def dim_centralized(city, scenario):
 
                     q_chp = 0.5*q_total/8760+count*q_total/(8760*100) #Mindestwert 50% Deckung + 1% der Gesamtleistung je Durchlauf
                     [eta_el, eta_th, p_nom, q_nom] = choose_device('chp', q_chp)
-                    (t_ann_op, t_x) = get_chp_ann_op_time(eta_th, q_nom, th_LDC)  # (Jahreslaufzeit, Volllaststunden)
+                    (t_ann_op, t_x) = get_chp_ann_op_time(q_nom, th_LDC)  # (Jahreslaufzeit, Volllaststunden)
                     count += 1
             else:
                 print('EEWärmeG muss aufgrund des Gebäudealters nicht beachtet werden.')
@@ -501,17 +501,17 @@ def dim_centralized(city, scenario):
 
             chp = CHP.CHP(city.environment, p_nom, q_nom, eta_el+eta_th)
             bes.addDevice(chp)
+            print('Added CHP: Q_nom = ' + str(q_nom / 1000) + ' kW (' + str(
+                round(q_nom * 100 / max(th_curve), 2)) + '% of Q_max) ->', t_x, 'full-load hours.')
 
-            # TODO: PEF für KWK berechnen und für Berechnung von qPEF nutzen
-            q_chp_ann = t_ann_op*q_nom # Primärenergie oder welche Energiemenge kommt hier rein? (eta_th ja/nein?)
-            qPEF.append(pef_enev['chp']*q_chp_ann) # Nur falls Deckung aus CHP bei ca. 70%
-
-            print('Added CHP: Q_nom = ' + str(q_nom/1000) + ' kW (' + str(
-                round(q_nom * eta_th * 100 / max(th_curve), 2)) + '% of Q_max) ->', t_x, 'full-load hours.')
+            # PEF und qPEF für EnEV berechnen
+            q_chp_ann = t_ann_op*q_nom/eta_th # Endenergiemenge des Brennstoffs vor der Verbrennung in KWK-Anlage
+            w_el_chp_out = q_chp_ann * eta_el # Mit KWK-Anlage produzierte, ausgespeiste Strommenge
+            qPEF.append(pef_enev['gas'] * q_chp_ann - pef_enev['el_chp_out'] * w_el_chp_out) # KWK-Anlage mit Erdgas betrieben?!
 
 
             # Pufferspeicher hinzufügen falls Leistung über 20% von Maximalverbrauch
-            if q_nom*eta_th/max(th_LDC) > 0.2:
+            if q_nom/max(th_LDC) > 0.2:
                 v_tes = q_nom/1000*60 # Förderung von Speichern für Mini-BHKW durch BAFA bei Speichergrößen über 60 l/kW_th
                 if v_tes > 1600: # 1600 liter genügen für Förderung
                     v_tes = 1600 + (q_nom/1000*60-1600)*0.2 # Schätzung um auch Anlagen >30kW mit Speicher zu versorgen
@@ -523,7 +523,7 @@ def dim_centralized(city, scenario):
 
             # Wärmeerzeuger für Spitzenlast hinzufügen
             if 'boiler' in scenario['peak']:
-                q_boiler = max(th_LDC) - q_nom*eta_th
+                q_boiler = max(th_LDC) - q_nom
                 boiler = Boiler.Boiler(city.environment, q_boiler, 0.8)
                 bes.addDevice(boiler)
                 print('Added Boiler: Q_nom = '+str(round(q_boiler/1000,2))+' kW')
@@ -532,7 +532,7 @@ def dim_centralized(city, scenario):
                 qPEF.append(pef_enev['gas']*(q_total - q_nom * t_ann_op))  # EnEV für Boiler. Anteil an Wärme*PEF (eta_th mit rein?)
 
             if 'elHeater' in scenario['peak']:
-                q_elHeater = max(th_LDC) - q_nom*eta_th
+                q_elHeater = max(th_LDC) - q_nom
                 # TODO: Werte überprüfen
                 elHeater = ElectricalHeater.ElectricalHeater(city.environment, q_elHeater, 0.95, 100, 0.2)
                 bes.addDevice(elHeater)
@@ -540,12 +540,6 @@ def dim_centralized(city, scenario):
                 qPEF.append(pef_enev['el'] * (q_total - q_nom * t_ann_op))
 
 
-        elif device == 'solar': # Regeln für Dimensionierung einführen!
-            pv_area = 0
-            for building in city.node.values():
-                pv_area += building['entity'].roof_usabl_pv_area
-            print('Solarthermie auf ', pv_area, ' qm')
-            #result['solar'] = pv_area # in m2
 
         elif device == 'hp_geo':
             print(' hp geothermie')
@@ -556,13 +550,15 @@ def dim_centralized(city, scenario):
         elif device == 'hp_air':
             # evtl. Vor/Rücklauftemperaturen mit Diagramm aus KVS-Klimatechnik bestimmen (Bild 1.1a, S.11)
 
-            # TODO: Wärmepumpen doch nur für Heizung -> Warmwasser über andere Anlage
+            # TODO: Wärmepumpen doch nur für Heizung -> Warmwasser über andere Anlage?
 
             [tAmbient, tFlow, qNominal, pNominal, cop, tMax, lower_activation_limit] = choose_device('hp', max(th_curve))
             hp_air = HP.Heatpump(city.environment, tAmbient, tFlow, qNominal, pNominal, cop,
                                      tMax, lower_activation_limit)
             bes.addDevice(hp_air)
-            qPEF.append(pef_enev['el']*1) # TODO: Berechnung korrigieren
+
+            q_hp_ann = 1 # TODO: Gesamte erzeugte Wärmemenge der HP über ein Jahr berechnen
+            qPEF.append(pef_enev['el_in']*q_hp_ann)
 
             # Warmwasserspeicher hinzufügen
             t_soll = 50 # Speichersolltemperatur
@@ -595,12 +591,13 @@ def dim_centralized(city, scenario):
                 print('Added Boiler: Q_nom = ' + str(round(q_boiler / 1000, 2)) + ' kW')
                 if q_boiler >= 4000 and q_boiler < 400000:
                     print('Kessel muss CE Kennzeichnung vorweisen können. (gemäß 92/42/EWG)')
+                qPEF.append(pef_enev['gas']*1) # TODO: Von Boiler erzeugte Wärmemenge über ein Jahr berechnen
 
 
     # Check EnEV (Produkt Erzeugeraufwandszahl und PEF <= 1,3)
     eg_nahwärme = 1.01 # Zentralisierte Versorgung!
     # qPEF = [q_hp*pef_hp_air, q_boiler*pef_gas]
-    pef_nahwärme = sum(qPEF)/sum(th_curve*eta_transmission) # Hier muss theoretisch noch die el.Jahresnettoarbeit der HKW eingerechnet werden
+    pef_nahwärme = sum(qPEF)/sum(th_curve*eta_transmission) # Hier müsste theoretisch noch der Strom für Hilfsenergien berücksichtig werden (W_f * f_p,el)
     if eg_nahwärme*pef_nahwärme <= 1.3:
         print('Energysytem according to EnEV! Factor:', round(eg_nahwärme*pef_nahwärme,2))
     else:
@@ -730,7 +727,7 @@ def calc_annuity(city):
 if __name__ == '__main__':
 
     #Choose example city_object
-    ex_city = 2
+    ex_city = 1
 
     this_path = os.path.dirname(os.path.abspath(__file__))
     #  Run program
