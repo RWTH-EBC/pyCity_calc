@@ -14,6 +14,7 @@ Passende Szenarien anhand der Randbedingungen auswählen und in qual_scenarios s
         Für decentralized: Einzelne Lastgänge nutzen
 
 """
+#  Todo: English comments
 
 import os
 import pickle
@@ -24,19 +25,21 @@ import math
 
 import matplotlib.pyplot as plt
 import pycity_calc.cities.city as City
-from prettytable import PrettyTable
+# from prettytable import PrettyTable
 
 import pycity_base.classes.supply.BES as BES
 import pycity_base.classes.supply.Boiler as Boiler
 import pycity_base.classes.supply.CHP as CHP
 import pycity_base.classes.supply.HeatPump as HP
+#  TOdo: use heatpumpsimple of pycity_calc
+
 import pycity_base.classes.supply.ElectricalHeater as ElectricalHeater
 import pycity_base.classes.supply.Inverter as Inverter
 import pycity_base.classes.supply.PV as PV
 import pycity_calc.energysystems.thermalEnergyStorage as TES
 import pycity_base.classes.demand.SpaceHeating as SpaceHeating
 
-
+#  Todo: Move choice of scenarios to main() and add it as input to run_approach
 #sc0 = {'type':['centralized','decentralized'],'base':['hp_geo'],'peak':['boiler']}
 sc1 = {'type':['centralized','decentralized'],'base':['hp_air'],'peak':['boiler']}
 #sc2 = {'type':['centralized','decentralized'],'base':[],'peak':['boiler']}
@@ -51,12 +54,24 @@ all_scenarios = [sc1, sc3]
 
 
 def run_approach(city):
+    """
+
+    Parameters
+    ----------
+    city
+
+    Returns
+    -------
+    solutions
+    """
+    #  Todo: Add explanations to docstring
 
     solutions = [] #Liste aller möglichen dimensionierten Szenarien (inklusive Kosten und Emissionen)
 
-    building_con = True
-    heating_net = True
-    geothermal = True
+    #  Todo: Move to run_approach as input parameters
+    building_con = True  # Does connection to heating network exist?
+    heating_net = True  # Does heating network exist?
+    geothermal = True  # Geothermal heat pump usage possible?
 
     # building_con, heating_net, geothermal = additional_information()
 
@@ -127,6 +142,11 @@ def get_building_age(city): #alternativ immer exaktes Alter abfragen. Wie sähe 
 
 
 def get_city_type(city):
+    #  Todo: building.net_floor_area --> Relate to energy
+    #  n1 and n2 --> calc_node_distance(graph, node_1, node_2)
+    #  get_min_span_tree_for_x_y_positions(city, nodelist)
+    #  --> Relate to energy demand
+
     num_buildings = len(city.nodelist_building)
     num_apartments = 0
     for building_node in city.nodelist_building:
@@ -768,4 +788,19 @@ if __name__ == '__main__':
         city = pickle.load(open(city_path, mode='rb'))
         print("District: 7 MFH, Bottrop")
 
-    run_approach(city)
+    list_city_object = run_approach(city)
+
+    import pycity_calc.visualization.city_visual as citvis
+
+    for i in range(len(list_city_object)):
+
+        cit = list_city_object[i]
+
+        city_name = 'city_out_' + str(i+1) + '.pkl'
+
+        path_output = os.path.join(this_path, 'output', city_name)
+
+        pickle.dump(cit, open(path_output, mode='wb'))
+
+        citvis.plot_city_district(city=cit, plot_lhn=True, plot_deg=True,
+                                  plot_esys=True)
