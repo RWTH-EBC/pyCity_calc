@@ -21,9 +21,8 @@ Structure:
     Analyse: Confident interval definition
              Reference for GHG specific calculation
 
-    Results: Save the results in a text file: True or False
+    Results: Save the results in a text file and in excel: True or False
              Filename
-
 2: Reference City generation and add energy systems
 
 3: Dictionary for sampling
@@ -53,10 +52,9 @@ import pycity_calc.toolbox.mc_helpers.Uncertainties_analysis.MC_esys_new_evaluat
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
-import random as rd
 from xlwt import Workbook
 
-def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True, time_sp_force_retro = 40,
+def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, time_sp_force_retro = 40,
                             max_retro_year = 2014,  Is_k_user_parameters = True, interest_fix = 0.05,
                             MC_analyse_total = True , Confident_intervall_pourcentage = 90, save_result = True,
                             save_path_mc='D:\jsc-les\\test_lolo\Results',
@@ -72,12 +70,15 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
     # if set to False: generation of a City with city_generator
     city_pickle_name = city_pickle_name
     # Scaling of esys (initialization)
-    size_esys=False
-    # ## Uncertainty
+    size_esys=False #if set to true: sizing of energy systems depending on the thermal need of the city
+                    # set to False: use of sizes defined in input files
 
+
+    # ## Uncertainty
     # energy systems parameters are unknown (efficiency, maximum temperature...)
     Is_k_esys_parameters = Is_k_esys_parameters
-    # Set to false: energy systems are known: buildings characteristics uncertainties
+    # Set to false: energy systems are known: small variations of energy system chacteristics
+    # Set to true: energy systems are unknown: large variations of energy system chacteristics
 
     # buildings parameters are unknown (infiltration rate, net_floor_area, modernisation year)
     Is_k_building_parameters = Is_k_building_parameters
@@ -97,14 +98,15 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
 
 
     MC_analyse_total = MC_analyse_total
-    # if set to false: MC analyse without uncertainties for area, height of floors, energy systems and economy
+    # if set to false: MC analyse without uncertainties for area, height of floors, energy systems
+    #  and economic parameters
 
     # ## Analyse
     Confident_intervall_pourcentage = Confident_intervall_pourcentage
     GHG_specific = 'user energy demand'
 
     # ## Save results
-    save_result = save_result # if set to false: no generation of results txt file
+    save_result = save_result # if set to false: no generation of results txt and excel file
     results_name = results_name
     results_excel_name = results_excel_name
     save_path_mc = save_path_mc
@@ -118,7 +120,7 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
     # #----------------------------------------------------------------------
     # # Generation of City reference:
     # #   load_city = True : City is load from pickle file
-    # #   load_city 0 False : City is generated with City_generator
+    # #   load_city 0 False : City is generated with City_generator.py
 
     this_path = os.path.dirname(os.path.abspath(__file__))
 
@@ -135,7 +137,6 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
         #  Add energy systems to city
         gen_esys = True  # True - Generate energy systems
         gen_e_net = gen_e_net # True - Generate energy networks
-        #dhw_dim_esys = True  # Use dhw profiles for esys dimensioning
 
         #  Path to energy system input file (csv/txt; tab separated)
         esys_filename = esys_filename
@@ -149,8 +150,6 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
 
             #  Generate energy systems
             esys_gen.gen_esys_for_city(city=City, list_data=list_esys, size_esys=size_esys)
-        # else enter all the parameter your self
-
 
         #  Add energy networks to city
         if gen_e_net:  # True - Generate energy networks
@@ -163,8 +162,8 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
             #  Load energy networks planing data
             dict_e_net_data = City_gen.enetgen.load_en_network_input_data(network_path)
 
+            # Add energy networks
             City_gen.enetgen.add_energy_networks_to_city(city=City, dict_data=dict_e_net_data)
-
 
 
     else:
@@ -367,17 +366,10 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
         network_path = os.path.join(this_path, 'City_generation', 'input', 'input_en_network_generator',
                                     network_filename)
 
-
-
-
         # # Load district_data file
-
-
 
         district_data = City_gen.citygen.get_district_data_from_txt(txt_path)
         print('district data : ', district_data)
-
-
 
         # # City Generation
 
@@ -419,9 +411,10 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
                                                 prev_heat_dev=prev_heat_dev,
                                                 season_mod=season_mod)
 
-
+    ########## End generation of the city reference ##########################
     # #----------------------------------------------------------------------
     # #----------------------------------------------------------------------
+    ########## Start calculations city reference #############################
 
     # # Energy balance calculations
 
@@ -480,9 +473,6 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
     GHG_Emission_ref = GHG_calc.CO2_emission_calc(city_object=City, emission_object=GHG, CO2_zero_lowerbound=False,
                                                   eco_calc_instance=eco_inst)
 
-    #print('GHG emissions reference City : kg/year')
-    #print(GHG_Emission_ref)
-
     print('***********************************************************************************************************')
     print('Save the city')
     print('***********************************************************************************************************')
@@ -496,14 +486,19 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
     print('total reference annuity:', round(total_annuity_ref, 2), ' Euro/year')
     print('total emission reference City :', GHG_Emission_ref, ' kg/year ')
 
+    ########## The end of  calculations for the city reference #############################
+    # #----------------------------------------------------------------------
+    # #----------------------------------------------------------------------
     print('***********************************************************************************************************')
     print('Samples Dictionnary')
     print('***********************************************************************************************************')
     # ## Do the dictionary for Monte Carlo uncertainty analysis sampling
 
+    # number of samples
     dict_par_unc = {}
     dict_par_unc['Nsamples'] = Nsamples
 
+    # weather object
     dict_par_unc['weather'] = genweather.gen_set_of_weathers(Nsamples)
     print('End of weather sampling')
 
@@ -519,9 +514,9 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
     else:
         dict_par_unc['build_physic_unc'] = False
 
-
     dict_par_unc['time_sp_force_retro'] = time_sp_force_retro
     dict_par_unc['max_retro_year'] = max_retro_year
+
     if Is_k_user_parameters:
         dict_par_unc['nb_occ_unc'] = True
         dict_par_unc['user'] = True
@@ -540,8 +535,10 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
 
     dict_par_unc['time'] = time
 
-        # TODO rajouter le sample pour un equipement avec des proprietes vraiment incertaines et d'autres moins
-
+    ########## The end of dictionary building ###############################
+    # #----------------------------------------------------------------------
+    # #----------------------------------------------------------------------
+    ########## Start simulations ############################################
     print('***********************************************************************************************************')
     print('Do the simulations')
     print('***********************************************************************************************************')
@@ -549,7 +546,7 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
     Th_results, Gas_results, El_results, Annuity_results, GHG_results, \
            GHG_spe_results, el_results2, dict_city_pb, Nboiler_rescaled, NEH_rescaled, Lal_rescaled, Tes_rescaled,\
            Annuity_results_h, Annuity_results_m, Annuity_results_ec1, Annuity_results_ec2, Annuity_results_ec3, \
-            EH_small_rescale, EH_total_rescale= \
+            EH_small_rescale, EH_total_rescale, Nboiler_total_rescaled= \
         newcity.new_city_evaluation_monte_carlo(City, dict_par_unc)
 
     # Get specific Annuity
@@ -560,8 +557,13 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
     print('***********************************************************************************************************')
     print('Do the Uncertainties analyse')
     print('***********************************************************************************************************')
-    # ## Results analysis - Standard deviation, mean and 90 confident interval- interest fix - eco0
+    ########## The end of simulations ###############################
+    # #----------------------------------------------------------------------
+    # #----------------------------------------------------------------------
+    ########## Start analysis ############################################
 
+
+    # ## Results analysis - Standard deviation, mean and 90 confident interval- interest fix
     print ()
     print ('Gas demand analysis')
     print ('-------------------')
@@ -594,8 +596,8 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
     confident_inter_el = stats.norm.interval(Confident_intervall_pourcentage / 100, loc=mean_el_demand,
                                               scale=sigma_el_demand)
     median_el_demand = np.median(a=El_results)
-    first_quantil_el = stats.scoreatpercentile(El_results, per=25)
-    second_quantil_el = stats.scoreatpercentile(El_results, per=50)
+    first_quantil_el = stats.scoreatpercentile(El_results, per = 25)
+    second_quantil_el = stats.scoreatpercentile(El_results, per= 50)
     third_quantil_el = stats.scoreatpercentile(El_results, per=75)
 
     print('mean :', mean_el_demand)
@@ -608,7 +610,7 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
     print('third quantil : ', third_quantil_el)
     print()
 
-    # Annuity, eco0, interest fixed low
+    # Annuity, interest fixed low
     print('Annuity analysis low interest')
     print('----------------')
     print('unit: Euro/year')
@@ -755,9 +757,13 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
     confident_inter_a_spe_h = stats.norm.interval(Confident_intervall_pourcentage / 100, loc=mean_annuity_spe_h,
                                                   scale=sigma_annuity_spe_h)
 
-    print ('Number of simulations with rescaled boiler : ', Nboiler_rescaled)
-    print('Number of simulations with rescaled EH : ', NEH_rescaled)
+
+    print('Number of simulations with small rescaled EH : ', EH_small_rescale)
+    print('Number of simulations with medium rescaled EH : ', NEH_rescaled)
+    print('Number of simulations with high rescaled EH: ', EH_total_rescale)
     print ('Number of simulations with rescaled Boiler Lal : ', Lal_rescaled)
+    print('Number of simulations with medium rescaled boiler : ', Nboiler_rescaled)
+    print('Number of simulations with high rescaled boiler : ', Nboiler_total_rescaled)
     print ('Number of Tes rescaled : ', Tes_rescaled)
 
     print('***********************************************************************************************************')
@@ -899,6 +905,18 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
                 Nsamples)) + '\n')
         write_results.write('reference:' + str(total_annuity_ref) + '\n')
 
+
+        write_results.write('\nSpecific Annuity medium \n')
+        write_results.write('\n -------\n')
+        write_results.write('unit : Euro/kWh/year \n')
+        write_results.write('mean : ' + str(mean_annuity_spe_m) + '\n')
+        write_results.write('sigma : ' + str(sigma_annuity_spe_m) + '\n')
+        write_results.write('confident interval {}'.format(Confident_intervall_pourcentage) + str(confident_inter_a_spe_m) + '\n')
+        write_results.write('{:0.2%} of the means are in confident interval'.
+                            format(((specific_annuity_m >= confident_inter_a_spe_m[0]) &
+                                    (specific_annuity_m<confident_inter_a_spe_m[1])).sum() / float(Nsamples)) + '\n')
+        write_results.write('reference:' + str(total_annuity_ref) + '\n')
+
         write_results.write('\n Annuity high \n')
         write_results.write('\n -------\n')
         write_results.write('unit : Euro/year \n')
@@ -947,23 +965,23 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
 
 
         write_results.write('\n Nboiler Lal rescaled: ' + str(Lal_rescaled))
-        write_results.write('\n Nboiler rescaled' + str(Nboiler_rescaled))
-        write_results.write('\n NEH rescaled medium' + str(NEH_rescaled))
-        write_results.write('\n Tes rescaled' + str(Tes_rescaled))
+        write_results.write('\n Nboiler rescaled medium: 20%' + str(Nboiler_rescaled))
+        write_results.write('\n Nboiler rescaled: 50%' + str(Nboiler_total_rescaled))
         write_results.write('\n EH rescaled small' + str(EH_small_rescale))
         write_results.write('\n EH rescaled total' + str(EH_total_rescale))
+        write_results.write('\n NEH rescaled medium' + str(NEH_rescaled))
+        write_results.write('\n Tes rescaled' + str(Tes_rescaled))
+
         write_results.close()
-
-
 
         # Xecel
         # Creation
         book = Workbook()
 
         #creation feuille1
-        feuill1 = book.add_sheet('i_low_ec0')
-        feuill2 = book.add_sheet('i_medium_eco0')
-        feuill3 = book.add_sheet('i_high_eco0')
+        feuill1 = book.add_sheet('i_low')
+        feuill2 = book.add_sheet('i_medium')
+        feuill3 = book.add_sheet('i_high')
         feuill4 = book.add_sheet('i_medium_others')
 
         # ajout des en-tête
@@ -971,10 +989,10 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
         feuill1.write(0,1,'gas_demand')
         feuill1.write(0,2,'Annuity')
         feuill1.write(0,3,'GHG')
+        feuill1.write(0, 4, 'specific Annuity')
         feuill1.write(0, 5, 'specific_GHG')
         feuill1.write(0, 6, 'electrical demand before EBB')
         feuill1.write(0, 7, 'thermal demand before EBB')
-        feuill1.write(0, 4, 'specific Annuity')
         feuill2.write(0, 0, 'Annuity')
         feuill2.write(0, 1, 'specific Annuity')
         feuill3.write(0, 0, 'Annuity')
@@ -985,27 +1003,45 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
         feuill4.write(0, 2, 'ec3')
 
         # write results
-        feuill1.write(0, 10, 'mean low i')
+        feuill1.write(0, 10, 'mean annuity low interest rate')
         feuill1.write(1, 10, str(mean_annuity))
-        feuill1.write(0, 11, 'sigma low i')
+        feuill1.write(0, 11, 'sigma annuity low interest rate')
         feuill1.write(1, 11, str(sigma_annuity))
         feuill1.write(5, 10, 'mean specific annuity')
         feuill1.write(6, 10, str(mean_annuity_spe_l))
         feuill1.write(5, 11, 'sigma specific annuity')
         feuill1.write(6, 11, str(sigma_annuity_spe_l))
 
-        feuill2.write(0, 10, 'mean')
+        feuill1.write(0, 18, 'mean ghg')
+        feuill1.write(1, 18, str(mean_GHG))
+        feuill1.write(0, 19, 'sigma ghg')
+        feuill1.write(1, 19, str(sigma_GHG))
+        feuill1.write(5, 18, 'mean specific ghg')
+        feuill1.write(6, 18, str(mean_spe_GHG))
+        feuill1.write(5, 19, 'sigma specific ghg')
+        feuill1.write(6, 19, str(sigma_spe_GHG))
+
+        feuill1.write(0, 15, 'mean electric final demand')
+        feuill1.write(1, 15, str(mean_el_demand))
+        feuill1.write(0, 16, 'sigma electric final demand')
+        feuill1.write(1, 16, str(sigma_el_demand))
+        feuill1.write(5, 15, 'mean gas demand')
+        feuill1.write(6, 15, str(mean_gas_demand))
+        feuill1.write(5, 16, 'sigma gas demamd')
+        feuill1.write(6, 16, str(sigma_gas_demand))
+
+        feuill2.write(0, 10, 'mean annuity medium interest rate')
         feuill2.write(1, 10, str(mean_annuity_m))
-        feuill2.write(0, 11, 'sigma')
+        feuill2.write(0, 11, 'sigma annuity medium interest rate')
         feuill2.write(1, 11, str(sigma_annuity_m))
         feuill2.write(5, 10, 'mean specific annuity')
         feuill2.write(6, 10, str(mean_annuity_spe_m))
         feuill2.write(5, 11, 'sigma specific annuity')
         feuill2.write(6, 11, str(sigma_annuity_spe_m))
 
-        feuill3.write(0, 10, 'mean')
+        feuill3.write(0, 10, 'mean  annuity high interest rate')
         feuill3.write(1, 10, str(mean_annuity_h))
-        feuill3.write(0, 11, 'sigma')
+        feuill3.write(0, 11, 'sigma annuity high interest rate')
         feuill3.write(1, 11, str(sigma_annuity_h))
         feuill3.write(5, 10, 'mean specific annuity')
         feuill3.write(6, 10, str(mean_annuity_spe_h))
@@ -1020,7 +1056,7 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
             feuill1.write(value+1, 4, str(specific_annuity_l[value]))
             feuill1.write(value + 1, 5, str(GHG_spe_results[value]))
             feuill1.write(value + 1, 6, str(el_results2[value]))
-            feuill1.write(value + 1, 6, str(Th_results[value]))
+            feuill1.write(value + 1, 7, str(Th_results[value]))
 
         for value in range(len(El_results)):
             feuill2.write(value+1,0,str(Annuity_results_m[value]))
@@ -1153,7 +1189,7 @@ def do_uncertainty_analysis(Nsamples=1000 , time=10, Is_k_esys_parameters = True
 
 if __name__ == '__main__':
 
-    do_uncertainty_analysis(Nsamples=1, time=10, Is_k_esys_parameters=True, time_sp_force_retro=40,
+    do_uncertainty_analysis(Nsamples=10, time=10, Is_k_esys_parameters=True, time_sp_force_retro=40,
                             max_retro_year=2014, Is_k_user_parameters=True, interest_fix=0.05,
                             MC_analyse_total=True, Confident_intervall_pourcentage=90, save_result=True,
                             save_path_mc='D:\jsc-les\\test_lolo\\Results',

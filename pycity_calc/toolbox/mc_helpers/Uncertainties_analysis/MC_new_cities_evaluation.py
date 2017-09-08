@@ -48,11 +48,11 @@ def new_city_evaluation_monte_carlo(ref_City, dict_sample):
                         Defines,if building physics unknown or not (default: True)
             weather : Holding weather sample lists
             interest_low:   list
-                        Holding interest rate sampling for economic calculation low
+                        Holding interest rate for economic calculation low
             interest_medium:   list
-                            Holding interest rate sampling for economic calculation medium
+                            Holding interest rate for economic calculation medium
             interest_high:   list
-                        Holding interest rate sampling for economic calculation high
+                        Holding interest rate for economic calculation high
             time:   int
                     Time for economic calculation in years (default: 10)
         Returns
@@ -65,7 +65,7 @@ def new_city_evaluation_monte_carlo(ref_City, dict_sample):
             1. Array holding net space heating demands in kWh as float
             2. Array holding Gas demands after EBB in kWh as float
             3. Array holding Electrical demands after EBB in kWh as float
-            4. Array holding Annuity in Euro as float, scenario eco0 , interest low
+            4. Array holding Annuity in Euro as float interest low
             5. Array holding GHG emissions in kg as float
             6. Array holding specific GHG emissions in kg as float
             7. Array holding electrical demand for EBB in kWh as float (sum of buildings demand)
@@ -76,9 +76,9 @@ def new_city_evaluation_monte_carlo(ref_City, dict_sample):
             12: Tes_rescale Number of city with Tes rescaled or not
             14: Annuity_results_h: Array holding Annuity in Euro as float, interest high
             15: Annuity_results_m: Array holding Annuity in Euro as float, interest medium
-            15: Annuity_results_ec1: Array holding Annuity in Euro as float, interest medium , ec1
-            16: Annuity_results_ec2: Array holding Annuity in Euro as float, interest medium , ec2
-            17: Annuity_results_ec3: Array holding Annuity in Euro as float, interest medium , ec3
+            15: Annuity_results_ec1: Array holding Annuity in Euro as float, interest medium , ec1 (economic setting 1)
+            16: Annuity_results_ec2: Array holding Annuity in Euro as float, interest medium , ec2 (economic setting 2)
+            17: Annuity_results_ec3: Array holding Annuity in Euro as float, interest medium , ec3 (economic setting 3)
 
         """
 
@@ -88,6 +88,7 @@ def new_city_evaluation_monte_carlo(ref_City, dict_sample):
     Nloop = dict_sample['Nsamples']
 
     Nboiler_rescaled = 0# number of boiler rescaled (thermal demand to high)
+    Nboiler_total_rescaled = 0
     NEH_rescaled = 0 # number of electrical heater rescaled (thermal demand to high) medium
     Lal_rescaled = 0 # Number of city with rescaled boiler lal
     Tes_rescale = 0 # Number of City with rescaled thermal storage
@@ -214,11 +215,14 @@ def new_city_evaluation_monte_carlo(ref_City, dict_sample):
         ############################################
 
         # Energy balance calculations
-        el_dem, gas_dem, rescale_boiler, rescale_EH, Lal_recaled, Rescale_tes , Rescale_eh_small, Rescal_eh_total = MC_EBB_calc(City)
+        el_dem, gas_dem, rescale_boiler, rescale_total_boiler, Lal_recaled, Rescale_tes, \
+        Rescale_eh_small, rescale_EH, Rescal_eh_total = MC_EBB_calc(City)
 
         # Counter of rescaled energy systems during EBB
         if rescale_boiler:
             Nboiler_rescaled += 1
+        if rescale_total_boiler:
+            Nboiler_total_rescaled +=1
         if rescale_EH:
             NEH_rescaled += 1
         if Lal_recaled:
@@ -329,7 +333,8 @@ def new_city_evaluation_monte_carlo(ref_City, dict_sample):
 
     return Th_results, Gas_results, El_results, Annuity_results, GHG_results, \
            GHG_spe_results, el_results2, dict_city_pb, Nboiler_rescaled, NEH_rescaled, Lal_rescaled, Tes_rescale,\
-           Annuity_results_h, Annuity_results_m, Annuity_results_ec1, Annuity_results_ec2, Annuity_results_ec3, EH_small_rescale, EH_total_rescale
+           Annuity_results_h, Annuity_results_m, Annuity_results_ec1, Annuity_results_ec2, Annuity_results_ec3, \
+           EH_small_rescale, EH_total_rescale, Nboiler_total_rescaled
 
 
 
@@ -381,6 +386,7 @@ def MC_new_city_generation (City, new_weather, max_retro_year=2014, time_sp_forc
     sph_city_list = []
     el_city_list = []
     dhw_city_list = []
+
     dict_build_pb = {}
 
     # generation of a new weather
@@ -459,10 +465,6 @@ def MC_new_economic_evaluation(City, time=10, interest=0.05, scenario='scenario_
     # Initialisation samples dictionary
     dict_eco_samples = {}
 
-    #  Generate economic calculator object
-    #print("Start Economic evaluation /n")
-    #eco_inst = eco_calc.EconomicCalculation(time=time, interest=interest)
-
     ## Annuity Calculation
     # Get Market object
     Market_instance = Mark.GermanMarket()
@@ -513,7 +515,7 @@ def MC_new_economic_evaluation(City, time=10, interest=0.05, scenario='scenario_
         el_change = rd.uniform(0.945, 0.955)
         gas_change = rd.uniform(0.945, 0.955)
 
-    elif scenario == 'scenario_eco4':
+    else : # scenario 4
         # New_price change factor
         inflation = rd.uniform(0.99, 1.01)
         # decrease of 7%
@@ -641,14 +643,20 @@ def MC_EBB_calc (City):
         el_dem:     float
                 Electrical demand per year in kWh
         rescale_boiler: Boolean
-                        True: City with rescaled boilers to cover all city energy demands
-        rescale_EH : Boolean
-                        True: City with rescaled EH to cover all city energy demands
+                        True: City with rescaled boilers to cover all city energy demands: 20% oversizing
+        rescale_total_boiler: Boolean
+                            True: City with rescaled boilers to cover all city energy demands: 50% oversizing
         LaL_boiler_rescaled : Boolean
-                        True: Lower Activation limit of boiler is set to 0
+                        True: Lower Activation limit of boiler is set to 0 and boiler is rescaled of 10%
         Rescale_tes: Boolean
-                        True: Tes has been rescaled to avoid error in energy balance
-
+                        True: Tes has been rescaled to avoid error in energy balance: Big rescale: capacity = 10000000 kg
+                        Boiler rescaled of 50%
+        rescale_EH_small: Boolean
+            True: City with rescaled EH to cover all city energy demands (medium: 10% oversizing)
+        rescale_EH : Boolean
+            True: City with rescaled EH to cover all city energy demands (medium: 20% oversizing)
+        rescale_EH_total:  Boolean
+            True: City with rescaled EH to cover all city energy demands (medium: 50% oversizing)
     """
     # Get special invalidind error of EBB
     invalidind = EBB.invalidind
@@ -663,6 +671,7 @@ def MC_EBB_calc (City):
 
     # Initialization of Boolean to keep track of rescaled energy systems
     rescale_boiler=False
+    rescale_total_boiler = False
     rescale_EH=False
     LaL_boiler_rescaled = False
     Rescale_tes = False
@@ -674,31 +683,42 @@ def MC_EBB_calc (City):
         for i in range(len(dict_bes_data)):
             City, dict_Qlhn, dict_supply = Calculator.eb_balances(dict_bes_data, i)
 
+
     except invalidind:
-        ## Rescale LAL boiler or EH
+        # ## Rescale LAL boiler or EH
         # Get list of building and rescale boiler or EH
         list_of_building = City.get_list_build_entity_node_ids()
         for build in list_of_building:
-            # Start try to rescale just LAl boiler or EH
+            # Start try to rescale boiler or EH
             if City.node[build]['entity'].bes.hasBoiler == True:
                 City.node[build]['entity'].bes.boiler.lowerActivationLimit = 0
                 LaL_boiler_rescaled = True
 
                 print()
                 print('Rescale LAl boiler')
-                print('new boiler Lal kW: ', City.node[build]['entity'].bes.boiler.lowerActivationLimit )
+                print('new boiler Lal kW: ', City.node[build]['entity'].bes.boiler.lowerActivationLimit)
+                print()
+
+            if City.node[build]['entity'].bes.hasBoiler == True:
+                City.node[build]['entity'].bes.boiler.qNominal = \
+                City.node[build]['entity'].bes.boiler.qNominal * 1.1 / City.node[build]['entity'].bes.boiler.eta
+
+                # rescale_boiler_small = True
+
+                print()
+                print('Rescale boiler first round 10%')
+                print('new boiler capacity kW: ', City.node[build]['entity'].bes.boiler.qNominal / 1000)
                 print()
 
             if City.node[build]['entity'].bes.hasElectricalHeater == True:
                 City.node[build]['entity'].bes.electricalHeater.qNominal = \
-                    City.node[build]['entity'].bes.electricalHeater.qNominal * 1.1 / City.node[build]['entity'].\
-                        bes.electricalHeater.eta
-
+                    City.node[build]['entity'].bes.electricalHeater.qNominal * 1.1 \
+                    / City.node[build]['entity'].bes.electricalHeater.eta
 
                 rescale_EH_small = True
 
                 print()
-                print('Rescale EH first round (10%)')
+                print('Rescale EH first round 10%')
                 print('new EH capacity kW: ', City.node[build]['entity'].bes.electricalHeater.qNominal / 1000)
                 print()
 
@@ -716,13 +736,22 @@ def MC_EBB_calc (City):
                     # Rescal Boiler capacity
                     if City.node[build]['entity'].bes.hasBoiler == True:
                         City.node[build]['entity'].bes.boiler.qNominal = \
-                            City.node[build]['entity'].bes.boiler.qNominal* 1.1 / City.node[build]['entity'].bes.boiler.eta
+                            City.node[build]['entity'].bes.boiler.qNominal * 1.2
 
                         rescale_boiler = True
 
                         print()
-                        print('Rescale boiler first round (10%)')
+                        print('Rescale boiler second round ')
                         print('new boiler capacity kW: ', City.node[build]['entity'].bes.boiler.qNominal / 1000)
+                        print()
+
+                    # Rescal TES capacity
+                    if City.node[build]['entity'].bes.hasTes == True:
+                        City.node[build]['entity'].bes.tes.capacity = City.node[build]['entity'].bes.tes.capacity * 1.1
+
+                        print()
+                        print('Rescale Tes first round 10%')
+                        print('new Tes capacity kg: ', City.node[build]['entity'].bes.tes.capacity)
                         print()
 
                     if City.node[build]['entity'].bes.hasElectricalHeater == True:
@@ -732,7 +761,7 @@ def MC_EBB_calc (City):
                         rescale_EH = True
 
                         print()
-                        print('Rescale EH for the second round 20%')
+                        print('Rescale EH for the second time 20%')
                         print('new EH capacity kW: ', City.node[build]['entity'].bes.electricalHeater.qNominal / 1000)
                         print()
 
@@ -749,14 +778,25 @@ def MC_EBB_calc (City):
                         for build in list_of_building:
                             # Rescal Boiler capacity
                             if City.node[build]['entity'].bes.hasBoiler == True:
-                                City.node[build]['entity'].bes.boiler.qNominal =\
-                                    City.node[build]['entity'].bes.boiler.qNominal*1.2
+                                City.node[build]['entity'].bes.boiler.qNominal = City.node[build][
+                                                                                 'entity'].bes.boiler.qNominal * 1.5
 
-                                rescale_boiler = True
+                                rescale_total_boiler = True
+                                print()
+                                print('Rescale boiler third time: 50%')
+                                print('new boiler capacity kW: ', City.node[build]['entity'].bes.boiler.qNominal / 1000)
+                                print()
+
+                            if City.node[build]['entity'].bes.hasElectricalHeater == True:
+                                City.node[build]['entity'].bes.electricalHeater.qNominal = \
+                                    City.node[build]['entity'].bes.electricalHeater.qNominal * 1.5
+
+                                rescale_EH = True
 
                                 print()
-                                print('Rescale boiler second round: 20% ')
-                                print('new boiler capacity kW: ', City.node[build]['entity'].bes.boiler.qNominal / 1000)
+                                print('Rescale EH for the third time 50%')
+                                print('new EH capacity kW: ',
+                                      City.node[build]['entity'].bes.electricalHeater.qNominal / 1000)
                                 print()
 
                         # Do another time EBB
@@ -777,17 +817,33 @@ def MC_EBB_calc (City):
                                                                                           'entity'].bes.tes.capacity * 100000
 
                                         print()
-                                        print('Rescale Tes')
-                                        print('new Tes capacity kW: ',
-                                        City.node[build]['entity'].bes.tes.capacity)
+                                        print('Rescale Tes totally')
+                                        print('new Tes capacity kg: ', City.node[build]['entity'].bes.tes.capacity)
                                         print()
 
                                         Rescale_tes = True
 
-                                    # Do another time EBB
-                                    for i in range(len(dict_bes_data)):
-                                        City, dict_Qlhn, dict_supply = Calculator.eb_balances(dict_bes_data, i)
+                                    # Rescal Boiler capacity
+                                    if City.node[build]['entity'].bes.hasBoiler == True:
+                                        City.node[build]['entity'].bes.boiler.qNominal = \
+                                            City.node[build]['entity'].bes.boiler.qNominal * 10
 
+                                    if City.node[build]['entity'].bes.hasElectricalHeater == True:
+                                        City.node[build]['entity'].bes.electricalHeater.qNominal = \
+                                            City.node[build]['entity'].bes.electricalHeater.qNominal * 10
+
+                                        rescale_EH_total = True
+
+                                        print()
+                                        print('Rescale EH totally')
+                                        print('new EH capacity kW: ',City.node[build]['entity'].bes.electricalHeater.qNominal / 1000)
+                                        print()
+
+                                # Do another time EBB
+                                for i in range(len(dict_bes_data)):
+                                    City, dict_Qlhn, dict_supply = Calculator.eb_balances(dict_bes_data, i)
+
+                                    # If here there is an error: Stop Monte Carlo simulations and crash: it's not normal
 
 
     except invalidind2:
@@ -888,7 +944,7 @@ def MC_EBB_calc (City):
                             if City.node[build]['entity'].bes.hasBoiler == True:
                                 City.node[build]['entity'].bes.boiler.qNominal = City.node[build]['entity'].bes.boiler.qNominal*1.5
 
-                                rescale_boiler = True
+                                rescale_total_boiler = True
                                 print()
                                 print('Rescale boiler third time: 50%')
                                 print('new boiler capacity kW: ', City.node[build]['entity'].bes.boiler.qNominal / 1000)
@@ -951,6 +1007,8 @@ def MC_EBB_calc (City):
                                 for i in range(len(dict_bes_data)):
                                     City, dict_Qlhn, dict_supply = Calculator.eb_balances(dict_bes_data, i)
 
+                                    # If here there is still an error: Stop Monte Carlo simulations and crash: it's not normal
+
     # ## Gas and electrical demand
     el_dem = 0
     gas_dem = 0
@@ -969,8 +1027,8 @@ def MC_EBB_calc (City):
                         gas_dem += sum(City.node[n]['fuel demand']) * \
                                    City.environment.timer.timeDiscretization / 1000 / 3600
 
-    return el_dem, gas_dem, rescale_boiler, rescale_EH, LaL_boiler_rescaled, Rescale_tes, \
-           rescale_EH_small, rescale_EH_total
+    return el_dem, gas_dem, rescale_boiler, rescale_total_boiler, LaL_boiler_rescaled, Rescale_tes, \
+           rescale_EH_small, rescale_EH, rescale_EH_total
 
 if __name__ == '__main__':
 
@@ -1068,7 +1126,7 @@ if __name__ == '__main__':
     #  Perform MC analysis for whole city
     ( Th_results, Gas_results, El_results, Annuity_results, GHG_results, \
            GHG_spe_results, el_results2, dict_city_pb, Nboiler_rescaled, NEH_rescaled, Lal_rescaled, Tes_rescale,\
-           Annuity_results_h, Annuity_results_m, Annuity_results_ec1, Annuity_results_ec2, Annuity_results_ec3, EH_small_rescale, EH_total_rescale) = \
+           Annuity_results_h, Annuity_results_m, Annuity_results_ec1, Annuity_results_ec2, Annuity_results_ec3, EH_small_rescale, EH_total_rescale, Nboiler_total_rescaled) = \
         new_city_evaluation_monte_carlo(ref_City=city, dict_sample=dict_pam)
 
     #  Results

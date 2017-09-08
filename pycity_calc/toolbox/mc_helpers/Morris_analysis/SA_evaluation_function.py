@@ -377,7 +377,7 @@ def evaluate(City, values):
 
         ############################################
 
-        time = 50  # Years
+        time = 10  # Years
         interest = row[47]  # Interest rate
         print ('\n New interest: {}'.format(interest))
 

@@ -84,14 +84,8 @@ def new_building_evaluation_mc(building, new_weather, max_retro_year=2014, time_
 
     # Timestep definition
     timestep = building.environment.timer.timeDiscretization
+    dict_problem = {} # dictionary to keep track of sampling and more speciclly sampling that lead to crazy results
 
-    dict_problem = {}
-    #dict_problem['infiltration'] = []
-    #dict_problem['dormer'] = []
-    #dict_problem['attic'] = []
-    #dict_problem['cellar'] = []
-    #dict_problem['user_air'] = []
-    #dict_problem['year'] = []
 
     print('Start Modification building')
     print ()
@@ -114,23 +108,26 @@ def new_building_evaluation_mc(building, new_weather, max_retro_year=2014, time_
 
     # New space heating
     # Get samples for parameters, which are not stored on building object
+    # infiltration factor
     inf_rate = dict_samples['inf']
     print('Inf. rate: ', inf_rate)
 
+    # user air ventilation factor
     usr_air_ex_rate = dict_samples['user_air']
     print('User air exchange rate: ', usr_air_ex_rate)
 
+    # ventilation factor
     vent_array = np.zeros(len(building.environment.weather.tAmbient))
-
     vent_array += inf_rate + usr_air_ex_rate
     #  Sum up user air exchange and infiltration
 
+    # Set heat temperature
     tset_heat = dict_samples['set_temp'][0]
     print('Set temperature: ', tset_heat)
 
+    # height of floorst
     height_of_floors = dict_samples['height_of_floor'][0]
     print ('new_height_of_floor', height_of_floors)
-
 
     #  Perform VDI 6007 simulation
     #  ##################################################################
@@ -164,6 +161,7 @@ def new_building_evaluation_mc(building, new_weather, max_retro_year=2014, time_
               'and high internal loads.)'
         warnings.warn(msg)
 
+    # Get the sampling
     dict_problem['infiltration']= dict_samples['inf'][0]
     dict_problem['dormer']= new_building.dormer
     dict_problem['attic']= new_building.attic
