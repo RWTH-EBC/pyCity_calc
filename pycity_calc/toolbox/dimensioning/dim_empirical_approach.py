@@ -1,17 +1,7 @@
 """
-1. If __name__ == ‚__main__‘: Durchlauf des Programms
-2. Beispielstadt laden
-3.
-
-
-Passende Szenarien anhand der Randbedingungen auswählen und in qual_scenarios speichern: select_szenarios()
-4. Alle qual_scenarios durchlaufen und abhängig ob zentral/dezentral dimensionieren:
-        dim_centralized(city, scenario)
-        dim_decentralized(city, scenario) 
-5. Für jedes Szenario in dim_de/centralized():
-        Dimensionierung der Anlagen in allen möglichen Szenarien nach gesetzlichen Bedingungen.
-        Für centralized: Alle Lastgänge addieren -> daraus maximale Last errechnen
-        Für decentralized: Einzelne Lastgänge nutzen
+Tool for the dimensioning of heating devices and district heating networks in city districts, based on approaches
+as being common in the industry.
+Every dimensioned district complies with current legal requirements.
 
 """
 #  Todo: English comments
@@ -31,6 +21,7 @@ import pycity_base.classes.supply.BES as BES
 import pycity_base.classes.supply.Boiler as Boiler
 import pycity_base.classes.supply.CHP as CHP
 import pycity_base.classes.supply.HeatPump as HP
+# import pycity_calc.energysystems.heatPumpSimple as HP
 #  TOdo: use heatpumpsimple of pycity_calc
 
 import pycity_base.classes.supply.ElectricalHeater as ElectricalHeater
@@ -39,41 +30,26 @@ import pycity_base.classes.supply.PV as PV
 import pycity_calc.energysystems.thermalEnergyStorage as TES
 import pycity_base.classes.demand.SpaceHeating as SpaceHeating
 
-#  Todo: Move choice of scenarios to main() and add it as input to run_approach
-#sc0 = {'type':['centralized','decentralized'],'base':['hp_geo'],'peak':['boiler']}
-sc1 = {'type':['centralized','decentralized'],'base':['hp_air'],'peak':['boiler']}
-#sc2 = {'type':['centralized','decentralized'],'base':[],'peak':['boiler']}
-#sc3 = {'type':['centralized','decentralized'],'base':['chp'],'peak':['boiler']}
-#sc4 = {'type':['centralized','decentralized'],'base':['hp_geo'],'peak':[]}
-#sc5 = {'type':['decentralized'],'base':['hp_air'],'peak':['elHeater']} # elHeater = Heizstab
 
-#all_scenarios = [sc0, sc1, sc2, sc3, sc4]
-
-sc3 = {'type':['centralized','decentralized'],'base':['chp'],'peak':['boiler']}
-all_scenarios = [sc1, sc3]
-
-
-def run_approach(city):
+def run_approach(city,scenarios,building_con=True,heating_net=True, geothermal=True):
     """
+    Main method to coordinate the planning process.
 
     Parameters
     ----------
-    city
+    city:           standard city_object from pyCity_base
+    scenarios:      list of dictionaries with common configurations of devices and suitability for (de)centralized usage
+    building_con:   Connection building -> district heating network already installed
+    heating_net:    district heating network already installed
+    geothermal:     usage of geothermal energy possible
 
     Returns
     -------
-    solutions
+    solutions:      list of city_objects with installed building energy systems, depending on scenarios
     """
     #  Todo: Add explanations to docstring
 
     solutions = [] #Liste aller möglichen dimensionierten Szenarien (inklusive Kosten und Emissionen)
-
-    #  Todo: Move to run_approach as input parameters
-    building_con = True  # Does connection to heating network exist?
-    heating_net = True  # Does heating network exist?
-    geothermal = True  # Geothermal heat pump usage possible?
-
-    # building_con, heating_net, geothermal = additional_information()
 
     # Change SpaceHeatingDemand of apartments to method 1 (SLP)
     for n in city.nodelist_building:
@@ -106,8 +82,8 @@ def run_approach(city):
 
     if dhn_elig >= 3:
         print('District Heating eligible!')
-        for scenario in all_scenarios:
-            print('\n---------- Scenario Centralized '+ str(all_scenarios.index(scenario)),'-----------')
+        for scenario in scenarios:
+            print('\n---------- Scenario Centralized '+ str(scenarios.index(scenario)),'-----------')
             if 'centralized' in scenario['type']:
                 if approve_scenario(city, scenario, geothermal):
                     result = dim_centralized(deepcopy(city),scenario)
@@ -116,14 +92,14 @@ def run_approach(city):
 
     elif dhn_elig < 3:
         print('District Heating not eligible!')
-    #     for scenario in all_scenarios:
+    #     for scenario in scenarios:
     #         if 'decentralized' in scenario['type']:
     #             if approve_scenario(city, scenario, geothermal):
     #                 solutions.append(dim_decentralized(deepcopy(city),scenario))
     #
     # else:
     #     print('District Heating solutions might be eligible...')
-    #     for scenario in all_scenarios:
+    #     for scenario in scenarios:
     #         if approve_scenario(city, scenario, geothermal):
     #             if 'centralized' in scenario['type']:
     #                 solutions.append(dim_centralized(deepcopy(city),scenario))
@@ -135,6 +111,11 @@ def run_approach(city):
 
 
 def get_building_age(city): #alternativ immer exaktes Alter abfragen. Wie sähe ein Neubau aus? build_year = 2017?
+    """
+    Evaluates the age of a building in regards to the EEWärmeG
+    :param city: standard city_object
+    :return: string 'new' or 'old'
+    """
     for building_node in city.nodelist_building:
         if city.node[building_node]['entity'].build_year >= 2009: # abhängig von Inkrafttreten des EEWärmeG (01.01.2009)
             return 'new'
@@ -142,6 +123,11 @@ def get_building_age(city): #alternativ immer exaktes Alter abfragen. Wie sähe 
 
 
 def get_city_type(city):
+    """
+
+    :param city:
+    :return:
+    """
     #  Todo: building.net_floor_area --> Relate to energy
     #  n1 and n2 --> calc_node_distance(graph, node_1, node_2)
     #  get_min_span_tree_for_x_y_positions(city, nodelist)
@@ -211,7 +197,7 @@ def additional_information():
     else:
         building_con = False
 
-    return building_age, building_con, heating_net, geothermal
+    return building_con, heating_net, geothermal
 
 
 def approve_scenario(city, scenario, geothermal):
@@ -770,6 +756,15 @@ def calc_annuity(city):
 
 if __name__ == '__main__':
 
+    scenarios = []
+    #scenarios.append({'type': ['centralized', 'decentralized'], 'base': [], 'peak': ['boiler']})
+    scenarios.append({'type': ['centralized', 'decentralized'], 'base': ['hp_air'], 'peak': []})
+    scenarios.append({'type': ['centralized', 'decentralized'], 'base': ['hp_air'], 'peak': ['boiler']})
+    scenarios.append({'type': ['centralized', 'decentralized'], 'base': ['hp_air'], 'peak': ['elHeater']})
+    scenarios.append({'type': ['centralized', 'decentralized'], 'base': ['chp'], 'peak': ['boiler']})
+    # scenarios.append({'type': ['centralized', 'decentralized'], 'base': ['hp_geo'], 'peak': []})
+    # scenarios.append({'type': ['centralized', 'decentralized'], 'base': ['hp_geo'], 'peak': ['elHeater']})
+
     #Choose example city_object
     ex_city = 1
 
@@ -788,19 +783,18 @@ if __name__ == '__main__':
         city = pickle.load(open(city_path, mode='rb'))
         print("District: 7 MFH, Bottrop")
 
-    list_city_object = run_approach(city)
+    list_city_object = run_approach(city,scenarios)
 
+    '''
+    # ---- Output in pickle files -----
+    
     import pycity_calc.visualization.city_visual as citvis
 
     for i in range(len(list_city_object)):
-
         cit = list_city_object[i]
-
         city_name = 'city_out_' + str(i+1) + '.pkl'
-
         path_output = os.path.join(this_path, 'output', city_name)
-
         pickle.dump(cit, open(path_output, mode='wb'))
-
         citvis.plot_city_district(city=cit, plot_lhn=True, plot_deg=True,
                                   plot_esys=True)
+    '''
