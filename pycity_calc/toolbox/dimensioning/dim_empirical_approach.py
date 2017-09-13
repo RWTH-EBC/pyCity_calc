@@ -13,9 +13,8 @@ from copy import deepcopy
 import xlrd
 import math
 
-import matplotlib.pyplot as plt
-import pycity_calc.cities.city as City
-# from prettytable import PrettyTable
+#import pycity_calc.cities.city as City
+import networkx as nx
 
 import pycity_base.classes.supply.BES as BES
 import pycity_base.classes.supply.Boiler as Boiler
@@ -29,6 +28,16 @@ import pycity_base.classes.supply.Inverter as Inverter
 import pycity_base.classes.supply.PV as PV
 import pycity_calc.energysystems.thermalEnergyStorage as TES
 import pycity_base.classes.demand.SpaceHeating as SpaceHeating
+import pycity_calc.toolbox.networks.network_ops as NW
+import pycity_calc.toolbox.dimensioning.dim_networks as dimnet
+
+import pycity_calc.economic.energy_sys_cost.boiler_cost as boiler_cost
+import pycity_calc.economic.energy_sys_cost.chp_cost as chp_cost
+import pycity_calc.economic.energy_sys_cost.eh_cost as eh_cost
+import pycity_calc.economic.energy_sys_cost.hp_cost as hp_cost
+import pycity_calc.economic.energy_sys_cost.lhn_cost as lhn_cost
+import pycity_calc.economic.energy_sys_cost.tes_cost as tes_cost
+
 
 
 def run_approach(city,scenarios,building_con=True,heating_net=True, geothermal=True):
@@ -132,6 +141,18 @@ def get_city_type(city):
     #  n1 and n2 --> calc_node_distance(graph, node_1, node_2)
     #  get_min_span_tree_for_x_y_positions(city, nodelist)
     #  --> Relate to energy demand
+
+    # dimnet.add_lhn_to_city(city, city.nodelist_building, temp_vl=90,
+    #                        temp_rl=50, c_p=4186, rho=1000,
+    #                        use_street_network=True, network_type='heating',
+    #                        plot_stepwise=False)
+
+    b_graph = nx.Graph()
+    for bn in city.nodelist_building:
+        b_graph.add_node(bn, position=city.node[bn]['position'])
+    min_st = NW.get_min_span_tree(b_graph,city.nodelist_building)
+    print(min_st)
+
 
     num_buildings = len(city.nodelist_building)
     num_apartments = 0
@@ -318,7 +339,7 @@ def choose_device(dev_type, q_ideal):
         for dev in chp_list.values():
             eta_th = dev[1]
             q_nom = dev[3]
-            if abs(q_nom*eta_th-q_ideal) < abs(specs[3]*eta_th-q_ideal):
+            if abs(q_nom*eta_th-q_ideal) < abs(specs[3]*eta_th-q_ideal):    # muss hier eta nicht raus?!
                 specs = dev[:]
     elif dev_type == 'hp':
         this_path = os.path.dirname(os.path.abspath(__file__))
@@ -328,6 +349,10 @@ def choose_device(dev_type, q_ideal):
         lower_activation_limit = 0.5
 
         # TODO: Auswahl der Wärmepumpen anpassen (Gespräch mit Markus - Wirtschaftlichkeitsbetrachtung)
+        # bis zu 50% des maximalen Wärmebedarfs, ca. 60% der aufzubringenden Jahreswärmemenge (Quelle: Springer - Wärme&Kälteversorgungsanlagen, S.68)
+
+        # TODO: (Gas-)Motorwärmepumpen statt Strom!
+
         if q_ideal >= 50000:
             hp_sheet = heatpumpData.sheet_by_name("Dimplex_LA60TU")
             print('Added HP: Dimplex LA60TU')
@@ -441,16 +466,16 @@ def dim_centralized(city, scenario):
 
     for device in scenario['base']:
         if device == 'chp':
-            chp_flh = 7000 #best possible full-load-hours
+            chp_flh = 7000 # best possible full-load-hours (not actual flh - just for dimensioning)
             q_chp = th_LDC[chp_flh]
             [eta_el, eta_th, p_nom, q_nom] = choose_device('chp', q_chp)
-            (t_ann_op, t_x) = get_chp_ann_op_time(q_nom, th_LDC)  # (Jahreslaufzeit, Volllaststunden)
+            (t_ann_op, t_x) = get_chp_ann_op_time(q_nom, th_LDC)  # (annual operation time, full load hours)
 
             bafa = False
             while not bafa:
                 # Auslegung auf BAFA Förderung (60% Deckungsanteil aus KWK)
                 if t_ann_op >= 6000 and t_x >= 5000 and q_nom*t_ann_op/q_total > 0.6: # Auslegung nur gültig, falls Bedingungen für aot und flh erfüllt sind
-                    print('CHP: BAFA Förderung möglich! Gesamtdeckungsanteil: '+str(round(q_nom*t_ann_op*100/q_total,2))+'%')
+                    print('CHP: BAFA Förderung möglich! Gesamtdeckungsanteil: '+ str(round(q_nom*t_ann_op*100/q_total,2)) + '%')
                     bafa = True
                 else:
                     chp_flh -= 20
@@ -518,7 +543,6 @@ def dim_centralized(city, scenario):
                 print('EEWärmeG muss aufgrund des Gebäudealters nicht beachtet werden.')
                 eewg = True
 
-
             chp = CHP.CHP(city.environment, p_nom, q_nom, eta_el+eta_th)
             bes.addDevice(chp)
             print('Added CHP: Q_nom = ' + str(q_nom / 1000) + ' kW (' + str(
@@ -547,7 +571,7 @@ def dim_centralized(city, scenario):
                 bes.addDevice(boiler)
                 print('Added Boiler: Q_nom = '+str(round(q_boiler/1000,2))+' kW')
                 if q_boiler >= 4000 and q_boiler < 400000:
-                    print('Kessel muss CE Kennzeichnung vorweisen können. (gemäß 92/42/EWG)')
+                    print('Boiler requires CE Label. (according to 92/42/EWG)')
                 qPEF.append(pef_enev['gas']*(q_total - q_nom * t_ann_op))  # EnEV für Boiler. Anteil an Wärme*PEF (eta_th mit rein?)
                 heg.append(heg_enev['boiler'][area_enev]*area_total)
 
@@ -560,6 +584,8 @@ def dim_centralized(city, scenario):
                 print('Added elHeater: Q_nom = ' + str(round(q_elHeater / 1000, 2)) + ' kW')
                 qPEF.append(pef_enev['el'] * (q_total - q_nom * t_ann_op))
 
+            ann_q_base = t_ann_op*q_nom/1000 # Annual produced heat with base supply in kWh
+            ann_q_peak = (q_total - q_nom * t_ann_op)/1000 # Annual produced heat with peak supply in kWh
 
 
         elif device == 'hp_geo':
@@ -638,6 +664,8 @@ def dim_centralized(city, scenario):
     assert not city.node[city.nodelist_building[0]]['entity'].hasBes, ('Building 0 has already BES. Mistakes may occur!')
     city.node[city.nodelist_building[0]]['entity'].addEntity(bes)
 
+    calc_costs(city,ann_q_base, ann_q_peak)
+
     return city
 
 
@@ -661,11 +689,6 @@ def dim_decentralized(city, scenario):
 
         for device in scenario['base']:
             if device == 'chp':
-                # Dimensionierungspremissen:
-                # BHKW zwischen 5000 und 7000 h/a Volllast und
-                # BHKW immer mit Speicher
-
-                # Dimensionierungsstrategie: 1.Anlage bei 7000h/a mit 1/2 mehr installierter Leistung als nötig für Speicher
 
                 chp_flh = 7000  # best possible full-load-hours
                 q_chp = th_LDC[chp_flh]
@@ -678,7 +701,7 @@ def dim_decentralized(city, scenario):
                     [eta_el, eta_th, p_nom, q_nom] = choose_device('chp', q_chp)
 
                 if building.build_year >= 2009:
-                    print('EEWärmeG beachten!')
+                    print('Energysystem must comply with EEWärmeG!')
                     eewg = False
                     count = 0
                     while not eewg:
@@ -691,23 +714,23 @@ def dim_decentralized(city, scenario):
                             pee = (1 - 1 / ((eta_th / refeta_th) + (eta_el / refeta_el))) * 100
                             if p_nom >= 1000000:
                                 if pee >= 10:
-                                    print('EEWärmeG erfüllt. (>=1MW)')
+                                    print('EEWärmeG obeyed. (>=1MW)')
                                     eewg = True
                                     break
                             else:
                                 if pee > 0:
-                                    print('EEWärmeG erfüllt. (<1MW)')
+                                    print('EEWärmeG obeyed. (<1MW)')
                                     eewg = True
                                     break
                             if q_chp / q_total > 0.9:
-                                print('EEWärmeG nicht erfüllt: Unrealistische Werte! (Q_chp > 90% von Q_total)')
+                                print('EEWärmeG not obeyed: Unrealistic values! (Q_chp > 90% of Q_total)')
                                 break
                         q_chp = math.ceil(
                             0.5 * q_total + count * q_total / 100)  # Mindestwert 50% Deckung + 1% der Gesamtleistung je Durchlauf
                         [eta_el, eta_th, p_nom, q_nom] = choose_device('chp', q_chp)
                         count += 1
                 else:
-                    print('EEWärmeG muss aufgrund des Gebäudealters nicht beachtet werden.')
+                    print('Due to building age, the EEWärmeG does not need to be considered.')
                     eewg = True
 
                 enev = False
@@ -737,20 +760,104 @@ def dim_decentralized(city, scenario):
 
 
 
-def calc_annuity(city):
+def calc_costs(city, q_base, q_peak, i=0.03, price_gas=0.0661):
     """
+    - Kosten
+        - Kapitalkosten (Investitionskosten über Annuitätenfaktor in jährliche Zahlung umrechnen)
+        - Bedarfsgebundene Kosten (Brennstoffkosten, Stromkosten)
+        - Betriebsgebundene Kosten
+        - sonstige Kosten und Erlöse (Förderungen, )
 
-    - Kosten/Annuität
         - KWK Vergünstigungen
         - Einspeisevergütung durch EEG
         - Strom- und Brennstoffkosten
         - Investitionskosten
         - sonstige Förderungen (Recherche!)
-    
-    :param city: 
-    :return: 
+
+    :param city: pycity_calc city_object
+    :param q_base: amount of thermal energy provided by base supply in kWh
+    :param q_peak: amount of thermal energy provided by peak supply in kWh
+    :param i: interest rate
+    :param price_gas: price of gas
+    :return: tuple of total capital and total operational costs in Euro
     """
-    print('Annuity check not implemented')
+
+    # Kostenfunktion in Wolff 2011, Kapitel 6.3.6
+    # Betriebs- und Energiekosten in Kapitel 6.3.7
+    # Bewertungskriterien, Masterarbeit Hendrik Kapitel 2.3
+    b_with_bes = []
+    for bn in city.nodelist_building:
+        if city.node[bn]['entity'].hasBes:
+            b_with_bes.append(city.node[bn]['entity'])
+    if len(b_with_bes) == 1:
+        d_type = 'c'
+
+        print('Costs for lhn missing (not implemented)')
+    elif len(b_with_bes) > 1:
+        d_type = 'd'
+    else:
+        raise Exception('No BES installed!')
+
+    # ------- Calculate Costs --------
+    cost_cap = [] # capital costs
+    cost_op = [] # operational costs
+
+    for b in b_with_bes:
+        bes = b.bes
+        '''
+        if bes.hasHeatpump:
+            t = 20  # nach VDI 2067
+            i_0 = hp_cost.calc_spec_cost_hp(bes.heatpump.qNominal, method='wolf', hp_type='aw') * bes.heatpump.qNominal
+            a = i * (1 + i) ** t / ((1 + i) ** t - 1)
+            c_cap.append(i_0 * a)
+            
+            if bes.hasBoiler:
+                t = 18  # nach VDI 2067
+                i_0 = boiler_cost.calc_spec_cost_boiler(bes.boiler.qNominal,
+                                                        method='viess2013') * bes.boiler.qNominal
+                a = i * (1 + i) ** t / ((1 + i) ** t - 1)
+                c_cap.append(i_0 * a)
+
+            elif bes.hasElectricalHeater:
+                t = 20 # nach VDI 2067
+                i_0 = eh_cost.calc_spec_cost_eh(bes.electricalHeater.qNominal, method='spieker') * bes.electricalHeater.qNominal
+                a = i * (1 + i)** t / ((1 + i)**t - 1)
+                c_cap.append(i_0*a)
+
+        '''
+        if bes.hasChp:
+            t = 15  # nach VDI 2067
+            i_0 = chp_cost.calc_spec_cost_chp(bes.chp.pNominal, method='asue2015', with_inst=True,
+                                              use_el_input=True, q_th_nom=None)
+            a = i * (1 + i) ** t / ((1 + i) ** t - 1)
+            cost_cap.append(i_0 * a)
+
+            eta_th = bes.chp.omega/(1+bes.chp.sigma)
+            cost_op.append(q_base/eta_th*price_gas)
+
+            if bes.hasBoiler:
+                t = 18  # nach VDI 2067
+                i_0 = boiler_cost.calc_spec_cost_boiler(bes.boiler.qNominal,
+                                                        method='viess2013') * bes.boiler.qNominal
+                a = i * (1 + i) ** t / ((1 + i) ** t - 1)
+                cost_cap.append(i_0 * a)
+                cost_op.append(q_peak/bes.boiler.eta*price_gas)
+
+
+        if bes.hasTes:
+            t = 20 # nach VDI 2067
+            volume = bes.tes.capacity/bes.tes.rho
+            i_0 = tes_cost.calc_spec_cost_tes(volume, method='spieker') * volume
+            a = i * (1 + i)** t / ((1 + i)**t - 1)
+            cost_cap.append(i_0*a)
+
+    cost_cap_total = round(sum(cost_cap),2)
+    cost_op_total = round(sum(cost_op),2)
+
+    print('Capital Cost:', cost_cap_total)
+    print('Operational Cost:', cost_op_total)
+
+    return (cost_cap_total, cost_op_total)
 
 
 
@@ -758,11 +865,11 @@ if __name__ == '__main__':
 
     scenarios = []
     #scenarios.append({'type': ['centralized', 'decentralized'], 'base': [], 'peak': ['boiler']})
-    scenarios.append({'type': ['centralized', 'decentralized'], 'base': ['hp_air'], 'peak': []})
-    scenarios.append({'type': ['centralized', 'decentralized'], 'base': ['hp_air'], 'peak': ['boiler']})
-    scenarios.append({'type': ['centralized', 'decentralized'], 'base': ['hp_air'], 'peak': ['elHeater']})
+    #scenarios.append({'type': ['decentralized'], 'base': ['hp_air'], 'peak': []})
+    #scenarios.append({'type': ['centralized', 'decentralized'], 'base': ['hp_air'], 'peak': ['boiler']})
+    #scenarios.append({'type': ['centralized', 'decentralized'], 'base': ['hp_air'], 'peak': ['elHeater']})
     scenarios.append({'type': ['centralized', 'decentralized'], 'base': ['chp'], 'peak': ['boiler']})
-    # scenarios.append({'type': ['centralized', 'decentralized'], 'base': ['hp_geo'], 'peak': []})
+    #scenarios.append({'type': ['centralized', 'decentralized'], 'base': ['hp_geo'], 'peak': ['boiler']})
     # scenarios.append({'type': ['centralized', 'decentralized'], 'base': ['hp_geo'], 'peak': ['elHeater']})
 
     #Choose example city_object
