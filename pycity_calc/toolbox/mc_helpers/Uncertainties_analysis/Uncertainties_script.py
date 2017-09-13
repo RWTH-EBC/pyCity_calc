@@ -543,16 +543,16 @@ def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, 
     print('Do the simulations')
     print('***********************************************************************************************************')
 
-    Th_results, Gas_results, El_results, Annuity_results, GHG_results, \
-           GHG_spe_results, el_results2, dict_city_pb, Nboiler_rescaled, NEH_rescaled, Lal_rescaled, Tes_rescaled,\
-           Annuity_results_h, Annuity_results_m, Annuity_results_ec1, Annuity_results_ec2, Annuity_results_ec3, \
-            EH_small_rescale, EH_total_rescale, Nboiler_total_rescaled= \
+    Th_results, el_results_net, Gas_results, El_results, Annuity_results, \
+    Annuity_results_high, Annuity_results_low, Annuity_results_ec1, Annuity_results_ec2, Annuity_results_ec3, \
+    GHG_results, GHG_spe_results, Nb_Lal_rescaled, Nb_boiler_medium_rescaled, Nb_boiler_high_rescaled, \
+    Nb_Tes_rescale, Nb_EH_small_rescaled, Nb_EH_medium_rescaled, Nb_EH_high_rescaled= \
         newcity.new_city_evaluation_monte_carlo(City, dict_par_unc)
 
     # Get specific Annuity
-    specific_annuity_m = Annuity_results_m/(Th_results + el_results2)
-    specific_annuity_l  = Annuity_results / (Th_results + el_results2)
-    specific_annuity_h  = Annuity_results_h / (Th_results + el_results2)
+    specific_annuity_m = Annuity_results/(Th_results + el_results_net)
+    specific_annuity_l  = Annuity_results_low / (Th_results + el_results_net)
+    specific_annuity_h  = Annuity_results_high / (Th_results + el_results_net)
 
     print('***********************************************************************************************************')
     print('Do the Uncertainties analyse')
@@ -615,19 +615,21 @@ def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, 
     print('----------------')
     print('unit: Euro/year')
 
-    mean_annuity = sum(Annuity_results)/len(Annuity_results)
-    sigma_annuity = np.std(a=Annuity_results)
+    mean_annuity = sum(Annuity_results)/len(Annuity_results_low)
+    sigma_annuity = np.std(a=Annuity_results_low)
     confident_inter_a = stats.norm.interval(Confident_intervall_pourcentage / 100, loc=mean_annuity, scale=sigma_annuity)
 
-    median_a = np.median(a=Annuity_results)
-    first_quantil_a = stats.scoreatpercentile(Annuity_results, per=25)
-    second_quantil_a = stats.scoreatpercentile(Annuity_results, per=50)
-    third_quantil_a = stats.scoreatpercentile(Annuity_results, per=75)
+    median_a = np.median(a=Annuity_results_low)
+    first_quantil_a = stats.scoreatpercentile(Annuity_results_low, per=25)
+    second_quantil_a = stats.scoreatpercentile(Annuity_results_low, per=50)
+    third_quantil_a = stats.scoreatpercentile(Annuity_results_low, per=75)
 
     print('mean :', mean_annuity)
     print('sigma :', sigma_annuity)
     print('confident interval {}'.format(Confident_intervall_pourcentage), confident_inter_a)
-    print('{:0.2%} of the means are in confident interval'.format(((Annuity_results>= confident_inter_a[0]) & (Annuity_results< confident_inter_a[1])).sum() / float(Nsamples)))
+    print('{:0.2%} of the means are in confident interval'.format(
+        ((Annuity_results_low>= confident_inter_a[0]) & (Annuity_results_low<
+                                                         confident_inter_a[1])).sum() / float(Nsamples)))
     print('median : ', median_a)
     print('first quantil : ', first_quantil_a)
     print('second quantil :', second_quantil_a)
@@ -640,21 +642,21 @@ def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, 
     print('----------------')
     print('unit: Euro/year')
 
-    mean_annuity_m = sum(Annuity_results_m) / len(Annuity_results_m)
-    sigma_annuity_m = np.std(a=Annuity_results_m)
+    mean_annuity_m = sum(Annuity_results) / len(Annuity_results)
+    sigma_annuity_m = np.std(a=Annuity_results)
     confident_inter_a_m = stats.norm.interval(Confident_intervall_pourcentage / 100, loc=mean_annuity_m,
                                             scale=sigma_annuity_m)
 
-    median_a_m = np.median(a=Annuity_results_m)
-    first_quantil_a_m = stats.scoreatpercentile(Annuity_results_m, per=25)
-    second_quantil_a_m = stats.scoreatpercentile(Annuity_results_m, per=50)
-    third_quantil_a_m = stats.scoreatpercentile(Annuity_results_m, per=75)
+    median_a_m = np.median(a=Annuity_results)
+    first_quantil_a_m = stats.scoreatpercentile(Annuity_results, per=25)
+    second_quantil_a_m = stats.scoreatpercentile(Annuity_results, per=50)
+    third_quantil_a_m = stats.scoreatpercentile(Annuity_results, per=75)
 
     print('mean :', mean_annuity_m)
     print('sigma :', sigma_annuity_m)
     print('confident interval {}'.format(Confident_intervall_pourcentage), confident_inter_a_m)
     print('{:0.2%} of the means are in confident interval'.format(
-        ((Annuity_results_m >= confident_inter_a_m[0]) & (Annuity_results_m < confident_inter_a_m[1])).sum() / float(
+        ((Annuity_results >= confident_inter_a_m[0]) & (Annuity_results < confident_inter_a_m[1])).sum() / float(
             Nsamples)))
     print('median : ', median_a_m)
     print('first quantil : ', first_quantil_a_m)
@@ -667,21 +669,21 @@ def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, 
     print('----------------')
     print('unit: Euro/year')
 
-    mean_annuity_h = sum(Annuity_results_h) / len(Annuity_results_h)
-    sigma_annuity_h = np.std(a=Annuity_results_h)
+    mean_annuity_h = sum(Annuity_results_high) / len(Annuity_results_high)
+    sigma_annuity_h = np.std(a=Annuity_results_high)
     confident_inter_a_h = stats.norm.interval(Confident_intervall_pourcentage / 100, loc=mean_annuity_h,
                                             scale=sigma_annuity_h)
 
-    median_a_h = np.median(a=Annuity_results_h)
-    first_quantil_a_h = stats.scoreatpercentile(Annuity_results_h, per=25)
-    second_quantil_a_h = stats.scoreatpercentile(Annuity_results_h, per=50)
-    third_quantil_a_h = stats.scoreatpercentile(Annuity_results_h, per=75)
+    median_a_h = np.median(a=Annuity_results_high)
+    first_quantil_a_h = stats.scoreatpercentile(Annuity_results_high, per=25)
+    second_quantil_a_h = stats.scoreatpercentile(Annuity_results_high, per=50)
+    third_quantil_a_h = stats.scoreatpercentile(Annuity_results_high, per=75)
 
     print('mean :', mean_annuity_h)
     print('sigma :', sigma_annuity_h)
     print('confident interval {}'.format(Confident_intervall_pourcentage), confident_inter_a_h)
     print('{:0.2%} of the means are in confident interval'.format(
-        ((Annuity_results_h >= confident_inter_a_h[0]) & (Annuity_results_h < confident_inter_a_h[1])).sum() / float(
+        ((Annuity_results_high >= confident_inter_a_h[0]) & (Annuity_results_high < confident_inter_a_h[1])).sum() / float(
             Nsamples)))
     print('median : ', median_a_h)
     print('first quantil : ', first_quantil_a_h)
@@ -758,13 +760,13 @@ def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, 
                                                   scale=sigma_annuity_spe_h)
 
 
-    print('Number of simulations with small rescaled EH : ', EH_small_rescale)
-    print('Number of simulations with medium rescaled EH : ', NEH_rescaled)
-    print('Number of simulations with high rescaled EH: ', EH_total_rescale)
-    print ('Number of simulations with rescaled Boiler Lal : ', Lal_rescaled)
-    print('Number of simulations with medium rescaled boiler : ', Nboiler_rescaled)
-    print('Number of simulations with high rescaled boiler : ', Nboiler_total_rescaled)
-    print ('Number of Tes rescaled : ', Tes_rescaled)
+    print('Number of simulations with small rescaled EH (10%) : ', Nb_EH_small_rescaled)
+    print('Number of simulations with medium rescaled EH (20%): ', Nb_EH_medium_rescaled)
+    print('Number of simulations with high rescaled EH (50%): ', Nb_EH_high_rescaled)
+    print ('Number of simulations with rescaled Boiler (10%) : ', Nb_Lal_rescaled)
+    print('Number of simulations with medium rescaled boiler (20%) : ', Nb_boiler_medium_rescaled)
+    print('Number of simulations with high rescaled boiler (50%): ', Nb_boiler_high_rescaled)
+    print ('Number of Tes rescaled : ', Nb_Tes_rescale)
 
     print('***********************************************************************************************************')
     print('Save results')
@@ -878,6 +880,7 @@ def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, 
 
         write_results.write('\n Annuity low \n')
         write_results.write('\n -------\n')
+        write_results.write('interest rate' + str(dict_par_unc['interest_low'])+'\n')
         write_results.write('unit : Euro/year \n')
         write_results.write('median : '+ str(median_a) + '\n')
         write_results.write('first quantil : '+ str(first_quantil_a) + '\n')
@@ -887,12 +890,13 @@ def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, 
         write_results.write('sigma : '+ str(sigma_annuity) + '\n')
         write_results.write('confident interval {}'.format(Confident_intervall_pourcentage)+ str(confident_inter_a) + '\n')
         write_results.write('{:0.2%} of the means are in confident interval'.format(
-            ((Annuity_results >= confident_inter_a[0]) & (Annuity_results < confident_inter_a[1])).sum() / float(
+            ((Annuity_results_low >= confident_inter_a[0]) & (Annuity_results_low < confident_inter_a[1])).sum() / float(
                 Nsamples)) + '\n')
         write_results.write('reference:' + str(total_annuity_ref) + '\n')
 
         write_results.write('\n Annuity medium \n')
         write_results.write('\n -------\n')
+        write_results.write('interest rate' + str(dict_par_unc['interest_medium']) + '\n')
         write_results.write('unit : Euro/year \n')
         write_results.write('median : ' + str(median_a_m) + '\n')
         write_results.write('first quantil : ' + str(first_quantil_a_m) + '\n')
@@ -901,8 +905,9 @@ def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, 
         write_results.write('mean : ' + str(mean_annuity_m) + '\n')
         write_results.write('sigma : ' + str(sigma_annuity_m) + '\n')
         write_results.write('confident interval {}'.format(Confident_intervall_pourcentage) + str(confident_inter_a_m) + '\n')
-        write_results.write('{:0.2%} of the means are in confident interval'.format(((Annuity_results >= confident_inter_a_m[0]) & (Annuity_results_m < confident_inter_a_m[1])).sum() / float(
-                Nsamples)) + '\n')
+        write_results.write('{:0.2%} of the means are in confident interval'.format
+                            (((Annuity_results >= confident_inter_a_m[0]) &
+                              (Annuity_results < confident_inter_a_m[1])).sum() / float(Nsamples)) + '\n')
         write_results.write('reference:' + str(total_annuity_ref) + '\n')
 
 
@@ -919,6 +924,7 @@ def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, 
 
         write_results.write('\n Annuity high \n')
         write_results.write('\n -------\n')
+        write_results.write('interest rate' + str(dict_par_unc['interest_high']) + '\n')
         write_results.write('unit : Euro/year \n')
         write_results.write('median : ' + str(median_a_h) + '\n')
         write_results.write('first quantil : ' + str(first_quantil_a_h) + '\n')
@@ -929,7 +935,7 @@ def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, 
         write_results.write(
             'confident interval {}'.format(Confident_intervall_pourcentage) + str(confident_inter_a_h) + '\n')
         write_results.write('{:0.2%} of the means are in confident interval'.format(
-            ((Annuity_results_m >= confident_inter_a_h[0]) & (Annuity_results_m < confident_inter_a_h[1])).sum() / float(
+            ((Annuity_results_high >= confident_inter_a_h[0]) & (Annuity_results_high < confident_inter_a_h[1])).sum() / float(
                 Nsamples)) + '\n')
         write_results.write('reference:' + str(total_annuity_ref) + '\n')
 
@@ -964,13 +970,13 @@ def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, 
         write_results.write('reference:' + str(GHG_Emission_ref) + '\n')
 
 
-        write_results.write('\n Nboiler Lal rescaled: ' + str(Lal_rescaled))
-        write_results.write('\n Nboiler rescaled medium: 20%' + str(Nboiler_rescaled))
-        write_results.write('\n Nboiler rescaled: 50%' + str(Nboiler_total_rescaled))
-        write_results.write('\n EH rescaled small' + str(EH_small_rescale))
-        write_results.write('\n EH rescaled total' + str(EH_total_rescale))
-        write_results.write('\n NEH rescaled medium' + str(NEH_rescaled))
-        write_results.write('\n Tes rescaled' + str(Tes_rescaled))
+        write_results.write('\n Nboiler Lal rescaled and boiler 10%: ' + str(Nb_Lal_rescaled))
+        write_results.write('\n Nboiler rescaled medium: 20%' + str(Nb_boiler_medium_rescaled))
+        write_results.write('\n Nboiler rescaled: 50%' + str(Nb_boiler_high_rescaled))
+        write_results.write('\n EH rescaled small' + str(Nb_EH_small_rescaled))
+        write_results.write('\n EH rescaled total' + str(Nb_EH_medium_rescaled))
+        write_results.write('\n EH rescaled medium' + str(Nb_EH_high_rescaled))
+        write_results.write('\n Tes rescaled: 100000000 kg + boiler rescale 1000%' + str(Nb_Tes_rescale))
 
         write_results.close()
 
@@ -979,8 +985,8 @@ def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, 
         book = Workbook()
 
         #creation feuille1
-        feuill1 = book.add_sheet('i_low')
-        feuill2 = book.add_sheet('i_medium')
+        feuill1 = book.add_sheet('i_medium')
+        feuill2 = book.add_sheet('i_low')
         feuill3 = book.add_sheet('i_high')
         feuill4 = book.add_sheet('i_medium_others')
 
@@ -1003,9 +1009,9 @@ def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, 
         feuill4.write(0, 2, 'ec3')
 
         # write results
-        feuill1.write(0, 10, 'mean annuity low interest rate')
+        feuill1.write(0, 10, 'mean annuity medium interest rate')
         feuill1.write(1, 10, str(mean_annuity))
-        feuill1.write(0, 11, 'sigma annuity low interest rate')
+        feuill1.write(0, 11, 'sigma annuity medium interest rate')
         feuill1.write(1, 11, str(sigma_annuity))
         feuill1.write(5, 10, 'mean specific annuity')
         feuill1.write(6, 10, str(mean_annuity_spe_l))
@@ -1030,9 +1036,9 @@ def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, 
         feuill1.write(5, 16, 'sigma gas demamd')
         feuill1.write(6, 16, str(sigma_gas_demand))
 
-        feuill2.write(0, 10, 'mean annuity medium interest rate')
+        feuill2.write(0, 10, 'mean annuity low interest rate')
         feuill2.write(1, 10, str(mean_annuity_m))
-        feuill2.write(0, 11, 'sigma annuity medium interest rate')
+        feuill2.write(0, 11, 'sigma annuity low interest rate')
         feuill2.write(1, 11, str(sigma_annuity_m))
         feuill2.write(5, 10, 'mean specific annuity')
         feuill2.write(6, 10, str(mean_annuity_spe_m))
@@ -1053,17 +1059,17 @@ def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, 
             feuill1.write(value+1,1, str(Gas_results[value]))
             feuill1.write(value+1,2, str(Annuity_results[value]))
             feuill1.write(value+1,3, str(GHG_results[value]))
-            feuill1.write(value+1, 4, str(specific_annuity_l[value]))
+            feuill1.write(value+1, 4, str(specific_annuity_m[value]))
             feuill1.write(value + 1, 5, str(GHG_spe_results[value]))
-            feuill1.write(value + 1, 6, str(el_results2[value]))
+            feuill1.write(value + 1, 6, str(el_results_net[value]))
             feuill1.write(value + 1, 7, str(Th_results[value]))
 
         for value in range(len(El_results)):
-            feuill2.write(value+1,0,str(Annuity_results_m[value]))
-            feuill2.write(value + 1, 1, str(specific_annuity_m[value]))
+            feuill2.write(value+1,0,str(Annuity_results_low[value]))
+            feuill2.write(value + 1, 1, str(specific_annuity_l[value]))
 
         for value in range(len(El_results)):
-            feuill3.write(value+1,0,str(Annuity_results_h[value]))
+            feuill3.write(value+1,0,str(Annuity_results_high[value]))
             feuill3.write(value + 1, 1, str(specific_annuity_h[value]))
 
         for value in range(len(El_results)):
@@ -1123,18 +1129,18 @@ def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, 
     ax12.set_title('Annual thermal demand in kWh')
     ax11.hist(El_results, 50)
     ax11.set_title('Annual electrical demand after energy balance in kWh')
-    ax13.hist(el_results2, 50)
+    ax13.hist(el_results_net, 50)
     ax13.set_title('Annual electrical demand for energy balance in kWh')
     ax14.hist(Gas_results, 50)
     ax14.set_title('Annual final gas demand in kWh')
     fig3.savefig(os.path.join(save_path_mc,'Energy_demand.pdf'))
 
     fig4, ((ax21, ax22), (ax23, ax24)) = plt.subplots(2, 2, figsize=(17,9))
-    ax22.hist(Annuity_results, 50)
+    ax22.hist(Annuity_results_low, 50)
     ax22.set_title('Annuity results low interest')
-    ax21.hist(Annuity_results_m, 50)
+    ax21.hist(Annuity_results, 50)
     ax21.set_title('Annuity results medium interest')
-    ax23.hist(Annuity_results_h, 50)
+    ax23.hist(Annuity_results_high, 50)
     ax23.set_title('Annuity results high interest')
 
     fig4.savefig(os.path.join(save_path_mc,'Annuity_interest.pdf'))
@@ -1156,13 +1162,13 @@ def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, 
     # Box plot:
     fig7, ((ax75, ax76), (ax77, ax78)) = plt.subplots(2, 2, figsize=(17, 9))
 
-    ax75.boxplot(Annuity_results, showmeans=True, whis=99)
+    ax75.boxplot(Annuity_results_low, showmeans=True, whis=99)
     ax75.set_title('Annuity - low interest')
     ax75.grid(color='b', alpha=0.5, linestyle='dashed', linewidth=0.5)
-    ax76.boxplot(Annuity_results_m, showmeans=True, whis=99)
+    ax76.boxplot(Annuity_results, showmeans=True, whis=99)
     ax76.set_title('Annuity - medium interest')
     ax76.grid(color='b', alpha=0.5, linestyle='dashed', linewidth=0.5)
-    ax77.boxplot(Annuity_results_h, showmeans=True, whis=99)
+    ax77.boxplot(Annuity_results_high, showmeans=True, whis=99)
     ax77.set_title('Annuity - high interest')
     ax77.grid(color='b', alpha=0.5, linestyle='dashed', linewidth=0.5)
     fig7.savefig(os.path.join(save_path_mc, 'boxplot2.pdf'))
@@ -1184,7 +1190,7 @@ def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, 
     #plt.hist(El_results, 100)
     #plt.xlabel('Electrical demand after EBB in kWh')
 
-    #plt.show()
+    plt.show()
 
 
 if __name__ == '__main__':
@@ -1194,6 +1200,6 @@ if __name__ == '__main__':
                             MC_analyse_total=True, Confident_intervall_pourcentage=90, save_result=True,
                             save_path_mc='D:\jsc-les\\test_lolo\\Results',
                             results_name='mc_results.txt', results_excel_name='mesresultats',
-                            Is_k_building_parameters=True, esys_filename='City_lolo_esys_ref.txt',
+                            Is_k_building_parameters=True, esys_filename='City_lolo_esys_Sc7.txt',
                             gen_e_net=True, network_filename='lolo_networks.txt',
                             city_pickle_name='aachen_kronenberg_3_mfh_ref_1.pkl')

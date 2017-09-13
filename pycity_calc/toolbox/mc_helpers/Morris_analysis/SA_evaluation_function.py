@@ -276,73 +276,305 @@ def evaluate(City, values):
         invalidind2 = EB.invalidind2
         rescale_EH = False
 
-
-
         # Loop over energy systems
         try:
             for i in range(len(dict_bes_data)):
                 City, dict_Qlhn, dict_supply = Calculator.eb_balances(dict_bes_data, i)
+
         except invalidind:
-            # Get list of building and rescale boiler
+            # ## Rescale LAL boiler or EH
+            # Get list of building and rescale boiler or EH
             list_of_building = City.get_list_build_entity_node_ids()
             for build in list_of_building:
-                # Het max demand building
-                demand_building = dimfunc.get_max_power_of_building(City.node[build]['entity'], with_dhw=True)
-                # Rescale Boiler
+                # Start try to rescale boiler or EH
                 if City.node[build]['entity'].bes.hasBoiler == True:
-                    City.node[build]['entity'].bes.boiler.qNominal = dimfunc.round_esys_size(
-                        demand_building/City.node[build]['entity'].bes.boiler.eta,round_up=True)
-
-                    rescale_boiler = True
+                    City.node[build]['entity'].bes.boiler.lowerActivationLimit = 0
 
                     print()
-                    print('Rescale boiler 0')
+                    print('Rescale LAl boiler')
+                    print('new boiler Lal kW: ', City.node[build]['entity'].bes.boiler.lowerActivationLimit)
+                    print()
+
+                if City.node[build]['entity'].bes.hasBoiler == True:
+                    City.node[build]['entity'].bes.boiler.qNominal = \
+                        City.node[build]['entity'].bes.boiler.qNominal * 1.1 / City.node[build]['entity'].bes.boiler.eta
+
+                    print()
+                    print('Rescale boiler first round 10%')
                     print('new boiler capacity kW: ', City.node[build]['entity'].bes.boiler.qNominal / 1000)
                     print()
 
                 if City.node[build]['entity'].bes.hasElectricalHeater == True:
-                    City.node[build]['entity'].bes.electricalHeater.qNominal = dimfunc.round_esys_size(
-                        demand_building/City.node[build]['entity'].bes.electricalHeater.eta, round_up=True)
+                    City.node[build]['entity'].bes.electricalHeater.qNominal = \
+                        City.node[build]['entity'].bes.electricalHeater.qNominal * 1.1 \
+                        / City.node[build]['entity'].bes.electricalHeater.eta
 
-                    rescale_EH = True
 
                     print()
-                    print('Rescale EH')
+                    print('Rescale EH first round 10%')
                     print('new EH capacity kW: ', City.node[build]['entity'].bes.electricalHeater.qNominal / 1000)
                     print()
 
             # Do another time EBB
             for i in range(len(dict_bes_data)):
-                City, dict_Qlhn, dict_supply = Calculator.eb_balances(dict_bes_data, i)
+                try:
+                    City, dict_Qlhn, dict_supply = Calculator.eb_balances(dict_bes_data, i)
+
+                except invalidind:
+                    ## Rescale boiler or resyze EH
+
+                    # Get list of building and rescale boiler or EH
+                    list_of_building = City.get_list_build_entity_node_ids()
+                    for build in list_of_building:
+                        # Rescal Boiler capacity
+                        if City.node[build]['entity'].bes.hasBoiler == True:
+                            City.node[build]['entity'].bes.boiler.qNominal = \
+                                City.node[build]['entity'].bes.boiler.qNominal * 1.2
+
+                            print()
+                            print('Rescale boiler second round ')
+                            print('new boiler capacity kW: ', City.node[build]['entity'].bes.boiler.qNominal / 1000)
+                            print()
+
+                        # Rescal TES capacity
+                        if City.node[build]['entity'].bes.hasTes == True:
+                            City.node[build]['entity'].bes.tes.capacity = City.node[build]['entity'].bes.tes.capacity * 1.1
+
+                            print()
+                            print('Rescale Tes first round 10%')
+                            print('new Tes capacity kg: ', City.node[build]['entity'].bes.tes.capacity)
+                            print()
+
+                        if City.node[build]['entity'].bes.hasElectricalHeater == True:
+                            City.node[build]['entity'].bes.electricalHeater.qNominal = \
+                                City.node[build]['entity'].bes.electricalHeater.qNominal * 1.2
+
+                            print()
+                            print('Rescale EH for the second time 20%')
+                            print('new EH capacity kW: ', City.node[build]['entity'].bes.electricalHeater.qNominal / 1000)
+                            print()
+
+                    # Do another time EBB
+                    for i in range(len(dict_bes_data)):
+                        try:
+                            City, dict_Qlhn, dict_supply = Calculator.eb_balances(dict_bes_data, i)
+
+                        except invalidind:
+                            # Resize boiler totally
+
+                            # Get list of building and rescale boiler or EH
+                            list_of_building = City.get_list_build_entity_node_ids()
+                            for build in list_of_building:
+                                # Rescal Boiler capacity
+                                if City.node[build]['entity'].bes.hasBoiler == True:
+                                    City.node[build]['entity'].bes.boiler.qNominal = City.node[build][
+                                                                                     'entity'].bes.boiler.qNominal * 1.5
+
+                                    print()
+                                    print('Rescale boiler third time: 50%')
+                                    print('new boiler capacity kW: ', City.node[build]['entity'].bes.boiler.qNominal / 1000)
+                                    print()
+
+                                if City.node[build]['entity'].bes.hasElectricalHeater == True:
+                                    City.node[build]['entity'].bes.electricalHeater.qNominal = \
+                                        City.node[build]['entity'].bes.electricalHeater.qNominal * 1.5
+
+                                    print()
+                                    print('Rescale EH for the third time 50%')
+                                    print('new EH capacity kW: ',
+                                        City.node[build]['entity'].bes.electricalHeater.qNominal / 1000)
+                                    print()
+
+                            # Do another time EBB
+                            for i in range(len(dict_bes_data)):
+                                try:
+                                    City, dict_Qlhn, dict_supply = Calculator.eb_balances(dict_bes_data, i)
+
+                                except invalidind:
+                                    ## Resvale TES
+                                    # Get list of building
+                                    list_of_building = City.get_list_build_entity_node_ids()
+
+                                    for build in list_of_building:
+
+                                        # Rescal TES capacity
+                                        if City.node[build]['entity'].bes.hasTes == True:
+                                            City.node[build]['entity'].bes.tes.capacity = City.node[build][
+                                                                                          'entity'].bes.tes.capacity * 100000
+
+                                            print()
+                                            print('Rescale Tes totally')
+                                            print('new Tes capacity kg: ', City.node[build]['entity'].bes.tes.capacity)
+                                            print()
+
+                                        # Rescal Boiler capacity
+                                        if City.node[build]['entity'].bes.hasBoiler == True:
+                                            City.node[build]['entity'].bes.boiler.qNominal = \
+                                                City.node[build]['entity'].bes.boiler.qNominal * 10
+
+                                        if City.node[build]['entity'].bes.hasElectricalHeater == True:
+                                            City.node[build]['entity'].bes.electricalHeater.qNominal = \
+                                                City.node[build]['entity'].bes.electricalHeater.qNominal * 10
+
+                                            print()
+                                            print('Rescale EH totally')
+                                            print('new EH capacity kW: ',
+                                                City.node[build]['entity'].bes.electricalHeater.qNominal / 1000)
+                                            print()
+
+                                    # Do another time EBB
+                                    for i in range(len(dict_bes_data)):
+                                        City, dict_Qlhn, dict_supply = Calculator.eb_balances(dict_bes_data, i)
+
+                                     #If here there is an error: Stop Monte Carlo simulations and crash: it's not normal
+
 
         except invalidind2:
-        # Get list of building and rescale boiler
+            # ## Rescale LAL boiler or EH
+            # Get list of building and rescale boiler or EH
             list_of_building = City.get_list_build_entity_node_ids()
             for build in list_of_building:
-                demand_building = dimfunc.get_max_power_of_building(City.node[build]['entity'], with_dhw=True)
+                # Start try to rescale boiler or EH
                 if City.node[build]['entity'].bes.hasBoiler == True:
-                    City.node[build]['entity'].bes.boiler.qNominal = dimfunc.round_esys_size(demand_building,
-                                                                                                 round_up=True)
-                    rescale_boiler = True
+                    City.node[build]['entity'].bes.boiler.lowerActivationLimit = 0
 
                     print()
-                    print('Rescale boiler')
+                    print('Rescale LAl boiler')
+                    print('new boiler Lal kW: ', City.node[build]['entity'].bes.boiler.lowerActivationLimit)
+                    print()
+
+                if City.node[build]['entity'].bes.hasBoiler == True:
+                    City.node[build]['entity'].bes.boiler.qNominal = \
+                        City.node[build]['entity'].bes.boiler.qNominal * 1.1 / City.node[build]['entity'].bes.boiler.eta
+
+                    print()
+                    print('Rescale boiler first round 10%')
                     print('new boiler capacity kW: ', City.node[build]['entity'].bes.boiler.qNominal / 1000)
                     print()
 
                 if City.node[build]['entity'].bes.hasElectricalHeater == True:
-                    City.node[build]['entity'].bes.electricalHeater.qNominal = dimfunc.round_esys_size(
-                        demand_building, round_up=True)
-                    rescale_EH = True
+                    City.node[build]['entity'].bes.electricalHeater.qNominal = \
+                        City.node[build]['entity'].bes.electricalHeater.qNominal * 1.1 \
+                        / City.node[build]['entity'].bes.electricalHeater.eta
+
 
                     print()
-                    print('Rescale EH')
+                    print('Rescale EH first round 10%')
                     print('new EH capacity kW: ', City.node[build]['entity'].bes.electricalHeater.qNominal / 1000)
                     print()
 
             # Do another time EBB
             for i in range(len(dict_bes_data)):
-                City, dict_Qlhn, dict_supply = Calculator.eb_balances(dict_bes_data, i)
+                try:
+                    City, dict_Qlhn, dict_supply = Calculator.eb_balances(dict_bes_data, i)
+
+                except invalidind2:
+                    ## Rescale boiler or resyze EH
+
+                    # Get list of building and rescale boiler or EH
+                    list_of_building = City.get_list_build_entity_node_ids()
+                    for build in list_of_building:
+                        # Rescal Boiler capacity
+                        if City.node[build]['entity'].bes.hasBoiler == True:
+                            City.node[build]['entity'].bes.boiler.qNominal = \
+                                City.node[build]['entity'].bes.boiler.qNominal * 1.2
+
+                            print()
+                            print('Rescale boiler second round ')
+                            print('new boiler capacity kW: ', City.node[build]['entity'].bes.boiler.qNominal / 1000)
+                            print()
+
+                        # Rescal TES capacity
+                        if City.node[build]['entity'].bes.hasTes == True:
+                            City.node[build]['entity'].bes.tes.capacity = City.node[build]['entity'].bes.tes.capacity * 1.1
+
+                            print()
+                            print('Rescale Tes first round 10%')
+                            print('new Tes capacity kg: ', City.node[build]['entity'].bes.tes.capacity)
+                            print()
+
+                        if City.node[build]['entity'].bes.hasElectricalHeater == True:
+                            City.node[build]['entity'].bes.electricalHeater.qNominal = \
+                                City.node[build]['entity'].bes.electricalHeater.qNominal * 1.2
+
+                            print()
+                            print('Rescale EH for the second time 20%')
+                            print('new EH capacity kW: ', City.node[build]['entity'].bes.electricalHeater.qNominal / 1000)
+                            print()
+
+                    # Do another time EBB
+                    for i in range(len(dict_bes_data)):
+                        try:
+                            City, dict_Qlhn, dict_supply = Calculator.eb_balances(dict_bes_data, i)
+
+                        except invalidind2:
+                            # Resize boiler totally
+
+                            # Get list of building and rescale boiler or EH
+                            list_of_building = City.get_list_build_entity_node_ids()
+                            for build in list_of_building:
+                                # Rescal Boiler capacity
+                                if City.node[build]['entity'].bes.hasBoiler == True:
+                                    City.node[build]['entity'].bes.boiler.qNominal = City.node[build][
+                                                                                     'entity'].bes.boiler.qNominal * 1.5
+
+                                    print()
+                                    print('Rescale boiler third time: 50%')
+                                    print('new boiler capacity kW: ', City.node[build]['entity'].bes.boiler.qNominal / 1000)
+                                    print()
+
+                                if City.node[build]['entity'].bes.hasElectricalHeater == True:
+                                    City.node[build]['entity'].bes.electricalHeater.qNominal = \
+                                        City.node[build]['entity'].bes.electricalHeater.qNominal * 1.5
+
+                                    print()
+                                    print('Rescale EH for the third time 50%')
+                                    print('new EH capacity kW: ',
+                                        City.node[build]['entity'].bes.electricalHeater.qNominal / 1000)
+                                    print()
+
+                            # Do another time EBB
+                            for i in range(len(dict_bes_data)):
+                                try:
+                                    City, dict_Qlhn, dict_supply = Calculator.eb_balances(dict_bes_data, i)
+
+                                except invalidind2:
+                                    ## Resvale TES
+                                    # Get list of building
+                                    list_of_building = City.get_list_build_entity_node_ids()
+
+                                    for build in list_of_building:
+
+                                        # Rescal TES capacity
+                                        if City.node[build]['entity'].bes.hasTes == True:
+                                            City.node[build]['entity'].bes.tes.capacity = City.node[build][
+                                                                                          'entity'].bes.tes.capacity * 100000
+
+                                            print()
+                                            print('Rescale Tes totally')
+                                            print('new Tes capacity kg: ', City.node[build]['entity'].bes.tes.capacity)
+                                            print()
+
+                                        # Rescal Boiler capacity
+                                        if City.node[build]['entity'].bes.hasBoiler == True:
+                                            City.node[build]['entity'].bes.boiler.qNominal = \
+                                                City.node[build]['entity'].bes.boiler.qNominal * 10
+
+                                        if City.node[build]['entity'].bes.hasElectricalHeater == True:
+                                            City.node[build]['entity'].bes.electricalHeater.qNominal = \
+                                                City.node[build]['entity'].bes.electricalHeater.qNominal * 10
+
+                                            print()
+                                            print('Rescale EH totally')
+                                            print('new EH capacity kW: ',
+                                                City.node[build]['entity'].bes.electricalHeater.qNominal / 1000)
+                                            print()
+
+                                    # Do another time EBB
+                                    for i in range(len(dict_bes_data)):
+                                        City, dict_Qlhn, dict_supply = Calculator.eb_balances(dict_bes_data, i)
+
+                                     #If here there is an error: Stop Monte Carlo simulations and crash: it's not normal
 
         #Gas and electrical demand
         el_dem = 0
