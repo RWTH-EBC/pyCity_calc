@@ -31,7 +31,7 @@ def estimate_u_value(d_i):
     Parameters
     ----------
     d_i : float
-        Inner diameter of pipe
+        Inner diameter of pipe in m
 
     Returns
     -------
@@ -289,6 +289,11 @@ def add_lhn_to_city(city, list_build_node_nb, temp_vl=90,
                                        length=length,
                                        round_up=True)
     print('Chosen inner diameter of LHN pipes in m:', d_i)
+    print()
+
+    u_val = estimate_u_value(d_i=d_i)
+    print('Estimated u-value of LHN pipe in W/m: ')
+    print(round(u_val, 2))
     print()
 
     #  Use street networks
