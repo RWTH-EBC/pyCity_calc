@@ -471,12 +471,12 @@ def dim_centralized(city, scenario):
             [eta_el, eta_th, p_nom, q_nom] = choose_device('chp', q_chp)
             (t_ann_op, t_x) = get_chp_ann_op_time(q_nom, th_LDC)  # (annual operation time, full load hours)
 
-            bafa = False
-            while not bafa:
-                # Auslegung auf BAFA Förderung (60% Deckungsanteil aus KWK)
+            bafa_lhn = False
+            while not bafa_lhn: #TODO: Förderung überprüfen! Nach KWKG 2016 Förderung erst ab 75%
+                # Auslegung auf BAFA Förderung für Wärmenetze (60% Deckungsanteil aus KWK)
                 if t_ann_op >= 6000 and t_x >= 5000 and q_nom*t_ann_op/q_total > 0.6: # Auslegung nur gültig, falls Bedingungen für aot und flh erfüllt sind
                     print('CHP: BAFA Förderung möglich! Gesamtdeckungsanteil: '+ str(round(q_nom*t_ann_op*100/q_total,2)) + '%')
-                    bafa = True
+                    bafa_lhn = True
                 else:
                     chp_flh -= 20
                     if chp_flh >= 5000:
@@ -485,11 +485,11 @@ def dim_centralized(city, scenario):
                         (t_ann_op, t_x) = get_chp_ann_op_time(q_nom,
                                                               th_LDC)  # (Jahreslaufzeit, Volllaststunden)
                     else:
-                        bafa = False
+                        bafa_lhn = False
                         break
 
             # Alternative Auslegung falls BAFA-Förderung nicht möglich
-            if not bafa:
+            if not bafa_lhn:
                 chp_flh = 5000
                 t_x = 0
                 t_ann_op = 0
@@ -563,6 +563,10 @@ def dim_centralized(city, scenario):
                 bes.addDevice(tes)
                 print('Added Thermal Energy Storage:', v_tes,'liter ')
                 heg.append(heg_enev['storage'][area_enev]*area_total)
+                if q_nom * t_ann_op * 100 / q_total >= 50:
+                    bafa_chp_tes = True
+                else:
+                    bafa_chp_tes = False
 
             # Wärmeerzeuger für Spitzenlast hinzufügen
             if 'boiler' in scenario['peak']:
@@ -664,7 +668,7 @@ def dim_centralized(city, scenario):
     assert not city.node[city.nodelist_building[0]]['entity'].hasBes, ('Building 0 has already BES. Mistakes may occur!')
     city.node[city.nodelist_building[0]]['entity'].addEntity(bes)
 
-    calc_costs(city,ann_q_base, ann_q_peak)
+    calc_costs_centralized(city,ann_q_base, ann_q_peak, bafa_lhn=bafa_lhn, bafa_chp_tes=bafa_chp_tes)
 
     return city
 
@@ -760,7 +764,10 @@ def dim_decentralized(city, scenario):
 
 
 
-def calc_costs(city, q_base, q_peak, i=0.03, price_gas=0.0661):
+# -------------------------------- Economic Calculations ----------------------------------------------------
+
+
+def calc_costs_centralized(city, q_base, q_peak, i=0.08, price_gas=0.0661, el_feedin_epex=0.02978, bafa_lhn=False, bafa_chp_tes=False):
     """
     - Kosten
         - Kapitalkosten (Investitionskosten über Annuitätenfaktor in jährliche Zahlung umrechnen)
@@ -779,86 +786,149 @@ def calc_costs(city, q_base, q_peak, i=0.03, price_gas=0.0661):
     :param q_peak: amount of thermal energy provided by peak supply in kWh
     :param i: interest rate
     :param price_gas: price of gas
+    :param el_feedin_epex: average price for baseload power at EPEX Spot for Q2 2017 in Euro/kWh
+    :param bafa_lhn: indicates if BAFA funding for lhn is applicable
+    :param bafa_chp_tes: indicates if BAFA funding for TES with CHP is applicable
     :return: tuple of total capital and total operational costs in Euro
     """
 
     # Kostenfunktion in Wolff 2011, Kapitel 6.3.6
     # Betriebs- und Energiekosten in Kapitel 6.3.7
-    # Bewertungskriterien, Masterarbeit Hendrik Kapitel 2.3
-    b_with_bes = []
+    # Bewertungskriterien, Masterarbeit Hendrik Kapitel 2.3!
+    print('')
+
+    insp_vdi2067 = {'boiler':[0.01,0.02,20],'chp':[0.06,0.02,100],'hp':[0.01,0.015,5]} # [maintenance, service, service hours]
+    service_fee = 40 # service fee in Euro/h
+
     for bn in city.nodelist_building:
         if city.node[bn]['entity'].hasBes:
-            b_with_bes.append(city.node[bn]['entity'])
-    if len(b_with_bes) == 1:
-        d_type = 'c'
+            bes = city.node[bn]['entity'].bes
 
-        print('Costs for lhn missing (not implemented)')
-    elif len(b_with_bes) > 1:
-        d_type = 'd'
+            cost_cap = [] # capital costs
+            cost_op = [] # operational costs
+            cost_insp = [] # inspection, maintenance and service costs (VDI 2067)
+            rev = [] # revenue for electricity feed-in and kwkg
+
+            # TODO: Heatpump integrieren (vorher auf Heatpump simple umstellen)
+            '''
+            if bes.hasHeatpump:
+                t = 20  # nach VDI 2067
+                i_0 = hp_cost.calc_spec_cost_hp(bes.heatpump.qNominal, method='wolf', hp_type='aw') * bes.heatpump.qNominal
+                a = i * (1 + i) ** t / ((1 + i) ** t - 1)
+                c_cap.append(i_0 * a)
+                
+                if bes.hasBoiler:
+                    t = 18  # nach VDI 2067
+                    i_0 = boiler_cost.calc_spec_cost_boiler(bes.boiler.qNominal,
+                                                            method='viess2013') * bes.boiler.qNominal
+                    a = i * (1 + i) ** t / ((1 + i) ** t - 1)
+                    c_cap.append(i_0 * a)
+    
+                elif bes.hasElectricalHeater:
+                    t = 20 # nach VDI 2067
+                    i_0 = eh_cost.calc_spec_cost_eh(bes.electricalHeater.qNominal, method='spieker') * bes.electricalHeater.qNominal
+                    a = i * (1 + i)** t / ((1 + i)**t - 1)
+                    c_cap.append(i_0*a)
+    
+            '''
+            if bes.hasChp:
+                eta_th = bes.chp.omega/(1+bes.chp.sigma)
+                t = 15  # nach VDI 2067
+                a = i * (1 + i) ** t / ((1 + i) ** t - 1)
+                chp_invest = chp_cost.calc_invest_cost_chp(bes.chp.pNominal/1000, method='asue2015', with_inst=True,
+                                                                                use_el_input=True, q_th_nom=None)
+                print('Investcost CHP', round(chp_invest,2), 'Euro')
+
+
+                # BAFA subsidy for Mini-CHP (CHP device must be listed on BAFA-list)
+                if bes.chp.pNominal < 20000 and bes.tes.capacity/bes.tes.rho >= 0.06:
+                    if bes.chp.pNominal < 1000:
+                        bafa_subs_chp = 1900
+                    elif bes.chp.pNominal < 4000:
+                        bafa_subs_chp = 1900 + (bes.chp.pNominal/1000 - 1) * 300
+                    elif bes.chp.pNominal < 10000:
+                        bafa_subs_chp = 1900 + 3 * 300 + (bes.chp.pNominal/1000 - 4) * 100
+                    else:   # bes.chp.pNominal < 20000:
+                        bafa_subs_chp = 1900 + 3 * 300 + 6 * 100 + (bes.chp.pNominal/1000 - 10) * 10
+                    print('BAFA subsidy for Mini-CHP possible:', bafa_subs_chp, 'Euro')
+                else:
+                    bafa_subs_chp = 0
+
+                # KWKG 2016 revenues for el. feed-in
+                if bes.chp.pNominal < 50000:
+                    el_feedin_kwkg = 0.08 # Euro/kWh, only paid for 60.000 flh
+                elif bes.chp.pNominal > 50000 and bes.chp.pNominal < 100000:
+                    el_feedin_kwkg = 0.06 # Euro/kWh, only paid for 30.000 flh
+                elif bes.chp.pNominal > 100000 and bes.chp.pNominal < 250000:
+                    el_feedin_kwkg = 0.05  # Euro/kWh, only paid for 30.000 flh
+                elif bes.chp.pNominal > 250000 and bes.chp.pNominal < 2000000:
+                    el_feedin_kwkg = 0.044 # Euro/kWh, only paid for 30.000 flh
+                else: # bes.chp.pNominal > 2000000:
+                    el_feedin_kwkg = 0.031 # Euro/kWh, only paid for 30.000 flh
+
+                el_feedin_chp = el_feedin_epex+el_feedin_kwkg
+                cost_cap.append((chp_invest - bafa_subs_chp)*a)
+                cost_op.append(q_base/eta_th*price_gas)
+                cost_insp.append(chp_invest *(sum(insp_vdi2067['chp'][0:2]))+insp_vdi2067['chp'][2]*service_fee)
+                rev.append(q_base*bes.chp.sigma*el_feedin_chp)
+
+                if bes.hasBoiler:
+                    t = 18  # nach VDI 2067
+                    boiler_invest = boiler_cost.calc_abs_boiler_cost(bes.boiler.qNominal/1000, method='viess2013')
+                    a = i * (1 + i) ** t / ((1 + i) ** t - 1)
+                    cost_cap.append(boiler_invest * a)
+                    cost_op.append(q_peak/bes.boiler.eta*price_gas)
+                    cost_insp.append(boiler_invest * (sum(insp_vdi2067['boiler'][0:2])) + insp_vdi2067['boiler'][2] * service_fee)
+
+            if bes.hasTes:
+                t = 20 # nach VDI 2067
+                volume = bes.tes.capacity/bes.tes.rho # in m3
+                tes_invest = tes_cost.calc_invest_cost_tes(volume, method='spieker')
+                a = i * (1 + i) ** t / ((1 + i) ** t - 1)
+
+                # BAFA subsidy for TES according to KWKG
+                if bafa_chp_tes:
+                    bafa_subs_tes = volume*100
+                    print('BAFA subsidy for TES possible:', bafa_subs_tes, ' Euro')
+                else:
+                    bafa_subs_tes = 0
+
+                cost_cap.append((tes_invest-bafa_subs_tes)*a)
+            break
     else:
         raise Exception('No BES installed!')
 
-    # ------- Calculate Costs --------
-    cost_cap = [] # capital costs
-    cost_op = [] # operational costs
-
-    for b in b_with_bes:
-        bes = b.bes
-        '''
-        if bes.hasHeatpump:
-            t = 20  # nach VDI 2067
-            i_0 = hp_cost.calc_spec_cost_hp(bes.heatpump.qNominal, method='wolf', hp_type='aw') * bes.heatpump.qNominal
-            a = i * (1 + i) ** t / ((1 + i) ** t - 1)
-            c_cap.append(i_0 * a)
-            
-            if bes.hasBoiler:
-                t = 18  # nach VDI 2067
-                i_0 = boiler_cost.calc_spec_cost_boiler(bes.boiler.qNominal,
-                                                        method='viess2013') * bes.boiler.qNominal
-                a = i * (1 + i) ** t / ((1 + i) ** t - 1)
-                c_cap.append(i_0 * a)
-
-            elif bes.hasElectricalHeater:
-                t = 20 # nach VDI 2067
-                i_0 = eh_cost.calc_spec_cost_eh(bes.electricalHeater.qNominal, method='spieker') * bes.electricalHeater.qNominal
-                a = i * (1 + i)** t / ((1 + i)**t - 1)
-                c_cap.append(i_0*a)
-
-        '''
-        if bes.hasChp:
-            t = 15  # nach VDI 2067
-            i_0 = chp_cost.calc_spec_cost_chp(bes.chp.pNominal, method='asue2015', with_inst=True,
-                                              use_el_input=True, q_th_nom=None)
-            a = i * (1 + i) ** t / ((1 + i) ** t - 1)
-            cost_cap.append(i_0 * a)
-
-            eta_th = bes.chp.omega/(1+bes.chp.sigma)
-            cost_op.append(q_base/eta_th*price_gas)
-
-            if bes.hasBoiler:
-                t = 18  # nach VDI 2067
-                i_0 = boiler_cost.calc_spec_cost_boiler(bes.boiler.qNominal,
-                                                        method='viess2013') * bes.boiler.qNominal
-                a = i * (1 + i) ** t / ((1 + i) ** t - 1)
-                cost_cap.append(i_0 * a)
-                cost_op.append(q_peak/bes.boiler.eta*price_gas)
-
-
-        if bes.hasTes:
-            t = 20 # nach VDI 2067
-            volume = bes.tes.capacity/bes.tes.rho
-            i_0 = tes_cost.calc_spec_cost_tes(volume, method='spieker') * volume
-            a = i * (1 + i)** t / ((1 + i)**t - 1)
-            cost_cap.append(i_0*a)
+    # TODO: Kosten und Förderung für Bau von Wärmenetz integrieren!
 
     cost_cap_total = round(sum(cost_cap),2)
     cost_op_total = round(sum(cost_op),2)
+    cost_insp_total = round(sum(cost_insp),2)
+    rev_total = round(sum(rev),2)
 
-    print('Capital Cost:', cost_cap_total)
+    print('\nCapital Cost:', cost_cap_total)
     print('Operational Cost:', cost_op_total)
+    print('Costs for inspection, maintenance and service:', cost_insp_total)
+    print('Revenue for el feed-in:', rev_total)
 
     return (cost_cap_total, cost_op_total)
 
+def calc_cost_decentralized():
+    """
+    Calculation for decentralized energy supply
+    :return:
+    """
+    # BAFA Förderung für Mini-KWK Anlagen (< 20kWel)
+
+    if bafa_chp:
+        if bes.chp.pNominal < 1000:
+            bafa_subs_chp = 1900
+        elif bes.chp.pNominal < 4000:
+            bafa_subs_chp = 1900 + (bes.chp.pNominal - 1000) * 300
+        elif bes.chp.pNominal < 10000:
+            bafa_subs_chp = 1900 + (bes.chp.pNominal - 1000) * 300 + (bes.chp.pNominal - 1000) * 100
+        elif bes.chp.pNominal < 20000:
+            bafa_subs_chp = 1900 + (bes.chp.pNominal - 1000) * 300 + (bes.chp.pNominal - 1000) * 100 + (
+                                                                                                   bes.chp.pNominal - 1000) * 10
 
 
 if __name__ == '__main__':
