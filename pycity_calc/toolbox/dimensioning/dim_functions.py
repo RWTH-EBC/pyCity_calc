@@ -594,27 +594,6 @@ def calc_chp_nom_th_power_building(building, with_dhw=False,
                                           force_min_runtime=force_min_runtime)
     return chp_nom_power
 
-def calc_asue_el_th_ratio(th_power):
-    """
-    Calculate Stromkennzahl according to ASUE 2015 data sets
-
-    Parameters
-    ----------
-    th_power : float
-        Thermal power in Watt
-
-    Returns
-    -------
-    el_th_ratio : float
-        Current el. to th. power ratio (Stromkennzahl)
-    """
-
-    assert th_power >= 0
-
-    el_th_ratio = 0.0799 * th_power ** 0.1783
-
-    return el_th_ratio
-
 #  # Storage size dimensioning
 #  #-----------------------------------------------------------------------
 

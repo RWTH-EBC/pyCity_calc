@@ -21,6 +21,7 @@ import pycity_calc.energysystems.thermalEnergyStorage as tes
 import pycity_calc.energysystems.heatPumpSimple as hpsys
 import pycity_calc.energysystems.electricalHeater as ehsys
 import pycity_calc.energysystems.battery as batt
+import pycity_calc.energysystems.Input.chp_asue_2015 as asue
 
 
 def load_enersys_input_data(esys_path):
@@ -334,7 +335,7 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
                                       timestep=
                                       city.environment.timer.timeDiscretization)
 
-            chp_el_th_ratio = dimfunc.calc_asue_el_th_ratio(chp_th_power)
+            chp_el_th_ratio = asue.calc_asue_el_th_ratio(chp_th_power)
             chp_el_power = chp_el_th_ratio * chp_th_power
 
             #  Round results
