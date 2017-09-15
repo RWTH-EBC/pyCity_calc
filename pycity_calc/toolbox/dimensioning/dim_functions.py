@@ -652,6 +652,8 @@ def calc_chp_el_sizes_for_opt(city, nb_sizes, mode, with_dhw=False):
     Returns list of possible CHP sizes (el. nominal power in Watt) for
     pyCity_opt, based on city and single building thermal power curves
 
+    Minimum possible size is defined with 1 kW el. power.
+
     Parameters
     ----------
     city : object
@@ -733,6 +735,9 @@ def calc_chp_el_sizes_for_opt(city, nb_sizes, mode, with_dhw=False):
 
         #  Convert to el. power
         el_power = round(th_power * el_th_ratio/1000, ndigits=0)*1000
+
+        if el_power < 1000:
+            el_power = 1000
 
         list_chp_size_el.append(el_power)
 
