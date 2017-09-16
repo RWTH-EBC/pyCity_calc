@@ -950,10 +950,10 @@ if __name__ == '__main__':
     #  Add EH to test energy balance for CHP, boiler, EH with TES
     exbuild = city.node[1001]['entity']
 
-    eh = elheat.ElectricalHeaterExtended(environment=exbuild.environment,
-                                         q_nominal=10000)
-
-    exbuild.bes.addDevice(eh)
+    # eh = elheat.ElectricalHeaterExtended(environment=exbuild.environment,
+    #                                      q_nominal=10000)
+    #
+    # exbuild.bes.addDevice(eh)
 
     #  Calculate energy balance
     calc_build_therm_eb(build=exbuild)
@@ -962,16 +962,70 @@ if __name__ == '__main__':
     sh_p_array = exbuild.get_space_heating_power_curve()
     dhw_p_array = exbuild.get_dhw_power_curve()
 
+    #  Get boiler results
     q_out = exbuild.bes.boiler.totalQOutput
     fuel_in = exbuild.bes.boiler.array_fuel_power
 
+    #  Get CHP results
+    q_chp_out = exbuild.bes.chp.totalQOutput
+    p_el_chp_out = exbuild.bes.chp.totalPOutput
+    fuel_chp_in = exbuild.bes.chp.array_fuel_power
+
+    #  Checks
+    sh_net_energy = sum(sh_p_array) * 3600 / (1000 * 3600) # in kWh
+    dhw_net_energy = sum(dhw_p_array) * 3600 / (1000 * 3600) # in kWh
+    boil_th_energy = sum(q_out) * 3600 / (1000 * 3600) # in kWh
+    chp_th_energy = sum(q_chp_out) * 3600 / (1000 * 3600) # in kWh
+    fuel_boiler_energy = sum(fuel_in) * 3600 / (1000 * 3600) # in kWh
+    fuel_chp_energy = sum(fuel_chp_in) * 3600 / (1000 * 3600)  # in kWh
+    chp_el_energy = sum(p_el_chp_out) * 3600 / (1000 * 3600)  # in kWh
+
+    print('Space heating demand in kWh:')
+    print(round(sh_net_energy, 0))
+    print('DHW heating demand in kWh:')
+    print(round(dhw_net_energy, 0))
+    print()
+
+    print('Boiler thermal energy output in kWh:')
+    print(round(boil_th_energy, 0))
+    print('CHP thermal energy output in kWh:')
+    print(round(chp_th_energy, 0))
+    print()
+
+    print('Boiler fuel energy demand in kWh:')
+    print(round(fuel_boiler_energy, 0))
+    print('CHP fuel energy demand in kWh:')
+    print(round(fuel_chp_energy, 0))
+    print()
+
+    print('CHP fuel energy demand in kWh:')
+    print(round(chp_el_energy, 0))
+
+    assert sh_net_energy + dhw_net_energy <= boil_th_energy + chp_th_energy
+
     fig = plt.figure()
 
-    plt.plot(q_out, label='q_out')
-    plt.plot(fuel_in, label='fuel in')
-    plt.plot(sh_p_array, label='sh power')
-    plt.plot(dhw_p_array, label='dhw power')
+    plt.subplot(4, 1, 1)
+    plt.plot(sh_p_array, label='Space heat. in Watt')
+    plt.plot(dhw_p_array, label='Hot water power in Watt')
     plt.legend()
+
+    plt.subplot(4, 1, 2)
+    plt.plot(q_out, label='Boiler th. power in Watt')
+    plt.plot(fuel_in, label='Boiler fuel power in Watt')
+    plt.legend()
+
+    plt.subplot(4, 1, 3)
+    plt.plot(q_chp_out, label='CHP th. power in Watt')
+    plt.plot(fuel_chp_in, label='CHP fuel power in Watt')
+    plt.legend()
+
+    plt.subplot(4, 1, 4)
+    plt.plot(p_el_chp_out, label='CHP el. power in Watt')
+    plt.legend()
+
+    plt.ylabel('Time in hours')
+
     plt.show()
     plt.close()
     #  ####################################################################
