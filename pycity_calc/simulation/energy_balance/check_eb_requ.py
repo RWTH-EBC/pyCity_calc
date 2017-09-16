@@ -7,6 +7,7 @@ from __future__ import division
 
 import os
 import pickle
+import warnings
 
 import pycity_calc.toolbox.networks.network_ops as netop
 
@@ -45,6 +46,12 @@ def check_eb_build_requ(build):
             status_okay = True
             if build.bes.hasTes is False:
                 tes_okay = False
+            if build.bes.hasElectricalHeater is False:
+                msg = 'Building does have heatpump, but no electric heater' \
+                      ' for hot water supply! If your building has hot' \
+                      ' water demand, the energy balance is going to ' \
+                      'crash!'
+                warnings.warn(msg)
 
         if build.bes.hasElectricalHeater is True:
             status_okay = True

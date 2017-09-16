@@ -135,6 +135,13 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
     if build.bes.hasHeatpump is True:
         has_hp = True
 
+        if has_eh is False and build.get_annual_dhw_demand() > 0:
+            msg = 'Building ' + str() + ' does only have HP without EH.' \
+                                        ' Thus, it cannot cover hot water' \
+                                        ' energy demand, which is larger ' \
+                                        'than zero!'
+            raise AssertionError(msg)
+
     if build.bes.hasElectricalHeater is True:
         has_eh = True
 
@@ -836,7 +843,86 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                       'building' + str(id) + ' at timestep ' + str(i) + '.'
                 raise EnergyBalanceException(msg)
 
-    if has_tes is False and has_hp is False:  # Has no TES
+    elif has_tes and has_hp:
+        #  Use heat pump with thermal storage to cover space heating demand
+
+        #  Loop over power values
+        for i in range(len(sh_p_array)):
+
+            #  Get required thermal power values
+            sh_power = sh_p_array[i]
+            dhw_power = dhw_p_array[i]
+
+            #  Remaining thermal power values
+            sh_pow_remain = sh_power + 0.0
+            dhw_pow_remain = dhw_power + 0.0
+
+            #  hp pointer
+            hp = build.bes.heatpump
+
+            #  Get nominal hp power
+            q_nom_hp = hp.qNominal
+
+            #  Get heat pump source temperature
+            if hp.hp_type == 'aw':
+                #  Use outdoor temperature
+                temp_source = build.environment.weather.tAmbient[i]
+            elif hp.hp_type == 'ww':
+                temp_source = build.environment.temp_ground
+
+            #  TES mode 1
+
+                #  Use HP for SH
+                #  Use EH for DHW
+                #  Use TES for SH, if necessary
+                #  Use EH for SH, if necessary
+
+            #  TES mode 2
+
+                #  Use HP for SH and TES
+                #  Use EH for DHW
+                #  Use EH for SH, if necessary
+                #  Use TES for SH, if necessary
+
+            #  TES mode 3
+
+                #  Use HP for SH and TES
+                #  Use EH for DHW
+                #  Use EH for SH and TES
+
+            # if sh_pow_remain >= q_nom_hp:
+            #     #  Cover part of sh power with full HP load
+            #     hp.calc_hp_all_results(
+            #         control_signal=q_nom_hp,
+            #         t_source=temp_source,
+            #         time_index=i)
+            #
+            #     sh_pow_remain -= q_nom_hp
+            #
+            # else:
+            #     #  sh_pow_remain < q_nom_hp
+            #     #  Try using hp in part load
+            #
+            #     hp_lal = hp.lowerActivationLimit
+            #
+            #     if sh_pow_remain < hp_lal * q_nom_hp:
+            #         #  Required power is below part load performance,
+            #         #  thus, hp cannot be used
+            #         hp.calc_hp_all_results(
+            #             control_signal=0,
+            #             t_source=temp_source,
+            #             time_index=i)
+            #     else:
+            #         #  HP can operate in part load
+            #         hp.th_op_calc_all_results(
+            #             control_signal=sh_pow_remain,
+            #             time_index=i)
+            #
+            #         sh_pow_remain = 0
+
+
+
+    elif has_tes is False and has_hp is False:  # Has no TES
         #  Run thermal simulation, if no TES is existent (only relevant for
         #  Boiler and EH
         #  #################################################################
