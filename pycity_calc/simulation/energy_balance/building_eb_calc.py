@@ -305,7 +305,7 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                 tes = build.bes.tes
 
                 #  Get info about max tes power output (include buffer)
-                #  Todo: (1 - buffer_low) only estimation, not correct value
+                #  Todo: (1 - buffer_low) only estimation, not desired value
                 q_out_max = (1 - buffer_low) * tes.calc_storage_q_out_max()
 
                 t_prior = tes.t_current
@@ -333,8 +333,6 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
 
                 else:
                     #  Cover remaining demand with storage load
-
-                    #  TODO: Check, if buffer is also necessary here!
 
                     tes.calc_storage_temp_for_next_timestep(q_in=0,
                                                             q_out=sh_pow_remain + dhw_pow_remain,
@@ -570,16 +568,21 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                 #  ###########################################################
                 #  Use/load storage, if possible
 
+                if q_tes_in is None:
+                    q_tes_in = 0
+
                 #  tes pointer
                 tes = build.bes.tes
 
+                #  Get maximum possible tes power output
+                q_tes_out_max = tes.calc_storage_q_out_max(q_in=q_tes_in)
+
+                #  Plausibility check
                 #  Get maximum possible tes power input
                 q_tes_in_max = tes.calc_storage_q_in_max()
+                assert q_tes_in_max >= q_tes_in
 
                 temp_prior = tes.t_current
-
-                if q_tes_in is None:
-                    q_tes_in = 0
 
                 if sh_pow_remain + dhw_pow_remain > 0:
                     #  Use storage to cover remaining demands
@@ -588,8 +591,9 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                 else:
                     q_tes_out = 0
 
-                if q_tes_in_max < sh_pow_remain + dhw_pow_remain:
-                    msg = 'TES stored energy cannot cover remaining demand in ' \
+                if q_tes_out_max < q_tes_out:
+                    msg = 'TES stored energy cannot cover remaining ' \
+                          'demand in ' \
                           'building' + str(id) + ' at timestep ' + str(i) + '.'
                     raise EnergyBalanceException(msg)
 
@@ -604,7 +608,20 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
             elif tes_status == 3:
                 #  #########################################################
                 #  Load tes with every possible device
-                pass
+
+                if has_chp:
+
+                    pass
+
+                if has_boiler:
+
+                    pass
+
+                if has_eh:
+
+                    pass
+
+                #  If uncovered demand, use TES
 
             if sh_pow_remain > 0 or dhw_pow_remain > 0:
                 msg = 'Could not solve thermal energy balance in ' \
