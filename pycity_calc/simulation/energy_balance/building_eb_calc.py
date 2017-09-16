@@ -173,7 +173,7 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
 
     #  Perform energy balance calculation for different states
     #  #################################################################
-    if has_tes:
+    if has_tes and has_hp is False:
         #  Energy balance calculation with thermal storage
         #  #################################################################
 
@@ -346,13 +346,73 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
 
                 if has_boiler:
 
+                    #  boiler pointer
+                    boiler = build.bes.boiler
+
+                    #  Get nominal power
+                    q_nom_boi = boiler.qNominal
+
                     #  if sh_pow_remain > 0 or dhw_pow_remain > 0, use boiler
-                    pass
+                    if (sh_pow_remain + dhw_pow_remain) >= q_nom_boi:
+                        #  Cover part of power with full boiler load
+                        boiler.calc_boiler_all_results(
+                            control_signal=q_nom_boi,
+                            time_index=i)
+
+                        #  Calculate remaining thermal power
+                        if sh_pow_remain - q_nom_boi > 0:
+                            sh_pow_remain -= q_nom_boi
+                        elif sh_pow_remain == q_nom_boi:
+                            sh_pow_remain = 0
+                        elif sh_pow_remain - q_nom_boi < 0:
+                            dhw_pow_remain -= (q_nom_boi - sh_pow_remain)
+                            sh_pow_remain = 0
+
+                    elif (sh_pow_remain + dhw_pow_remain) < q_nom_boi:
+                        #  Use boiler in part load
+
+                        boiler.calc_boiler_all_results(
+                            control_signal=(sh_pow_remain + dhw_pow_remain),
+                            time_index=i)
+
+                        sh_pow_remain = 0
+                        dhw_pow_remain = 0
 
                 if has_eh:
 
-                    #  if sh_pow_remain > 0 or dhw_pow_remain > 0, use boiler
-                    pass
+                    #  if sh_pow_remain > 0 or dhw_pow_remain > 0, use eh
+
+                    #  eh pointer
+                    eheater = build.bes.electricalHeater
+
+                    #  Get nominal power
+                    q_nom_eh = eheater.qNominal
+
+                    #  if sh_pow_remain > 0 or dhw_pow_remain > 0, use eh
+                    if (sh_pow_remain + dhw_pow_remain) >= q_nom_eh:
+                        #  Cover part of power with full eh load
+                        eheater.calc_el_h_all_results(
+                            control_signal=q_nom_eh,
+                            time_index=i)
+
+                        #  Calculate remaining thermal power
+                        if sh_pow_remain - q_nom_eh > 0:
+                            sh_pow_remain -= q_nom_eh
+                        elif sh_pow_remain == q_nom_eh:
+                            sh_pow_remain = 0
+                        elif sh_pow_remain - q_nom_eh < 0:
+                            dhw_pow_remain -= (q_nom_eh - sh_pow_remain)
+                            sh_pow_remain = 0
+
+                    elif (sh_pow_remain + dhw_pow_remain) < q_nom_eh:
+                        #  Use eh in part load
+
+                        eheater.calc_el_h_all_results(
+                            control_signal=(sh_pow_remain + dhw_pow_remain),
+                            time_index=i)
+
+                        sh_pow_remain = 0
+                        dhw_pow_remain = 0
 
                 if sh_pow_remain > 0 or dhw_pow_remain > 0:
                     msg = 'Could not solve thermal energy balance in ' \
@@ -371,7 +431,7 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
 
 
 
-    else:  # Has no TES
+    if has_tes is False and has_hp is False:  # Has no TES
         #  Run thermal simulation, if no TES is existent (only relevant for
         #  Boiler and EH
         #  #################################################################
