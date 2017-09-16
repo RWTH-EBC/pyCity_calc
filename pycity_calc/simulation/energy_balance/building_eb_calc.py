@@ -474,34 +474,48 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                                 dhw_pow_remain = 0
                             sh_pow_remain = 0
 
-                        temp_prior = tes.t_current
-
-                        #  Load storage with q_tes_in
-                        tes.calc_storage_temp_for_next_timestep(q_in=q_tes_in,
-                                                                q_out=0,
-                                                                t_prior=temp_prior,
-                                                                set_new_temperature=True,
-                                                                save_res=True,
-                                                                time_index=i)
-
                     elif (sh_pow_remain + dhw_pow_remain + q_tes_in_max) < \
                             q_nom_chp:
                         #  Try to use CHP, depending on part load
 
                         chp_lal = chp.lowerActivationLimit
 
-                        # if (sh_pow_remain + dhw_pow_remain) < chp_lal * q_nom_chp:
-                        #     #  Required power is below part load performance,
-                        #     #  thus, chp cannot be used
-                        #     chp.th_op_calc_all_results(control_signal=0,
-                        #                                time_index=i)
-                        # else:
-                        #     #  CHP can operate in part load
-                        #     chp.th_op_calc_all_results(control_signal=sh_pow_remain + dhw_pow_remain,
-                        #                                time_index=i)
-                        #
-                        #     sh_pow_remain = 0
-                        #     dhw_pow_remain = 0
+                        if ((sh_pow_remain + dhw_pow_remain + q_tes_in_max)
+                            < chp_lal * q_nom_chp):
+                            #  Required power is below part load performance,
+                            #  thus, chp cannot be used
+                            chp.th_op_calc_all_results(control_signal=0,
+                                                       time_index=i)
+                            q_tes_in = 0
+
+                        else:
+                            #  CHP can operate in part load
+                            chp.th_op_calc_all_results(control_signal=sh_pow_remain + dhw_pow_remain + q_tes_in_max,
+                                                       time_index=i)
+
+                            q_tes_in = q_tes_in_max + 0.0
+
+                            sh_pow_remain = 0
+                            dhw_pow_remain = 0
+
+                    #  Use/load storage, if possible
+                    temp_prior = tes.t_current
+
+                    #  Load storage with q_tes_in
+                    tes.calc_storage_temp_for_next_timestep(q_in=q_tes_in,
+                                                            q_out=0,
+                                                            t_prior=temp_prior,
+                                                            set_new_temperature=True,
+                                                            save_res=True,
+                                                            time_index=i)
+
+                if has_boiler:
+
+                    pass
+
+                if has_eh:
+
+                    pass
 
             elif tes_status == 3:
                 #  #########################################################
