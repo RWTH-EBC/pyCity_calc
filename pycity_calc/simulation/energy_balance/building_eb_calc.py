@@ -304,14 +304,14 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                 #  TES pointer
                 tes = build.bes.tes
 
-                #  Get info about max tes power output
-                q_out_max = tes.calc_storage_q_out_max()
+                #  Get info about max tes power output (include buffer)
+                q_out_max = (1 - buffer_low) * tes.calc_storage_q_out_max()
 
                 t_prior = tes.t_current
 
                 if (sh_pow_remain + dhw_pow_remain) >= q_out_max:
                     #  Cover part of remaining th. demand with full storage
-                    #  load
+                    #  load (leave buffer)
 
                     tes.calc_storage_temp_for_next_timestep(q_in=0,
                                                             q_out=q_out_max,
@@ -420,9 +420,50 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                     raise EnergyBalanceException(msg)
 
             elif tes_status == 2:
+                #  Tes should be charged with CHP
                 #  #########################################################
 
-                pass
+                if has_chp:
+                    #  #####################################################
+                    #  Use CHP
+
+                    # #  chp pointer
+                    # chp = build.bes.chp
+                    #
+                    # #  Get nominal chp power
+                    # q_nom_chp = chp.qNominal
+                    #
+                    # if (sh_pow_remain + dhw_pow_remain) >= q_nom_chp:
+                    #     #  Cover part of power with full CHP load
+                    #     chp.th_op_calc_all_results(control_signal=q_nom_chp,
+                    #                                time_index=i)
+                    #
+                    #     #  Calculate remaining thermal power
+                    #     if sh_pow_remain - q_nom_chp > 0:
+                    #         sh_pow_remain -= q_nom_chp
+                    #     elif sh_pow_remain == q_nom_chp:
+                    #         sh_pow_remain = 0
+                    #     elif sh_pow_remain - q_nom_chp < 0:
+                    #         dhw_pow_remain -= (q_nom_chp - sh_pow_remain)
+                    #         sh_pow_remain = 0
+                    #
+                    # elif (sh_pow_remain + dhw_pow_remain) < q_nom_chp:
+                    #     #  Try to use CHP, depending on part load
+                    #
+                    #     chp_lal = chp.lowerActivationLimit
+                    #
+                    #     if (sh_pow_remain + dhw_pow_remain) < chp_lal * q_nom_chp:
+                    #         #  Required power is below part load performance,
+                    #         #  thus, chp cannot be used
+                    #         chp.th_op_calc_all_results(control_signal=0,
+                    #                                    time_index=i)
+                    #     else:
+                    #         #  CHP can operate in part load
+                    #         chp.th_op_calc_all_results(control_signal=sh_pow_remain + dhw_pow_remain,
+                    #                                    time_index=i)
+                    #
+                    #         sh_pow_remain = 0
+                    #         dhw_pow_remain = 0
 
             elif tes_status == 3:
                 #  #########################################################
