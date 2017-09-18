@@ -1472,14 +1472,6 @@ if __name__ == '__main__':
     #  Extract building 1008 (HP, EH, PV and TES)
     exbuild = city.node[1008]['entity']
 
-    print(exbuild.bes.heatpump.qNominal)
-
-    import pycity_calc.toolbox.dimensioning.dim_functions as dimfunc
-
-    print(dimfunc.get_max_power_of_building(building=exbuild,
-                                            get_therm=True,
-                                            with_dhw=False))
-
     exbuild.bes.electricalHeater.qNominal *= 1.5
 
     #  Calculate energy balance
@@ -1488,3 +1480,34 @@ if __name__ == '__main__':
     #  Get space heating results
     sh_p_array = exbuild.get_space_heating_power_curve()
     dhw_p_array = exbuild.get_dhw_power_curve()
+
+    q_hp_out = exbuild.bes.heatpump.totalQOutput
+    el_hp_in = exbuild.bes.heatpump.array_el_power_in
+
+    q_eh_out = exbuild.bes.electricalHeater.totalQOutput
+    el_eh_in = exbuild.bes.electricalHeater.totalPConsumption
+
+    tes_temp = exbuild.bes.tes.array_temp_storage
+
+    fig = plt.figure()
+
+    plt.subplot(4, 1, 1)
+    plt.plot(sh_p_array, label='Space heating power in W')
+    plt.plot(dhw_p_array, label='DHW power in W')
+    plt.legend()
+
+    plt.subplot(4, 1, 2)
+    plt.plot(q_hp_out, label='HP thermal output in W')
+    plt.plot(el_hp_in, label='El. input HP in W')
+    plt.legend()
+
+    plt.subplot(4, 1, 3)
+    plt.plot(q_eh_out, label='EH thermal output in W')
+    plt.legend()
+
+    plt.subplot(4, 1, 4)
+    plt.plot(tes_temp, label='Storage temp. in degree C')
+    plt.legend()
+
+    plt.show()
+    plt.close()
