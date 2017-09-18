@@ -89,11 +89,13 @@ def slp_th_manipulator(timestep, th_slp_curve, temp_array, temp_av_cut=12):
     assert len(th_slp_curve) * timestep == 365 * 24 * 3600
     assert len(temp_array) * timestep == 365 * 24 * 3600
 
+    timesteps_per_day = len(th_slp_curve)/365
+
     slp_org_th_energy = sum(th_slp_curve) * timestep / (3600 * 1000)  # kWh
 
     #  Calculate average, daily temperatures
     temp_average_array = np.zeros(365)
-    count_hour = 0
+    count_timestep = 0
 
     #  Loop over days
     for i in range(len(temp_average_array)):
@@ -101,21 +103,21 @@ def slp_th_manipulator(timestep, th_slp_curve, temp_array, temp_av_cut=12):
         temp_average = 0
 
         #  Loop over hours
-        for h in range(24):
+        for h in range(int(timesteps_per_day)):
             #  Sum up values
-            temp_average += temp_array[count_hour + h]
+            temp_average += temp_array[count_timestep + h]
 
         # and divide by 24 hours
-        temp_average /= 24
+        temp_average /= timesteps_per_day
 
         temp_average_array[i] = temp_average
 
         #  Count up day counter
-        count_hour += 24
+        count_timestep += int(timesteps_per_day)
 
     slp_mod_curve = np.zeros(len(th_slp_curve))
 
-    count_hour = 0
+    count_timestep = 0
     #  Loop over days (for average temperatures)
     for i in range(len(temp_average_array)):
 
@@ -125,17 +127,17 @@ def slp_th_manipulator(timestep, th_slp_curve, temp_array, temp_av_cut=12):
         if curr_av_temp >= temp_av_cut:  # Set power in timeframe to zero
 
             #  Loop over hours
-            for h in range(24):
-                slp_mod_curve[count_hour + h] = 0  # Set to zero
+            for h in range(int(timesteps_per_day)):
+                slp_mod_curve[count_timestep + h] = 0  # Set to zero
 
         else:  # Set slp_mod values to th_slp_curve values
 
             #  Loop over hours
-            for h in range(24):
-                slp_mod_curve[count_hour + h] = th_slp_curve[count_hour + h]
+            for h in range(int(timesteps_per_day)):
+                slp_mod_curve[count_timestep + h] = th_slp_curve[count_timestep + h]
 
         # Count up day counter
-        count_hour += 24
+        count_timestep += int(timesteps_per_day)
 
     # Rescale to original energy demand
     con_factor = slp_org_th_energy / (
