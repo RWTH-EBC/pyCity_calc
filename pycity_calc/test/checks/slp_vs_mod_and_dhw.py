@@ -144,5 +144,58 @@ def compare_slp_mod_dhw(timestep=3600, nb_occ=3):
     plt.ylabel('Power in W')
     plt.show()
 
+
+def compare_modified_slp_curve():
+    """
+    Create and compare thermal SLP curves with modified ones based upon the output of function slp_th_manipulator
+    for different timestep values.
+
+    """
+    timestep_range = [900, 1800, 2700, 3600]
+
+    # Check result for each timestep value:
+    for timestep in timestep_range:
+        # Generate pycity environment
+        timer = pycity_base.classes.Timer.Timer(timeDiscretization=timestep,
+                                                timestepsHorizon=int(3600 * 24 * 365 / timestep),
+                                                timestepsUsedHorizon=int(24 * 3600 / timestep),
+                                                timestepsTotal=int(3600 * 24 * 365 / timestep))
+        weather = pycity_base.classes.Weather.Weather(timer, useTRY=True)
+        prices = pycity_base.classes.Prices.Prices()
+
+        environment = pycity_base.classes.Environment.Environment(timer, weather, prices)
+
+        pycity_base.classes.demand.SpaceHeating.SpaceHeating.loaded_slp = False
+
+        #  Generate slp object
+        slp_object = slpman.gen_th_slp(environment)
+
+        #  Pointer to temperature curve
+        temp_curve = environment.weather.tAmbient
+
+        #  Pointer to slp curve
+        slp_curve = slp_object.loadcurve
+
+        # Energy before manipulation:
+        energy_before = sum(slp_curve[t] for t in range(len(slp_curve)))
+
+        #  Manipulate slp profile
+        slp_mod_curve = slpman.slp_th_manipulator(timestep, th_slp_curve=slp_curve, temp_array=temp_curve)
+
+        # Energy after manipulation:
+        energy_after = sum(slp_mod_curve[t] for t in range(len(slp_mod_curve)))
+
+        assert energy_before - energy_after <= 0.0001
+
+        plt.plot(slp_curve, label='Org. SLP')
+        plt.plot(slp_mod_curve, label='Mod. SLP')
+        plt.xlabel('Time in {} hours'.format(float(timestep/3600.0)))
+        plt.ylabel('Thermal power in W')
+        plt.legend()
+        plt.show()
+    return
+
+
 if __name__ == '__main__':
     compare_slp_mod_dhw()
+    compare_modified_slp_curve()
