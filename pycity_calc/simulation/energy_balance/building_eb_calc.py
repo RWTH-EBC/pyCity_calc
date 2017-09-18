@@ -1472,7 +1472,12 @@ if __name__ == '__main__':
     #  Extract building 1008 (HP, EH, PV and TES)
     exbuild = city.node[1008]['entity']
 
+    #  Modify size of electrical heater
     exbuild.bes.electricalHeater.qNominal *= 1.5
+
+    #  Modify tes
+    exbuild.bes.tes.tMax = 45
+    print('Capacity of TES in kg: ', exbuild.bes.tes.capacity)
 
     #  Calculate energy balance
     calc_build_therm_eb(build=exbuild, id=1008)
@@ -1488,6 +1493,24 @@ if __name__ == '__main__':
     el_eh_in = exbuild.bes.electricalHeater.totalPConsumption
 
     tes_temp = exbuild.bes.tes.array_temp_storage
+
+    sh_en = sum(sh_p_array) * 3600 / (1000 * 3600)
+    dhw_en = sum(dhw_p_array) * 3600 / (1000 * 3600)
+
+    q_hp_out_en = sum(q_hp_out) * 3600 / (1000 * 3600)
+    q_eh_out_en = sum(q_eh_out) * 3600 / (1000 * 3600)
+
+    print('Space heating net energy demand in kWh:')
+    print(sh_en)
+    print('Domestic hot water net energy demand in kWh:')
+    print(dhw_en)
+    print()
+
+    print('HP thermal energy output in kWh:')
+    print(q_hp_out_en)
+    print('EH thermal energy output in kWh:')
+    print(q_eh_out_en)
+    print()
 
     fig = plt.figure()
 
