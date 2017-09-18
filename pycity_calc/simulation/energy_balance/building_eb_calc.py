@@ -145,6 +145,8 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
     if build.bes.hasElectricalHeater is True:
         has_eh = True
 
+        curr_lal = build.bes.electricalHeater.lowerActivationLimit
+
         if eh_full_pl:
             if curr_lal != 0:
                 msg = 'EH lower activation limit is currently higher than 0.' \
@@ -175,8 +177,6 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
     #  #################################################################
     sh_p_array = build.get_space_heating_power_curve()
     dhw_p_array = build.get_dhw_power_curve()
-
-    #  TODO: Differentiate between building with and without HP
 
     #  Perform energy balance calculation for different states
     #  #################################################################
@@ -838,6 +838,9 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                                                         save_res=True,
                                                         time_index=i)
 
+                sh_pow_remain = 0
+                dhw_pow_remain = 0
+
             if sh_pow_remain > 0 or dhw_pow_remain > 0:
                 msg = 'Could not solve thermal energy balance in ' \
                       'building' + str(id) + ' at timestep ' + str(i) + '.'
@@ -848,6 +851,16 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
 
         #  Loop over power values
         for i in range(len(sh_p_array)):
+
+            #  Calculate tes status
+            #  ##############################################################
+            tes_status = get_tes_status(tes=build.bes.tes,
+                                        buffer_low=buffer_low,
+                                        buffer_high=buffer_high)
+            #  TES status as integer number:
+            # 1 - No further power input allowed
+            # 2 - Only thermal input of efficient devices (CHP, HP) allowed
+            # 3 - All devices can provide energy
 
             #  Get required thermal power values
             sh_power = sh_p_array[i]
@@ -870,57 +883,396 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
             elif hp.hp_type == 'ww':
                 temp_source = build.environment.temp_ground
 
+            #  TES pointer
+            tes = build.bes.tes
+
+            #  Get maximum possible tes power input
+            q_tes_in_max = tes.calc_storage_q_in_max()
+
+            #  Get info about max tes power output (include buffer)
+            #  Todo: (1 - buffer_low) only estimation, not desired value
+            q_out_max = (1 - buffer_low) * tes.calc_storage_q_out_max()
+
             #  TES mode 1
+            if tes_status == 1:
+                # #########################################################
+                #  Do not load tes any further. Use esys only to supply
+                #  thermal power
 
                 #  Use HP for SH
                 #  Use EH for DHW
                 #  Use TES for SH, if necessary
                 #  Use EH for SH, if necessary
+                if sh_pow_remain >= q_nom_hp:
+                    #  Cover part of sh power with full HP load
+                    hp.calc_hp_all_results(
+                        control_signal=q_nom_hp,
+                        t_source=temp_source,
+                        time_index=i)
+
+                    sh_pow_remain -= q_nom_hp
+
+                else:
+                    #  sh_pow_remain < q_nom_hp
+                    #  Try using hp in part load
+
+                    hp_lal = hp.lowerActivationLimit
+
+                    if sh_pow_remain < hp_lal * q_nom_hp:
+                        #  Required power is below part load performance,
+                        #  thus, hp cannot be used
+                        hp.calc_hp_all_results(
+                            control_signal=0,
+                            t_source=temp_source,
+                            time_index=i)
+                    else:
+                        #  HP can operate in part load
+                        hp.calc_hp_all_results(
+                            control_signal=sh_pow_remain,
+                            t_source=temp_source,
+                            time_index=i)
+
+                        sh_pow_remain = 0
+
+                #  Use TES
+                #  #####################################################
+
+                t_prior = tes.t_current
+
+                if sh_pow_remain >= q_out_max:
+                    #  Cover part of remaining th. demand with full storage
+                    #  load (leave buffer)
+
+                    tes.calc_storage_temp_for_next_timestep(q_in=0,
+                                                            q_out=q_out_max,
+                                                            t_prior=t_prior,
+                                                            t_ambient=None,
+                                                            set_new_temperature=True,
+                                                            save_res=True,
+                                                            time_index=i)
+
+                    #  Calculate remaining thermal power
+                    if sh_pow_remain - q_out_max > 0:
+                        sh_pow_remain -= q_out_max
+                    elif sh_pow_remain == q_out_max:
+                        sh_pow_remain = 0
+
+                else:
+                    #  Cover remaining demand with storage load
+
+                    tes.calc_storage_temp_for_next_timestep(q_in=0,
+                                                            q_out=sh_pow_remain,
+                                                            t_prior=t_prior,
+                                                            t_ambient=None,
+                                                            set_new_temperature=True,
+                                                            save_res=True,
+                                                            time_index=i)
+                    sh_pow_remain = 0
+
+                if has_eh:
+
+                    #  if sh_pow_remain > 0 or dhw_pow_remain > 0, use eh
+
+                    #  eh pointer
+                    eheater = build.bes.electricalHeater
+
+                    #  Get nominal power
+                    q_nom_eh = eheater.qNominal
+
+                    #  if sh_pow_remain > 0 or dhw_pow_remain > 0, use eh
+                    if (sh_pow_remain + dhw_pow_remain) >= q_nom_eh:
+                        #  Cover part of power with full eh load
+                        eheater.calc_el_h_all_results(
+                            control_signal=q_nom_eh,
+                            time_index=i)
+
+                        #  Calculate remaining thermal power
+                        if sh_pow_remain - q_nom_eh > 0:
+                            sh_pow_remain -= q_nom_eh
+                        elif sh_pow_remain == q_nom_eh:
+                            sh_pow_remain = 0
+                        elif sh_pow_remain - q_nom_eh < 0:
+                            dhw_pow_remain -= (q_nom_eh - sh_pow_remain)
+                            sh_pow_remain = 0
+
+                    elif (sh_pow_remain + dhw_pow_remain) < q_nom_eh:
+                        #  Use eh in part load
+
+                        eheater.calc_el_h_all_results(
+                            control_signal=(
+                            sh_pow_remain + dhw_pow_remain),
+                            time_index=i)
+
+                        sh_pow_remain = 0
+                        dhw_pow_remain = 0
 
             #  TES mode 2
-
+            elif tes_status == 2:
                 #  Use HP for SH and TES
                 #  Use EH for DHW
                 #  Use EH for SH, if necessary
                 #  Use TES for SH, if necessary
 
-            #  TES mode 3
+                #  Dummy value
+                q_tes_in = None
 
+                q_tes_in_remain = q_tes_in_max + 0.0
+
+                #  Use HP
+                if sh_pow_remain + q_tes_in_remain >= q_nom_hp:
+                    #  Cover part of sh power with full HP load
+                    hp.calc_hp_all_results(
+                        control_signal=q_nom_hp,
+                        t_source=temp_source,
+                        time_index=i)
+
+                    if sh_pow_remain > q_nom_hp:
+                        sh_pow_remain -= q_nom_hp
+                    elif sh_pow_remain == q_nom_hp:
+                        sh_pow_remain = 0
+                    elif sh_pow_remain < q_nom_hp:
+                        q_tes_in = q_nom_hp - sh_pow_remain
+                        q_tes_in_remain -= q_tes_in
+                        sh_pow_remain = 0
+
+                        assert q_tes_in <= q_tes_in_max
+
+                else:
+                    #  sh_pow_remain < q_nom_hp
+                    #  Try using hp in part load
+
+                    hp_lal = hp.lowerActivationLimit
+
+                    if sh_pow_remain + q_tes_in_max < hp_lal * q_nom_hp:
+                        #  Required power is below part load performance,
+                        #  thus, hp cannot be used
+                        hp.calc_hp_all_results(
+                            control_signal=0,
+                            t_source=temp_source,
+                            time_index=i)
+                    else:
+                        #  HP can operate in part load
+                        hp.calc_hp_all_results(
+                            control_signal=sh_pow_remain + q_tes_in_remain,
+                            t_source=temp_source,
+                            time_index=i)
+
+                        sh_pow_remain = 0
+                        q_tes_in = q_tes_in_remain + 0.0
+                        q_tes_in_remain = 0
+
+                # Use tes
+                #  ###########################################################
+                #  Use/load storage, if possible
+
+                if q_tes_in is None:
+                    q_tes_in = 0
+
+                #  Get maximum possible tes power output
+                q_tes_out_max = tes.calc_storage_q_out_max(q_in=q_tes_in)
+
+                #  Plausibility check
+                #  Get maximum possible tes power input
+                q_tes_in_max = tes.calc_storage_q_in_max()
+                assert q_tes_in_max >= q_tes_in
+
+                temp_prior = tes.t_current
+
+                if sh_pow_remain > 0:
+                    #  Use storage to cover remaining demands
+                    q_tes_out = sh_pow_remain
+                else:
+                    q_tes_out = 0
+
+                if q_tes_out_max < q_tes_out:
+                    msg = 'TES stored energy cannot cover remaining ' \
+                          'demand in ' \
+                          'building' + str(id) + ' at timestep ' + str(i) + '.'
+                    raise EnergyBalanceException(msg)
+
+                # Load storage with q_tes_in
+                tes.calc_storage_temp_for_next_timestep(q_in=q_tes_in,
+                                                        q_out=q_tes_out,
+                                                        t_prior=temp_prior,
+                                                        set_new_temperature=True,
+                                                        save_res=True,
+                                                        time_index=i)
+
+                if has_eh:
+
+                    #  if sh_pow_remain > 0 or dhw_pow_remain > 0, use eh
+
+                    #  eh pointer
+                    eheater = build.bes.electricalHeater
+
+                    #  Get nominal power
+                    q_nom_eh = eheater.qNominal
+
+                    #  if sh_pow_remain > 0 or dhw_pow_remain > 0, use eh
+                    if (sh_pow_remain + dhw_pow_remain) >= q_nom_eh:
+                        #  Cover part of power with full eh load
+                        eheater.calc_el_h_all_results(
+                            control_signal=q_nom_eh,
+                            time_index=i)
+
+                        #  Calculate remaining thermal power
+                        if sh_pow_remain - q_nom_eh > 0:
+                            sh_pow_remain -= q_nom_eh
+                        elif sh_pow_remain == q_nom_eh:
+                            sh_pow_remain = 0
+                        elif sh_pow_remain - q_nom_eh < 0:
+                            dhw_pow_remain -= (q_nom_eh - sh_pow_remain)
+                            sh_pow_remain = 0
+
+                    elif (sh_pow_remain + dhw_pow_remain) < q_nom_eh:
+                        #  Use eh in part load
+
+                        eheater.calc_el_h_all_results(
+                            control_signal=(
+                            sh_pow_remain + dhw_pow_remain),
+                            time_index=i)
+
+                        sh_pow_remain = 0
+                        dhw_pow_remain = 0
+
+            #  TES mode 3
+            elif tes_status == 3:
+                #  Load TES with every possible device
                 #  Use HP for SH and TES
                 #  Use EH for DHW
                 #  Use EH for SH and TES
 
-            # if sh_pow_remain >= q_nom_hp:
-            #     #  Cover part of sh power with full HP load
-            #     hp.calc_hp_all_results(
-            #         control_signal=q_nom_hp,
-            #         t_source=temp_source,
-            #         time_index=i)
-            #
-            #     sh_pow_remain -= q_nom_hp
-            #
-            # else:
-            #     #  sh_pow_remain < q_nom_hp
-            #     #  Try using hp in part load
-            #
-            #     hp_lal = hp.lowerActivationLimit
-            #
-            #     if sh_pow_remain < hp_lal * q_nom_hp:
-            #         #  Required power is below part load performance,
-            #         #  thus, hp cannot be used
-            #         hp.calc_hp_all_results(
-            #             control_signal=0,
-            #             t_source=temp_source,
-            #             time_index=i)
-            #     else:
-            #         #  HP can operate in part load
-            #         hp.th_op_calc_all_results(
-            #             control_signal=sh_pow_remain,
-            #             time_index=i)
-            #
-            #         sh_pow_remain = 0
+                #  Dummy value
+                q_tes_in = None
 
+                q_tes_in_remain = q_tes_in_max + 0.0
 
+                #  Use HP
+                if sh_pow_remain + q_tes_in_max >= q_nom_hp:
+                    #  Cover part of sh power with full HP load
+                    hp.calc_hp_all_results(
+                        control_signal=q_nom_hp,
+                        t_source=temp_source,
+                        time_index=i)
+
+                    if sh_pow_remain > q_nom_hp:
+                        sh_pow_remain -= q_nom_hp
+                    elif sh_pow_remain == q_nom_hp:
+                        sh_pow_remain = 0
+                    elif sh_pow_remain < q_nom_hp:
+                        sh_pow_remain = 0
+                        q_tes_in = q_nom_hp - sh_pow_remain
+                        q_tes_in_remain -= q_tes_in
+
+                else:
+                    #  sh_pow_remain < q_nom_hp
+                    #  Try using hp in part load
+
+                    hp_lal = hp.lowerActivationLimit
+
+                    if sh_pow_remain + q_tes_in_max < hp_lal * q_nom_hp:
+                        #  Required power is below part load performance,
+                        #  thus, hp cannot be used
+                        hp.calc_hp_all_results(
+                            control_signal=0,
+                            t_source=temp_source,
+                            time_index=i)
+                    else:
+                        #  HP can operate in part load
+                        hp.calc_hp_all_results(
+                            control_signal=sh_pow_remain + q_tes_in_max,
+                            t_source=temp_source,
+                            time_index=i)
+
+                        sh_pow_remain = 0
+                        q_tes_in = q_tes_in_max + 0.0
+                        q_tes_in_remain -= q_tes_in
+
+                #  Use EH
+                if has_eh:
+
+                    #  if sh_pow_remain > 0 or dhw_pow_remain > 0, use eh
+
+                    #  eh pointer
+                    eheater = build.bes.electricalHeater
+
+                    #  Get nominal power
+                    q_nom_eh = eheater.qNominal
+
+                    #  if sh_pow_remain > 0 or dhw_pow_remain > 0, use eh
+                    if (sh_pow_remain + dhw_pow_remain + q_tes_in_remain) \
+                            >= q_nom_eh:
+                        #  Cover part of power with full eh load
+                        eheater.calc_el_h_all_results(
+                            control_signal=q_nom_eh,
+                            time_index=i)
+
+                        #  Calculate remaining thermal power
+                        if sh_pow_remain - q_nom_eh > 0:
+                            sh_pow_remain -= q_nom_eh
+                        elif sh_pow_remain == q_nom_eh:
+                            sh_pow_remain = 0
+                        elif sh_pow_remain - q_nom_eh < 0:
+                            if dhw_pow_remain > q_nom_eh - sh_pow_remain:
+                                dhw_pow_remain -= (q_nom_eh - sh_pow_remain)
+                                sh_pow_remain = 0
+                            elif dhw_pow_remain == q_nom_eh - sh_pow_remain:
+                                sh_pow_remain = 0
+                                dhw_pow_remain = 0
+                            elif dhw_pow_remain < q_nom_eh - sh_pow_remain:
+                                q_tes_in_remain -= q_nom_eh - sh_pow_remain \
+                                                   - dhw_pow_remain
+                                q_tes_in += q_nom_eh - sh_pow_remain \
+                                                   - dhw_pow_remain
+
+                    elif (sh_pow_remain + dhw_pow_remain + q_tes_in_remain) \
+                            < q_nom_eh:
+                        #  Use eh in part load
+
+                        eheater.calc_el_h_all_results(
+                            control_signal=(
+                                sh_pow_remain + dhw_pow_remain + q_tes_in_remain),
+                            time_index=i)
+
+                        sh_pow_remain = 0
+                        dhw_pow_remain = 0
+                        q_tes_in_remain = 0
+                        q_tes_in += q_tes_in_remain
+
+                #  Use TES
+                # If uncovered demand, use TES
+                if sh_pow_remain > 0:
+
+                    q_out_max = tes.calc_storage_q_out_max(q_in=q_tes_in)
+
+                    q_out_requ = sh_pow_remain + 0.0
+
+                    if q_out_max < q_out_requ:
+                        msg = 'TES stored energy cannot cover remaining ' \
+                              'demand in ' \
+                              'building' + str(
+                            id) + ' at timestep ' + str(
+                            i) + '.'
+                        raise EnergyBalanceException(msg)
+                else:
+                    q_out_requ = 0
+
+                temp_prior = tes.t_current
+
+                #  Calc. storage energy balance for this timestep
+                tes.calc_storage_temp_for_next_timestep(q_in=q_tes_in,
+                                                        q_out=q_out_requ,
+                                                        t_prior=temp_prior,
+                                                        set_new_temperature=True,
+                                                        save_res=True,
+                                                        time_index=i)
+
+                sh_pow_remain = 0
+
+            if sh_pow_remain > 0 or dhw_pow_remain > 0:
+                msg = 'Could not solve thermal energy balance in ' \
+                      'building ' + str(id) + ' at timestep ' + str(i) + '.'
+                raise EnergyBalanceException(msg)
 
     elif has_tes is False and has_hp is False:  # Has no TES
         #  Run thermal simulation, if no TES is existent (only relevant for
@@ -1032,86 +1384,107 @@ if __name__ == '__main__':
     #  ####################################################################
 
     #  ####################################################################
-    #  Get buiding 1001 (CHP, boiler, tes)
-    #  Add EH to test energy balance for CHP, boiler, EH with TES
-    exbuild = city.node[1001]['entity']
-
-    # eh = elheat.ElectricalHeaterExtended(environment=exbuild.environment,
-    #                                      q_nominal=10000)
+    # #  Get buiding 1001 (CHP, boiler, tes)
+    # #  Add EH to test energy balance for CHP, boiler, EH with TES
+    # exbuild = city.node[1001]['entity']
     #
-    # exbuild.bes.addDevice(eh)
+    # # eh = elheat.ElectricalHeaterExtended(environment=exbuild.environment,
+    # #                                      q_nominal=10000)
+    # #
+    # # exbuild.bes.addDevice(eh)
+    #
+    # #  Calculate energy balance
+    # calc_build_therm_eb(build=exbuild)
+    #
+    # #  Get space heating results
+    # sh_p_array = exbuild.get_space_heating_power_curve()
+    # dhw_p_array = exbuild.get_dhw_power_curve()
+    #
+    # #  Get boiler results
+    # q_out = exbuild.bes.boiler.totalQOutput
+    # fuel_in = exbuild.bes.boiler.array_fuel_power
+    #
+    # #  Get CHP results
+    # q_chp_out = exbuild.bes.chp.totalQOutput
+    # p_el_chp_out = exbuild.bes.chp.totalPOutput
+    # fuel_chp_in = exbuild.bes.chp.array_fuel_power
+    #
+    # #  Checks
+    # sh_net_energy = sum(sh_p_array) * 3600 / (1000 * 3600) # in kWh
+    # dhw_net_energy = sum(dhw_p_array) * 3600 / (1000 * 3600) # in kWh
+    # boil_th_energy = sum(q_out) * 3600 / (1000 * 3600) # in kWh
+    # chp_th_energy = sum(q_chp_out) * 3600 / (1000 * 3600) # in kWh
+    # fuel_boiler_energy = sum(fuel_in) * 3600 / (1000 * 3600) # in kWh
+    # fuel_chp_energy = sum(fuel_chp_in) * 3600 / (1000 * 3600)  # in kWh
+    # chp_el_energy = sum(p_el_chp_out) * 3600 / (1000 * 3600)  # in kWh
+    #
+    # print('Space heating demand in kWh:')
+    # print(round(sh_net_energy, 0))
+    # print('DHW heating demand in kWh:')
+    # print(round(dhw_net_energy, 0))
+    # print()
+    #
+    # print('Boiler thermal energy output in kWh:')
+    # print(round(boil_th_energy, 0))
+    # print('CHP thermal energy output in kWh:')
+    # print(round(chp_th_energy, 0))
+    # print()
+    #
+    # print('Boiler fuel energy demand in kWh:')
+    # print(round(fuel_boiler_energy, 0))
+    # print('CHP fuel energy demand in kWh:')
+    # print(round(fuel_chp_energy, 0))
+    # print()
+    #
+    # print('CHP fuel energy demand in kWh:')
+    # print(round(chp_el_energy, 0))
+    #
+    # assert sh_net_energy + dhw_net_energy <= boil_th_energy + chp_th_energy
+    #
+    # fig = plt.figure()
+    #
+    # plt.subplot(4, 1, 1)
+    # plt.plot(sh_p_array, label='Space heat. in Watt')
+    # plt.plot(dhw_p_array, label='Hot water power in Watt')
+    # plt.legend()
+    #
+    # plt.subplot(4, 1, 2)
+    # plt.plot(q_out, label='Boiler th. power in Watt')
+    # plt.plot(fuel_in, label='Boiler fuel power in Watt')
+    # plt.legend()
+    #
+    # plt.subplot(4, 1, 3)
+    # plt.plot(q_chp_out, label='CHP th. power in Watt')
+    # plt.plot(fuel_chp_in, label='CHP fuel power in Watt')
+    # plt.legend()
+    #
+    # plt.subplot(4, 1, 4)
+    # plt.plot(p_el_chp_out, label='CHP el. power in Watt')
+    # plt.legend()
+    #
+    # plt.ylabel('Time in hours')
+    #
+    # plt.show()
+    # plt.close()
+    #  ####################################################################
+
+    #  ####################################################################
+    #  Extract building 1008 (HP, EH, PV and TES)
+    exbuild = city.node[1008]['entity']
+
+    print(exbuild.bes.heatpump.qNominal)
+
+    import pycity_calc.toolbox.dimensioning.dim_functions as dimfunc
+
+    print(dimfunc.get_max_power_of_building(building=exbuild,
+                                            get_therm=True,
+                                            with_dhw=False))
+
+    exbuild.bes.electricalHeater.qNominal *= 1.5
 
     #  Calculate energy balance
-    calc_build_therm_eb(build=exbuild)
+    calc_build_therm_eb(build=exbuild, id=1008)
 
     #  Get space heating results
     sh_p_array = exbuild.get_space_heating_power_curve()
     dhw_p_array = exbuild.get_dhw_power_curve()
-
-    #  Get boiler results
-    q_out = exbuild.bes.boiler.totalQOutput
-    fuel_in = exbuild.bes.boiler.array_fuel_power
-
-    #  Get CHP results
-    q_chp_out = exbuild.bes.chp.totalQOutput
-    p_el_chp_out = exbuild.bes.chp.totalPOutput
-    fuel_chp_in = exbuild.bes.chp.array_fuel_power
-
-    #  Checks
-    sh_net_energy = sum(sh_p_array) * 3600 / (1000 * 3600) # in kWh
-    dhw_net_energy = sum(dhw_p_array) * 3600 / (1000 * 3600) # in kWh
-    boil_th_energy = sum(q_out) * 3600 / (1000 * 3600) # in kWh
-    chp_th_energy = sum(q_chp_out) * 3600 / (1000 * 3600) # in kWh
-    fuel_boiler_energy = sum(fuel_in) * 3600 / (1000 * 3600) # in kWh
-    fuel_chp_energy = sum(fuel_chp_in) * 3600 / (1000 * 3600)  # in kWh
-    chp_el_energy = sum(p_el_chp_out) * 3600 / (1000 * 3600)  # in kWh
-
-    print('Space heating demand in kWh:')
-    print(round(sh_net_energy, 0))
-    print('DHW heating demand in kWh:')
-    print(round(dhw_net_energy, 0))
-    print()
-
-    print('Boiler thermal energy output in kWh:')
-    print(round(boil_th_energy, 0))
-    print('CHP thermal energy output in kWh:')
-    print(round(chp_th_energy, 0))
-    print()
-
-    print('Boiler fuel energy demand in kWh:')
-    print(round(fuel_boiler_energy, 0))
-    print('CHP fuel energy demand in kWh:')
-    print(round(fuel_chp_energy, 0))
-    print()
-
-    print('CHP fuel energy demand in kWh:')
-    print(round(chp_el_energy, 0))
-
-    assert sh_net_energy + dhw_net_energy <= boil_th_energy + chp_th_energy
-
-    fig = plt.figure()
-
-    plt.subplot(4, 1, 1)
-    plt.plot(sh_p_array, label='Space heat. in Watt')
-    plt.plot(dhw_p_array, label='Hot water power in Watt')
-    plt.legend()
-
-    plt.subplot(4, 1, 2)
-    plt.plot(q_out, label='Boiler th. power in Watt')
-    plt.plot(fuel_in, label='Boiler fuel power in Watt')
-    plt.legend()
-
-    plt.subplot(4, 1, 3)
-    plt.plot(q_chp_out, label='CHP th. power in Watt')
-    plt.plot(fuel_chp_in, label='CHP fuel power in Watt')
-    plt.legend()
-
-    plt.subplot(4, 1, 4)
-    plt.plot(p_el_chp_out, label='CHP el. power in Watt')
-    plt.legend()
-
-    plt.ylabel('Time in hours')
-
-    plt.show()
-    plt.close()
-    #  ####################################################################
