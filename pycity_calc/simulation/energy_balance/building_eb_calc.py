@@ -1336,6 +1336,86 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                       '' + str(i) + ' at building ' + str(id)
                 EnergyBalanceException(msg)
 
+def calc_build_el_eb(build, use_chp=True, use_pv=True):
+    """
+    Calculate building electric energy balance.
+
+    Parameters
+    ----------
+    build : object
+        Extended building ob pyCity_calc
+    use_chp : bool, optional
+        Defines, if CHP power is self consumed (default: True). If False,
+        has to feed all CHP el. power into the grid
+    use_pv : bool, optional
+        Defines
+
+    Returns
+    -------
+    dict_el_eb_res : dict
+        Dictionary with results of electric energy balance
+    """
+
+    #  Initialize results_dict
+    dict_el_eb_res = {}
+
+    #  Check building esys
+
+    #  Pointer to bes
+    bes = build.bes
+
+    has_bat = False
+    has_chp = False
+    has_eh = False
+    has_hp = False
+    has_pv = False
+
+    if bes.hasBattery:
+        has_bat = True
+    if bes.hasChp:
+        has_chp = True
+    if bes.hasElectricalHeater:
+        has_eh = True
+    if bes.hasHeatpump:
+        has_hp = True
+    if bes.hasPv:
+        has_pv = True
+
+    #  1. Use PV electric energy
+
+        #  El. demand
+        #  HP
+        #  EH
+        #  Bat
+        #  DEG
+        #  Grid
+
+    #  2. Use CHP electric energy
+
+        #  El. demand
+        #  HP
+        #  EH
+        #  Bat
+        #  DEG
+        #  Grid
+
+    #  3. Cover remaining el. demand with devices
+
+        #  Bat
+        #  DEG
+        #  Grid
+
+    #  4. Supply heat pump system
+
+        #  Bat
+        #  DEG
+        #  Grid
+
+    #  5. Supply electric heater system
+
+        #  Bat
+        #  DEG
+        #  Grid
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
@@ -1354,8 +1434,8 @@ if __name__ == '__main__':
     #  ####################################################################
 
     #  Uncomment, if you would like to deactivate plotting)
-    # citvis.plot_city_district(city=city, plot_esys=True, plot_lhn=True,
-    #                           plot_deg=True)
+    citvis.plot_city_district(city=city, plot_esys=True, plot_lhn=True,
+                              plot_deg=True)
 
     #  ####################################################################
     # #  Get buiding 1007 (boiler, only)
@@ -1384,153 +1464,160 @@ if __name__ == '__main__':
     #  ####################################################################
 
     #  ####################################################################
-    # #  Get buiding 1001 (CHP, boiler, tes)
-    # #  Add EH to test energy balance for CHP, boiler, EH with TES
-    # exbuild = city.node[1001]['entity']
-    #
-    # # eh = elheat.ElectricalHeaterExtended(environment=exbuild.environment,
-    # #                                      q_nominal=10000)
-    # #
-    # # exbuild.bes.addDevice(eh)
-    #
-    # #  Calculate energy balance
-    # calc_build_therm_eb(build=exbuild)
-    #
-    # #  Get space heating results
-    # sh_p_array = exbuild.get_space_heating_power_curve()
-    # dhw_p_array = exbuild.get_dhw_power_curve()
-    #
-    # #  Get boiler results
-    # q_out = exbuild.bes.boiler.totalQOutput
-    # fuel_in = exbuild.bes.boiler.array_fuel_power
-    #
-    # #  Get CHP results
-    # q_chp_out = exbuild.bes.chp.totalQOutput
-    # p_el_chp_out = exbuild.bes.chp.totalPOutput
-    # fuel_chp_in = exbuild.bes.chp.array_fuel_power
-    #
-    # #  Checks
-    # sh_net_energy = sum(sh_p_array) * 3600 / (1000 * 3600) # in kWh
-    # dhw_net_energy = sum(dhw_p_array) * 3600 / (1000 * 3600) # in kWh
-    # boil_th_energy = sum(q_out) * 3600 / (1000 * 3600) # in kWh
-    # chp_th_energy = sum(q_chp_out) * 3600 / (1000 * 3600) # in kWh
-    # fuel_boiler_energy = sum(fuel_in) * 3600 / (1000 * 3600) # in kWh
-    # fuel_chp_energy = sum(fuel_chp_in) * 3600 / (1000 * 3600)  # in kWh
-    # chp_el_energy = sum(p_el_chp_out) * 3600 / (1000 * 3600)  # in kWh
-    #
-    # print('Space heating demand in kWh:')
-    # print(round(sh_net_energy, 0))
-    # print('DHW heating demand in kWh:')
-    # print(round(dhw_net_energy, 0))
-    # print()
-    #
-    # print('Boiler thermal energy output in kWh:')
-    # print(round(boil_th_energy, 0))
-    # print('CHP thermal energy output in kWh:')
-    # print(round(chp_th_energy, 0))
-    # print()
-    #
-    # print('Boiler fuel energy demand in kWh:')
-    # print(round(fuel_boiler_energy, 0))
-    # print('CHP fuel energy demand in kWh:')
-    # print(round(fuel_chp_energy, 0))
-    # print()
-    #
-    # print('CHP fuel energy demand in kWh:')
-    # print(round(chp_el_energy, 0))
-    #
-    # assert sh_net_energy + dhw_net_energy <= boil_th_energy + chp_th_energy
-    #
-    # fig = plt.figure()
-    #
-    # plt.subplot(4, 1, 1)
-    # plt.plot(sh_p_array, label='Space heat. in Watt')
-    # plt.plot(dhw_p_array, label='Hot water power in Watt')
-    # plt.legend()
-    #
-    # plt.subplot(4, 1, 2)
-    # plt.plot(q_out, label='Boiler th. power in Watt')
-    # plt.plot(fuel_in, label='Boiler fuel power in Watt')
-    # plt.legend()
-    #
-    # plt.subplot(4, 1, 3)
-    # plt.plot(q_chp_out, label='CHP th. power in Watt')
-    # plt.plot(fuel_chp_in, label='CHP fuel power in Watt')
-    # plt.legend()
-    #
-    # plt.subplot(4, 1, 4)
-    # plt.plot(p_el_chp_out, label='CHP el. power in Watt')
-    # plt.legend()
-    #
-    # plt.ylabel('Time in hours')
-    #
-    # plt.show()
-    # plt.close()
-    #  ####################################################################
+    #  Get buiding 1001 (CHP, boiler, tes)
+    #  Add EH to test energy balance for CHP, boiler, EH with TES
+    exbuild = city.node[1001]['entity']
 
-    #  ####################################################################
-    #  Extract building 1008 (HP, EH, PV and TES)
-    exbuild = city.node[1008]['entity']
-
-    #  Modify size of electrical heater
-    exbuild.bes.electricalHeater.qNominal *= 1.5
-
-    #  Modify tes
-    exbuild.bes.tes.tMax = 45
-    print('Capacity of TES in kg: ', exbuild.bes.tes.capacity)
+    # eh = elheat.ElectricalHeaterExtended(environment=exbuild.environment,
+    #                                      q_nominal=10000)
+    #
+    # exbuild.bes.addDevice(eh)
 
     #  Calculate energy balance
-    calc_build_therm_eb(build=exbuild, id=1008)
+    calc_build_therm_eb(build=exbuild)
 
     #  Get space heating results
     sh_p_array = exbuild.get_space_heating_power_curve()
     dhw_p_array = exbuild.get_dhw_power_curve()
 
-    q_hp_out = exbuild.bes.heatpump.totalQOutput
-    el_hp_in = exbuild.bes.heatpump.array_el_power_in
+    #  Get boiler results
+    q_out = exbuild.bes.boiler.totalQOutput
+    fuel_in = exbuild.bes.boiler.array_fuel_power
 
-    q_eh_out = exbuild.bes.electricalHeater.totalQOutput
-    el_eh_in = exbuild.bes.electricalHeater.totalPConsumption
+    #  Get CHP results
+    q_chp_out = exbuild.bes.chp.totalQOutput
+    p_el_chp_out = exbuild.bes.chp.totalPOutput
+    fuel_chp_in = exbuild.bes.chp.array_fuel_power
 
     tes_temp = exbuild.bes.tes.array_temp_storage
 
-    sh_en = sum(sh_p_array) * 3600 / (1000 * 3600)
-    dhw_en = sum(dhw_p_array) * 3600 / (1000 * 3600)
+    #  Checks
+    sh_net_energy = sum(sh_p_array) * 3600 / (1000 * 3600) # in kWh
+    dhw_net_energy = sum(dhw_p_array) * 3600 / (1000 * 3600) # in kWh
+    boil_th_energy = sum(q_out) * 3600 / (1000 * 3600) # in kWh
+    chp_th_energy = sum(q_chp_out) * 3600 / (1000 * 3600) # in kWh
+    fuel_boiler_energy = sum(fuel_in) * 3600 / (1000 * 3600) # in kWh
+    fuel_chp_energy = sum(fuel_chp_in) * 3600 / (1000 * 3600)  # in kWh
+    chp_el_energy = sum(p_el_chp_out) * 3600 / (1000 * 3600)  # in kWh
 
-    q_hp_out_en = sum(q_hp_out) * 3600 / (1000 * 3600)
-    q_eh_out_en = sum(q_eh_out) * 3600 / (1000 * 3600)
-
-    print('Space heating net energy demand in kWh:')
-    print(sh_en)
-    print('Domestic hot water net energy demand in kWh:')
-    print(dhw_en)
+    print('Space heating demand in kWh:')
+    print(round(sh_net_energy, 0))
+    print('DHW heating demand in kWh:')
+    print(round(dhw_net_energy, 0))
     print()
 
-    print('HP thermal energy output in kWh:')
-    print(q_hp_out_en)
-    print('EH thermal energy output in kWh:')
-    print(q_eh_out_en)
+    print('Boiler thermal energy output in kWh:')
+    print(round(boil_th_energy, 0))
+    print('CHP thermal energy output in kWh:')
+    print(round(chp_th_energy, 0))
     print()
+
+    print('Boiler fuel energy demand in kWh:')
+    print(round(fuel_boiler_energy, 0))
+    print('CHP fuel energy demand in kWh:')
+    print(round(fuel_chp_energy, 0))
+    print()
+
+    print('CHP fuel energy demand in kWh:')
+    print(round(chp_el_energy, 0))
+
+    assert sh_net_energy + dhw_net_energy <= boil_th_energy + chp_th_energy
 
     fig = plt.figure()
 
-    plt.subplot(4, 1, 1)
-    plt.plot(sh_p_array, label='Space heating power in W')
-    plt.plot(dhw_p_array, label='DHW power in W')
+    plt.subplot(5, 1, 1)
+    plt.plot(sh_p_array, label='Space heat. in Watt')
+    plt.plot(dhw_p_array, label='Hot water power in Watt')
     plt.legend()
 
-    plt.subplot(4, 1, 2)
-    plt.plot(q_hp_out, label='HP thermal output in W')
-    plt.plot(el_hp_in, label='El. input HP in W')
+    plt.subplot(5, 1, 2)
+    plt.plot(q_out, label='Boiler th. power in Watt')
+    plt.plot(fuel_in, label='Boiler fuel power in Watt')
     plt.legend()
 
-    plt.subplot(4, 1, 3)
-    plt.plot(q_eh_out, label='EH thermal output in W')
+    plt.subplot(5, 1, 3)
+    plt.plot(q_chp_out, label='CHP th. power in Watt')
+    plt.plot(fuel_chp_in, label='CHP fuel power in Watt')
     plt.legend()
 
-    plt.subplot(4, 1, 4)
+    plt.subplot(5, 1, 4)
+    plt.plot(p_el_chp_out, label='CHP el. power in Watt')
+    plt.legend()
+
+    plt.subplot(5, 1, 5)
     plt.plot(tes_temp, label='Storage temp. in degree C')
     plt.legend()
 
+    plt.ylabel('Time in hours')
+
     plt.show()
     plt.close()
+    #  ####################################################################
+
+    # #  ####################################################################
+    # #  Extract building 1008 (HP, EH, PV and TES)
+    # exbuild = city.node[1008]['entity']
+    #
+    # #  Modify size of electrical heater
+    # exbuild.bes.electricalHeater.qNominal *= 1.5
+    #
+    # #  Modify tes
+    # exbuild.bes.tes.tMax = 45
+    # print('Capacity of TES in kg: ', exbuild.bes.tes.capacity)
+    #
+    # #  Calculate energy balance
+    # calc_build_therm_eb(build=exbuild, id=1008)
+    #
+    # #  Get space heating results
+    # sh_p_array = exbuild.get_space_heating_power_curve()
+    # dhw_p_array = exbuild.get_dhw_power_curve()
+    #
+    # q_hp_out = exbuild.bes.heatpump.totalQOutput
+    # el_hp_in = exbuild.bes.heatpump.array_el_power_in
+    #
+    # q_eh_out = exbuild.bes.electricalHeater.totalQOutput
+    # el_eh_in = exbuild.bes.electricalHeater.totalPConsumption
+    #
+    # tes_temp = exbuild.bes.tes.array_temp_storage
+    #
+    # sh_en = sum(sh_p_array) * 3600 / (1000 * 3600)
+    # dhw_en = sum(dhw_p_array) * 3600 / (1000 * 3600)
+    #
+    # q_hp_out_en = sum(q_hp_out) * 3600 / (1000 * 3600)
+    # q_eh_out_en = sum(q_eh_out) * 3600 / (1000 * 3600)
+    #
+    # print('Space heating net energy demand in kWh:')
+    # print(sh_en)
+    # print('Domestic hot water net energy demand in kWh:')
+    # print(dhw_en)
+    # print()
+    #
+    # print('HP thermal energy output in kWh:')
+    # print(q_hp_out_en)
+    # print('EH thermal energy output in kWh:')
+    # print(q_eh_out_en)
+    # print()
+    #
+    # fig = plt.figure()
+    #
+    # plt.subplot(4, 1, 1)
+    # plt.plot(sh_p_array, label='Space heating power in W')
+    # plt.plot(dhw_p_array, label='DHW power in W')
+    # plt.legend()
+    #
+    # plt.subplot(4, 1, 2)
+    # plt.plot(q_hp_out, label='HP thermal output in W')
+    # plt.plot(el_hp_in, label='El. input HP in W')
+    # plt.legend()
+    #
+    # plt.subplot(4, 1, 3)
+    # plt.plot(q_eh_out, label='EH thermal output in W')
+    # plt.legend()
+    #
+    # plt.subplot(4, 1, 4)
+    # plt.plot(tes_temp, label='Storage temp. in degree C')
+    # plt.legend()
+    #
+    # plt.show()
+    # plt.close()
+    # #  ####################################################################

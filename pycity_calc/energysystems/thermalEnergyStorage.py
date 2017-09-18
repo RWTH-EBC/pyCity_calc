@@ -23,7 +23,7 @@ class thermalEnergyStorageExtended(TES.ThermalEnergyStorage):
                  t_surroundings=20.0, k_loss=0.3, h_d_ratio=3.5,
                  use_outside_temp=False):
         """
-        Construcotr of extended thermal storage system
+        Constructor of extended thermal storage system
 
         Parameters
         ----------
