@@ -205,3 +205,67 @@ class TestBuildingEnergyBalance():
         sum_chp_feed = sum(chp_feed) * timestep / (100 * 3600)
 
         assert abs(sum_chp_self / (sum_chp_self + sum_chp_feed) - 1/4) < 0.001
+
+    def test_energy_balance_without_losses(self, fixture_building):
+        """
+        Check energy balance without losses
+        """
+
+        build = copy.deepcopy(fixture_building)
+
+        timestep = build.environment.timer.timeDiscretization
+        nb_timesteps = int(365 * 24 * 3600 / timestep)
+
+        q_nom = 20000
+        eta_total = 1
+
+        p_nom = asue.calc_el_power_with_th_power(th_power=q_nom,
+                                                 eta_total=eta_total)
+
+        sh_power = np.ones(nb_timesteps) * 20000
+        el_power = np.ones(nb_timesteps) * 12000
+
+        build.apartments[0].demandSpaceheating.loadcurve = sh_power
+        build.apartments[0].power_el.loadcurve = el_power
+
+        chp = chpsys.ChpExtended(environment=build.environment,
+                                 q_nominal=q_nom,
+                                 p_nominal=p_nom, eta_total=eta_total)
+
+        # eh = ehsys.ElectricalHeaterExtended(environment=build.environment,
+        #                                     q_nominal=5000)
+
+        tes = sto.thermalEnergyStorageExtended \
+            (environment=build.environment, t_init=80, capacity=500, k_loss=0)
+
+        pv = PV.PV(environment=build.environment, area=10, eta=1)
+
+        pv.totalPower = np.ones(nb_timesteps) * 10000
+
+        bes = BES.BES(environment=build.environment)
+
+        bes.addDevice(chp)
+        bes.addDevice(tes)
+        bes.addDevice(pv)
+        # bes.addDevice(eh)
+
+        build.addEntity(bes)
+
+        #  Calculate energy balances
+        buildeb.calc_build_therm_eb(build=build)
+
+        buildeb.calc_build_el_eb(build=build)
+
+        chp_self = build.dict_el_eb_res['chp_self']
+        chp_feed = build.dict_el_eb_res['chp_feed']
+        pv_self = build.dict_el_eb_res['pv_self']
+        pv_feed = build.dict_el_eb_res['pv_feed']
+
+        sum_chp_self = sum(chp_self) * timestep / (100 * 3600)
+        sum_chp_feed = sum(chp_feed) * timestep / (100 * 3600)
+        sum_pv_self = sum(pv_self) * timestep / (100 * 3600)
+        sum_pv_feed = sum(pv_feed) * timestep / (100 * 3600)
+
+        assert abs(sum_pv_self / (sum_pv_feed + sum_pv_self) - 1) \
+               <= 0.001
+        assert abs(sum_chp_feed - (p_nom - 2000) * 900 / (3600 * 1000))
