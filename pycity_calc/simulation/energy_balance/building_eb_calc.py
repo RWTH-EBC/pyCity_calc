@@ -1458,80 +1458,163 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
                     pv_self[i] += p_pv_remain
                     p_pv_remain = 0
 
-            #  Bat
-            if has_bat:
-
-                #  Battery pointer
-                bat = build.bes.battery
-
-                #  Dummy values
-                p_bat_charge = 0
-                p_bat_discharge = 0
-
-                #  Maximum charging power
-                p_bat_charge_max = bat.calc_battery_max_p_el_in()
-                p_bat_charge_remain = p_bat_charge_max + 0.0
-
-                #  Maximum discharging power
-                p_bat_disch_max = bat.calc_battery_max_p_el_out()
-                p_bat_disch_remain = p_bat_disch_max + 0.0
-
-                if p_pv_remain >= p_bat_charge_remain:
-                    # #  Maximal charging of battery
-                    #  Fixme: Move behind CHP calculation
-                    # #  Maximal charging of battery
-                    # bat.calc_battery_soc_next_timestep(p_el_in=p_bat_charge_max,
-                    #                                    save_res=True,
-                    #                                    time_index=i)
-                    p_pv_remain -= p_bat_charge_remain
-                    pv_self[i] += p_bat_charge_remain
-                    p_bat_charge += p_bat_charge_remain
-                    p_bat_charge_remain = 0
-                else:
-                    #  Partially charge battery with PV power
-                    p_bat_charge_remain -= p_pv_remain
-                    pv_self[i] += p_pv_remain
-                    p_bat_charge += p_pv_remain
-                    p_pv_remain = 0
-
-            #  DEG
-            if has_deg:
-
-                #  TODO: Add deg calculation
-                warnings.warn('has_deg has not been added!')
-
         #  2. Use CHP electric energy
         if has_chp:
 
             p_el_chp = build.bes.chp.totalPOutput[i]
+            p_el_chp_remain = p_el_chp + 0.0
 
             #  El. demand
+            if p_el_chp_remain >= p_el_remain:
+                #  Cover complete el. demand with CHP power
+                p_el_chp_remain -= p_el_remain
+                chp_self[i] += p_el_remain
+                p_el_remain = 0
+            else:
+                #  Cover part of el. power with CHP power
+                p_el_remain -= p_el_chp_remain
+                chp_self[i] += p_el_chp_remain
+                p_el_chp_remain = 0
+
             #  HP
+            if has_hp:
+
+                if p_el_chp_remain >= p_el_hp_remain:
+                    #  Cover complete HP demand with CHP power
+                    p_el_chp_remain -= p_el_hp_remain
+                    chp_self[i] += p_el_hp_remain
+                    p_el_hp_remain = 0
+                else:
+                    #  Cover part of HP power with CHP power
+                    p_el_hp_remain -= p_el_chp_remain
+                    chp_self[i] += p_el_chp_remain
+                    p_el_chp_remain = 0
+
             #  EH
-            #  Bat
-            #  DEG
+            if has_eh:
+
+                if p_el_chp_remain >= p_el_eh_remain:
+                    #  Cover complete EH demand with CHP power
+                    p_el_chp_remain -= p_el_eh_remain
+                    chp_self[i] += p_el_eh_remain
+                    p_el_eh_remain = 0
+                else:
+                    #  Cover part of EH power with CHP power
+                    p_el_eh_remain -= p_el_chp_remain
+                    chp_self[i] += p_el_chp_remain
+                    p_el_chp_remain = 0
+
+        #  Bat
+        if has_bat:
+
+            #  Try to feed remaining el. power (PV and CHP) with battery
+
+            #  Try to cover remaining el. power demand (building, HP, EH)
+            #  with battery
+
+            #  Battery pointer
+            bat = build.bes.battery
+
+            #  Initial values
+            p_bat_charge = 0
+            p_bat_discharge = 0
+
+            #  Maximum charging power
+            p_bat_charge_max = bat.calc_battery_max_p_el_in()
+            p_bat_charge_remain = p_bat_charge_max + 0.0
+
+            #  Maximum discharging power
+            p_bat_disch_max = bat.calc_battery_max_p_el_out()
+            p_bat_disch_remain = p_bat_disch_max + 0.0
+
+            if has_pv:
+
+                if p_pv_remain > 0:
+
+                    if p_pv_remain >= p_bat_charge_remain:
+                        #  Fully charge battery
+                        p_pv_remain -= p_bat_charge_remain
+                        p_bat_charge += p_bat_charge_remain
+                        p_bat_charge_remain = 0
+                    else:
+                        #  Partially charge battery
+                        p_bat_charge_remain -= p_pv_remain
+                        p_bat_charge += p_pv_remain
+                        p_pv_remain = 0
+
+            if has_chp:
+
+                if p_el_chp_remain > 0:
+
+                    if p_el_chp_remain >= p_bat_charge:
+                        #  Fully charge battery
+                        p_el_chp_remain -= p_bat_charge_remain
+                        p_bat_charge += p_bat_charge_remain
+                        p_bat_charge_remain = 0
+                    else:
+                        #  Partially charge battery
+                        p_bat_charge_remain -= p_el_chp_remain
+                        p_bat_charge += p_el_chp_remain
+                        p_el_chp_remain = 0
+
+            if p_el_remain > 0:
+
+                if p_el_remain >= p_bat_disch_remain:
+                    #  Fully uncharge battery
+                    p_el_remain -= p_bat_disch_remain
+                    p_bat_discharge += p_bat_disch_remain
+                    p_bat_disch_remain = 0
+                else:
+                    #  Partially discharge battery
+                    p_bat_disch_remain -= p_el_remain
+                    p_bat_discharge += p_el_remain
+                    p_el_remain = 0
+
+            if has_hp:
+
+                if p_el_hp_remain > 0:
+
+                    if p_el_hp_remain >= p_bat_disch_remain:
+                        #  Fully uncharge battery
+                        p_el_hp_remain -= p_bat_disch_remain
+                        p_bat_discharge += p_bat_disch_remain
+                        p_bat_disch_remain = 0
+                    else:
+                        #  Partially discharge battery
+                        p_bat_disch_remain -= p_el_hp_remain
+                        p_bat_discharge += p_el_hp_remain
+                        p_el_hp_remain = 0
+
+            if has_eh:
+
+                if p_el_eh_remain > 0:
+
+                    if p_el_eh_remain >= p_bat_disch_remain:
+                        #  Fully uncharge battery
+                        p_el_eh_remain -= p_bat_disch_remain
+                        p_bat_discharge += p_bat_disch_remain
+                        p_bat_disch_remain = 0
+                    else:
+                        #  Partially discharge battery
+                        p_bat_disch_remain -= p_el_eh_remain
+                        p_bat_discharge += p_el_eh_remain
+                        p_el_eh_remain = 0
+
+            #  Logic checks
+            assert p_bat_charge <= p_bat_charge_max
+            assert p_bat_discharge <= p_bat_disch_max
+
+            #  Use battery
+            bat.calc_battery_soc_next_timestep(p_el_in=p_bat_charge,
+                                               p_el_out=p_bat_discharge,
+                                               save_res=True,
+                                               time_index=i)
+
+        #  DEG
 
         #  Grid
         #  Import remaining el. power from grid
         grid_import[i] += p_el_remain
-
-        #  3. Cover remaining el. demand with devices
-
-            #  Bat
-            #  DEG
-            #  Grid
-
-        #  4. Supply heat pump system
-
-            #  Bat
-            #  DEG
-            #  Grid
-
-        #  5. Supply electric heater system
-
-            #  Bat
-            #  DEG
-            #  Grid
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
