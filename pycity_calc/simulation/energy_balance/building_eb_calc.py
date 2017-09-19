@@ -136,7 +136,8 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
     if build.bes.hasHeatpump is True:
         has_hp = True
 
-        if has_eh is False and build.get_annual_dhw_demand() > 0:
+        if build.bes.hasElectricalHeater is False and\
+                        build.get_annual_dhw_demand() > 0:
             msg = 'Building ' + str() + ' does only have HP without EH.' \
                                         ' Thus, it cannot cover hot water' \
                                         ' energy demand, which is larger ' \
@@ -1411,6 +1412,12 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
         p_el = el_pow_array[i]
         p_el_remain = p_el + 0.0
 
+        #  Dummy values
+        p_el_eh_remain = 0
+        p_el_hp_remain = 0
+        p_el_chp_remain = 0
+        p_pv_remain = 0
+
         #  1. Use PV electric energy
         if has_pv:
 
@@ -1674,35 +1681,41 @@ if __name__ == '__main__':
                               plot_deg=True)
 
     #  ####################################################################
-    # #  Get buiding 1007 (boiler, only)
-    # #  Add EH to test energy balance for boiler and eh without tes
-    # exbuild = city.node[1007]['entity']
-    #
-    # eh = elheat.ElectricalHeaterExtended(environment=exbuild.environment,
-    #                                      q_nominal=10000)
-    #
-    # exbuild.bes.addDevice(eh)
-    #
-    # calc_build_therm_eb(build=exbuild)
-    #
-    # q_out = exbuild.bes.boiler.totalQOutput
-    # fuel_in = exbuild.bes.boiler.array_fuel_power
-    # sh_p_array = exbuild.get_space_heating_power_curve()
-    # dhw_p_array = exbuild.get_dhw_power_curve()
-    #
-    # plt.plot(q_out, label='q_out')
-    # plt.plot(fuel_in, label='fuel in')
-    # plt.plot(sh_p_array, label='sh power')
-    # plt.plot(dhw_p_array, label='dhw power')
-    # plt.legend()
-    # plt.show()
-    # plt.close()
+    #  Get buiding 1007 (boiler, only)
+    #  Add EH to test energy balance for boiler and eh without tes
+    id = 1007
+    exbuild = city.node[id]['entity']
+
+    eh = elheat.ElectricalHeaterExtended(environment=exbuild.environment,
+                                         q_nominal=10000)
+
+    exbuild.bes.addDevice(eh)
+
+    #  Calculate thermal energy balance
+    calc_build_therm_eb(build=exbuild, id=id)
+
+    #  Calculate electric energy balance
+    calc_build_el_eb(build=exbuild)
+
+    q_out = exbuild.bes.boiler.totalQOutput
+    fuel_in = exbuild.bes.boiler.array_fuel_power
+    sh_p_array = exbuild.get_space_heating_power_curve()
+    dhw_p_array = exbuild.get_dhw_power_curve()
+
+    plt.plot(q_out, label='q_out')
+    plt.plot(fuel_in, label='fuel in')
+    plt.plot(sh_p_array, label='sh power')
+    plt.plot(dhw_p_array, label='dhw power')
+    plt.legend()
+    plt.show()
+    plt.close()
     #  ####################################################################
 
     #  ####################################################################
     #  Get buiding 1001 (CHP, boiler, tes)
     #  Add EH to test energy balance for CHP, boiler, EH with TES
-    exbuild = city.node[1001]['entity']
+    id = 1001
+    exbuild = city.node[id]['entity']
 
     # eh = elheat.ElectricalHeaterExtended(environment=exbuild.environment,
     #                                      q_nominal=10000)
@@ -1710,7 +1723,7 @@ if __name__ == '__main__':
     # exbuild.bes.addDevice(eh)
 
     #  Calculate thermal energy balance
-    calc_build_therm_eb(build=exbuild)
+    calc_build_therm_eb(build=exbuild, id=id)
 
     #  Calculate electric energy balance
     calc_build_el_eb(build=exbuild)
@@ -1794,69 +1807,73 @@ if __name__ == '__main__':
     #  ####################################################################
 
     # #  ####################################################################
-    # #  Extract building 1008 (HP, EH, PV and TES)
-    # exbuild = city.node[1008]['entity']
-    #
-    # #  Modify size of electrical heater
-    # exbuild.bes.electricalHeater.qNominal *= 1.5
-    #
-    # #  Modify tes
-    # exbuild.bes.tes.tMax = 45
-    # print('Capacity of TES in kg: ', exbuild.bes.tes.capacity)
-    #
-    # #  Calculate energy balance
-    # calc_build_therm_eb(build=exbuild, id=1008)
-    #
-    # #  Get space heating results
-    # sh_p_array = exbuild.get_space_heating_power_curve()
-    # dhw_p_array = exbuild.get_dhw_power_curve()
-    #
-    # q_hp_out = exbuild.bes.heatpump.totalQOutput
-    # el_hp_in = exbuild.bes.heatpump.array_el_power_in
-    #
-    # q_eh_out = exbuild.bes.electricalHeater.totalQOutput
-    # el_eh_in = exbuild.bes.electricalHeater.totalPConsumption
-    #
-    # tes_temp = exbuild.bes.tes.array_temp_storage
-    #
-    # sh_en = sum(sh_p_array) * 3600 / (1000 * 3600)
-    # dhw_en = sum(dhw_p_array) * 3600 / (1000 * 3600)
-    #
-    # q_hp_out_en = sum(q_hp_out) * 3600 / (1000 * 3600)
-    # q_eh_out_en = sum(q_eh_out) * 3600 / (1000 * 3600)
-    #
-    # print('Space heating net energy demand in kWh:')
-    # print(sh_en)
-    # print('Domestic hot water net energy demand in kWh:')
-    # print(dhw_en)
-    # print()
-    #
-    # print('HP thermal energy output in kWh:')
-    # print(q_hp_out_en)
-    # print('EH thermal energy output in kWh:')
-    # print(q_eh_out_en)
-    # print()
-    #
-    # fig = plt.figure()
-    #
-    # plt.subplot(4, 1, 1)
-    # plt.plot(sh_p_array, label='Space heating power in W')
-    # plt.plot(dhw_p_array, label='DHW power in W')
-    # plt.legend()
-    #
-    # plt.subplot(4, 1, 2)
-    # plt.plot(q_hp_out, label='HP thermal output in W')
-    # plt.plot(el_hp_in, label='El. input HP in W')
-    # plt.legend()
-    #
-    # plt.subplot(4, 1, 3)
-    # plt.plot(q_eh_out, label='EH thermal output in W')
-    # plt.legend()
-    #
-    # plt.subplot(4, 1, 4)
-    # plt.plot(tes_temp, label='Storage temp. in degree C')
-    # plt.legend()
-    #
-    # plt.show()
-    # plt.close()
+    #  Extract building 1008 (HP, EH, PV and TES)
+    id = 1008
+    exbuild = city.node[id]['entity']
+
+    #  Modify size of electrical heater
+    exbuild.bes.electricalHeater.qNominal *= 1.5
+
+    #  Modify tes
+    exbuild.bes.tes.tMax = 45
+    print('Capacity of TES in kg: ', exbuild.bes.tes.capacity)
+
+    #  Calculate thermal energy balance
+    calc_build_therm_eb(build=exbuild, id=id)
+
+    #  Calculate electric energy balance
+    calc_build_el_eb(build=exbuild)
+
+    #  Get space heating results
+    sh_p_array = exbuild.get_space_heating_power_curve()
+    dhw_p_array = exbuild.get_dhw_power_curve()
+
+    q_hp_out = exbuild.bes.heatpump.totalQOutput
+    el_hp_in = exbuild.bes.heatpump.array_el_power_in
+
+    q_eh_out = exbuild.bes.electricalHeater.totalQOutput
+    el_eh_in = exbuild.bes.electricalHeater.totalPConsumption
+
+    tes_temp = exbuild.bes.tes.array_temp_storage
+
+    sh_en = sum(sh_p_array) * 3600 / (1000 * 3600)
+    dhw_en = sum(dhw_p_array) * 3600 / (1000 * 3600)
+
+    q_hp_out_en = sum(q_hp_out) * 3600 / (1000 * 3600)
+    q_eh_out_en = sum(q_eh_out) * 3600 / (1000 * 3600)
+
+    print('Space heating net energy demand in kWh:')
+    print(sh_en)
+    print('Domestic hot water net energy demand in kWh:')
+    print(dhw_en)
+    print()
+
+    print('HP thermal energy output in kWh:')
+    print(q_hp_out_en)
+    print('EH thermal energy output in kWh:')
+    print(q_eh_out_en)
+    print()
+
+    fig = plt.figure()
+
+    plt.subplot(4, 1, 1)
+    plt.plot(sh_p_array, label='Space heating power in W')
+    plt.plot(dhw_p_array, label='DHW power in W')
+    plt.legend()
+
+    plt.subplot(4, 1, 2)
+    plt.plot(q_hp_out, label='HP thermal output in W')
+    plt.plot(el_hp_in, label='El. input HP in W')
+    plt.legend()
+
+    plt.subplot(4, 1, 3)
+    plt.plot(q_eh_out, label='EH thermal output in W')
+    plt.legend()
+
+    plt.subplot(4, 1, 4)
+    plt.plot(tes_temp, label='Storage temp. in degree C')
+    plt.legend()
+
+    plt.show()
+    plt.close()
     # #  ####################################################################
