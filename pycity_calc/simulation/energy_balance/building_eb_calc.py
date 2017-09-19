@@ -1359,6 +1359,11 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
         Dictionary with results of electric energy balance
     """
 
+    if use_chp is False:
+        warnings.warn('use_chp==False has not been implemented, yet!')
+    if use_pv is False:
+        warnings.warn('use_pv==False has not been implemented, yet!')
+
     #  Check building esys
 
     #  Pointer to bes
@@ -1396,7 +1401,9 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
     chp_self = np.zeros(len(el_pow_array))
     chp_feed = np.zeros(len(el_pow_array))
 
-    grid_import = np.zeros(len(el_pow_array))
+    grid_import_dem = np.zeros(len(el_pow_array))
+    grid_import_hp = np.zeros(len(el_pow_array))
+    grid_import_eh = np.zeros(len(el_pow_array))
 
     #  Loop over power values
     for i in range(len(el_pow_array)):
@@ -1611,10 +1618,40 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
                                                time_index=i)
 
         #  DEG
+        if has_deg:
+
+            warnings.warn('has_deg has not been implemented, yet!')
+            pass
 
         #  Grid
         #  Import remaining el. power from grid
-        grid_import[i] += p_el_remain
+        grid_import_dem[i] += p_el_remain
+
+        if has_hp:
+            grid_import_hp[i] += p_el_hp_remain
+        if has_eh:
+            grid_import_eh[i] += p_el_eh_remain
+
+        if has_pv:
+            pv_feed[i] += p_pv_remain
+        if has_chp:
+            chp_feed[i] += p_el_chp_remain
+
+    #  Add to results dict
+    dict_el_eb_res['pv_self'] = pv_self
+    dict_el_eb_res['pv_feed'] = pv_feed
+
+    dict_el_eb_res['chp_self'] = chp_self
+    dict_el_eb_res['chp_feed'] = chp_feed
+
+    dict_el_eb_res['grid_import_dem'] = grid_import_dem
+    dict_el_eb_res['grid_import_hp'] = grid_import_hp
+    dict_el_eb_res['grid_import_eh'] = grid_import_eh
+
+    #  Add dict to building
+    build.dict_el_eb_res = dict_el_eb_res
+
+    return dict_el_eb_res
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
@@ -1672,8 +1709,11 @@ if __name__ == '__main__':
     #
     # exbuild.bes.addDevice(eh)
 
-    #  Calculate energy balance
+    #  Calculate thermal energy balance
     calc_build_therm_eb(build=exbuild)
+
+    #  Calculate electric energy balance
+    calc_build_el_eb(build=exbuild)
 
     #  Get space heating results
     sh_p_array = exbuild.get_space_heating_power_curve()
