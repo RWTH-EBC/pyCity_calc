@@ -6,9 +6,20 @@
 from __future__ import division
 
 import os
-import pickle
+import copy
+import numpy as np
+
+import pycity_base.classes.supply.BES as BES
+import pycity_base.classes.supply.PV as PV
 
 import pycity_calc.simulation.energy_balance.building_eb_calc as buildeb
+import pycity_calc.energysystems.chp as chpsys
+import pycity_calc.energysystems.battery as bat
+import pycity_calc.energysystems.boiler as boil
+import pycity_calc.energysystems.electricalHeater as ehsys
+import pycity_calc.energysystems.heatPumpSimple as hpsys
+import pycity_calc.energysystems.thermalEnergyStorage as sto
+import pycity_calc.energysystems.Input.chp_asue_2015 as asue
 
 from pycity_calc.test.pycity_calc_fixtures import fixture_building, \
     fixture_environment, fixture_city, fixture_apartment, fixture_th_demand, \
@@ -46,7 +57,7 @@ class TestBuildingEnergyBalance():
         fuel_boiler_energy = sum(fuel_in) * timestep / (1000 * 3600)  # in kWh
 
         assert fuel_boiler_energy >= boil_th_energy
-        assert boil_th_energy - (sh_net_energy + dhw_net_energy) <= 0.001
+        assert abs(boil_th_energy - (sh_net_energy + dhw_net_energy)) <= 0.001
 
         #  ##################################################################
 
@@ -136,9 +147,61 @@ class TestBuildingEnergyBalance():
         el_eh_in_en = sum(el_eh_in) * timestep / (1000 * 3600)
         el_hp_in_en = sum(el_hp_in) * timestep / (1000 * 3600)
 
-        assert sh_en + dhw_en - (q_hp_out_en + q_eh_out_en) < 0.001
-        assert dhw_en - q_eh_out_en < 0.001
-        assert q_eh_out_en - el_eh_in_en < 0.001
+        assert abs(sh_en + dhw_en - (q_hp_out_en + q_eh_out_en)) < 0.001
+        assert abs(dhw_en - q_eh_out_en) < 0.001
+        assert abs(q_eh_out_en - el_eh_in_en) < 0.001
         assert el_hp_in_en <= q_hp_out_en
 
         # #  #################################################################
+
+    def test_building_eb_2(self, fixture_building):
+        """
+        Test, if share of CHP self-consumed and fed-in electric energy is
+        correct
+        """
+
+        build = copy.deepcopy(fixture_building)
+
+        timestep = build.environment.timer.timeDiscretization
+        nb_timesteps = int(365 * 24 * 3600 / timestep)
+
+        q_nom = 1000
+        eta_total = 0.9
+
+        p_nom = asue.calc_el_power_with_th_power(th_power=q_nom,
+                                                 eta_total=eta_total)
+
+        sh_power = np.ones(nb_timesteps) * q_nom  # 1000 W
+
+        el_power = np.ones(nb_timesteps) * p_nom / 4  # 1/4 p_nom in W
+
+        build.apartments[0].demandSpaceheating.loadcurve = sh_power
+        build.apartments[0].power_el.loadcurve = el_power
+
+        chp = chpsys.ChpExtended(environment=build.environment,
+                                 q_nominal=q_nom,
+                                 p_nominal=p_nom, eta_total=eta_total)
+
+        tes = sto.thermalEnergyStorageExtended\
+            (environment=build.environment, t_init=75, capacity=100)
+
+        bes = BES.BES(environment=build.environment)
+
+        bes.addDevice(chp)
+        bes.addDevice(tes)
+
+        build.addEntity(bes)
+
+        #  Calculate energy balances
+        buildeb.calc_build_therm_eb(build=build)
+
+        buildeb.calc_build_el_eb(build=build)
+
+        #  Check results
+        chp_self = build.dict_el_eb_res['chp_self']
+        chp_feed = build.dict_el_eb_res['chp_feed']
+
+        sum_chp_self = sum(chp_self) * timestep / (100 * 3600)
+        sum_chp_feed = sum(chp_feed) * timestep / (100 * 3600)
+
+        assert abs(sum_chp_self / (sum_chp_self + sum_chp_feed) - 1/4) < 0.001
