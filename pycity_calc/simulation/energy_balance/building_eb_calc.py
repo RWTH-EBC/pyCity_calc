@@ -8,6 +8,7 @@ from __future__ import division
 import os
 import pickle
 import warnings
+import numpy as np
 
 import pycity_calc.simulation.energy_balance.check_eb_requ as check_eb
 
@@ -1336,7 +1337,7 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                       '' + str(i) + ' at building ' + str(id)
                 EnergyBalanceException(msg)
 
-def calc_build_el_eb(build, use_chp=True, use_pv=True):
+def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
     """
     Calculate building electric energy balance.
 
@@ -1349,15 +1350,14 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True):
         has to feed all CHP el. power into the grid
     use_pv : bool, optional
         Defines
+    has_deg : bool, optional
+        Defines, if building is connected to deg (default: False)
 
     Returns
     -------
     dict_el_eb_res : dict
         Dictionary with results of electric energy balance
     """
-
-    #  Initialize results_dict
-    dict_el_eb_res = {}
 
     #  Check building esys
 
@@ -1381,41 +1381,157 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True):
     if bes.hasPv:
         has_pv = True
 
-    #  1. Use PV electric energy
+        pv_gen_array = build.bes.pv.getPower(currentValues=False)
 
-        #  El. demand
-        #  HP
-        #  EH
-        #  Bat
-        #  DEG
+    #  Get electric power value
+    el_pow_array = build.get_electric_power_curve()
+
+    #  Initialize results_dict
+    dict_el_eb_res = {}
+
+    #  Initial result arrays
+    pv_self = np.zeros(len(el_pow_array))
+    pv_feed = np.zeros(len(el_pow_array))
+
+    chp_self = np.zeros(len(el_pow_array))
+    chp_feed = np.zeros(len(el_pow_array))
+
+    grid_import = np.zeros(len(el_pow_array))
+
+    #  Loop over power values
+    for i in range(len(el_pow_array)):
+
+        p_el = el_pow_array[i]
+        p_el_remain = p_el + 0.0
+
+        #  1. Use PV electric energy
+        if has_pv:
+
+            p_pv = pv_gen_array[i]
+            p_pv_remain = p_pv + 0.0
+
+            #  El. demand
+            if p_pv_remain >= p_el_remain:
+                #  Cover complete el. demand with PV power
+                p_pv_remain -= p_el_remain
+                pv_self[i] += p_el_remain
+                p_el_remain = 0
+            else:
+                #  Cover part of el. power with PV power
+                p_el_remain -= p_pv_remain
+                pv_self[i] += p_pv_remain
+                p_pv_remain = 0
+
+            #  HP
+            if has_hp:
+
+                #  Get el. power demand of heat pump
+                p_el_hp = build.bes.heatpump.array_el_power_in[i]
+                p_el_hp_remain = p_el_hp + 0.0
+
+                if p_pv_remain >= p_el_hp_remain:
+                    #  Cover complete HP demand with PV power
+                    p_pv_remain -= p_el_hp_remain
+                    pv_self[i] += p_el_hp_remain
+                    p_el_hp_remain = 0
+                else:
+                    #  Cover part of HP power with PV power
+                    p_el_hp_remain -= p_pv_remain
+                    pv_self[i] += p_pv_remain
+                    p_pv_remain = 0
+
+            #  EH
+            if has_eh:
+
+                #  Get el. power demand of heat pump
+                p_el_eh = build.bes.electricalHeater.totalPConsumption[i]
+                p_el_eh_remain = p_el_eh + 0.0
+
+                if p_pv_remain >= p_el_eh_remain:
+                    #  Cover complete EH demand with PV power
+                    p_pv_remain -= p_el_eh_remain
+                    pv_self[i] += p_el_eh_remain
+                    p_el_eh_remain = 0
+                else:
+                    #  Cover part of EH power with PV power
+                    p_el_eh_remain -= p_pv_remain
+                    pv_self[i] += p_pv_remain
+                    p_pv_remain = 0
+
+            #  Bat
+            if has_bat:
+
+                #  Battery pointer
+                bat = build.bes.battery
+
+                #  Dummy values
+                p_bat_charge = 0
+                p_bat_discharge = 0
+
+                #  Maximum charging power
+                p_bat_charge_max = bat.calc_battery_max_p_el_in()
+                p_bat_charge_remain = p_bat_charge_max + 0.0
+
+                #  Maximum discharging power
+                p_bat_disch_max = bat.calc_battery_max_p_el_out()
+                p_bat_disch_remain = p_bat_disch_max + 0.0
+
+                if p_pv_remain >= p_bat_charge_remain:
+                    # #  Maximal charging of battery
+                    #  Fixme: Move behind CHP calculation
+                    # #  Maximal charging of battery
+                    # bat.calc_battery_soc_next_timestep(p_el_in=p_bat_charge_max,
+                    #                                    save_res=True,
+                    #                                    time_index=i)
+                    p_pv_remain -= p_bat_charge_remain
+                    pv_self[i] += p_bat_charge_remain
+                    p_bat_charge += p_bat_charge_remain
+                    p_bat_charge_remain = 0
+                else:
+                    #  Partially charge battery with PV power
+                    p_bat_charge_remain -= p_pv_remain
+                    pv_self[i] += p_pv_remain
+                    p_bat_charge += p_pv_remain
+                    p_pv_remain = 0
+
+            #  DEG
+            if has_deg:
+
+                #  TODO: Add deg calculation
+                warnings.warn('has_deg has not been added!')
+
+        #  2. Use CHP electric energy
+        if has_chp:
+
+            p_el_chp = build.bes.chp.totalPOutput[i]
+
+            #  El. demand
+            #  HP
+            #  EH
+            #  Bat
+            #  DEG
+
         #  Grid
+        #  Import remaining el. power from grid
+        grid_import[i] += p_el_remain
 
-    #  2. Use CHP electric energy
+        #  3. Cover remaining el. demand with devices
 
-        #  El. demand
-        #  HP
-        #  EH
-        #  Bat
-        #  DEG
-        #  Grid
+            #  Bat
+            #  DEG
+            #  Grid
 
-    #  3. Cover remaining el. demand with devices
+        #  4. Supply heat pump system
 
-        #  Bat
-        #  DEG
-        #  Grid
+            #  Bat
+            #  DEG
+            #  Grid
 
-    #  4. Supply heat pump system
+        #  5. Supply electric heater system
 
-        #  Bat
-        #  DEG
-        #  Grid
-
-    #  5. Supply electric heater system
-
-        #  Bat
-        #  DEG
-        #  Grid
+            #  Bat
+            #  DEG
+            #  Grid
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt

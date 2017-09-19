@@ -158,7 +158,7 @@ if __name__ == '__main__':
         #  2 - Load and rescale Modelica simulation profile
         #  (generated with TRY region 12, 2010)
         #  3 - VDI 6007 calculation (requires el_gen_method = 2)
-        th_gen_method = 1
+        th_gen_method = 3
         #  For non-residential buildings, SLPs are generated automatically.
 
         #  Manipulate thermal slp to fit to space heating demand?
@@ -179,7 +179,7 @@ if __name__ == '__main__':
         #  Choose electric load profile generation method (1 - SLP; 2 - Stochastic)
         #  Stochastic profile is only generated for residential buildings,
         #  which have a defined number of occupants (otherwise, SLP is used)
-        el_gen_method = 1
+        el_gen_method = 2
         #  If user defindes method_3_nb or method_4_nb within input file
         #  (only valid for non-residential buildings), SLP will not be used.
         #  Instead, corresponding profile will be loaded (based on measurement
@@ -191,7 +191,7 @@ if __name__ == '__main__':
         do_normalization = True
 
         #  Randomize electrical demand value (residential buildings, only)
-        el_random = True
+        el_random = False
 
         #  Prevent usage of electrical heating and hot water devices in
         #  electrical load generation
@@ -211,21 +211,21 @@ if __name__ == '__main__':
         #  Hot water profile generation
         #  ######################################################
         #  Generate DHW profiles? (True/False)
-        use_dhw = False  # Only relevant for residential buildings
+        use_dhw = True  # Only relevant for residential buildings
 
         #  DHW generation method? (1 - Annex 42; 2 - Stochastic profiles)
         #  Choice of Anex 42 profiles NOT recommended for multiple builings,
         #  as profile stays the same and only changes scaling.
         #  Stochastic profiles require defined nb of occupants per residential
         #  building
-        dhw_method = 1  # Only relevant for residential buildings
+        dhw_method = 2  # Only relevant for residential buildings
 
         #  Define dhw volume per person and day (use_dhw=True)
         dhw_volumen = None  # Only relevant for residential buildings
 
         #  Randomize choosen dhw_volume reference value by selecting new value
         #  from gaussian distribution with 20 % standard deviation
-        dhw_random = True
+        dhw_random = False
 
         #  Use dhw profiles for esys dimensioning
         dhw_dim_esys = True
@@ -253,7 +253,7 @@ if __name__ == '__main__':
         t_set_cool = 70  # Cooling set temperature in degree Celsius
 
         #  Air exchange rate (required for th_gen_method = 3 (VDI 6007 sim.))
-        air_vent_mode = 1
+        air_vent_mode = 2
         #  int; Define mode for air ventilation rate generation
         #  0 : Use constant value (vent_factor in 1/h)
         #  1 : Use deterministic, temperature-dependent profile
