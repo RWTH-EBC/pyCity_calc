@@ -269,3 +269,40 @@ class TestBuildingEnergyBalance():
         assert abs(sum_pv_self / (sum_pv_feed + sum_pv_self) - 1) \
                <= 0.001
         assert abs(sum_chp_feed - (p_nom - 2000) * 900 / (3600 * 1000))
+
+    def test_eb_pv_with_bat(self, fixture_building):
+        """
+        Test energy balance with PV, battery and single building
+        """
+
+        build = copy.deepcopy(fixture_building)
+
+        timestep = build.environment.timer.timeDiscretization
+        nb_timesteps = int(365 * 24 * 3600 / timestep)
+
+        build.apartments[0].power_el.loadcurve = np.ones(nb_timesteps) * 1000
+
+        battery = bat.BatteryExtended(environment=build.environment,
+                                      soc_init_ratio=0.5, capacity_kwh=50,
+                                      self_discharge=0, eta_charge=1,
+                                      eta_discharge=1)
+
+        pv = PV.PV(environment=build.environment, area=20, eta=0.15,
+                   temperature_nominal=45,
+                   alpha=0, beta=0, gamma=0, tau_alpha=0.9)
+
+        bes = BES.BES(environment=build.environment)
+
+        bes.addDevice(pv)
+        bes.addDevice(battery)
+
+        build.addEntity(bes)
+
+        buildeb.calc_build_el_eb(build=build)
+
+        pv_self = build.dict_el_eb_res['pv_self']
+        grid_import_dem = build.dict_el_eb_res['grid_import_dem']
+
+        sum_pv_self = sum(pv_self) * timestep / (1000 * 3600)
+        sum_grid_import = sum(grid_import_dem) * timestep / (1000 * 3600)
+

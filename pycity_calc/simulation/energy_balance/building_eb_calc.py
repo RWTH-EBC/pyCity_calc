@@ -1387,7 +1387,8 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
     if bes.hasPv:
         has_pv = True
 
-        pv_gen_array = build.bes.pv.getPower(currentValues=False)
+        pv_gen_array = build.bes.pv.getPower(currentValues=False,
+                                             updatePower=True)
 
     #  Get electric power value
     el_pow_array = build.get_electric_power_curve()
