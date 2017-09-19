@@ -147,8 +147,8 @@ class TestBuildingEnergyBalance():
         el_eh_in_en = sum(el_eh_in) * timestep / (1000 * 3600)
         el_hp_in_en = sum(el_hp_in) * timestep / (1000 * 3600)
 
-        assert abs(sh_en + dhw_en - (q_hp_out_en + q_eh_out_en)) < 0.001
-        assert abs(dhw_en - q_eh_out_en) < 0.001
+        assert sh_en + dhw_en <= (q_hp_out_en + q_eh_out_en)
+        assert dhw_en <= q_eh_out_en
         assert abs(q_eh_out_en - el_eh_in_en) < 0.001
         assert el_hp_in_en <= q_hp_out_en
 
