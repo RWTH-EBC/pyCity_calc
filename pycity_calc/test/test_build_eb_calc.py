@@ -256,6 +256,18 @@ class TestBuildingEnergyBalance():
 
         buildeb.calc_build_el_eb(build=build)
 
+        #  Get results
+
+        sh_energy = build.get_annual_space_heat_demand()
+        dhw_energy = build.get_annual_dhw_demand()
+        el_energy = build.get_annual_el_demand()
+
+        chp_th_power = build.bes.chp.totalQOutput
+        chp_el_power = build.bes.chp.totalPOutput
+
+        chp_th_energy = sum(chp_th_power) * timestep / (100 * 3600)
+        chp_el_energy = sum(chp_el_power) * timestep / (100 * 3600)
+
         chp_self = build.dict_el_eb_res['chp_self']
         chp_feed = build.dict_el_eb_res['chp_feed']
         pv_self = build.dict_el_eb_res['pv_self']
@@ -266,13 +278,21 @@ class TestBuildingEnergyBalance():
         sum_pv_self = sum(pv_self) * timestep / (100 * 3600)
         sum_pv_feed = sum(pv_feed) * timestep / (100 * 3600)
 
+        grid_import_dem = build.dict_el_eb_res['grid_import_dem']
+        sum_grid_import = sum(grid_import_dem) * timestep / (1000 * 3600)
+
+        assert chp_el_energy - (sum_chp_self + sum_chp_feed) <= 0.001
+        assert sh_energy + dhw_energy - chp_th_energy <= 0.001
+        assert el_energy - (sum_chp_self + sum_pv_self + sum_grid_import) \
+               <= 0.001
+
         assert abs(sum_pv_self / (sum_pv_feed + sum_pv_self) - 1) \
                <= 0.001
         assert abs(sum_chp_feed - (p_nom - 2000) * 900 / (3600 * 1000))
 
-    def test_eb_pv_with_bat(self, fixture_building):
+    def test_el_eb_pv(self, fixture_building):
         """
-        Test energy balance with PV, battery and single building
+        Test el. energy balance with PV
         """
 
         build = copy.deepcopy(fixture_building)
@@ -317,14 +337,84 @@ class TestBuildingEnergyBalance():
         assert el_demand - (sum_pv_self + sum_grid_import) <= 0.001
         assert sum_pv_energy - (sum_pv_self + sum_pv_feed) <= 0.001
 
-        # #  Add to results dict
-        # dict_el_eb_res['pv_self'] = pv_self
-        # dict_el_eb_res['pv_feed'] = pv_feed
-        #
-        # dict_el_eb_res['chp_self'] = chp_self
-        # dict_el_eb_res['chp_feed'] = chp_feed
-        #
-        # dict_el_eb_res['grid_import_dem'] = grid_import_dem
-        # dict_el_eb_res['grid_import_hp'] = grid_import_hp
-        # dict_el_eb_res['grid_import_eh'] = grid_import_eh
+    def test_eb_pv_hp_eh(self, fixture_building):
+        """
 
+        """
+
+        build = copy.deepcopy(fixture_building)
+
+        timestep = build.environment.timer.timeDiscretization
+        nb_timesteps = int(365 * 24 * 3600 / timestep)
+
+        build.apartments[0].power_el.loadcurve = np.ones(nb_timesteps) * 1000
+        build.apartments[0].demandSpaceheating.loadcurve = \
+            np.ones(nb_timesteps) * 2000
+
+        # battery = bat.BatteryExtended(environment=build.environment,
+        #                               soc_init_ratio=1, capacity_kwh=10,
+        #                               self_discharge=0, eta_charge=1,
+        #                               eta_discharge=1)
+
+        pv = PV.PV(environment=build.environment, area=20, eta=0.15,
+                   temperature_nominal=45,
+                   alpha=0, beta=0, gamma=0, tau_alpha=0.9)
+
+        bes = BES.BES(environment=build.environment)
+
+        hp = hpsys.heatPumpSimple(environment=build.environment,
+                                  q_nominal=6000)
+
+        eh = ehsys.ElectricalHeaterExtended(environment=build.environment,
+                                            q_nominal=10000)
+
+        tes = sto.thermalEnergyStorageExtended(environment=build.environment,
+                                               t_init=45, t_max=45,
+                                               capacity=300, k_loss=0)
+
+        bes.addDevice(pv)
+        # bes.addDevice(battery)
+        bes.addDevice(hp)
+        bes.addDevice(eh)
+        bes.addDevice(tes)
+
+        build.addEntity(bes)
+
+        buildeb.calc_build_el_eb(build=build)
+
+        sh_energy = build.get_annual_space_heat_demand()
+        dhw_energy = build.get_annual_dhw_demand()
+        el_energy = build.get_annual_el_demand()
+
+        pv_power = pv.getPower(currentValues=False, updatePower=True)
+        sum_pv_energy = sum(pv_power) * timestep / (3600 * 1000)
+
+        hp_th_power = build.bes.heatpump.totalQOutput
+        hp_el_power = build.bes.heatpump.array_el_power_in
+
+        eh_th_power = build.bes.electricalHeater.totalQOutput
+        eh_el_power = build.bes.electricalHeater.totalPConsumption
+
+        sum_hp_th_energy = sum(hp_th_power) * timestep / (1000 * 3600)
+        sum_hp_el_energy = sum(hp_el_power) * timestep / (1000 * 3600)
+        sum_eh_th_energy = sum(eh_th_power) * timestep / (1000 * 3600)
+        sum_eh_el_energy = sum(eh_el_power) * timestep / (1000 * 3600)
+
+        pv_self = build.dict_el_eb_res['pv_self']
+        pv_feed = build.dict_el_eb_res['pv_feed']
+        grid_import_dem = build.dict_el_eb_res['grid_import_dem']
+        grid_import_hp = build.dict_el_eb_res['grid_import_hp']
+        grid_import_eh = build.dict_el_eb_res['grid_import_eh']
+
+        sum_pv_self = sum(pv_self) * timestep / (1000 * 3600)
+        sum_pv_feed = sum(pv_feed) * timestep / (1000 * 3600)
+        sum_grid_import = sum(grid_import_dem) * timestep / (1000 * 3600)
+        sum_grid_import_hp = sum(grid_import_hp) * timestep / (1000 * 3600)
+        sum_grid_import_eh = sum(grid_import_eh) * timestep / (1000 * 3600)
+
+        assert abs(el_energy + sum_hp_el_energy + sum_eh_el_energy\
+               - (sum_pv_self + sum_grid_import + sum_grid_import_hp +
+                  sum_grid_import_eh)) <= 0.001
+        assert abs(sum_hp_el_energy - sum_grid_import_hp) <= 0.001
+        assert abs(sum_eh_el_energy - sum_grid_import_eh) <= 0.001
+        assert abs(sum_pv_energy - (sum_pv_self + sum_pv_feed)) <= 0.001
