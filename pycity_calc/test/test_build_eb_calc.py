@@ -282,27 +282,49 @@ class TestBuildingEnergyBalance():
 
         build.apartments[0].power_el.loadcurve = np.ones(nb_timesteps) * 1000
 
-        battery = bat.BatteryExtended(environment=build.environment,
-                                      soc_init_ratio=0.5, capacity_kwh=50,
-                                      self_discharge=0, eta_charge=1,
-                                      eta_discharge=1)
+        # battery = bat.BatteryExtended(environment=build.environment,
+        #                               soc_init_ratio=1, capacity_kwh=10,
+        #                               self_discharge=0, eta_charge=1,
+        #                               eta_discharge=1)
 
         pv = PV.PV(environment=build.environment, area=20, eta=0.15,
                    temperature_nominal=45,
                    alpha=0, beta=0, gamma=0, tau_alpha=0.9)
 
+        pv_power = pv.getPower(currentValues=False, updatePower=True)
+
+        sum_pv_energy = sum(pv_power) * timestep / (3600 * 1000)
+
         bes = BES.BES(environment=build.environment)
 
         bes.addDevice(pv)
-        bes.addDevice(battery)
+        # bes.addDevice(battery)
 
         build.addEntity(bes)
 
         buildeb.calc_build_el_eb(build=build)
 
         pv_self = build.dict_el_eb_res['pv_self']
+        pv_feed = build.dict_el_eb_res['pv_feed']
         grid_import_dem = build.dict_el_eb_res['grid_import_dem']
 
         sum_pv_self = sum(pv_self) * timestep / (1000 * 3600)
+        sum_pv_feed = sum(pv_feed) * timestep / (1000 * 3600)
         sum_grid_import = sum(grid_import_dem) * timestep / (1000 * 3600)
+
+        el_demand = build.get_annual_el_demand()
+
+        assert el_demand - (sum_pv_self + sum_grid_import) <= 0.001
+        assert sum_pv_energy - (sum_pv_self + sum_pv_feed) <= 0.001
+
+        # #  Add to results dict
+        # dict_el_eb_res['pv_self'] = pv_self
+        # dict_el_eb_res['pv_feed'] = pv_feed
+        #
+        # dict_el_eb_res['chp_self'] = chp_self
+        # dict_el_eb_res['chp_feed'] = chp_feed
+        #
+        # dict_el_eb_res['grid_import_dem'] = grid_import_dem
+        # dict_el_eb_res['grid_import_hp'] = grid_import_hp
+        # dict_el_eb_res['grid_import_eh'] = grid_import_eh
 
