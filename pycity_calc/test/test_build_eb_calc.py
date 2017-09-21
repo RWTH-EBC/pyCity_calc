@@ -198,13 +198,23 @@ class TestBuildingEnergyBalance():
         buildeb.calc_build_el_eb(build=build)
 
         #  Check results
+        sh_energy = build.get_annual_space_heat_demand()
+
         chp_self = build.dict_el_eb_res['chp_self']
         chp_feed = build.dict_el_eb_res['chp_feed']
 
-        sum_chp_self = sum(chp_self) * timestep / (100 * 3600)
-        sum_chp_feed = sum(chp_feed) * timestep / (100 * 3600)
+        sum_chp_self = sum(chp_self) * timestep / (1000 * 3600)
+        sum_chp_feed = sum(chp_feed) * timestep / (1000 * 3600)
 
+        chp_th_power = build.bes.chp.totalQOutput
+        chp_el_power = build.bes.chp.totalPOutput
+
+        chp_th_energy = sum(chp_th_power) * timestep / (1000 * 3600)
+        chp_el_energy = sum(chp_el_power) * timestep / (1000 * 3600)
+
+        assert abs(chp_el_energy - (sum_chp_self + sum_chp_feed)) <= 0.001
         assert abs(sum_chp_self / (sum_chp_self + sum_chp_feed) - 1/4) < 0.001
+        assert chp_th_energy >= sh_energy
 
     def test_energy_balance_without_losses(self, fixture_building):
         """
