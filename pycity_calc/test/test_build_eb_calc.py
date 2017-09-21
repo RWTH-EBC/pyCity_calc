@@ -370,7 +370,7 @@ class TestBuildingEnergyBalance():
 
         tes = sto.thermalEnergyStorageExtended(environment=build.environment,
                                                t_init=45, t_max=45,
-                                               capacity=300, k_loss=0)
+                                               capacity=100, k_loss=0)
 
         bes.addDevice(pv)
         # bes.addDevice(battery)
@@ -380,6 +380,7 @@ class TestBuildingEnergyBalance():
 
         build.addEntity(bes)
 
+        buildeb.calc_build_therm_eb(build=build)
         buildeb.calc_build_el_eb(build=build)
 
         sh_energy = build.get_annual_space_heat_demand()
@@ -415,6 +416,9 @@ class TestBuildingEnergyBalance():
         assert abs(el_energy + sum_hp_el_energy + sum_eh_el_energy\
                - (sum_pv_self + sum_grid_import + sum_grid_import_hp +
                   sum_grid_import_eh)) <= 0.001
-        assert abs(sum_hp_el_energy - sum_grid_import_hp) <= 0.001
-        assert abs(sum_eh_el_energy - sum_grid_import_eh) <= 0.001
+        assert sum_hp_el_energy <= sum_grid_import_hp + sum_pv_self
+        assert sum_eh_el_energy <= sum_grid_import_eh + sum_pv_self
         assert abs(sum_pv_energy - (sum_pv_self + sum_pv_feed)) <= 0.001
+
+        assert abs(sh_energy + dhw_energy - (sum_hp_th_energy +
+                                             sum_eh_th_energy)) <= 0.1

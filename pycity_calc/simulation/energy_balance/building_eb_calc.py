@@ -1419,11 +1419,24 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
         p_el_chp_remain = 0
         p_pv_remain = 0
 
-        #  1. Use PV electric energy
+        #  Get remaining power, depending on system
         if has_pv:
-
             p_pv = pv_gen_array[i]
             p_pv_remain = p_pv + 0.0
+        if has_hp:
+            #  Get el. power demand of heat pump
+            p_el_hp = build.bes.heatpump.array_el_power_in[i]
+            p_el_hp_remain = p_el_hp + 0.0
+        if has_eh:
+            #  Get el. power demand of heat pump
+            p_el_eh = build.bes.electricalHeater.totalPConsumption[i]
+            p_el_eh_remain = p_el_eh + 0.0
+        if has_chp:
+            p_el_chp = build.bes.chp.totalPOutput[i]
+            p_el_chp_remain = p_el_chp + 0.0
+
+        #  1. Use PV electric energy
+        if has_pv:
 
             #  El. demand
             if p_pv_remain >= p_el_remain:
@@ -1440,10 +1453,6 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
             #  HP
             if has_hp:
 
-                #  Get el. power demand of heat pump
-                p_el_hp = build.bes.heatpump.array_el_power_in[i]
-                p_el_hp_remain = p_el_hp + 0.0
-
                 if p_pv_remain >= p_el_hp_remain:
                     #  Cover complete HP demand with PV power
                     p_pv_remain -= p_el_hp_remain
@@ -1458,10 +1467,6 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
             #  EH
             if has_eh:
 
-                #  Get el. power demand of heat pump
-                p_el_eh = build.bes.electricalHeater.totalPConsumption[i]
-                p_el_eh_remain = p_el_eh + 0.0
-
                 if p_pv_remain >= p_el_eh_remain:
                     #  Cover complete EH demand with PV power
                     p_pv_remain -= p_el_eh_remain
@@ -1475,9 +1480,6 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
 
         #  2. Use CHP electric energy
         if has_chp:
-
-            p_el_chp = build.bes.chp.totalPOutput[i]
-            p_el_chp_remain = p_el_chp + 0.0
 
             #  El. demand
             if p_el_chp_remain >= p_el_remain:
