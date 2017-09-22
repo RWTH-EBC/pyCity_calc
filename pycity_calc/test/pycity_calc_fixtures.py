@@ -64,7 +64,8 @@ def fixture_environment(year=2010, timestep=900,
     #  Generate emission object of pycity_calc
     emission = co2.Emissions(year=year)
 
-    fixture_environment = env.EnvironmentExtended(timer=timer, weather=weather,
+    fixture_environment = env.EnvironmentExtended(timer=timer,
+                                                  weather=weather,
                                                   prices=market,
                                                   location=location,
                                                   co2em=emission)

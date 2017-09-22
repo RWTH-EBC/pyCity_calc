@@ -1551,11 +1551,13 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
                     if p_pv_remain >= p_bat_charge_remain:
                         #  Fully charge battery
                         p_pv_remain -= p_bat_charge_remain
+                        pv_self[i] += p_bat_charge_remain
                         p_bat_charge += p_bat_charge_remain
                         p_bat_charge_remain = 0
                     else:
                         #  Partially charge battery
                         p_bat_charge_remain -= p_pv_remain
+                        pv_self[i] += p_pv_remain
                         p_bat_charge += p_pv_remain
                         p_pv_remain = 0
 
@@ -1566,11 +1568,13 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
                     if p_el_chp_remain >= p_bat_charge:
                         #  Fully charge battery
                         p_el_chp_remain -= p_bat_charge_remain
+                        chp_self[i] += p_bat_charge_remain
                         p_bat_charge += p_bat_charge_remain
                         p_bat_charge_remain = 0
                     else:
                         #  Partially charge battery
                         p_bat_charge_remain -= p_el_chp_remain
+                        chp_self[i] += p_el_chp_remain
                         p_bat_charge += p_el_chp_remain
                         p_el_chp_remain = 0
 
