@@ -8,14 +8,13 @@ python:
 install:
   - pip install --upgrade pip setuptools wheel
   - pip install --only-binary=numpy,scipy numpy scipy
-  - pip install networkx=1.11
+  - pip install networkx==1.11
   - pip install xlrd
   - pip install utm
   - pip install pypower
   - pip install sklearn
   - pip install shapely
   - pip install pyproj
-  - pip install pyxb==1.2.5
   - pip install -e git+git@github.com:RWTH-EBC/TEASER.git@issue297_vdi_core_dev_jsc#egg=teaser
   - pip install -e git+git@github.com:RWTH-EBC/uesgraphs.git#egg=uesgraphs
   - pip install -e git+git@github.com:RWTH-EBC/richardsonpy.git#egg=richardsonpy
