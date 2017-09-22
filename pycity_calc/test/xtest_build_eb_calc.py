@@ -654,3 +654,6 @@ class TestBuildingEnergyBalance():
 
         assert abs(sh_energy + dhw_energy - (sum_hp_th_energy +
                                              sum_eh_th_energy)) <= 0.1
+
+    def test_pv_with_battery_eb(self):
+
