@@ -583,11 +583,6 @@ class TestBuildingEnergyBalance():
         build.apartments[0].demandSpaceheating.loadcurve = \
             np.ones(nb_timesteps) * 2000
 
-        # battery = bat.BatteryExtended(environment=build.environment,
-        #                               soc_init_ratio=1, capacity_kwh=10,
-        #                               self_discharge=0, eta_charge=1,
-        #                               eta_discharge=1)
-
         pv = PV.PV(environment=build.environment, area=20, eta=0.15,
                    temperature_nominal=45,
                    alpha=0, beta=0, gamma=0, tau_alpha=0.9)
@@ -605,7 +600,6 @@ class TestBuildingEnergyBalance():
                                                capacity=100, k_loss=0)
 
         bes.addDevice(pv)
-        # bes.addDevice(battery)
         bes.addDevice(hp)
         bes.addDevice(eh)
         bes.addDevice(tes)
