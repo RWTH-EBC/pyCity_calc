@@ -1398,10 +1398,22 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
 
     #  Initial result arrays
     pv_self = np.zeros(len(el_pow_array))
+    pv_self_dem = np.zeros(len(el_pow_array))
+    pv_self_hp = np.zeros(len(el_pow_array))
+    pv_self_eh = np.zeros(len(el_pow_array))
+    pv_self_bat = np.zeros(len(el_pow_array))
     pv_feed = np.zeros(len(el_pow_array))
 
     chp_self = np.zeros(len(el_pow_array))
+    chp_self_dem = np.zeros(len(el_pow_array))
+    chp_self_hp = np.zeros(len(el_pow_array))
+    chp_self_eh = np.zeros(len(el_pow_array))
+    chp_self_bat = np.zeros(len(el_pow_array))
     chp_feed = np.zeros(len(el_pow_array))
+
+    bat_out_dem = np.zeros(len(el_pow_array))
+    bat_out_hp = np.zeros(len(el_pow_array))
+    bat_out_eh = np.zeros(len(el_pow_array))
 
     grid_import_dem = np.zeros(len(el_pow_array))
     grid_import_hp = np.zeros(len(el_pow_array))
@@ -1443,11 +1455,13 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
                 #  Cover complete el. demand with PV power
                 p_pv_remain -= p_el_remain
                 pv_self[i] += p_el_remain
+                pv_self_dem[i] += p_el_remain
                 p_el_remain = 0
             else:
                 #  Cover part of el. power with PV power
                 p_el_remain -= p_pv_remain
                 pv_self[i] += p_pv_remain
+                pv_self_dem[i] += p_pv_remain
                 p_pv_remain = 0
 
             #  HP
@@ -1457,11 +1471,13 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
                     #  Cover complete HP demand with PV power
                     p_pv_remain -= p_el_hp_remain
                     pv_self[i] += p_el_hp_remain
+                    pv_self_hp[i] += p_el_hp_remain
                     p_el_hp_remain = 0
                 else:
                     #  Cover part of HP power with PV power
                     p_el_hp_remain -= p_pv_remain
                     pv_self[i] += p_pv_remain
+                    pv_self_hp[i] += p_pv_remain
                     p_pv_remain = 0
 
             #  EH
@@ -1471,11 +1487,13 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
                     #  Cover complete EH demand with PV power
                     p_pv_remain -= p_el_eh_remain
                     pv_self[i] += p_el_eh_remain
+                    pv_self_eh[i] += p_el_eh_remain
                     p_el_eh_remain = 0
                 else:
                     #  Cover part of EH power with PV power
                     p_el_eh_remain -= p_pv_remain
                     pv_self[i] += p_pv_remain
+                    pv_self_eh[i] += p_pv_remain
                     p_pv_remain = 0
 
         #  2. Use CHP electric energy
@@ -1486,11 +1504,13 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
                 #  Cover complete el. demand with CHP power
                 p_el_chp_remain -= p_el_remain
                 chp_self[i] += p_el_remain
+                chp_self_dem[i] += p_el_remain
                 p_el_remain = 0
             else:
                 #  Cover part of el. power with CHP power
                 p_el_remain -= p_el_chp_remain
                 chp_self[i] += p_el_chp_remain
+                chp_self_dem[i] += p_el_chp_remain
                 p_el_chp_remain = 0
 
             #  HP
@@ -1500,11 +1520,13 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
                     #  Cover complete HP demand with CHP power
                     p_el_chp_remain -= p_el_hp_remain
                     chp_self[i] += p_el_hp_remain
+                    chp_self_hp[i] += p_el_hp_remain
                     p_el_hp_remain = 0
                 else:
                     #  Cover part of HP power with CHP power
                     p_el_hp_remain -= p_el_chp_remain
                     chp_self[i] += p_el_chp_remain
+                    chp_self_hp[i] += p_el_chp_remain
                     p_el_chp_remain = 0
 
             #  EH
@@ -1514,11 +1536,13 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
                     #  Cover complete EH demand with CHP power
                     p_el_chp_remain -= p_el_eh_remain
                     chp_self[i] += p_el_eh_remain
+                    chp_self_eh[i] += p_el_eh_remain
                     p_el_eh_remain = 0
                 else:
                     #  Cover part of EH power with CHP power
                     p_el_eh_remain -= p_el_chp_remain
                     chp_self[i] += p_el_chp_remain
+                    chp_self_eh[i] += p_el_chp_remain
                     p_el_chp_remain = 0
 
         #  Bat
@@ -1552,12 +1576,14 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
                         #  Fully charge battery
                         p_pv_remain -= p_bat_charge_remain
                         pv_self[i] += p_bat_charge_remain
+                        pv_self_bat[i] += p_bat_charge_remain
                         p_bat_charge += p_bat_charge_remain
                         p_bat_charge_remain = 0
                     else:
                         #  Partially charge battery
                         p_bat_charge_remain -= p_pv_remain
                         pv_self[i] += p_pv_remain
+                        pv_self_bat[i] += p_pv_remain
                         p_bat_charge += p_pv_remain
                         p_pv_remain = 0
 
@@ -1569,12 +1595,14 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
                         #  Fully charge battery
                         p_el_chp_remain -= p_bat_charge_remain
                         chp_self[i] += p_bat_charge_remain
+                        chp_self_bat[i] += p_bat_charge_remain
                         p_bat_charge += p_bat_charge_remain
                         p_bat_charge_remain = 0
                     else:
                         #  Partially charge battery
                         p_bat_charge_remain -= p_el_chp_remain
                         chp_self[i] += p_el_chp_remain
+                        chp_self_bat[i] += p_el_chp_remain
                         p_bat_charge += p_el_chp_remain
                         p_el_chp_remain = 0
 
@@ -1584,11 +1612,13 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
                     #  Fully uncharge battery
                     p_el_remain -= p_bat_disch_remain
                     p_bat_discharge += p_bat_disch_remain
+                    bat_out_dem[i] += p_bat_disch_remain
                     p_bat_disch_remain = 0
                 else:
                     #  Partially discharge battery
                     p_bat_disch_remain -= p_el_remain
                     p_bat_discharge += p_el_remain
+                    bat_out_dem[i] += p_el_remain
                     p_el_remain = 0
 
             if has_hp:
@@ -1599,11 +1629,13 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
                         #  Fully uncharge battery
                         p_el_hp_remain -= p_bat_disch_remain
                         p_bat_discharge += p_bat_disch_remain
+                        bat_out_hp[i] += p_bat_disch_remain
                         p_bat_disch_remain = 0
                     else:
                         #  Partially discharge battery
                         p_bat_disch_remain -= p_el_hp_remain
                         p_bat_discharge += p_el_hp_remain
+                        bat_out_hp[i] += p_el_hp_remain
                         p_el_hp_remain = 0
 
             if has_eh:
@@ -1614,11 +1646,13 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
                         #  Fully uncharge battery
                         p_el_eh_remain -= p_bat_disch_remain
                         p_bat_discharge += p_bat_disch_remain
+                        bat_out_eh[i] += p_bat_disch_remain
                         p_bat_disch_remain = 0
                     else:
                         #  Partially discharge battery
                         p_bat_disch_remain -= p_el_eh_remain
                         p_bat_discharge += p_el_eh_remain
+                        bat_out_eh[i] += p_el_eh_remain
                         p_el_eh_remain = 0
 
             #  Logic checks
@@ -1655,12 +1689,26 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
     dict_el_eb_res['pv_self'] = pv_self
     dict_el_eb_res['pv_feed'] = pv_feed
 
+    dict_el_eb_res['pv_self_dem'] = pv_self_dem
+    dict_el_eb_res['pv_self_hp'] = pv_self_hp
+    dict_el_eb_res['pv_self_eh'] = pv_self_eh
+    dict_el_eb_res['pv_self_bat'] = pv_self_bat
+
     dict_el_eb_res['chp_self'] = chp_self
     dict_el_eb_res['chp_feed'] = chp_feed
+
+    dict_el_eb_res['chp_self_dem'] = chp_self_dem
+    dict_el_eb_res['chp_self_hp'] = chp_self_hp
+    dict_el_eb_res['chp_self_eh'] = chp_self_eh
+    dict_el_eb_res['chp_self_bat'] = chp_self_bat
 
     dict_el_eb_res['grid_import_dem'] = grid_import_dem
     dict_el_eb_res['grid_import_hp'] = grid_import_hp
     dict_el_eb_res['grid_import_eh'] = grid_import_eh
+
+    dict_el_eb_res['bat_out_dem'] = bat_out_dem
+    dict_el_eb_res['bat_out_hp'] = bat_out_hp
+    dict_el_eb_res['bat_out_eh'] = bat_out_eh
 
     #  Add dict to building
     build.dict_el_eb_res = dict_el_eb_res
