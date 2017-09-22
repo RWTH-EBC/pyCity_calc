@@ -713,3 +713,73 @@ class TestBuildingEnergyBalance():
         assert abs(sum_pv_energy - sum_pv_self - sum_pv_feed) <= 0.001
         assert abs(el_energy - sum_grid_import - sum_bat_discharge + \
                sum_bat_charge - sum_pv_self) <= 0.001
+
+    def test_pv_bat_chp_eh_boiler(self, fixture_building):
+        """
+
+        """
+        build = copy.deepcopy(fixture_building)
+
+        timestep = build.environment.timer.timeDiscretization
+        nb_timesteps = int(365 * 24 * 3600 / timestep)
+
+        bes = BES.BES(environment=build.environment)
+
+        battery = bat.BatteryExtended(environment=build.environment,
+                                      soc_init_ratio=0, capacity_kwh=100,
+                                      self_discharge=0, eta_charge=1,
+                                      eta_discharge=1)
+
+        pv = PV.PV(environment=build.environment, area=20, eta=0.15,
+                   temperature_nominal=45,
+                   alpha=0, beta=0, gamma=0, tau_alpha=0.9)
+
+        eh = ehsys.ElectricalHeaterExtended(environment=build.environment,
+                                            q_nominal=50000)
+
+        tes = sto.thermalEnergyStorageExtended(environment=build.environment,
+                                               capacity=1000, k_loss=0,
+                                               t_init=70)
+
+        q_nom = 10000
+        eta_total = 1
+
+        p_nom = asue.calc_el_power_with_th_power(th_power=q_nom,
+                                                 eta_total=eta_total)
+
+        chp = chpsys.ChpExtended(environment=build.environment,
+                                 q_nominal=q_nom,
+                                 p_nominal=p_nom, eta_total=eta_total)
+
+        boiler = boil.BoilerExtended(environment=build.environment,
+                                     q_nominal=50000, eta=1)
+
+        bes.addMultipleDevices([battery, pv, eh, tes, chp, boiler])
+
+        build.addEntity(bes)
+
+        sh_day = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                           100, 100, 100, 100, 30, 30, 30, 30, 30, 30, 30, 30,
+                           10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
+                           5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+                           2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+                           ]) * 1000
+
+        el_day = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                           20, 20, 20, 20, 30, 30, 30, 30, 30, 30, 30, 30,
+                           10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
+                           5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+                           100, 100, 100, 100, 2, 2, 2, 2, 2, 2, 2, 2,
+                           50, 50, 50, 50, 0, 0, 0, 0, 0, 0, 0, 0,
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+                           ]) * 1000
+
+        build.apartments[0].demandSpaceheating.loadcurve = np.tile(sh_day, 365)
+        build.apartments[0].power_el.loadcurve = np.tile(el_day, 365)
+
+        buildeb.calc_build_therm_eb(build=build)
+        buildeb.calc_build_el_eb(build=build)
