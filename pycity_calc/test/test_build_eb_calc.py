@@ -1379,6 +1379,273 @@ class TestBuildingEnergyBalance():
     #                                                        + sum_grid_import_dem
     #                                                        )) <= 0.001
 
+    def test_pv_bat_chp_eh_boiler_static(self, fixture_building):
+        """
+
+        """
+        build = copy.deepcopy(fixture_building)
+
+        timestep = build.environment.timer.timeDiscretization
+        nb_timesteps = int(365 * 24 * 3600 / timestep)
+
+        bes = BES.BES(environment=build.environment)
+
+        soc_init = 0
+
+        # battery = bat.BatteryExtended(environment=build.environment,
+        #                               soc_init_ratio=soc_init,
+        #                               capacity_kwh=100,
+        #                               self_discharge=0, eta_charge=1,
+        #                               eta_discharge=1)
+
+        pv = PV.PV(environment=build.environment, area=100, eta=0.15,
+                   temperature_nominal=45,
+                   alpha=0, beta=0, gamma=0, tau_alpha=0.9)
+
+        eh = ehsys.ElectricalHeaterExtended(environment=build.environment,
+                                            q_nominal=50000)
+
+        tes = sto.thermalEnergyStorageExtended(environment=build.environment,
+                                               capacity=1, k_loss=0,
+                                               t_init=70)
+
+        q_nom = 10000
+        eta_total = 1
+
+        p_nom = asue.calc_el_power_with_th_power(th_power=q_nom,
+                                                 eta_total=eta_total)
+
+        chp = chpsys.ChpExtended(environment=build.environment,
+                                 q_nominal=q_nom,
+                                 p_nominal=p_nom, eta_total=eta_total)
+
+        # boiler = boil.BoilerExtended(environment=build.environment,
+        #                              q_nominal=50000, eta=1)
+
+        bes.addMultipleDevices([
+            # battery,
+            pv,
+            eh,
+            tes,
+            chp,
+            # boiler
+        ])
+
+        build.addEntity(bes)
+
+        sh_day = np.ones(nb_timesteps) * 15000
+        el_day = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                           20, 20, 20, 20, 30, 30, 30, 30, 30, 30, 30, 30,
+                           10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
+                           5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+                           100, 100, 100, 100, 2, 2, 2, 2, 2, 2, 2, 2,
+                           50, 50, 50, 50, 0, 0, 0, 0, 0, 0, 0, 0,
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+                           ]) * 100
+
+        build.apartments[0].demandSpaceheating.loadcurve = sh_day
+        build.apartments[0].power_el.loadcurve = np.tile(el_day, 365)
+
+        #  Calculate energy balances
+        buildeb.calc_build_therm_eb(build=build)
+        buildeb.calc_build_el_eb(build=build)
+
+        #  Analyse results
+
+        #  Demands
+        sh_energy = build.get_annual_space_heat_demand()
+        dhw_energy = build.get_annual_dhw_demand()
+        el_energy = build.get_annual_el_demand()
+
+        #  PV
+        pv_power = pv.getPower(currentValues=False, updatePower=True)
+        sum_pv_energy = sum(pv_power) * timestep / (3600 * 1000)
+
+        #  CHP
+        q_chp_out = build.bes.chp.totalQOutput
+        p_el_chp_out = build.bes.chp.totalPOutput
+        fuel_chp_in = build.bes.chp.array_fuel_power
+
+        chp_th_energy = sum(q_chp_out) * timestep / (1000 * 3600)  # in kWh
+        fuel_chp_energy = sum(fuel_chp_in) * timestep / (1000 * 3600)  # in kWh
+        chp_el_energy = sum(p_el_chp_out) * timestep / (1000 * 3600)  # in kWh
+
+        # #  Boiler
+        # q_boiler = build.bes.boiler.totalQOutput
+        # sum_q_boiler = sum(q_boiler) * timestep / (1000 * 3600)  # in kWh
+        #
+        # fuel_in = build.bes.boiler.array_fuel_power
+        # fuel_boiler_energy = sum(fuel_in) * timestep / (1000 * 3600)  # in kWh
+
+        #  Electric heater
+        eh_th_power = build.bes.electricalHeater.totalQOutput
+        eh_el_power = build.bes.electricalHeater.totalPConsumption
+
+        sum_eh_th_energy = sum(eh_th_power) * timestep / (1000 * 3600)
+        sum_eh_el_energy = sum(eh_el_power) * timestep / (1000 * 3600)
+
+        #  Thermal storage
+        q_tes_in = build.bes.tes.array_q_charge
+        q_tes_out = build.bes.tes.array_q_discharge
+
+        sum_q_tes_in = sum(q_tes_in) * timestep / (1000 * 3600)
+        sum_q_tes_out = sum(q_tes_out) * timestep / (1000 * 3600)
+
+        # #  Battery
+        # bat_in = build.bes.battery.totalPCharge
+        # bat_out = build.bes.battery.totalPDischarge
+        #
+        # sum_bat_in = sum(bat_in) * timestep / (1000 * 3600)
+        # sum_bat_out = sum(bat_out) * timestep / (1000 * 3600)
+
+        pv_self = build.dict_el_eb_res['pv_self']
+        pv_feed = build.dict_el_eb_res['pv_feed']
+        pv_self_dem = build.dict_el_eb_res['pv_self_dem']
+        pv_self_eh = build.dict_el_eb_res['pv_self_eh']
+        # pv_self_bat = build.dict_el_eb_res['pv_self_bat']
+
+        chp_self_dem = build.dict_el_eb_res['chp_self_dem']
+        chp_self = build.dict_el_eb_res['chp_self']
+        chp_feed = build.dict_el_eb_res['chp_feed']
+        # chp_self_bat = build.dict_el_eb_res['chp_self_bat']
+        chp_self_eh = build.dict_el_eb_res['chp_self_eh']
+
+        grid_import_dem = build.dict_el_eb_res['grid_import_dem']
+        grid_import_eh = build.dict_el_eb_res['grid_import_eh']
+
+        # bat_out_dem = build.dict_el_eb_res['bat_out_dem']
+        # bat_out_eh = build.dict_el_eb_res['bat_out_eh']
+
+        sum_pv_self = sum(pv_self) * timestep / (1000 * 3600)
+        sum_pv_feed = sum(pv_feed) * timestep / (1000 * 3600)
+        sum_pv_self_dem = sum(pv_self_dem) * timestep / (1000 * 3600)
+        sum_pv_self_eh = sum(pv_self_eh) * timestep / (1000 * 3600)
+        # sum_pv_self_bat = sum(pv_self_bat) * timestep / (1000 * 3600)
+
+        sum_chp_self_dem = sum(chp_self_dem) * timestep / (1000 * 3600)
+        sum_chp_self = sum(chp_self) * timestep / (1000 * 3600)
+        sum_chp_feed = sum(chp_feed) * timestep / (1000 * 3600)
+        # sum_chp_self_bat = sum(chp_self_bat) * timestep / (1000 * 3600)
+        sum_chp_self_eh = sum(chp_self_eh) * timestep / (1000 * 3600)
+
+        sum_grid_import_dem = sum(grid_import_dem) * timestep / (1000 * 3600)
+        sum_grid_import_eh = sum(grid_import_eh) * timestep / (1000 * 3600)
+
+        # sum_bat_out_dem = sum(bat_out_dem) * timestep / (1000 * 3600)
+        # sum_bat_out_eh = sum(bat_out_eh) * timestep / (1000 * 3600)
+
+        assert sum_pv_energy >= 0
+        assert chp_th_energy >= 0
+        assert fuel_chp_energy >= 0
+        assert chp_el_energy >= 0
+        assert sum_eh_th_energy >= 0
+        assert sum_eh_el_energy >= 0
+        assert sum_pv_self >= 0
+        assert sum_pv_feed >= 0
+        assert sum_pv_self_dem >= 0
+        assert sum_pv_self_eh >= 0
+        assert sum_chp_self_dem >= 0
+        assert sum_chp_self >= 0
+        assert sum_chp_feed >= 0
+        assert sum_chp_self_eh >= 0
+        assert sum_grid_import_dem >= 0
+        assert sum_grid_import_eh >= 0
+
+        #  Assert PV energy balance
+        assert abs(sum_pv_energy -
+                   (sum_pv_feed
+                    + sum_pv_self_dem
+                    + sum_pv_self_eh
+                    # + sum_pv_self_bat
+                    )) <= 0.001
+
+        assert abs(sum_pv_self - (
+            sum_pv_self_dem
+            + sum_pv_self_eh
+            # + sum_pv_self_bat
+        )) <= 0.001
+
+        #  Assert CHP internal energy balance
+        assert abs(fuel_chp_energy - (chp_th_energy + chp_el_energy)) <= 0.001
+
+        #  Assert CHP electric energy balance
+        assert abs(fuel_chp_energy - chp_th_energy) - \
+               (sum_chp_feed + sum_chp_self_dem
+                # + sum_chp_self_bat
+                + sum_chp_self_eh) <= 0.001
+
+        assert abs(sum_chp_self - (
+            # sum_chp_self_bat
+            + sum_chp_self_dem
+            + sum_chp_self_eh)) \
+               <= 0.001
+
+        # #  Assert boiler energy balance
+        # assert abs(fuel_boiler_energy - sum_q_boiler) <= 0.001
+
+        #  Assert electric heater energy balance
+        assert abs(sum_eh_th_energy - sum_eh_el_energy) <= 0.001
+        assert abs(sum_eh_el_energy
+                   - (sum_pv_self_eh
+                      + sum_chp_self_eh
+                      + sum_grid_import_eh
+                      # + sum_bat_out_eh
+                      )) <= 0.001
+
+        #  Assert net thermal energy balance
+        assert abs(sh_energy + dhw_energy
+                   - (chp_th_energy
+                      # + sum_q_boiler
+                      + sum_eh_th_energy
+                      + sum_q_tes_out
+                      - sum_q_tes_in
+                      )) <= 0.001
+
+        #  Assert net electric energy balance
+        assert abs(el_energy - (sum_chp_self_dem + sum_pv_self_dem +
+                                sum_grid_import_dem
+                                # + sum_bat_out_dem
+                                )) <= 0.001
+
+        # #  Assert battery energy balance
+        # delta_bat_kWh = (build.bes.battery.soc_ratio_current - soc_init) * \
+        #                 build.bes.battery.get_battery_capacity_in_kwh()
+        # assert abs(delta_bat_kWh - (sum_bat_in - sum_bat_out)) <= 0.001
+        #
+        # assert abs(sum_bat_in - (sum_pv_self_bat + sum_chp_self_bat)) <= 0.001
+        #
+        # assert abs(sum_bat_out - (sum_bat_out_dem + sum_bat_out_eh)) <= 0.001
+
+        assert abs(sh_energy + dhw_energy
+                   + el_energy
+                   - (chp_th_energy
+                      + sum_chp_self_dem
+                      # + sum_q_boiler
+                      + sum_eh_th_energy
+                      - sum_q_tes_in
+                      + sum_q_tes_out
+                      + sum_pv_self_dem
+                      + sum_grid_import_dem
+                      # - sum_bat_in
+                      # + sum_bat_out
+                      ))
+
+        assert abs(sh_energy
+                   + dhw_energy
+                   + el_energy
+                   - (fuel_chp_energy
+                      - sum_chp_feed
+                      # + fuel_boiler_energy
+                      + sum_grid_import_eh
+                      + sum_pv_self_eh
+                      + sum_pv_self_dem
+                      + sum_grid_import_dem
+                      - sum_q_tes_in
+                      + sum_q_tes_out
+                      # - sum_bat_in
+                      # + sum_bat_out
+                      )) <= 0.001
 
     def test_pv_bat_chp_eh_boiler(self, fixture_building):
         """
