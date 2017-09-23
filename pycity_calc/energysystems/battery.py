@@ -95,7 +95,7 @@ class BatteryExtended(Batt.Battery):
 
     def get_battery_capacity_in_kwh(self):
         """
-        Returns battery capacity in kwh.
+        Returns maximum battery capacity in kwh.
 
         Returns
         -------
