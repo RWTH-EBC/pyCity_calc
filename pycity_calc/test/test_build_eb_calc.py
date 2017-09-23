@@ -707,7 +707,7 @@ class TestBuildingEnergyBalance():
 
         build.apartments[0].power_el.loadcurve = np.ones(nb_timesteps) * 1000
 
-        pv = PV.PV(environment=build.environment, area=20, eta=0.15,
+        pv = PV.PV(environment=build.environment, area=100, eta=0.15,
                    temperature_nominal=45,
                    alpha=0, beta=0, gamma=0, tau_alpha=0.9)
 
@@ -796,26 +796,48 @@ class TestBuildingEnergyBalance():
         sum_eh_el_energy = sum(eh_el_power) * timestep / (1000 * 3600)
 
         pv_self = build.dict_el_eb_res['pv_self']
+        pv_self_dem = build.dict_el_eb_res['pv_self_dem']
+        pv_self_eh = build.dict_el_eb_res['pv_self_eh']
         pv_feed = build.dict_el_eb_res['pv_feed']
         grid_import_dem = build.dict_el_eb_res['grid_import_dem']
         grid_import_hp = build.dict_el_eb_res['grid_import_hp']
         grid_import_eh = build.dict_el_eb_res['grid_import_eh']
 
         sum_pv_self = sum(pv_self) * timestep / (1000 * 3600)
+        sum_pv_self_dem = sum(pv_self_dem) * timestep / (1000 * 3600)
+        sum_pv_self_eh = sum(pv_self_eh) * timestep / (1000 * 3600)
         sum_pv_feed = sum(pv_feed) * timestep / (1000 * 3600)
-        sum_grid_import = sum(grid_import_dem) * timestep / (1000 * 3600)
+
+        sum_grid_import_dem = sum(grid_import_dem) * timestep / (1000 * 3600)
         sum_grid_import_hp = sum(grid_import_hp) * timestep / (1000 * 3600)
         sum_grid_import_eh = sum(grid_import_eh) * timestep / (1000 * 3600)
 
+        #  Thermal storage
+        q_tes_in = build.bes.tes.array_q_charge
+        q_tes_out = build.bes.tes.array_q_discharge
+
+        sum_q_tes_in = sum(q_tes_in) * timestep / (1000 * 3600)
+        sum_q_tes_out = sum(q_tes_out) * timestep / (1000 * 3600)
+
         assert abs(el_energy + sum_hp_el_energy + sum_eh_el_energy\
-               - (sum_pv_self + sum_grid_import + sum_grid_import_hp +
+               - (sum_pv_self + sum_grid_import_dem + sum_grid_import_hp +
                   sum_grid_import_eh)) <= 0.001
         assert sum_hp_el_energy <= sum_grid_import_hp + sum_pv_self
         assert sum_eh_el_energy <= sum_grid_import_eh + sum_pv_self
         assert abs(sum_pv_energy - (sum_pv_self + sum_pv_feed)) <= 0.001
 
         assert abs(sh_energy + dhw_energy - (sum_hp_th_energy +
-                                             sum_eh_th_energy)) <= 0.1
+                                             sum_eh_th_energy)) <= 0.001
+
+        #  Assert total energy balance
+        assert abs(sh_energy + dhw_energy
+                   + el_energy - (sum_hp_th_energy
+                                  + sum_eh_th_energy
+                                  + sum_pv_self_dem
+                                  + sum_grid_import_dem
+                                  - sum_q_tes_in
+                                  + sum_q_tes_out)) <= 0.001
+
 
     def test_pv_with_battery_eb(self, fixture_building):
         """
