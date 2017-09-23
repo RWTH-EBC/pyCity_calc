@@ -93,15 +93,16 @@ class CityEBCalculator(object):
 
         #  Loop over buildings, which are not connected to energy networks
         for n in self._list_single_build:
+
+            print('Process stand-alone building with id: ', n)
+
             building = self.city.node[n]['entity']
 
             #  Calculate single building thermal energy balance
-            beb.calc_build_therm_eb(build=building)
+            beb.calc_build_therm_eb(build=building, id=n)
 
             #  Calculate single building electrical energy balance
-
-
-
+            beb.calc_build_el_eb(build=building)
 
         #  Loop over subcities (energy network interconnected buildings)
 
@@ -109,7 +110,7 @@ class CityEBCalculator(object):
 
             #  Estimate energy network losses
 
-        #  Electrical energy balance of subcity
+            #  Electrical energy balance of subcity
 
 
 if __name__ == '__main__':
@@ -360,5 +361,27 @@ if __name__ == '__main__':
         file_path = os.path.join(this_path, 'input', filename)
         pickle.dump(city_object, open(file_path, mode='wb'))
 
+    #  Upscale boiler size of building 1006
+    # city_object.node[1006]['entity'].bes.boiler.qNominal *= 10
+    # city_object.node[1006]['entity'].bes.tes.capacity *= 10
+    # city_object.node[1006]['entity'].bes.tes.t_current = 80
+    #
+    # print(city_object.node[1006]['entity'].bes.boiler.qNominal)
+    # print(city_object.node[1006]['entity'].bes.tes.capacity)
+    # print(city_object.node[1006]['entity'].bes.tes.t_current)
+    #
+    # sh_power = city_object.node[1006]['entity'].get_space_heating_power_curve()
+    # dhw_power = city_object.node[1006]['entity'].get_electric_power_curve()
+    #
+    # import matplotlib.pyplot as plt
+    #
+    # plt.plot(sh_power)
+    # plt.plot(dhw_power)
+    # plt.show()
+    # plt.close()
+
     # Construct energy balance
     energy_balance = CityEBCalculator(city=city_object)
+
+    #  Calc. city energy balance
+    energy_balance.calc_city_energy_balance()

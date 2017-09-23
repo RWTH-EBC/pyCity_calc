@@ -796,9 +796,6 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                             elif dhw_pow_remain - \
                                     (q_nom_eh - sh_pow_remain) < 0:
 
-                                if q_tes_in is None:
-                                    q_tes_in = 0
-
                                 # Add eh power to CHP and boiler power to load
                                 #  storage
                                 q_tes_in += q_nom_eh - sh_pow_remain - \
@@ -821,6 +818,9 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
 
                     q_out_max = tes.calc_storage_q_out_max()
 
+                    print('q_out_requ', q_out_requ)
+                    print('q_out_max', q_out_max)
+
                     if q_out_max < q_out_requ:
                         msg = 'TES stored energy cannot cover remaining ' \
                               'demand in ' \
@@ -831,6 +831,9 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                     q_out_requ = 0
 
                 temp_prior = tes.t_current
+
+                if q_tes_in is None:
+                    q_tes_in = 0
 
                 #  Calc. storage energy balance for this timestep
                 tes.calc_storage_temp_for_next_timestep(q_in=q_tes_in,

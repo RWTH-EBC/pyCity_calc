@@ -1161,6 +1161,8 @@ def get_list_build_without_energy_network(city):
             if valid_net:
                 list_single_build.append(n)
 
+    return list_single_build
+
 
 def remove_str_nodes_degree_one(city, nodelist):
     """
