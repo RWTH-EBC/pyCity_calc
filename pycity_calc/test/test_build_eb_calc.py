@@ -737,7 +737,7 @@ class TestBuildingEnergyBalance():
         assert el_demand - (sum_pv_self + sum_grid_import) <= 0.001
         assert sum_pv_energy - (sum_pv_self + sum_pv_feed) <= 0.001
 
-    def test_eb_pv_hp_eh_tes(self, fixture_building):
+    def test_eb_pv_hp_eh_tes_static(self, fixture_building):
         """
 
         """
@@ -892,19 +892,90 @@ class TestBuildingEnergyBalance():
         sum_bat_charge = sum(bat_charge) * timestep / (1000 * 3600)
         sum_bat_discharge = sum(bat_discharge) * timestep / (1000 * 3600)
 
-        print('Final state of charge of el. battery:')
-        print(final_soc)
-        print('Sum bat. charge energy in kWh:')
-        print(sum_bat_charge)
-        print('Sum bat. discharge energy in kWh:')
-        print(sum_bat_discharge)
+        # print('Final state of charge of el. battery:')
+        # print(final_soc)
+        # print('Sum bat. charge energy in kWh:')
+        # print(sum_bat_charge)
+        # print('Sum bat. discharge energy in kWh:')
+        # print(sum_bat_discharge)
 
         assert sum_grid_import == 0
         assert abs(sum_pv_energy - sum_pv_self - sum_pv_feed) <= 0.001
-        assert abs(el_energy - sum_grid_import - sum_bat_discharge + \
-               sum_bat_charge - sum_pv_self) <= 0.001
 
-    def test_pv_chp_eh_boiler(self, fixture_building):
+        #  Assert electric energy balance
+        assert abs(el_energy - (sum_pv_self
+                                - sum_bat_charge
+                                + sum_bat_discharge
+                                + sum_grid_import)) <= 0.001
+
+    def test_pv_with_battery_eb_with_feed_in(self, fixture_building):
+        """
+
+        """
+
+        build = copy.deepcopy(fixture_building)
+
+        timestep = build.environment.timer.timeDiscretization
+        nb_timesteps = int(365 * 24 * 3600 / timestep)
+
+        bes = BES.BES(environment=build.environment)
+
+        battery = bat.BatteryExtended(environment=build.environment,
+                                      soc_init_ratio=0.5, capacity_kwh=20,
+                                      self_discharge=0, eta_charge=1,
+                                      eta_discharge=1)
+
+        pv = PV.PV(environment=build.environment, area=100, eta=0.15,
+                   temperature_nominal=45,
+                   alpha=0, beta=0, gamma=0, tau_alpha=0.9)
+
+        pv_power = pv.getPower(currentValues=False, updatePower=True)
+        sum_pv_energy = sum(pv_power) * timestep / (1000 * 3600)
+
+        el_day = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                           20, 50, 10, 5, 0, 0, 0, 0, 0, 0, 0, 0,
+                           0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 0,
+                           0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2,
+                           100, 100, 100, 100, 2, 2, 2, 2, 2, 2, 2, 2,
+                           50, 20, 10, 10, 2, 2, 2, 0, 0, 0, 0, 0,
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+                           ]) * 100
+
+        build.apartments[0].power_el.loadcurve = np.tile(el_day, 365)
+
+        bes.addMultipleDevices([battery, pv])
+
+        build.addEntity(bes)
+
+        #  Calculate el. energy balance
+        buildeb.calc_build_el_eb(build=build)
+
+        el_energy = build.get_annual_el_demand()
+
+        pv_self = build.dict_el_eb_res['pv_self']
+        pv_feed = build.dict_el_eb_res['pv_feed']
+        grid_import_dem = build.dict_el_eb_res['grid_import_dem']
+
+        bat_charge = build.bes.battery.totalPCharge
+        bat_discharge = build.bes.battery.totalPDischarge
+
+        sum_pv_self = sum(pv_self) * timestep / (1000 * 3600)
+        sum_pv_feed = sum(pv_feed) * timestep / (1000 * 3600)
+        sum_grid_import = sum(grid_import_dem) * timestep / (1000 * 3600)
+
+        sum_bat_charge = sum(bat_charge) * timestep / (1000 * 3600)
+        sum_bat_discharge = sum(bat_discharge) * timestep / (1000 * 3600)
+
+        assert abs(sum_pv_energy - sum_pv_self - sum_pv_feed) <= 0.001
+
+        #  Assert electric energy balance
+        assert abs(el_energy - (sum_pv_self
+                                - sum_bat_charge
+                                + sum_bat_discharge
+                                + sum_grid_import)) <= 0.001
+
+    def test_pv_chp_eh_boiler_dynamic(self, fixture_building):
         """
 
         """
