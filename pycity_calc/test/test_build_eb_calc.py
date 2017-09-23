@@ -885,7 +885,7 @@ class TestBuildingEnergyBalance():
 
         assert abs((sh_energy + dhw_energy + el_energy) - (fuel_chp_energy
                    + fuel_boiler_energy - sum_chp_feed + sum_q_tes_out
-                   - sum_q_tes_in - sum_pv_feed
+                   - sum_q_tes_in
                    + sum_pv_self_dem + sum_pv_self_eh
                    + sum_grid_import_dem
                    + sum_grid_import_eh)) <= 0.001
@@ -893,7 +893,7 @@ class TestBuildingEnergyBalance():
         assert abs((sh_energy + dhw_energy + el_energy) - (sum_chp_self_dem
                    + chp_th_energy
                    + sum_q_tes_out - sum_q_tes_in
-                   + sum_q_boiler + sum_eh_th_energy - sum_pv_feed
+                   + sum_q_boiler + sum_eh_th_energy
                    + sum_pv_self_dem
                    + sum_grid_import_dem)) <= 0.001
 
@@ -1097,7 +1097,6 @@ class TestBuildingEnergyBalance():
                                                            - sum_chp_feed
                                                            + sum_q_tes_out
                                                            - sum_q_tes_in
-                                                           # - sum_pv_feed
                                                            # + sum_pv_self_dem
                                                            # + sum_pv_self_eh
                                                            + sum_grid_import_dem
@@ -1111,7 +1110,6 @@ class TestBuildingEnergyBalance():
                                                            - sum_q_tes_in
                                                            + sum_q_boiler
                                                            + sum_eh_th_energy
-                                                           # - sum_pv_feed
                                                            # + sum_pv_self_dem
                                                            + sum_grid_import_dem
                                                            )) <= 0.001
@@ -1313,8 +1311,8 @@ class TestBuildingEnergyBalance():
         assert abs(sum_bat_out - (sum_bat_out_dem + sum_bat_out_eh)) <= 0.001
 
         assert abs((sh_energy + dhw_energy + el_energy) - (fuel_chp_energy
-                   + fuel_boiler_energy - sum_chp_feed + sum_q_tes_out
-                   - sum_q_tes_in - sum_pv_feed
+                   + fuel_boiler_energy + sum_q_tes_out
+                   - sum_q_tes_in
                    + sum_pv_self_dem + sum_pv_self_eh
                    + sum_bat_out
                    - sum_bat_in
