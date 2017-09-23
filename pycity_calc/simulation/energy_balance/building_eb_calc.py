@@ -1447,6 +1447,10 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
             p_el_chp = build.bes.chp.totalPOutput[i]
             p_el_chp_remain = p_el_chp + 0.0
 
+        #  TODO: Erase later
+        assert p_el_remain >= 0
+        assert p_el_chp_remain >= 0
+
         #  1. Use PV electric energy
         if has_pv:
 
@@ -1495,6 +1499,10 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
                     pv_self[i] += p_pv_remain
                     pv_self_eh[i] += p_pv_remain
                     p_pv_remain = 0
+
+        #  TODO: Erase later
+        assert p_el_remain >= 0
+        assert p_el_chp_remain >= 0
 
         #  2. Use CHP electric energy
         if has_chp:
@@ -1545,6 +1553,10 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
                     chp_self_eh[i] += p_el_chp_remain
                     p_el_chp_remain = 0
 
+        #  TODO: Erase later
+        assert p_el_remain >= 0
+        assert p_el_chp_remain >= 0
+
         #  Bat
         if has_bat:
 
@@ -1591,7 +1603,7 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
 
                 if p_el_chp_remain > 0:
 
-                    if p_el_chp_remain >= p_bat_charge:
+                    if p_el_chp_remain >= p_bat_charge_remain:
                         #  Fully charge battery
                         p_el_chp_remain -= p_bat_charge_remain
                         chp_self[i] += p_bat_charge_remain
@@ -1605,6 +1617,8 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
                         chp_self_bat[i] += p_el_chp_remain
                         p_bat_charge += p_el_chp_remain
                         p_el_chp_remain = 0
+
+                    assert p_el_chp_remain >= 0
 
             if p_el_remain > 0:
 
@@ -1665,6 +1679,10 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
                                                save_res=True,
                                                time_index=i)
 
+        #  TODO: Erase later
+        assert p_el_remain >= 0
+        assert p_el_chp_remain >= 0
+
         #  DEG
         if has_deg:
 
@@ -1674,16 +1692,21 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
         #  Grid
         #  Import remaining el. power from grid
         grid_import_dem[i] += p_el_remain
+        p_el_remain = 0
 
         if has_hp:
             grid_import_hp[i] += p_el_hp_remain
+            p_el_hp_remain = 0
         if has_eh:
             grid_import_eh[i] += p_el_eh_remain
+            p_el_eh_remain = 0
 
         if has_pv:
             pv_feed[i] += p_pv_remain
+            p_pv_remain = 0
         if has_chp:
             chp_feed[i] += p_el_chp_remain
+            p_el_chp_remain = 0
 
     #  Add to results dict
     dict_el_eb_res['pv_self'] = pv_self
