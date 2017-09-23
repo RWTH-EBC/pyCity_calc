@@ -1134,8 +1134,10 @@ class TestBuildingEnergyBalance():
         assert abs(sum_chp_self - (sum_chp_self_dem + sum_chp_self_eh)) <= 0.001
 
         #  Assert electric heater energy balance
-        assert abs(sum_eh_th_energy - (sum_eh_el_energy + sum_pv_self_eh)) \
-               <= 0.001
+        assert abs(sum_eh_th_energy - sum_eh_el_energy) <= 0.001
+        assert abs(sum_eh_th_energy
+                   - (sum_pv_self_eh
+                      + sum_chp_self_eh + sum_grid_import_eh)) <= 0.001
 
         #  Assert net thermal energy balance
         assert abs(sh_energy + dhw_energy - (chp_th_energy + sum_q_boiler
@@ -1420,7 +1422,9 @@ class TestBuildingEnergyBalance():
         boiler = boil.BoilerExtended(environment=build.environment,
                                      q_nominal=50000, eta=1)
 
-        bes.addMultipleDevices([battery, pv, eh, tes, chp, boiler])
+        bes.addMultipleDevices([
+            battery,
+            pv, eh, tes, chp, boiler])
 
         build.addEntity(bes)
 
@@ -1509,6 +1513,7 @@ class TestBuildingEnergyBalance():
         chp_self = build.dict_el_eb_res['chp_self']
         chp_feed = build.dict_el_eb_res['chp_feed']
         chp_self_bat = build.dict_el_eb_res['chp_self_bat']
+        chp_self_eh = build.dict_el_eb_res['chp_self_eh']
 
         grid_import_dem = build.dict_el_eb_res['grid_import_dem']
         grid_import_eh = build.dict_el_eb_res['grid_import_eh']
@@ -1547,14 +1552,20 @@ class TestBuildingEnergyBalance():
 
         #  Assert CHP electric energy balance
         assert abs(fuel_chp_energy - chp_th_energy) - \
-               (sum_chp_feed + sum_chp_self_dem + sum_chp_self_bat) <= 0.001
+               (sum_chp_feed + sum_chp_self_dem + sum_chp_self_bat
+                + sum_chp_self_eh) <= 0.001
 
-        assert abs(sum_chp_self - (sum_chp_self_bat + sum_chp_self_dem)) \
+        assert abs(sum_chp_self - (sum_chp_self_bat + sum_chp_self_dem
+                                   + sum_chp_self_eh)) \
                <= 0.001
 
         #  Assert electric heater energy balance
-        assert abs(sum_eh_th_energy - (sum_eh_el_energy + sum_pv_self_eh)) \
-               <= 0.001
+        assert abs(sum_eh_th_energy - sum_eh_el_energy) <= 0.001
+        assert abs(sum_eh_el_energy
+                   - (sum_pv_self_eh
+                      + sum_chp_self_eh
+                      + sum_grid_import_eh
+                      + sum_bat_out_eh)) <= 0.001
 
         #  Assert net thermal energy balance
         assert abs(sh_energy + dhw_energy - (chp_th_energy + sum_q_boiler
@@ -1574,20 +1585,23 @@ class TestBuildingEnergyBalance():
 
         assert abs(sum_bat_out - (sum_bat_out_dem + sum_bat_out_eh)) <= 0.001
 
-        assert abs((sh_energy + dhw_energy + el_energy) - (fuel_chp_energy
-                   + fuel_boiler_energy + sum_q_tes_out
-                   - sum_q_tes_in
-                   + sum_pv_self_dem + sum_pv_self_eh
-                   + sum_bat_out
-                   - sum_bat_in
-                   + sum_grid_import_dem
-                   + sum_grid_import_eh)) <= 0.001
+        assert abs((sh_energy + dhw_energy + el_energy)
+                   - (fuel_chp_energy
+                      - sum_chp_feed
+                      + fuel_boiler_energy
+                      + sum_q_tes_out - sum_q_tes_in
+                      + sum_pv_self_dem + sum_pv_self_eh
+                      + sum_bat_out
+                      - sum_bat_in
+                      + sum_grid_import_dem
+                      + sum_grid_import_eh)) <= 0.001
 
-        assert abs((sh_energy + dhw_energy + el_energy) - (sum_chp_self_dem
-                   + chp_th_energy
-                   + sum_q_tes_out - sum_q_tes_in
-                   + sum_q_boiler + sum_eh_th_energy
-                   + sum_pv_self_dem
-                   + sum_bat_out
-                   - sum_bat_in
-                   + sum_grid_import_dem)) <= 0.001
+        assert abs((sh_energy + dhw_energy + el_energy)
+                   - (sum_chp_self_dem
+                      + chp_th_energy
+                      + sum_q_tes_out - sum_q_tes_in
+                      + sum_q_boiler + sum_eh_th_energy
+                      + sum_pv_self_dem
+                      + sum_bat_out
+                      - sum_bat_in
+                      + sum_grid_import_dem)) <= 0.001
