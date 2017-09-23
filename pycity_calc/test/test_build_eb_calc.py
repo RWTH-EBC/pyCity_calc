@@ -897,7 +897,7 @@ class TestBuildingEnergyBalance():
                    + sum_pv_self_dem
                    + sum_grid_import_dem)) <= 0.001
 
-    def test_pv_chp_eh_boiler(self, fixture_building):
+    def test_pv_chp_eh_boiler_b(self, fixture_building):
         """
 
         """
