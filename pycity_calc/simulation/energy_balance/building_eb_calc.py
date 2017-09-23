@@ -1284,6 +1284,14 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
 
         #  Loop over power values
         for i in range(len(sh_p_array)):
+
+            #  Calculate tes status
+            #  ##############################################################
+            tes_status = get_tes_status(tes=build.bes.tes,
+                                        buffer_low=0.85,
+                                        buffer_high=buffer_high)
+
+            #  Get required thermal power values
             sh_power = sh_p_array[i]
             dhw_power = dhw_p_array[i]
             th_power = sh_power + dhw_power
@@ -1291,58 +1299,97 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
             #  Remaining th_ power
             th_pow_remain = th_power + 0.0
 
-            #  Check tes status
+            if tes_status == 2:
+                #  Do not charge TES
 
-                #  Load storage
+                #  Try covering power with boiler
+                if has_boiler:
 
-                #  Only use boiler / EH
+                    #  Boiler pointer
+                    boiler = build.bes.boiler
 
-            # #  Try covering power with boiler
-            # if has_boiler:
-            #
-            #     #  Boiler pointer
-            #     boiler = build.bes.boiler
-            #
-            #     #  Get nominal boiler power
-            #     q_nom_boi = boiler.qNominal
-            #
-            #     if q_nom_boi < th_pow_remain:
-            #         #  Only cover partial power demand with boiler power
-            #         boiler.calc_boiler_all_results(control_signal=q_nom_boi,
-            #                                        time_index=i)
-            #         th_pow_remain -= q_nom_boi
-            #
-            #     else:  # Cover total thermal power demand with boiler
-            #
-            #         boiler.calc_boiler_all_results(control_signal=th_power,
-            #                                        time_index=i)
-            #         th_pow_remain = 0
-            #
-            # # If not enough, use EH, if existent
-            # if has_eh:
-            #
-            #     #  EH pointer
-            #     eh = build.bes.electricalHeater
-            #
-            #     #  Get nominal eh power
-            #     q_nom_eh = eh.qNominal
-            #
-            #     if q_nom_eh < th_pow_remain:
-            #         #  Only cover partial power demand with eh power
-            #         eh.calc_el_h_all_results(control_signal=q_nom_eh,
-            #                                  time_index=i)
-            #         th_pow_remain -= q_nom_eh
-            #
-            #     else:  # Cover total thermal power demand with eh
-            #
-            #         eh.calc_el_h_all_results(control_signal=th_pow_remain,
-            #                                  time_index=i)
-            #         th_pow_remain = 0
-            #
-            # if th_pow_remain > 0:
-            #     msg = 'Could not cover thermal energy power at timestep ' \
-            #           '' + str(i) + ' at building ' + str(id)
-            #     EnergyBalanceException(msg)
+                    #  Get nominal boiler power
+                    q_nom_boi = boiler.qNominal
+
+                    if q_nom_boi < th_pow_remain:
+                        #  Only cover partial power demand with boiler power
+                        boiler.calc_boiler_all_results(
+                            control_signal=q_nom_boi,
+                            time_index=i)
+                        th_pow_remain -= q_nom_boi
+
+                    else:  # Cover total thermal power demand with boiler
+
+                        boiler.calc_boiler_all_results(control_signal=th_power,
+                                                       time_index=i)
+                        th_pow_remain = 0
+
+                # If not enough, use EH, if existent
+                if has_eh:
+
+                    #  EH pointer
+                    eh = build.bes.electricalHeater
+
+                    #  Get nominal eh power
+                    q_nom_eh = eh.qNominal
+
+                    if q_nom_eh < th_pow_remain:
+                        #  Only cover partial power demand with eh power
+                        eh.calc_el_h_all_results(control_signal=q_nom_eh,
+                                                 time_index=i)
+                        th_pow_remain -= q_nom_eh
+
+                    else:  # Cover total thermal power demand with eh
+
+                        eh.calc_el_h_all_results(control_signal=th_pow_remain,
+                                                 time_index=i)
+                        th_pow_remain = 0
+
+                tes = build.bes.tes
+
+                if th_pow_remain > 0:
+                    #  Use TES to cover remaining demand
+                    #  Use tes to cover demands
+                    q_out_requ = th_pow_remain + 0.0
+
+                    q_out_max = tes.calc_storage_q_out_max()
+
+                    print('q_out_requ', q_out_requ)
+                    print('q_out_max', q_out_max)
+
+                    if q_out_max < q_out_requ:
+                        msg = 'TES stored energy cannot cover remaining ' \
+                              'demand in ' \
+                              'building' + str(id) + ' at timestep ' + str(
+                            i) + '.'
+                        raise EnergyBalanceException(msg)
+                else:
+                    q_out_requ = 0
+
+                temp_prior = tes.t_current
+
+                if q_tes_in is None:
+                    q_tes_in = 0
+
+                # Calc. storage energy balance for this timestep
+                tes.calc_storage_temp_for_next_timestep(q_in=q_tes_in,
+                                                        q_out=q_out_requ,
+                                                        t_prior=temp_prior,
+                                                        set_new_temperature=True,
+                                                        save_res=True,
+                                                        time_index=i)
+
+                if th_pow_remain > 0:
+                    msg = 'Could not cover thermal energy power at timestep ' \
+                          '' + str(i) + ' at building ' + str(id)
+                    EnergyBalanceException(msg)
+
+            elif tes_status == 3:
+                # Use boiler and/or EH to load TES
+
+                pass
+                #  Todo
+
 
     elif has_tes is False and has_hp is False:  # Has no TES
         #  Run thermal simulation, if no TES is existent (only relevant for
