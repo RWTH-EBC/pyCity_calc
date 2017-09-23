@@ -182,7 +182,7 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
 
     #  Perform energy balance calculation for different states
     #  #################################################################
-    if has_tes and has_hp is False:
+    if has_tes and has_chp and has_hp is False:
         #  Energy balance calculation with thermal storage
         #  Relevant for CHP, boiler and EH, only, as HP cannot cover
         #  complete hot water demand / cannot reach temperature levels
@@ -1279,6 +1279,71 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                       'building ' + str(id) + ' at timestep ' + str(i) + '.'
                 raise EnergyBalanceException(msg)
 
+    elif has_tes and has_boiler and has_chp is False and has_hp is False:
+        #  Run thermal simulation for combination of boiler, EH and TES
+
+        #  Loop over power values
+        for i in range(len(sh_p_array)):
+            sh_power = sh_p_array[i]
+            dhw_power = dhw_p_array[i]
+            th_power = sh_power + dhw_power
+
+            #  Remaining th_ power
+            th_pow_remain = th_power + 0.0
+
+            #  Check tes status
+
+                #  Load storage
+
+                #  Only use boiler / EH
+
+            # #  Try covering power with boiler
+            # if has_boiler:
+            #
+            #     #  Boiler pointer
+            #     boiler = build.bes.boiler
+            #
+            #     #  Get nominal boiler power
+            #     q_nom_boi = boiler.qNominal
+            #
+            #     if q_nom_boi < th_pow_remain:
+            #         #  Only cover partial power demand with boiler power
+            #         boiler.calc_boiler_all_results(control_signal=q_nom_boi,
+            #                                        time_index=i)
+            #         th_pow_remain -= q_nom_boi
+            #
+            #     else:  # Cover total thermal power demand with boiler
+            #
+            #         boiler.calc_boiler_all_results(control_signal=th_power,
+            #                                        time_index=i)
+            #         th_pow_remain = 0
+            #
+            # # If not enough, use EH, if existent
+            # if has_eh:
+            #
+            #     #  EH pointer
+            #     eh = build.bes.electricalHeater
+            #
+            #     #  Get nominal eh power
+            #     q_nom_eh = eh.qNominal
+            #
+            #     if q_nom_eh < th_pow_remain:
+            #         #  Only cover partial power demand with eh power
+            #         eh.calc_el_h_all_results(control_signal=q_nom_eh,
+            #                                  time_index=i)
+            #         th_pow_remain -= q_nom_eh
+            #
+            #     else:  # Cover total thermal power demand with eh
+            #
+            #         eh.calc_el_h_all_results(control_signal=th_pow_remain,
+            #                                  time_index=i)
+            #         th_pow_remain = 0
+            #
+            # if th_pow_remain > 0:
+            #     msg = 'Could not cover thermal energy power at timestep ' \
+            #           '' + str(i) + ' at building ' + str(id)
+            #     EnergyBalanceException(msg)
+
     elif has_tes is False and has_hp is False:  # Has no TES
         #  Run thermal simulation, if no TES is existent (only relevant for
         #  Boiler and EH
@@ -1761,6 +1826,8 @@ if __name__ == '__main__':
     citvis.plot_city_district(city=city, plot_esys=True, plot_lhn=True,
                               plot_deg=True)
 
+    timestep = city.environment.timer.timeDiscretization
+
     #  ####################################################################
     #  Get buiding 1007 (boiler, only)
     #  Add EH to test energy balance for boiler and eh without tes
@@ -1825,13 +1892,13 @@ if __name__ == '__main__':
     tes_temp = exbuild.bes.tes.array_temp_storage
 
     #  Checks
-    sh_net_energy = sum(sh_p_array) * 3600 / (1000 * 3600) # in kWh
-    dhw_net_energy = sum(dhw_p_array) * 3600 / (1000 * 3600) # in kWh
-    boil_th_energy = sum(q_out) * 3600 / (1000 * 3600) # in kWh
-    chp_th_energy = sum(q_chp_out) * 3600 / (1000 * 3600) # in kWh
-    fuel_boiler_energy = sum(fuel_in) * 3600 / (1000 * 3600) # in kWh
-    fuel_chp_energy = sum(fuel_chp_in) * 3600 / (1000 * 3600)  # in kWh
-    chp_el_energy = sum(p_el_chp_out) * 3600 / (1000 * 3600)  # in kWh
+    sh_net_energy = sum(sh_p_array) * timestep / (1000 * 3600) # in kWh
+    dhw_net_energy = sum(dhw_p_array) * timestep / (1000 * 3600) # in kWh
+    boil_th_energy = sum(q_out) * timestep / (1000 * 3600) # in kWh
+    chp_th_energy = sum(q_chp_out) * timestep / (1000 * 3600) # in kWh
+    fuel_boiler_energy = sum(fuel_in) * timestep / (1000 * 3600) # in kWh
+    fuel_chp_energy = sum(fuel_chp_in) * timestep / (1000 * 3600)  # in kWh
+    chp_el_energy = sum(p_el_chp_out) * timestep / (1000 * 3600)  # in kWh
 
     print('Space heating demand in kWh:')
     print(round(sh_net_energy, 0))
@@ -1917,11 +1984,11 @@ if __name__ == '__main__':
 
     tes_temp = exbuild.bes.tes.array_temp_storage
 
-    sh_en = sum(sh_p_array) * 3600 / (1000 * 3600)
-    dhw_en = sum(dhw_p_array) * 3600 / (1000 * 3600)
+    sh_en = sum(sh_p_array) * timestep / (1000 * 3600)
+    dhw_en = sum(dhw_p_array) * timestep / (1000 * 3600)
 
-    q_hp_out_en = sum(q_hp_out) * 3600 / (1000 * 3600)
-    q_eh_out_en = sum(q_eh_out) * 3600 / (1000 * 3600)
+    q_hp_out_en = sum(q_hp_out) * timestep / (1000 * 3600)
+    q_eh_out_en = sum(q_eh_out) * timestep / (1000 * 3600)
 
     print('Space heating net energy demand in kWh:')
     print(sh_en)
@@ -1953,6 +2020,60 @@ if __name__ == '__main__':
 
     plt.subplot(4, 1, 4)
     plt.plot(tes_temp, label='Storage temp. in degree C')
+    plt.legend()
+
+    plt.show()
+    plt.close()
+    # #  ####################################################################
+
+    # #  ####################################################################
+    #  Extract building 1008 (Boiler, TES, PV, Battery)
+    id = 1006
+    exbuild = city.node[id]['entity']
+
+    print('Capacity of TES in kg: ', exbuild.bes.tes.capacity)
+
+    #  Calculate thermal energy balance
+    calc_build_therm_eb(build=exbuild, id=id)
+
+    #  Calculate electric energy balance
+    calc_build_el_eb(build=exbuild)
+
+    #  Get space heating results
+    sh_p_array = exbuild.get_space_heating_power_curve()
+    dhw_p_array = exbuild.get_dhw_power_curve()
+
+    tes_temp = exbuild.bes.tes.array_temp_storage
+
+    sh_en = sum(sh_p_array) * timestep / (1000 * 3600)
+    dhw_en = sum(dhw_p_array) * timestep / (1000 * 3600)
+
+    q_boiler = exbuild.bes.boiler.array_fuel_power
+    q_boil_th_en = sum(q_boiler) * timestep / (1000 * 3600)
+
+    print('Space heating net energy demand in kWh:')
+    print(sh_en)
+    print('Domestic hot water net energy demand in kWh:')
+    print(dhw_en)
+    print()
+
+    print('Boiler thermal energy output in kWh:')
+    print(q_boil_th_en)
+    print()
+
+    fig = plt.figure()
+
+    plt.subplot(3, 1, 1)
+    plt.plot(sh_p_array, label='Space heating power in W')
+    plt.plot(dhw_p_array, label='DHW power in W')
+    plt.legend()
+
+    plt.subplot(3, 1, 2)
+    plt.plot(q_hp_out, label='Boiler thermal output in W')
+    plt.legend()
+
+    plt.subplot(3, 1, 3)
+    plt.plot(q_boil_th_en, label='Storage temp. in degree C')
     plt.legend()
 
     plt.show()
