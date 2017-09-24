@@ -1299,7 +1299,15 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
             #  Remaining th_ power
             th_pow_remain = th_power + 0.0
 
-            if tes_status == 2:
+            #  Pointer to TES
+            tes = build.bes.tes
+
+            q_out_max = tes.calc_storage_q_out_max()
+            q_in_max = tes.calc_storage_q_in_max()
+
+            q_tes_in = None
+
+            if tes_status == 1 or tes_status == 2:
                 #  Do not charge TES
 
                 #  Try covering power with boiler
@@ -1345,14 +1353,10 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                                                  time_index=i)
                         th_pow_remain = 0
 
-                tes = build.bes.tes
-
                 if th_pow_remain > 0:
                     #  Use TES to cover remaining demand
                     #  Use tes to cover demands
                     q_out_requ = th_pow_remain + 0.0
-
-                    q_out_max = tes.calc_storage_q_out_max()
 
                     print('q_out_requ', q_out_requ)
                     print('q_out_max', q_out_max)
@@ -1387,8 +1391,109 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
             elif tes_status == 3:
                 # Use boiler and/or EH to load TES
 
-                pass
-                #  Todo
+                q_tes_in_remain = q_in_max + 0.0
+                q_tes_in = 0
+
+                #  Try covering power with boiler
+                if has_boiler:
+
+                    #  Boiler pointer
+                    boiler = build.bes.boiler
+
+                    #  Get nominal boiler power
+                    q_nom_boi = boiler.qNominal
+
+                    if q_nom_boi < (th_pow_remain + q_tes_in_remain):
+                        #  Only cover partial power demand with boiler power
+                        boiler.calc_boiler_all_results(
+                            control_signal=q_nom_boi,
+                            time_index=i)
+                        if th_pow_remain > q_nom_boi:
+                            th_pow_remain -= q_nom_boi
+                        elif th_pow_remain == q_nom_boi:
+                            th_pow_remain = 0
+                        else:
+                            q_tes_in_remain -= (q_nom_boi - th_pow_remain)
+                            q_tes_in += (q_nom_boi - th_pow_remain)
+                            th_pow_remain = 0
+
+                    else:  # Cover total thermal power demand with boiler
+
+                        boiler.calc_boiler_all_results(control_signal=th_pow_remain + q_tes_in_remain,
+                                                       time_index=i)
+                        th_pow_remain = 0
+                        q_tes_in += q_tes_in_remain
+                        q_tes_in_remain = 0
+
+                # If not enough, use EH, if existent
+                if has_eh:
+
+                    #  EH pointer
+                    eh = build.bes.electricalHeater
+
+                    #  Get nominal eh power
+                    q_nom_eh = eh.qNominal
+
+                    if q_nom_eh < (th_pow_remain + q_tes_in_remain):
+                        #  Only cover partial power demand with boiler power
+                        eh.calc_el_h_all_results(
+                            control_signal=q_nom_eh,
+                            time_index=i)
+                        if th_pow_remain > q_nom_eh:
+                            th_pow_remain -= q_nom_eh
+                        elif th_pow_remain == q_nom_eh:
+                            th_pow_remain = 0
+                        else:
+                            q_tes_in_remain -= (q_nom_eh - th_pow_remain)
+                            q_tes_in += (q_nom_eh - th_pow_remain)
+                            th_pow_remain = 0
+
+                    else:  # Cover total thermal power demand with boiler
+
+                        eh.calc_el_h_all_results(control_signal=th_pow_remain + q_tes_in_remain,
+                                                       time_index=i)
+                        th_pow_remain = 0
+                        q_tes_in += q_tes_in_remain
+                        q_tes_in_remain = 0
+
+                tes = build.bes.tes
+
+                if th_pow_remain > 0:
+                    #  Use TES to cover remaining demand
+                    #  Use tes to cover demands
+                    q_out_requ = th_pow_remain + 0.0
+
+                    q_out_max = tes.calc_storage_q_out_max(q_in=q_tes_in)
+
+                    print('q_out_requ', q_out_requ)
+                    print('q_out_max', q_out_max)
+
+                    if q_out_max < q_out_requ:
+                        msg = 'TES stored energy cannot cover remaining ' \
+                              'demand in ' \
+                              'building' + str(id) + ' at timestep ' + str(
+                            i) + '.'
+                        raise EnergyBalanceException(msg)
+                else:
+                    q_out_requ = 0
+
+                temp_prior = tes.t_current
+
+                if q_tes_in is None:
+                    q_tes_in = 0
+
+                # Calc. storage energy balance for this timestep
+                tes.calc_storage_temp_for_next_timestep(q_in=q_tes_in,
+                                                        q_out=q_out_requ,
+                                                        t_prior=temp_prior,
+                                                        set_new_temperature=True,
+                                                        save_res=True,
+                                                        time_index=i)
+
+                if th_pow_remain > 0:
+                    msg = 'Could not cover thermal energy power at timestep ' \
+                          '' + str(i) + ' at building ' + str(id)
+                    EnergyBalanceException(msg)
 
 
     elif has_tes is False and has_hp is False:  # Has no TES
@@ -2116,11 +2221,11 @@ if __name__ == '__main__':
     plt.legend()
 
     plt.subplot(3, 1, 2)
-    plt.plot(q_hp_out, label='Boiler thermal output in W')
+    plt.plot(q_boiler, label='Boiler thermal output in W')
     plt.legend()
 
     plt.subplot(3, 1, 3)
-    plt.plot(q_boil_th_en, label='Storage temp. in degree C')
+    plt.plot(tes_temp, label='Storage temp. in degree C')
     plt.legend()
 
     plt.show()
