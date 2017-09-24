@@ -818,9 +818,6 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
 
                     q_out_max = tes.calc_storage_q_out_max()
 
-                    print('q_out_requ', q_out_requ)
-                    print('q_out_max', q_out_max)
-
                     if q_out_max < q_out_requ:
                         msg = 'TES stored energy cannot cover remaining ' \
                               'demand in ' \
@@ -1358,9 +1355,6 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                     #  Use tes to cover demands
                     q_out_requ = th_pow_remain + 0.0
 
-                    print('q_out_requ', q_out_requ)
-                    print('q_out_max', q_out_max)
-
                     if q_out_max < q_out_requ:
                         msg = 'TES stored energy cannot cover remaining ' \
                               'demand in ' \
@@ -1464,9 +1458,6 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                     q_out_requ = th_pow_remain + 0.0
 
                     q_out_max = tes.calc_storage_q_out_max(q_in=q_tes_in)
-
-                    print('q_out_requ', q_out_requ)
-                    print('q_out_max', q_out_max)
 
                     if q_out_max < q_out_requ:
                         msg = 'TES stored energy cannot cover remaining ' \

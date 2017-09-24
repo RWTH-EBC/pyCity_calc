@@ -110,6 +110,9 @@ class CityEBCalculator(object):
 
             #  Estimate energy network losses
 
+            #  Hand over network energy demand to feeder node buildings
+            #  and solve thermal energy balance
+
             #  Electrical energy balance of subcity
 
 
