@@ -9,10 +9,69 @@ import os
 import copy
 import pickle
 import warnings
+import numpy as np
+import networkx as nx
 
 import pycity_calc.simulation.energy_balance.check_eb_requ as check_eb
 import pycity_calc.toolbox.networks.network_ops as netop
 import pycity_calc.simulation.energy_balance.building_eb_calc as beb
+import pycity_calc.toolbox.dimensioning.dim_networks as dimnet
+
+
+def get_list_lhn_build_without_th_esys(city, list_buildings=None):
+    """
+    Return list of ids of building nodes, which do not have any internal
+    thermal supply, except LHN connection.
+
+    Parameters
+    ----------
+    city : object
+        City object of pyCity_calc
+    list_buildings list (of ints), optional
+        List of buildings (default: None). If None, searches for
+        all buildings
+
+    Returns
+    -------
+    list_no_th_esys : list (of li ints)
+        List of buildings without own thermal energy supply unit
+    """
+
+    if list_buildings is None:
+        list_buildings = city.get_list_build_entity_node_ids()
+
+    list_no_th_esys = []
+
+    for n in list_buildings:
+
+        build = city.node[n]['entity']
+
+        has_th_supply = False
+
+        if build.hasBes:
+
+            if build.bes.hasBoiler:
+                assert build.bes.boiler._kind == 'boiler'
+                has_th_supply = True
+
+            if build.bes.hasChp:
+                assert build.bes.chp._kind == 'chp'
+                has_th_supply = True
+
+            if build.bes.hasElectricalHeater:
+                assert build.bes.electricalHeater._kind == 'electricalheater'
+                has_th_supply = True
+
+            if build.bes.hasHeatpump:
+                assert build.bes.heatpump._kind == 'heatpump'
+                has_th_supply = True
+
+        if has_th_supply is False:
+            print('Found building without own thermal energy supply:')
+            print('ID: ', n)
+            list_no_th_esys.append(n)
+
+    return list_no_th_esys
 
 
 class CityEBCalculator(object):
@@ -46,6 +105,7 @@ class CityEBCalculator(object):
         self._list_lists_deg_ids = None
         self._list_lists_deg_ids_build = None
         self._list_single_build = None
+        self._list_no_th_esys = None
 
         #  Get list of sub-cities
         self.set_subcity_lists()
@@ -58,6 +118,7 @@ class CityEBCalculator(object):
         _list_lists_deg_ids
         _list_lists_deg_ids_build
         _list_single_build
+        _list_lists_lhn_no_th_supply
         """
 
         #  List of lists of local heating network connected nodes
@@ -86,29 +147,114 @@ class CityEBCalculator(object):
         self._list_single_build = \
             netop.get_list_build_without_energy_network(city=self.city)
 
+        #  Get list of all buildings, which do not have own internal
+        #  thermal energy supply
+        self._list_no_th_esys = \
+            get_list_lhn_build_without_th_esys(city=self.city)
+
     def calc_city_energy_balance(self):
         """
         Calculate energy balance of whole city. Save results on city object
         """
 
-        #  Loop over buildings, which are not connected to energy networks
-        for n in self._list_single_build:
+        # #  Loop over buildings, which are not connected to energy networks
+        # for n in self._list_single_build:
+        #     print()
+        #     print('########################################################')
+        #     print('Process stand-alone building with id: ', n)
+        #
+        #     building = self.city.node[n]['entity']
+        #
+        #     #  Calculate single building thermal energy balance
+        #     beb.calc_build_therm_eb(build=building, id=n)
+        #
+        #     #  Calculate single building electrical energy balance
+        #     beb.calc_build_el_eb(build=building)
 
-            print('Process stand-alone building with id: ', n)
+        # LHN energy balance
 
-            building = self.city.node[n]['entity']
+        #  Loop over subcities
+        for list_lhn_build_ids in self._list_lists_lhn_ids_build:
 
-            #  Calculate single building thermal energy balance
-            beb.calc_build_therm_eb(build=building, id=n)
-
-            #  Calculate single building electrical energy balance
-            beb.calc_build_el_eb(build=building)
-
-        #  Loop over subcities (energy network interconnected buildings)
+            print()
+            print('########################################################')
+            print('Process LHN network with buildings: ')
+            print(list_lhn_build_ids)
+            print()
 
             #  Start with buildings without own thermal energy supply units
+            #  Identify all buildings in list_lhn_build_ids, which do
+            #  not have own thermal energy supply
+            list_no_th_esys = []
+            list_th_esys = []
+            for n in list_lhn_build_ids:
+                if n in self._list_no_th_esys:
+                    list_no_th_esys.append(n)
+                else:
+                    list_th_esys.append(n)
+
+            print('Buildings within LHN network without thermal energy '
+                  'supply:')
+            print(list_no_th_esys)
+
+            print('Buildings within LHN network with feeder supply:')
+            print(list_th_esys)
+            print()
+
+            timestep = self.city.environment.timer.timeDiscretization
+
+            #  Sum up thermal energy demand of all buildings without own th.
+            #  supply system
+            th_lhn_power = np.zeros(int(365 * 24 * 3600 / timestep))
+
+            for n in list_no_th_esys:
+
+                build = self.city.node[n]['entity']
+
+                th_lhn_power += build.get_space_heating_power_curve()
+                th_lhn_power += build.get_dhw_power_curve()
 
             #  Estimate energy network losses
+
+            #  Get lhn network temperatures, env. temperature and diameter
+
+            #  TODO: Implement better way to extract LHN pipe data instead of
+            #  TODO: Choosing from first node
+
+            ref_id = list_no_th_esys[0]
+
+            #  Identify neighbors of first building
+            list_neighb = nx.neighbors(G=self.city, node=ref_id)
+
+            temp_vl = None
+
+            #  Extract data
+            for n in list_neighb:
+
+                if 'network_type' in self.city.edge[ref_id][n]:
+
+                    if (self.city.edge[ref_id][n]['network_type'] == 'heating'
+                        or self.city.edge[ref_id][n]['network_type'] == 'heating_and_deg'):
+
+                        #  Extract lhn data
+                        temp_vl = self.city.edge[ref_id][n]['temp_vl']
+                        temp_rl = self.city.edge[ref_id][n]['temp_rl']
+                        d_i = self.city.edge[ref_id][n]['d_i']
+
+                        #  Estimate u-value of pipe in W/mK
+                        u_value = dimnet.estimate_u_value(d_i)
+                        break
+
+            if temp_vl is None:
+                msg = 'Could not find network of type heating or network' \
+                      ' does not have temp_vl as attribute!'
+                raise AssertionError(msg)
+
+            #  Estimate heat pipe losses per timestep, where LHN is used
+            # q_lhn_loss_if =
+
+
+
 
             #  Hand over network energy demand to feeder node buildings
             #  and solve thermal energy balance
@@ -364,7 +510,7 @@ if __name__ == '__main__':
         file_path = os.path.join(this_path, 'input', filename)
         pickle.dump(city_object, open(file_path, mode='wb'))
 
-    #  Upscale boiler size of building 1006
+    # Upscale boiler size of building 1006
     # city_object.node[1006]['entity'].bes.boiler.qNominal *= 10
     # city_object.node[1006]['entity'].bes.tes.capacity *= 10
     # city_object.node[1006]['entity'].bes.tes.t_current = 80
