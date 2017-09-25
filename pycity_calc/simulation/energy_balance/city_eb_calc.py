@@ -294,10 +294,17 @@ class CityEBCalculator(object):
 
             th_lhn_power_remain = copy.deepcopy(th_lhn_power)
 
-            print(th_lhn_power_remain[0])
-
             #  Sort list_th_esys (CHP systems first)
-            #  TODO: Add sorting function call
+            list_th_esys_copy = []
+            for n in list_th_esys:
+                build = self.city.node[n]['entity']
+
+                if build.bes.hasChp:
+                    list_th_esys_copy.insert(0, n)
+                else:
+                    list_th_esys_copy.append(n)
+
+            list_th_esys = list_th_esys_copy
 
             for n in list_th_esys:
 
