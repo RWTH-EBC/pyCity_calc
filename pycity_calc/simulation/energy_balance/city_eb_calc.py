@@ -172,6 +172,9 @@ class CityEBCalculator(object):
         #     beb.calc_build_el_eb(build=building)
 
         # LHN energy balance
+        #  ################################################################
+        #  Add weights to edges
+        netop.add_weights_to_edges(graph=self.city)
 
         #  Loop over subcities
         for list_lhn_build_ids in self._list_lists_lhn_ids_build:
@@ -208,13 +211,12 @@ class CityEBCalculator(object):
             th_lhn_power = np.zeros(int(365 * 24 * 3600 / timestep))
 
             for n in list_no_th_esys:
-
                 build = self.city.node[n]['entity']
 
                 th_lhn_power += build.get_space_heating_power_curve()
                 th_lhn_power += build.get_dhw_power_curve()
 
-            #  Estimate energy network losses
+            # Estimate energy network losses
 
             #  Get lhn network temperatures, env. temperature and diameter
 
@@ -224,7 +226,7 @@ class CityEBCalculator(object):
             ref_id = list_no_th_esys[0]
 
             #  Identify neighbors of first building
-            list_neighb = nx.neighbors(G=self.city, node=ref_id)
+            list_neighb = nx.neighbors(G=self.city, n=ref_id)
 
             temp_vl = None
 
@@ -234,8 +236,8 @@ class CityEBCalculator(object):
                 if 'network_type' in self.city.edge[ref_id][n]:
 
                     if (self.city.edge[ref_id][n]['network_type'] == 'heating'
-                        or self.city.edge[ref_id][n]['network_type'] == 'heating_and_deg'):
-
+                        or self.city.edge[ref_id][n][
+                            'network_type'] == 'heating_and_deg'):
                         #  Extract lhn data
                         temp_vl = self.city.edge[ref_id][n]['temp_vl']
                         temp_rl = self.city.edge[ref_id][n]['temp_rl']
@@ -250,16 +252,49 @@ class CityEBCalculator(object):
                       ' does not have temp_vl as attribute!'
                 raise AssertionError(msg)
 
+            # Get LHN network length
+            list_lhn_weights = \
+                list(self.city.edges_iter(nbunch=list_lhn_build_ids,
+                                          data='weight'))
+            # print(list_lhn_weights)
+
+            #  Sum up weights to get total network lenght
+            lhn_len = 0
+            for tup_lhn in list_lhn_weights:
+                lhn_len += tup_lhn[2]
+
+            print('Total LHN network length in m: ')
+            print(round(lhn_len, 0))
+            print()
+
             #  Estimate heat pipe losses per timestep, where LHN is used
-            # q_lhn_loss_if =
+            temp_env = self.city.environment.temp_ground
 
+            q_lhn_loss_if = u_value * lhn_len * (temp_vl - temp_env)
+            q_lhn_loss_rf = u_value * lhn_len * (temp_rl - temp_env)
 
+            q_lhn_loss = q_lhn_loss_if + q_lhn_loss_rf
 
+            print('Total heating power loss of LHN in kW:')
+            print(round(q_lhn_loss / 1000, 2))
+            print()
+
+            #  Add LHN losses to total thermal power demand
+            th_lhn_power += q_lhn_loss
+
+            #  Add LHN electric power demand for pumps
+            #  TODO: Add pump el. power demand calculation
 
             #  Hand over network energy demand to feeder node buildings
             #  and solve thermal energy balance
+            #  ##########################################################
+            
 
-            #  Electrical energy balance of subcity
+        #  Electrical energy balance of subcity (deg subcities)
+
+            #  Share with deg
+
+            #  Single el. energy balance for remaining buildings
 
 
 if __name__ == '__main__':
