@@ -1711,7 +1711,7 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                     EnergyBalanceException(msg)
 
 
-    elif has_tes is False and has_hp is False:  # Has no TES
+    elif has_tes is False and has_hp is False and has_chp is False:
         #  Run thermal simulation, if no TES is existent (only relevant for
         #  Boiler and EH
         #  #################################################################
@@ -1735,17 +1735,25 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                 #  Get nominal boiler power
                 q_nom_boi = boiler.qNominal
 
-                if q_nom_boi < th_pow_remain:
+                if q_nom_boi < th_pow_remain + th_lhn_pow_rem[i]:
                     #  Only cover partial power demand with boiler power
                     boiler.calc_boiler_all_results(control_signal=q_nom_boi,
                                                    time_index=i)
-                    th_pow_remain -= q_nom_boi
+
+                    if th_pow_remain > q_nom_boi:
+                        th_pow_remain -= q_nom_boi
+                    elif th_pow_remain == q_nom_boi:
+                        th_pow_remain = 0
+                    else:
+                        th_lhn_pow_rem[i] -= (q_nom_boi - th_pow_remain)
+                        th_pow_remain = 0
 
                 else:  # Cover total thermal power demand with boiler
 
-                    boiler.calc_boiler_all_results(control_signal=th_power,
+                    boiler.calc_boiler_all_results(control_signal=th_pow_remain + th_lhn_pow_rem[i],
                                                    time_index=i)
                     th_pow_remain = 0
+                    th_lhn_pow_rem[i] = 0
 
             # If not enough, use EH, if existent
             if has_eh:
@@ -1756,17 +1764,26 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                 #  Get nominal eh power
                 q_nom_eh = eh.qNominal
 
-                if q_nom_eh < th_pow_remain:
+                if q_nom_eh < th_pow_remain + th_lhn_pow_rem[i]:
                     #  Only cover partial power demand with eh power
                     eh.calc_el_h_all_results(control_signal=q_nom_eh,
                                              time_index=i)
-                    th_pow_remain -= q_nom_eh
+
+                    if th_pow_remain > q_nom_eh:
+                        th_pow_remain -= q_nom_eh
+                    elif th_pow_remain == q_nom_eh:
+                        th_pow_remain = 0
+                    else:
+                        th_lhn_pow_rem[i] -= (q_nom_eh - th_pow_remain)
+                        th_pow_remain = 0
 
                 else:  # Cover total thermal power demand with eh
 
-                    eh.calc_el_h_all_results(control_signal=th_pow_remain,
+                    eh.calc_el_h_all_results(control_signal=th_pow_remain
+                                                            +th_lhn_pow_rem[i],
                                              time_index=i)
                     th_pow_remain = 0
+                    th_lhn_pow_rem[i] = 0
 
             if th_pow_remain > 0:
                 msg = 'Could not cover thermal energy power at timestep ' \
