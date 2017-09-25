@@ -288,7 +288,18 @@ class CityEBCalculator(object):
             #  Hand over network energy demand to feeder node buildings
             #  and solve thermal energy balance
             #  ##########################################################
-            
+
+            th_lhn_power_remain = copy.deepcopy(th_lhn_power)
+
+            for n in list_th_esys:
+
+                build = self.city.node[n]['entity']
+
+                #  Solve thermal energy balance for single building with
+                #  remaining LHN power demand
+                beb.calc_build_therm_eb(build=build,
+                                        id=n,
+                                        th_lhn_pow_rem=th_lhn_power)
 
         #  Electrical energy balance of subcity (deg subcities)
 
