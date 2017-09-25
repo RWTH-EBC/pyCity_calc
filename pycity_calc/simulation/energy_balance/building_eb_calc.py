@@ -186,7 +186,7 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
 
     #  Get remaining LHN thermal power demand, if existent
     if th_lhn_pow_rem is None:
-        th_lhn_pow_rem = np.zeros(365 * 24 * 3600 / timestep)
+        th_lhn_pow_rem = np.zeros(int(365 * 24 * 3600 / timestep))
 
     # Perform energy balance calculation for different states
     #  #################################################################
@@ -522,7 +522,8 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                     #  Get maximum possible tes power input
                     q_tes_in_max = tes.calc_storage_q_in_max()
 
-                    if (sh_pow_remain + dhw_pow_remain + q_tes_in_max) \
+                    if (sh_pow_remain + dhw_pow_remain + q_tes_in_max
+                            + th_lhn_pow_rem[i]) \
                             >= q_nom_chp:
                         #  Cover part of power with full CHP load
                         chp.th_op_calc_all_results(control_signal=q_nom_chp,
@@ -550,19 +551,23 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                             elif dhw_pow_remain - (
                                         q_nom_chp - sh_pow_remain) < 0:
 
+                                #  TODO: Continue over here th_lhn_pow_rem[i]
+
                                 q_tes_in = q_nom_chp - sh_pow_remain - \
                                            dhw_pow_remain
 
                                 dhw_pow_remain = 0
                             sh_pow_remain = 0
 
-                    elif (sh_pow_remain + dhw_pow_remain + q_tes_in_max) < \
+                    elif (sh_pow_remain + dhw_pow_remain + q_tes_in_max
+                              + th_lhn_pow_rem[i]) < \
                             q_nom_chp:
                         #  Try to use CHP, depending on part load
 
                         chp_lal = chp.lowerActivationLimit
 
-                        if ((sh_pow_remain + dhw_pow_remain + q_tes_in_max)
+                        if ((sh_pow_remain + dhw_pow_remain + q_tes_in_max
+                                 + th_lhn_pow_rem[i])
                                 < chp_lal * q_nom_chp):
                             #  Required power is below part load performance,
                             #  thus, chp cannot be used
@@ -573,13 +578,17 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                         else:
                             #  CHP can operate in part load
                             chp.th_op_calc_all_results(
-                                control_signal=sh_pow_remain + dhw_pow_remain + q_tes_in_max,
+                                control_signal=sh_pow_remain
+                                               + dhw_pow_remain
+                                               + q_tes_in_max
+                                               + th_lhn_pow_rem[i],
                                 time_index=i)
 
                             q_tes_in = q_tes_in_max + 0.0
 
                             sh_pow_remain = 0
                             dhw_pow_remain = 0
+                            th_lhn_pow_rem[i] = 0
 
                 if has_boiler:
 
