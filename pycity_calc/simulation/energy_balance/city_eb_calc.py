@@ -280,7 +280,10 @@ class CityEBCalculator(object):
             print()
 
             #  Add LHN losses to total thermal power demand
-            th_lhn_power += q_lhn_loss
+            #  (when LHN is active)
+            for i in range(len(th_lhn_power)):
+                if th_lhn_power[i] > 0:
+                    th_lhn_power[i] += q_lhn_loss
 
             #  Add LHN electric power demand for pumps
             #  TODO: Add pump el. power demand calculation
@@ -290,6 +293,8 @@ class CityEBCalculator(object):
             #  ##########################################################
 
             th_lhn_power_remain = copy.deepcopy(th_lhn_power)
+
+            print(th_lhn_power_remain[0])
 
             #  Sort list_th_esys (CHP systems first)
             #  TODO: Add sorting function call
@@ -302,7 +307,14 @@ class CityEBCalculator(object):
                 #  remaining LHN power demand
                 beb.calc_build_therm_eb(build=build,
                                         id=n,
-                                        th_lhn_pow_rem=th_lhn_power)
+                                        th_lhn_pow_rem=th_lhn_power_remain)
+
+            for i in range(len(th_lhn_power_remain)):
+                if abs(th_lhn_power_remain[i]) > 0.001:
+                    msg = 'Could not cover LHN thermal energy demand of' \
+                          ' ' + str(int(th_lhn_power_remain[i])) + ' Watt' \
+                          ' for timestep ' + str(i) + '.'
+                    raise AssertionError(msg)
 
         #  Electrical energy balance of subcity (deg subcities)
 
