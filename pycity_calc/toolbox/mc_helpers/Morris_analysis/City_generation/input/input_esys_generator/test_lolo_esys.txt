@@ -1,4 +1,0 @@
-node_id	type	method
-1001	0	1
-1002	0	1
-1003	0	1

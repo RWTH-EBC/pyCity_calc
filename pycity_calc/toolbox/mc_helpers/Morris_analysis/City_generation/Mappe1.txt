@@ -1,7 +1,0 @@
-year	2010	2014
-longitude	50	51
-lattitude	600	601
-Altitude	266	268
-Tset_heat	18	22
-Tset_cool	65	75
-Tset_night	14	18

@@ -582,7 +582,6 @@ def calc_cap_and_op_rel_annuity_city(city_object, eco_calc_instance):
 
     #  Calculate operation-related annuity
     op_rel_ann = \
-        eco_calc_instance.calc_op_rel_annuity_multi_comp(list_invest=list_invest,
-                                                list_types=list_type)
+        eco_calc_instance.calc_op_rel_annuity_multi_comp(list_invest=list_invest, list_types=list_type)
 
     return (cap_rel_ann, op_rel_ann)

@@ -4,7 +4,7 @@
 '''
 
 Script to perform a Monte Carlo analysis of a city object.
-Output are gas, electrical final demand, uncertain annuity and GHG emissions
+Main considered outputs are gas, electrical final demand, annuity and GHG emissions
 
 Structure:
 ---------
@@ -21,9 +21,8 @@ Structure:
     Analyse: Confident interval definition
              Reference for GHG specific calculation
 
-    Results: Save the results in a text file: True or False
+    Results: Save the results in a text file and in excel: True or False
              Filename
-
 2: Reference City generation and add energy systems
 
 3: Dictionary for sampling
@@ -48,57 +47,69 @@ import pycity_calc.economic.annuity_calculation as eco_calc
 import pycity_calc.economic.calc_CO2_emission as GHG_calc
 import pycity_calc.toolbox.mc_helpers.Uncertainties_analysis.MC_new_cities_evaluation as newcity
 import pycity_calc.toolbox.mc_helpers.weather.gen_weather_set as genweather
+import pycity_calc.toolbox.mc_helpers.Uncertainties_analysis.MC_esys_new_evaluation as esys_gen
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
-import random as rd
+from xlwt import Workbook
 
-def do_uncertainty_analysis(Nsamples=10):
+def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, time_sp_force_retro = 40,
+                            max_retro_year = 2014,  Is_k_user_parameters = True, interest_fix = 0.05,
+                            MC_analyse_total = True , Confident_intervall_pourcentage = 90, save_result = True,
+                            save_path_mc='D:\jsc-les\\test_lolo\Results',
+                            results_name = 'mc_results.txt',city_pickle_name = 'aachen_kronenberg_3_mfh_ref_1.pkl',
+                            results_excel_name = 'mesresultats',
+                            Is_k_building_parameters = False, esys_filename = 'City_lolo_esys_ref.txt' ,
+                            gen_e_net=False, network_filename = 'lolo_networks.txt'):
 
     # Define Uncertainty analysis parameters
     # #############################################################################################################
     # ## City generation mode
     load_city = True  # load a pickle City file
     # if set to False: generation of a City with city_generator
-    city_pickle_name = 'aachen_kronenberg_3_mfh_ref_1.pkl'
+    city_pickle_name = city_pickle_name
+    # Scaling of esys (initialization)
+    size_esys=False #if set to true: sizing of energy systems depending on the thermal need of the city
+                    # set to False: use of sizes defined in input files
+
 
     # ## Uncertainty
-
     # energy systems parameters are unknown (efficiency, maximum temperature...)
-    Is_k_esys_parameters = True
-    # Set to false: energy systems are known: buildings characteristics uncertainties
+    Is_k_esys_parameters = Is_k_esys_parameters
+    # Set to false: energy systems are known: small variations of energy system chacteristics
+    # Set to true: energy systems are unknown: large variations of energy system chacteristics
 
     # buildings parameters are unknown (infiltration rate, net_floor_area, modernisation year)
-    Is_k_building_parameters = True
+    Is_k_building_parameters = Is_k_building_parameters
     # Set to False:  buildings parameters are known: building uncertainties (infiltration rate and net_floor_area)
-    time_sp_force_retro = 40
-    max_retro_year = 2014
+    time_sp_force_retro = time_sp_force_retro
+    max_retro_year = max_retro_year
 
     # user parameters are unknown (user_ventilation_rate, Tset_heat, number of occupants)
-    Is_k_user_parameters = True
+    Is_k_user_parameters = Is_k_user_parameters
     #Set to False: user parameters are fixed
 
     # ## Economic calculations:
-    # Interest rate is uncertain: Set to False: interest_rate is fixed
-    interest_unc = True
-    interest_rate_variation = 'low' #0-0.05
-    #interest_rate_variation = 'medium' #0.05-0.1
-    #interest_rate_variation = 'high' #0.1-0.2
-    # if interest is fixed
-    interest_fix = 0.05
+    interest_fix = interest_fix
 
     # Time for economic calculation in years (default: 10)
-    time = 10  # Years
+    time = time  # Years
 
-    MC_analyse_total = True
+
+    MC_analyse_total = MC_analyse_total
+    # if set to false: MC analyse without uncertainties for area, height of floors, energy systems
+    #  and economic parameters
 
     # ## Analyse
-    Confident_intervall_pourcentage = 90
+    Confident_intervall_pourcentage = Confident_intervall_pourcentage
     GHG_specific = 'user energy demand'
 
     # ## Save results
-    save_result = False  # if set to false: no generation of results txt file
-    results_name = 'mc_results.txt'
+    save_result = save_result # if set to false: no generation of results txt and excel file
+    results_name = results_name
+    results_excel_name = results_excel_name
+    save_path_mc = save_path_mc
 
     print('***********************************************************************************************************')
     print('Initialisation: Reference City Generation')
@@ -109,14 +120,14 @@ def do_uncertainty_analysis(Nsamples=10):
     # #----------------------------------------------------------------------
     # # Generation of City reference:
     # #   load_city = True : City is load from pickle file
-    # #   load_city 0 False : City is generated with City_generator
+    # #   load_city 0 False : City is generated with City_generator.py
 
     this_path = os.path.dirname(os.path.abspath(__file__))
 
     if load_city == True:
         # load pickle City
 
-        load_path = os.path.join(this_path, 'City_generation', 'output', city_pickle_name)
+        load_path = os.path.join(this_path, 'City_generation', 'input', city_pickle_name)
         City = pickle.load(open(load_path, mode='rb'))
 
         print()
@@ -125,36 +136,34 @@ def do_uncertainty_analysis(Nsamples=10):
 
         #  Add energy systems to city
         gen_esys = True  # True - Generate energy systems
-        gen_e_net = True# True - Generate energy networks
-        dhw_dim_esys = True  # Use dhw profiles for esys dimensioning
+        gen_e_net = gen_e_net # True - Generate energy networks
 
         #  Path to energy system input file (csv/txt; tab separated)
-        esys_filename = 'lolo_esys.txt'
+        esys_filename = esys_filename
         esys_path = os.path.join(this_path, 'City_generation', 'input', 'input_esys_generator', esys_filename)
 
         # Generate energy systems for city district
         if gen_esys:
             #  Load energy networks planing data
-            list_esys = City_gen.esysgen.load_enersys_input_data(esys_path)
+            list_esys = esys_gen.load_enersys_input_data(esys_path)
             print ('Add energy systems')
 
             #  Generate energy systems
-            City_gen.esysgen.gen_esys_for_city(city=City, list_data=list_esys,
-                                               dhw_scale=dhw_dim_esys)
+            esys_gen.gen_esys_for_city(city=City, list_data=list_esys, size_esys=size_esys)
 
         #  Add energy networks to city
         if gen_e_net:  # True - Generate energy networks
 
             #  Path to energy network input file (csv/txt; tab separated)
-            network_filename = 'lolo_networks.txt'
+            network_filename = network_filename
 
             network_path = os.path.join(this_path, 'City_generation', 'input', 'input_en_network_generator',
                                              network_filename)
             #  Load energy networks planing data
             dict_e_net_data = City_gen.enetgen.load_en_network_input_data(network_path)
 
+            # Add energy networks
             City_gen.enetgen.add_energy_networks_to_city(city=City, dict_data=dict_e_net_data)
-
 
 
     else:
@@ -357,17 +366,10 @@ def do_uncertainty_analysis(Nsamples=10):
         network_path = os.path.join(this_path, 'City_generation', 'input', 'input_en_network_generator',
                                     network_filename)
 
-
-
-
         # # Load district_data file
-
-
 
         district_data = City_gen.citygen.get_district_data_from_txt(txt_path)
         print('district data : ', district_data)
-
-
 
         # # City Generation
 
@@ -409,8 +411,10 @@ def do_uncertainty_analysis(Nsamples=10):
                                                 prev_heat_dev=prev_heat_dev,
                                                 season_mod=season_mod)
 
+    ########## End generation of the city reference ##########################
     # #----------------------------------------------------------------------
     # #----------------------------------------------------------------------
+    ########## Start calculations city reference #############################
 
     # # Energy balance calculations
 
@@ -455,7 +459,7 @@ def do_uncertainty_analysis(Nsamples=10):
     print("Annuity calculations")
     dem_rel_annuity = eco_inst.calc_dem_rel_annuity_city(City,)
     total_proc_annuity = eco_inst.calc_proc_annuity_multi_comp_city(City)
-    cap_rel_ann, op_rel_ann = eco_inst.calc_cap_and_op_rel_annuity_city(City)
+    cap_rel_ann, op_rel_ann = eco_inst.calc_cap_and_op_rel_annuity_city(City, cost_spe=False)
 
     total_annuity_ref = eco_inst.calc_total_annuity(ann_capital=cap_rel_ann,
                                                     ann_demand=dem_rel_annuity,
@@ -468,9 +472,6 @@ def do_uncertainty_analysis(Nsamples=10):
 
     GHG_Emission_ref = GHG_calc.CO2_emission_calc(city_object=City, emission_object=GHG, CO2_zero_lowerbound=False,
                                                   eco_calc_instance=eco_inst)
-
-    #print('GHG emissions reference City : kg/year')
-    #print(GHG_Emission_ref)
 
     print('***********************************************************************************************************')
     print('Save the city')
@@ -485,14 +486,19 @@ def do_uncertainty_analysis(Nsamples=10):
     print('total reference annuity:', round(total_annuity_ref, 2), ' Euro/year')
     print('total emission reference City :', GHG_Emission_ref, ' kg/year ')
 
+    ########## The end of  calculations for the city reference #############################
+    # #----------------------------------------------------------------------
+    # #----------------------------------------------------------------------
     print('***********************************************************************************************************')
     print('Samples Dictionnary')
     print('***********************************************************************************************************')
     # ## Do the dictionary for Monte Carlo uncertainty analysis sampling
 
+    # number of samples
     dict_par_unc = {}
     dict_par_unc['Nsamples'] = Nsamples
 
+    # weather object
     dict_par_unc['weather'] = genweather.gen_set_of_weathers(Nsamples)
     print('End of weather sampling')
 
@@ -500,15 +506,17 @@ def do_uncertainty_analysis(Nsamples=10):
     if Is_k_esys_parameters:
         # energy systems parameters are totally uncertain
         dict_par_unc['esys'] = True
+    else:
+        dict_par_unc['esys'] = False
 
     if Is_k_building_parameters:
         dict_par_unc['build_physic_unc'] = True
     else:
         dict_par_unc['build_physic_unc'] = False
-        # TODO rajouter le sample pour un equipement avec des proprietes totalement incertaines pour le batiments
 
     dict_par_unc['time_sp_force_retro'] = time_sp_force_retro
     dict_par_unc['max_retro_year'] = max_retro_year
+
     if Is_k_user_parameters:
         dict_par_unc['nb_occ_unc'] = True
         dict_par_unc['user'] = True
@@ -521,48 +529,42 @@ def do_uncertainty_analysis(Nsamples=10):
     else:
         dict_par_unc['MC_analysis'] = False
 
-    if interest_unc:
-        if interest_rate_variation == 'low':
-            max =  0.05
-            min = 0
-        elif interest_rate_variation== 'medium':
-            max = 0.1
-            min = 0.05
-        elif interest_rate_variation=='high':
-            max = 0.2
-            min = 0.1
-        else:
-            print('Error: interest_rate_variation not valid: default value: low')
-            max = 0.05
-            min = 0
-
-        interest_list = []
-        for i in range(Nsamples):
-            temp = rd.uniform(min, max)
-            interest_list.append(temp)
-    else:
-        interest_list=[]
-        for i in range (Nsamples):
-            interest_list.append(interest_fix)
-    dict_par_unc['interest'] = interest_list
+    dict_par_unc['interest_low'] = 0.03
+    dict_par_unc['interest_medium'] = 0.05
+    dict_par_unc['interest_high'] = 0.07
 
     dict_par_unc['time'] = time
 
-        # TODO rajouter le sample pour un equipement avec des proprietes vraiment incertaines et d'autres moins
-
+    ########## The end of dictionary building ###############################
+    # #----------------------------------------------------------------------
+    # #----------------------------------------------------------------------
+    ########## Start simulations ############################################
     print('***********************************************************************************************************')
     print('Do the simulations')
     print('***********************************************************************************************************')
 
-    Th_results, Gas_results, El_results, Annuity_results, GHG_results, \
-    GHG_spe_results, el_results2, Th_results2, dict_city_pb, Nboiler_rescaled = \
+    Th_results, el_results_net, Gas_results, El_results, Annuity_results, Annuity_spe_results, \
+    Annuity_results_high, Annuity_results_low, Annuity_results_ec1, Annuity_results_ec2, Annuity_results_ec3, \
+    GHG_results, GHG_spe_results, Nb_Lal_rescaled, Nb_boiler_medium_rescaled, Nb_boiler_high_rescaled, \
+    Nb_Tes_rescale, Nb_EH_small_rescaled, Nb_EH_medium_rescaled, Nb_EH_high_rescaled, pv_used_self , pv_sold,\
+    CHP_el_self_used, CHP_el_sold= \
         newcity.new_city_evaluation_monte_carlo(City, dict_par_unc)
+
+    # Get specific Annuity
+    specific_annuity_m = Annuity_spe_results
+    specific_annuity_l  = Annuity_results_low * (Annuity_spe_results) / Annuity_results
+    specific_annuity_h  = Annuity_results_high * (Annuity_spe_results) / Annuity_results
 
     print('***********************************************************************************************************')
     print('Do the Uncertainties analyse')
     print('***********************************************************************************************************')
-    # ## Results analysis - Standard deviation, mean and 90 confident interval
+    ########## The end of simulations ###############################
+    # #----------------------------------------------------------------------
+    # #----------------------------------------------------------------------
+    ########## Start analysis ############################################
 
+
+    # ## Results analysis - Standard deviation, mean and 90 confident interval- interest fix
     print ()
     print ('Gas demand analysis')
     print ('-------------------')
@@ -595,8 +597,8 @@ def do_uncertainty_analysis(Nsamples=10):
     confident_inter_el = stats.norm.interval(Confident_intervall_pourcentage / 100, loc=mean_el_demand,
                                               scale=sigma_el_demand)
     median_el_demand = np.median(a=El_results)
-    first_quantil_el = stats.scoreatpercentile(El_results, per=25)
-    second_quantil_el = stats.scoreatpercentile(El_results, per=50)
+    first_quantil_el = stats.scoreatpercentile(El_results, per = 25)
+    second_quantil_el = stats.scoreatpercentile(El_results, per= 50)
     third_quantil_el = stats.scoreatpercentile(El_results, per=75)
 
     print('mean :', mean_el_demand)
@@ -609,28 +611,85 @@ def do_uncertainty_analysis(Nsamples=10):
     print('third quantil : ', third_quantil_el)
     print()
 
-    # Annuity
-    print('Annuity analysis')
+    # Annuity, interest fixed low
+    print('Annuity analysis low interest')
     print('----------------')
     print('unit: Euro/year')
 
-    mean_annuity = sum(Annuity_results)/len(Annuity_results)
-    sigma_annuity = np.std(a=Annuity_results)
+    mean_annuity = sum(Annuity_results)/len(Annuity_results_low)
+    sigma_annuity = np.std(a=Annuity_results_low)
     confident_inter_a = stats.norm.interval(Confident_intervall_pourcentage / 100, loc=mean_annuity, scale=sigma_annuity)
 
-    median_a = np.median(a=Annuity_results)
-    first_quantil_a = stats.scoreatpercentile(Annuity_results, per=25)
-    second_quantil_a = stats.scoreatpercentile(Annuity_results, per=50)
-    third_quantil_a = stats.scoreatpercentile(Annuity_results, per=75)
+    median_a = np.median(a=Annuity_results_low)
+    first_quantil_a = stats.scoreatpercentile(Annuity_results_low, per=25)
+    second_quantil_a = stats.scoreatpercentile(Annuity_results_low, per=50)
+    third_quantil_a = stats.scoreatpercentile(Annuity_results_low, per=75)
 
     print('mean :', mean_annuity)
     print('sigma :', sigma_annuity)
     print('confident interval {}'.format(Confident_intervall_pourcentage), confident_inter_a)
-    print('{:0.2%} of the means are in confident interval'.format(((Annuity_results >= confident_inter_a[0]) & (Annuity_results < confident_inter_a[1])).sum() / float(Nsamples)))
+    print('{:0.2%} of the means are in confident interval'.format(
+        ((Annuity_results_low>= confident_inter_a[0]) & (Annuity_results_low<
+                                                         confident_inter_a[1])).sum() / float(Nsamples)))
     print('median : ', median_a)
     print('first quantil : ', first_quantil_a)
     print('second quantil :', second_quantil_a)
     print('third quantil : ', third_quantil_a)
+    print()
+
+
+    # Annuity, interest medium
+    print('Annuity analysis medium')
+    print('----------------')
+    print('unit: Euro/year')
+
+    mean_annuity_m = sum(Annuity_results) / len(Annuity_results)
+    sigma_annuity_m = np.std(a=Annuity_results)
+    confident_inter_a_m = stats.norm.interval(Confident_intervall_pourcentage / 100, loc=mean_annuity_m,
+                                            scale=sigma_annuity_m)
+
+    median_a_m = np.median(a=Annuity_results)
+    first_quantil_a_m = stats.scoreatpercentile(Annuity_results, per=25)
+    second_quantil_a_m = stats.scoreatpercentile(Annuity_results, per=50)
+    third_quantil_a_m = stats.scoreatpercentile(Annuity_results, per=75)
+
+    print('mean :', mean_annuity_m)
+    print('sigma :', sigma_annuity_m)
+    print('confident interval {}'.format(Confident_intervall_pourcentage), confident_inter_a_m)
+    print('{:0.2%} of the means are in confident interval'.format(
+        ((Annuity_results >= confident_inter_a_m[0]) & (Annuity_results < confident_inter_a_m[1])).sum() / float(
+            Nsamples)))
+    print('median : ', median_a_m)
+    print('first quantil : ', first_quantil_a_m)
+    print('second quantil :', second_quantil_a_m)
+    print('third quantil : ', third_quantil_a_m)
+    print()
+
+    # Annuity, interest fixed high
+    print('Annuity analysis high')
+    print('----------------')
+    print('unit: Euro/year')
+
+    mean_annuity_h = sum(Annuity_results_high) / len(Annuity_results_high)
+    sigma_annuity_h = np.std(a=Annuity_results_high)
+    confident_inter_a_h = stats.norm.interval(Confident_intervall_pourcentage / 100, loc=mean_annuity_h,
+                                            scale=sigma_annuity_h)
+
+    median_a_h = np.median(a=Annuity_results_high)
+    first_quantil_a_h = stats.scoreatpercentile(Annuity_results_high, per=25)
+    second_quantil_a_h = stats.scoreatpercentile(Annuity_results_high, per=50)
+    third_quantil_a_h = stats.scoreatpercentile(Annuity_results_high, per=75)
+
+    print('mean :', mean_annuity_h)
+    print('sigma :', sigma_annuity_h)
+    print('confident interval {}'.format(Confident_intervall_pourcentage), confident_inter_a_h)
+    print('{:0.2%} of the means are in confident interval'.format(
+        ((Annuity_results_high >= confident_inter_a_h[0]) & (Annuity_results_high < confident_inter_a_h[1])).sum() / float(
+            Nsamples)))
+    print('median : ', median_a_h)
+    print('first quantil : ', first_quantil_a_h)
+    print('second quantil :', second_quantil_a_h)
+    print('third quantil : ', third_quantil_a_h)
     print()
 
     # GHG
@@ -685,6 +744,36 @@ def do_uncertainty_analysis(Nsamples=10):
     print('third quantil : ', third_quantil_spe_GHG)
     print ()
 
+    # Specific costs analysis
+    mean_annuity_spe_l = sum(specific_annuity_l) / len(specific_annuity_l)
+    sigma_annuity_spe_l = np.std(a=specific_annuity_l)
+    confident_inter_a_spe_l = stats.norm.interval(Confident_intervall_pourcentage / 100, loc=mean_annuity_spe_l,
+                                              scale=sigma_annuity_spe_l)
+
+    mean_annuity_spe_m = sum(specific_annuity_m) / len(specific_annuity_m)
+    sigma_annuity_spe_m = np.std(a=specific_annuity_m)
+    confident_inter_a_spe_m = stats.norm.interval(Confident_intervall_pourcentage / 100, loc=mean_annuity_spe_m,
+                                                  scale=sigma_annuity_spe_m)
+
+    mean_annuity_spe_h = sum(specific_annuity_h) / len(specific_annuity_h)
+    sigma_annuity_spe_h = np.std(a=specific_annuity_h)
+    confident_inter_a_spe_h = stats.norm.interval(Confident_intervall_pourcentage / 100, loc=mean_annuity_spe_h,
+                                                  scale=sigma_annuity_spe_h)
+
+    mean_pv_sold = sum(pv_sold) / len(pv_sold)
+    sigma_pv_sold = np.std(a=pv_sold)
+
+    mean_pv_self_used = sum(pv_used_self) / len(pv_used_self)
+    sigma_pv_self_used = np.std(a=pv_used_self)
+
+    print('Number of simulations with small rescaled EH (10%) : ', Nb_EH_small_rescaled)
+    print('Number of simulations with medium rescaled EH (20%): ', Nb_EH_medium_rescaled)
+    print('Number of simulations with high rescaled EH (50%): ', Nb_EH_high_rescaled)
+    print ('Number of simulations with rescaled Boiler (10%) : ', Nb_Lal_rescaled)
+    print('Number of simulations with medium rescaled boiler (20%) : ', Nb_boiler_medium_rescaled)
+    print('Number of simulations with high rescaled boiler (50%): ', Nb_boiler_high_rescaled)
+    print ('Number of Tes rescaled : ', Nb_Tes_rescale)
+
     print('***********************************************************************************************************')
     print('Save results')
     print('***********************************************************************************************************')
@@ -692,9 +781,12 @@ def do_uncertainty_analysis(Nsamples=10):
     if save_result:
         #  Write results file
 
+        if not os.path.exists(save_path_mc):
+            os.makedirs(save_path_mc)
+
         #  Log file path
-        this_path = os.path.dirname(os.path.abspath(__file__))
-        results_path = os.path.join(this_path, 'output', results_name)
+        #this_path = os.path.dirname(os.path.abspath(__file__))
+        results_path = os.path.join(save_path_mc, results_name)
         write_results = open(results_path, mode='w')
 
         write_results.write(' ---------- Monte Carlo Analysis ---------- \n ')
@@ -705,15 +797,17 @@ def do_uncertainty_analysis(Nsamples=10):
         write_results.write('user behaviour: ' + str(Is_k_user_parameters)+ '\n')
         write_results.write('energy systems parameters: ' + str(Is_k_esys_parameters)+ '\n')
         write_results.write('buildings parameters: ' + str(Is_k_building_parameters)+ '\n')
-        write_results.write('interest_unc: ' + str(interest_unc) + '\n')
-        write_results.write('interest_rate_variation: ' + str(interest_rate_variation) + '\n')
         write_results.write('interest_fix: ' + str(interest_fix) + '\n')
+        write_results.write('heating network: ' + str(gen_e_net) + '\n')
 
         write_results.write('\n############## City reference ##############\n')
         if load_city == True:
             generation_mode = 'load City from pickle file'
             write_results.write('Generation mode: ' + generation_mode+ '\n')
             write_results.write('pickle file path :  ' + str(load_path)+ '\n')
+
+
+
         else:
             generation_mode = 'generation of a city with City_generator'
             write_results.write('Generation mode: ' + generation_mode)
@@ -746,6 +840,17 @@ def do_uncertainty_analysis(Nsamples=10):
             write_results.write(
                 'Do random dhw. normalization: ' + str(dhw_random) + '\n')
 
+        write_results.write('\n##############  reference values ##############\n')
+
+        write_results.write('electrical demand before energy balance: ' + str(SaveCity.get_annual_el_demand()) + 'kWh/year'+ '\n')
+        write_results.write('thermal demand before energy balance : ' + str( SaveCity.get_total_annual_th_demand()) + 'kWh/year' + '\n')
+        write_results.write('Gas demand after energy balance:' + str(gas_dem_ref) + 'kWh/year' +'\n')
+        write_results.write('electrical demand after energy balance :' + str(el_dem_ref) + 'kWh/year' + '\n')
+        write_results.write('Annuity:' + str(total_annuity_ref) + 'Euro/year' +'\n')
+        write_results.write('GHG emissions :' + str(GHG_Emission_ref) + 'kg/year' +'\n')
+
+        write_results.write('\n############################Esys #########################\n')
+
         write_results.write('+++++++++++++++++++ \n')
         write_results.write('energy systems type: ' + str(list_esys)+ '\n')
         write_results.write('+++++++++++++++++++ \n')
@@ -762,6 +867,7 @@ def do_uncertainty_analysis(Nsamples=10):
         write_results.write('sigma : '+ str(sigma_gas_demand) + '\n')
         write_results.write('confident interval {}'.format(Confident_intervall_pourcentage)+ str(confident_inter_gas) + '\n')
         write_results.write('{:0.2%} of the means are in confident interval'.format(((Gas_results >= confident_inter_gas[0]) & (Gas_results < confident_inter_gas[1])).sum() / float(Nsamples))+ '\n')
+        write_results.write('reference:' + str(gas_dem_ref) + '\n')
 
         write_results.write('\n electrical demand\n')
         write_results.write('\n -----------------\n')
@@ -776,9 +882,11 @@ def do_uncertainty_analysis(Nsamples=10):
         write_results.write('{:0.2%} of the means are in confident interval'.format(
             ((El_results >= confident_inter_el[0]) & (El_results < confident_inter_el[1])).sum() / float(
                 Nsamples)) + '\n')
+        write_results.write('reference:' + str(el_dem_ref) + '\n')
 
-        write_results.write('\n Annuity\n')
+        write_results.write('\n Annuity low \n')
         write_results.write('\n -------\n')
+        write_results.write('interest rate' + str(dict_par_unc['interest_low'])+'\n')
         write_results.write('unit : Euro/year \n')
         write_results.write('median : '+ str(median_a) + '\n')
         write_results.write('first quantil : '+ str(first_quantil_a) + '\n')
@@ -788,8 +896,54 @@ def do_uncertainty_analysis(Nsamples=10):
         write_results.write('sigma : '+ str(sigma_annuity) + '\n')
         write_results.write('confident interval {}'.format(Confident_intervall_pourcentage)+ str(confident_inter_a) + '\n')
         write_results.write('{:0.2%} of the means are in confident interval'.format(
-            ((Annuity_results >= confident_inter_a[0]) & (Annuity_results < confident_inter_a[1])).sum() / float(
+            ((Annuity_results_low >= confident_inter_a[0]) & (Annuity_results_low < confident_inter_a[1])).sum() / float(
                 Nsamples)) + '\n')
+        write_results.write('reference:' + str(total_annuity_ref) + '\n')
+
+        write_results.write('\n Annuity medium \n')
+        write_results.write('\n -------\n')
+        write_results.write('interest rate' + str(dict_par_unc['interest_medium']) + '\n')
+        write_results.write('unit : Euro/year \n')
+        write_results.write('median : ' + str(median_a_m) + '\n')
+        write_results.write('first quantil : ' + str(first_quantil_a_m) + '\n')
+        write_results.write('second quantil :' + str(second_quantil_a_m) + '\n')
+        write_results.write('third quantil :' + str(third_quantil_a_m) + '\n')
+        write_results.write('mean : ' + str(mean_annuity_m) + '\n')
+        write_results.write('sigma : ' + str(sigma_annuity_m) + '\n')
+        write_results.write('confident interval {}'.format(Confident_intervall_pourcentage) + str(confident_inter_a_m) + '\n')
+        write_results.write('{:0.2%} of the means are in confident interval'.format
+                            (((Annuity_results >= confident_inter_a_m[0]) &
+                              (Annuity_results < confident_inter_a_m[1])).sum() / float(Nsamples)) + '\n')
+        write_results.write('reference:' + str(total_annuity_ref) + '\n')
+
+
+        write_results.write('\nSpecific Annuity medium \n')
+        write_results.write('\n -------\n')
+        write_results.write('unit : Euro/kWh/year \n')
+        write_results.write('mean : ' + str(mean_annuity_spe_m) + '\n')
+        write_results.write('sigma : ' + str(sigma_annuity_spe_m) + '\n')
+        write_results.write('confident interval {}'.format(Confident_intervall_pourcentage) + str(confident_inter_a_spe_m) + '\n')
+        write_results.write('{:0.2%} of the means are in confident interval'.
+                            format(((specific_annuity_m >= confident_inter_a_spe_m[0]) &
+                                    (specific_annuity_m<confident_inter_a_spe_m[1])).sum() / float(Nsamples)) + '\n')
+        write_results.write('reference:' + str(total_annuity_ref) + '\n')
+
+        write_results.write('\n Annuity high \n')
+        write_results.write('\n -------\n')
+        write_results.write('interest rate' + str(dict_par_unc['interest_high']) + '\n')
+        write_results.write('unit : Euro/year \n')
+        write_results.write('median : ' + str(median_a_h) + '\n')
+        write_results.write('first quantil : ' + str(first_quantil_a_h) + '\n')
+        write_results.write('second quantil :' + str(second_quantil_a_h) + '\n')
+        write_results.write('third quantil :' + str(third_quantil_a_h) + '\n')
+        write_results.write('mean : ' + str(mean_annuity_h) + '\n')
+        write_results.write('sigma : ' + str(sigma_annuity_h) + '\n')
+        write_results.write(
+            'confident interval {}'.format(Confident_intervall_pourcentage) + str(confident_inter_a_h) + '\n')
+        write_results.write('{:0.2%} of the means are in confident interval'.format(
+            ((Annuity_results_high >= confident_inter_a_h[0]) & (Annuity_results_high < confident_inter_a_h[1])).sum() / float(
+                Nsamples)) + '\n')
+        write_results.write('reference:' + str(total_annuity_ref) + '\n')
 
         write_results.write('\n GHG Emissions\n')
         write_results.write('\n -------------\n')
@@ -819,33 +973,147 @@ def do_uncertainty_analysis(Nsamples=10):
         write_results.write('{:0.2%} of the means are in confident interval'.format(
             ((GHG_spe_results >= confident_inter_spe_GHG[0]) & (GHG_spe_results < confident_inter_spe_GHG[1])).sum() / float(
                 Nsamples)) + '\n')
+        write_results.write('reference:' + str(GHG_Emission_ref) + '\n')
+
+
+        write_results.write('\n Nboiler Lal rescaled and boiler 10% : ' + str(Nb_Lal_rescaled))
+        write_results.write('\n Nboiler rescaled medium: 20% : ' + str(Nb_boiler_medium_rescaled))
+        write_results.write('\n Nboiler rescaled: 50% : ' + str(Nb_boiler_high_rescaled))
+        write_results.write('\n EH rescaled small : ' + str(Nb_EH_small_rescaled))
+        write_results.write('\n EH rescaled total: ' + str(Nb_EH_medium_rescaled))
+        write_results.write('\n EH rescaled medium : ' + str(Nb_EH_high_rescaled))
+        write_results.write('\n Tes rescaled: 100000000 kg + boiler rescale 1000% : ' + str(Nb_Tes_rescale))
+
         write_results.close()
+
+        # Xecel
+        # Creation
+        book = Workbook()
+
+        #creation feuille1
+        feuill1 = book.add_sheet('i_medium')
+        feuill2 = book.add_sheet('i_low')
+        feuill3 = book.add_sheet('i_high')
+        feuill4 = book.add_sheet('i_medium_others')
+
+        # ajout des en-tête
+        feuill1.write(0,0,'el_demand')
+        feuill1.write(0,1,'gas_demand')
+        feuill1.write(0,2,'Annuity')
+        feuill1.write(0,3,'GHG')
+        feuill1.write(0, 4, 'specific Annuity')
+        feuill1.write(0, 5, 'specific_GHG')
+        feuill1.write(0, 6, 'electrical demand before EBB')
+        feuill1.write(0, 7, 'thermal demand before EBB')
+        feuill2.write(0, 0, 'Annuity')
+        feuill2.write(0, 1, 'specific Annuity')
+        feuill3.write(0, 0, 'Annuity')
+        feuill3.write(0, 1, 'specific Annuity')
+
+        feuill4.write(0, 0, 'ec1')
+        feuill4.write(0, 1, 'ec2')
+        feuill4.write(0, 2, 'ec3')
+
+        # write results
+        feuill1.write(0, 10, 'mean annuity medium interest rate')
+        feuill1.write(1, 10, str(mean_annuity))
+        feuill1.write(0, 11, 'sigma annuity medium interest rate')
+        feuill1.write(1, 11, str(sigma_annuity))
+        feuill1.write(5, 10, 'mean specific annuity')
+        feuill1.write(6, 10, str(mean_annuity_spe_l))
+        feuill1.write(5, 11, 'sigma specific annuity')
+        feuill1.write(6, 11, str(sigma_annuity_spe_l))
+
+        feuill1.write(0, 18, 'mean ghg')
+        feuill1.write(1, 18, str(mean_GHG))
+        feuill1.write(0, 19, 'sigma ghg')
+        feuill1.write(1, 19, str(sigma_GHG))
+        feuill1.write(5, 18, 'mean specific ghg')
+        feuill1.write(6, 18, str(mean_spe_GHG))
+        feuill1.write(5, 19, 'sigma specific ghg')
+        feuill1.write(6, 19, str(sigma_spe_GHG))
+
+        feuill1.write(0, 15, 'mean electric final demand')
+        feuill1.write(1, 15, str(mean_el_demand))
+        feuill1.write(0, 16, 'sigma electric final demand')
+        feuill1.write(1, 16, str(sigma_el_demand))
+        feuill1.write(5, 15, 'mean gas demand')
+        feuill1.write(6, 15, str(mean_gas_demand))
+        feuill1.write(5, 16, 'sigma gas demamd')
+        feuill1.write(6, 16, str(sigma_gas_demand))
+
+        feuill2.write(0, 10, 'mean annuity low interest rate')
+        feuill2.write(1, 10, str(mean_annuity_m))
+        feuill2.write(0, 11, 'sigma annuity low interest rate')
+        feuill2.write(1, 11, str(sigma_annuity_m))
+        feuill2.write(5, 10, 'mean specific annuity')
+        feuill2.write(6, 10, str(mean_annuity_spe_m))
+        feuill2.write(5, 11, 'sigma specific annuity')
+        feuill2.write(6, 11, str(sigma_annuity_spe_m))
+
+        feuill3.write(0, 10, 'mean  annuity high interest rate')
+        feuill3.write(1, 10, str(mean_annuity_h))
+        feuill3.write(0, 11, 'sigma annuity high interest rate')
+        feuill3.write(1, 11, str(sigma_annuity_h))
+        feuill3.write(5, 10, 'mean specific annuity')
+        feuill3.write(6, 10, str(mean_annuity_spe_h))
+        feuill3.write(5, 11, 'sigma specific annuity')
+        feuill3.write(6, 11, str(sigma_annuity_spe_h))
+
+        for value in range(len(El_results)):
+            feuill1.write(value+1,0,str(El_results[value]))
+            feuill1.write(value+1,1, str(Gas_results[value]))
+            feuill1.write(value+1,2, str(Annuity_results[value]))
+            feuill1.write(value+1,3, str(GHG_results[value]))
+            feuill1.write(value+1, 4, str(specific_annuity_m[value]))
+            feuill1.write(value + 1, 5, str(GHG_spe_results[value]))
+            feuill1.write(value + 1, 6, str(el_results_net[value]))
+            feuill1.write(value + 1, 7, str(Th_results[value]))
+
+        for value in range(len(El_results)):
+            feuill2.write(value+1,0,str(Annuity_results_low[value]))
+            feuill2.write(value + 1, 1, str(specific_annuity_l[value]))
+
+        for value in range(len(El_results)):
+            feuill3.write(value+1,0,str(Annuity_results_high[value]))
+            feuill3.write(value + 1, 1, str(specific_annuity_h[value]))
+
+        for value in range(len(El_results)):
+            feuill4.write(value+1, 0,str(Annuity_results_ec1[value]))
+            feuill4.write(value + 1, 1, str(Annuity_results_ec2[value]))
+            feuill4.write(value + 1, 2, str(Annuity_results_ec3[value]))
+
+
+        # creation materielle du fichier
+        book.save(os.path.join(save_path_mc,results_excel_name))
 
     print('***********************************************************************************************************')
     print('Visualisation')
     print('***********************************************************************************************************')
     print()
+
     # ## Visualisation
     # Histogram figure
 
-    fig, ((ax1,ax2), (ax3,ax4)) = plt.subplots(2, 2)
+    fig, ((ax1,ax2), (ax3,ax4)) = plt.subplots(2, 2, figsize=(17,9))
 
     ax1.hist(El_results,50, normed=1)
+    ax1.set_title('Final annual electrical demand in kWh')
 
     ax2.hist(Gas_results,50 , normed=1)
-    ax2.set_title('Gas demand in kWh')
+    ax2.set_title('Final annual gas demand in kWh')
 
     ax3.hist(Annuity_results, 50, normed=1)
     ax3.set_title('Annuity in  Euro/year')
 
-    ax4.hist(GHG_spe_results, 50 , normed=1)
-    ax4.set_title('GHG specific emission in kg/kWh/year')
+    ax4.hist(GHG_results, 50 , normed=1)
+    ax4.set_title('GHG emission in kg/year')
 
     fig.suptitle('Histogram energy demand in kWh/year for {} simulations '.format(Nsamples))
+    fig.savefig(os.path.join(save_path_mc, 'Mainoutput.pdf'))
 
     # Box plot:
-
-    fig2, ((ax5,ax6),(ax7,ax8)) = plt.subplots(2,2)
+    fig2, ((ax5,ax6),(ax7,ax8)) = plt.subplots(2,2, figsize=(17,9))
 
     ax5.boxplot(El_results, showmeans=True, whis=99)
     ax5.set_title('Electrical demand in kWh')
@@ -856,24 +1124,89 @@ def do_uncertainty_analysis(Nsamples=10):
     ax7.boxplot(Annuity_results, showmeans=True, whis=99)
     ax7.set_title('Annuity in  Euro/year')
     ax7.grid(color='b', alpha=0.5, linestyle='dashed', linewidth=0.5)
-    ax8.boxplot(GHG_spe_results, showmeans=True, whis=99)
-    ax8.set_title('GHG specific emission in kg/kWh/year')
+    ax8.boxplot(GHG_results, showmeans=True, whis=99)
+    ax8.set_title('GHG emission in kg/kWh/year')
     ax8.grid(color='b', alpha=0.5, linestyle='dashed', linewidth=0.5)
+    fig2.savefig(os.path.join(save_path_mc,'boxplot_mainoutputs.pdf'))
 
-    fig3,((ax11,ax12), (ax13,ax14)) = plt.subplots(2, 2)
-    ax11.hist(Th_results, 50)
-    ax11.set_title('Thermal demand normal')
-    ax12.hist(Th_results2, 50)
-    ax12.set_title('Thermal demand sum buildings')
-    ax13.hist(El_results, 50)
-    ax13.set_title('Electrical demand normal')
-    ax14.hist(el_results2, 50)
-    ax14.set_title('electrical demand sum buildings')
 
-    plt.show()
+    fig3,((ax11,ax12), (ax13,ax14)) = plt.subplots(2, 2, figsize=(17,9))
+    ax12.hist(Th_results, 50)
+    ax12.set_title('Annual thermal demand in kWh')
+    ax11.hist(El_results, 50)
+    ax11.set_title('Annual electrical demand after energy balance in kWh')
+    ax13.hist(el_results_net, 50)
+    ax13.set_title('Annual electrical demand for energy balance in kWh')
+    ax14.hist(Gas_results, 50)
+    ax14.set_title('Annual final gas demand in kWh')
+    fig3.savefig(os.path.join(save_path_mc,'Energy_demand.pdf'))
 
-    for keys in dict_city_pb:
-        print(str(keys), dict_city_pb[keys])
+    fig4, ((ax21, ax22)) = plt.subplots(1, 2, figsize=(17,9))
+    ax22.hist(specific_annuity_m, 50)
+    ax22.set_title('Specific annuity results medium interest')
+    ax21.hist(Annuity_results, 50)
+    ax21.set_title('Annuity results medium interest')
+    fig4.savefig(os.path.join(save_path_mc,'Annuity_med_interest.pdf'))
+
+    # Box plot:
+    fig6, ((ax65, ax66,ax67)) = plt.subplots(1, 3, figsize=(17, 9))
+
+    ax65.boxplot(specific_annuity_l, showmeans=True, whis=99)
+    ax65.set_title('specific annuity - low interest')
+    ax65.grid(color='b', alpha=0.5, linestyle='dashed', linewidth=0.5)
+    ax66.boxplot(specific_annuity_m, showmeans=True, whis=99)
+    ax66.set_title('specific annuity - medium interest')
+    ax66.grid(color='b', alpha=0.5, linestyle='dashed', linewidth=0.5)
+    ax67.boxplot(specific_annuity_h, showmeans=True, whis=99)
+    ax67.set_title('specific annuity - high interest')
+    ax67.grid(color='b', alpha=0.5, linestyle='dashed', linewidth=0.5)
+    fig6.savefig(os.path.join(save_path_mc, 'boxplot_specific_annuity.pdf'))
+
+    # Box plot:
+    fig7, (ax75, ax76,ax77) = plt.subplots(1, 3, figsize=(17, 9))
+
+    ax75.boxplot(Annuity_results_low, showmeans=True, whis=99)
+    ax75.set_title('Annuity - low interest')
+    ax75.grid(color='b', alpha=0.5, linestyle='dashed', linewidth=0.5)
+    ax76.boxplot(Annuity_results, showmeans=True, whis=99)
+    ax76.set_title('Annuity - medium interest')
+    ax76.grid(color='b', alpha=0.5, linestyle='dashed', linewidth=0.5)
+    ax77.boxplot(Annuity_results_high, showmeans=True, whis=99)
+    ax77.set_title('Annuity - high interest')
+    ax77.grid(color='b', alpha=0.5, linestyle='dashed', linewidth=0.5)
+    fig7.savefig(os.path.join(save_path_mc, 'boxplot_annuity.pdf'))
+
+
+    fig5, (ax31, ax32, ax33) = plt.subplots(1, 3, figsize=(17, 9))
+    ax32.hist(specific_annuity_l, 50)
+    ax32.set_title('Specific annuity results - low interest')
+    ax31.hist(specific_annuity_m, 50)
+    ax31.set_title('Specific annuity results - medium interest')
+    ax33.hist(specific_annuity_h, 50)
+    ax33.set_title('Specific Annuity results - high interest')
+
+    fig5.savefig(os.path.join(save_path_mc, 'specific_Annuity_interest.pdf'))
+
+    #plt.show()
+
+    #fig = plt.figure()
+    #plt.hist(El_results, 100)
+    #plt.xlabel('Electrical demand after EBB in kWh')
+
+    #plt.show()
+
+
+
+    #print (mean_pv_self_used, 'pv_used_self')
+    #print (mean_pv_sold, 'pv_sold')
 
 if __name__ == '__main__':
-    do_uncertainty_analysis()
+
+    do_uncertainty_analysis(Nsamples=2, time=10, Is_k_esys_parameters=True, time_sp_force_retro=40,
+                            max_retro_year=2014, Is_k_user_parameters=True, interest_fix=0.05,
+                            MC_analyse_total=True, Confident_intervall_pourcentage=90, save_result=True,
+                            save_path_mc='D:\jsc-les\\test_lolo\\Results',
+                            results_name='mc_results.txt', results_excel_name='mesresultats',
+                            Is_k_building_parameters=True, esys_filename='City_lolo_esys.txt',
+                            gen_e_net=True, network_filename='lolo_networks.txt',
+                            city_pickle_name='aachen_kronenberg_3_mfh_ref_1.pkl')
