@@ -56,10 +56,11 @@ def new_city_evaluation_monte_carlo(ref_City, dict_sample):
         Returns
         -------
         res_tuple : tuple (of Array)
-            Results tuple (Th_results, el_results_net, Gas_results, El_results, Annuity_results,\
+            Results tuple (Th_results, el_results_net, Gas_results, El_results, Annuity_results, Annuity_spe_results,\
            Annuity_results_high, Annuity_results_low,  Annuity_results_ec1, Annuity_results_ec2, Annuity_results_ec3,\
            GHG_results, GHG_spe_results, Nb_Lal_rescaled, Nb_boiler_medium_rescaled, Nb_boiler_high_rescaled,\
-           Nb_Tes_rescale, Nb_EH_small_rescaled, Nb_EH_medium_rescaled, Nb_EH_high_rescaled)
+           Nb_Tes_rescale, Nb_EH_small_rescaled, Nb_EH_medium_rescaled, Nb_EH_high_rescaled, PV_el_self_used,\
+           PV_el_sold, CHP_el_self_used, CHP_el_sold)
 
             1. Array holding net space heating demands in kWh as float
             2. Array holding electrical demand for EBB in kWh as float (sum of buildings demand)
@@ -67,7 +68,7 @@ def new_city_evaluation_monte_carlo(ref_City, dict_sample):
             4. Array holding Electrical demands after EBB in kWh as float
             5. Array holding Annuity in Euro as float, interest medium (current value to 0.05)
             6. Array holding specific annuity in Euro/kwh as float, interest medium (current value to 0.05)
-            7 Annuity_results_high: Array holding Annuity in Euro as float, interest high(current value to 0.07)
+            7. Annuity_results_high: Array holding Annuity in Euro as float, interest high(current value to 0.07)
             8. Annuity_results_m: Array holding Annuity in Euro as float, interest low (current value to 0.03)
             9. Annuity_results_ec1: Array holding Annuity in Euro as float, interest medium , ec1 (economic setting 1)
             10. Annuity_results_ec2: Array holding Annuity in Euro as float, interest medium , ec2 (economic setting 2)
@@ -85,6 +86,10 @@ def new_city_evaluation_monte_carlo(ref_City, dict_sample):
                 (medium: 20% rescaling)
             20. Rescal_eh_third_time:  Boolean, City with rescaled EH to cover all city energy demands
                 (high: 50% rescaling)
+            21. Array holding Electricity used for self consumption by PV modules in kWh as float
+            22. Array holding Electricity sold on the public grid by PV modules in kWh as float
+            23. Array holding Electricity used for self consumption by CHP modules in kWh as float
+            24. Array holding Electricity sold on the public grid by CHP modules in kWh as float
 
         """
 
@@ -369,7 +374,8 @@ def new_city_evaluation_monte_carlo(ref_City, dict_sample):
     return Th_results, el_results_net, Gas_results, El_results, Annuity_results, Annuity_spe_results,\
            Annuity_results_high, Annuity_results_low,  Annuity_results_ec1, Annuity_results_ec2, Annuity_results_ec3,\
            GHG_results, GHG_spe_results, Nb_Lal_rescaled, Nb_boiler_medium_rescaled, Nb_boiler_high_rescaled,\
-           Nb_Tes_rescale, Nb_EH_small_rescaled, Nb_EH_medium_rescaled, Nb_EH_high_rescaled, PV_el_self_used, PV_el_sold
+           Nb_Tes_rescale, Nb_EH_small_rescaled, Nb_EH_medium_rescaled, Nb_EH_high_rescaled, PV_el_self_used,\
+           PV_el_sold, CHP_el_self_used, CHP_el_sold
 
 
 
@@ -1124,7 +1130,7 @@ if __name__ == '__main__':
 
     this_path = os.path.dirname(os.path.abspath(__file__))
 
-    city_path = os.path.join(this_path,'City_generation', 'output', city_f_name)
+    city_path = os.path.join(this_path,'City_generation', 'input', city_f_name)
 
     city = pickle.load(open(city_path, mode='rb'))
 
@@ -1197,10 +1203,11 @@ if __name__ == '__main__':
     dict_pam['time']=time
 
     #  Perform MC analysis for whole city
-    ( Th_results, el_results_net, Gas_results, El_results, Annuity_results,\
+    (Th_results, el_results_net, Gas_results, El_results, Annuity_results, Annuity_spe_results,\
            Annuity_results_high, Annuity_results_low,  Annuity_results_ec1, Annuity_results_ec2, Annuity_results_ec3,\
            GHG_results, GHG_spe_results, Nb_Lal_rescaled, Nb_boiler_medium_rescaled, Nb_boiler_high_rescaled,\
-           Nb_Tes_rescale, Nb_EH_small_rescaled, Nb_EH_medium_rescaled, Nb_EH_high_rescaled) = \
+           Nb_Tes_rescale, Nb_EH_small_rescaled, Nb_EH_medium_rescaled, Nb_EH_high_rescaled, PV_el_self_used,\
+           PV_el_sold, CHP_el_self_used, CHP_el_sold) = \
         new_city_evaluation_monte_carlo(ref_City=city, dict_sample=dict_pam)
 
     #  Results
@@ -1224,6 +1231,6 @@ if __name__ == '__main__':
     ax23.hist(Annuity_results_high, 50)
     ax23.set_title('Annuity_results high interest 7%')
 
-    #plt.show()
-    #plt.close()
+    plt.show()
+    plt.close()
 

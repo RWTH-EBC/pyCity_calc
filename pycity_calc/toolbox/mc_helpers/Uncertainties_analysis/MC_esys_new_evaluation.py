@@ -6,12 +6,9 @@ import random as rd
 import os
 import pickle
 import pycity_calc.cities.scripts.overall_gen_and_dimensioning as City_gen
-import pycity_calc.toolbox.dimensioning.dim_functions as dimfunc
-import numpy as np
 import csv
 import pycity_base.classes.supply.BES as BES
 import pycity_base.classes.supply.PV as PV
-import pycity_calc.visualization.city_visual as citvis
 import pycity_calc.toolbox.dimensioning.dim_functions as dimfunc
 import pycity_calc.energysystems.boiler as boil
 import pycity_calc.energysystems.chp as chpsys
@@ -636,11 +633,11 @@ if __name__ == '__main__':
 
     import matplotlib.pyplot as plt
 
-    Nsamples = 100000
+    Nsamples = 10
     city_pickle_name = 'aachen_kronenberg_3_mfh_ref_1.pkl'
 
     this_path = os.path.dirname(os.path.abspath(__file__))
-    load_path = os.path.join(this_path, 'City_generation', 'output', city_pickle_name)
+    load_path = os.path.join(this_path, 'City_generation', 'input', city_pickle_name)
     City = pickle.load(open(load_path, mode='rb'))
 
     print()
@@ -652,22 +649,21 @@ if __name__ == '__main__':
     dhw_dim_esys = True  # Use dhw profiles for esys dimensioning
 
     #  Path to energy system input file (csv/txt; tab separated)
-    esys_filename = 'lolo_esys.txt'
+    esys_filename = 'City_lolo_esys.txt'
     esys_path = os.path.join(this_path, 'City_generation', 'input', 'input_esys_generator', esys_filename)
 
     #initialisation list boiler sampling
     list_boiler_sampling = []
 
-
-
     # Generate energy systems for city district
     if gen_esys:
+
         #  Load energy networks planing data
-        list_esys = City_gen.esysgen.load_enersys_input_data(esys_path)
-        print('Add energy systems')
+        list_esys = load_enersys_input_data(esys_path)
+        print ('Add energy systems')
 
         #  Generate energy systems
-        City_gen.esysgen.gen_esys_for_city(city=City, list_data=list_esys,dhw_scale=dhw_dim_esys)
+        gen_esys_for_city(city=City, list_data=list_esys, size_esys=False)
 
     ref_city = copy.deepcopy(City)
 

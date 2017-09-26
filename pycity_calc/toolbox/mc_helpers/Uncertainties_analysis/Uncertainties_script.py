@@ -546,7 +546,8 @@ def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, 
     Th_results, el_results_net, Gas_results, El_results, Annuity_results, Annuity_spe_results, \
     Annuity_results_high, Annuity_results_low, Annuity_results_ec1, Annuity_results_ec2, Annuity_results_ec3, \
     GHG_results, GHG_spe_results, Nb_Lal_rescaled, Nb_boiler_medium_rescaled, Nb_boiler_high_rescaled, \
-    Nb_Tes_rescale, Nb_EH_small_rescaled, Nb_EH_medium_rescaled, Nb_EH_high_rescaled, pv_used_self , pv_sold= \
+    Nb_Tes_rescale, Nb_EH_small_rescaled, Nb_EH_medium_rescaled, Nb_EH_high_rescaled, pv_used_self , pv_sold,\
+    CHP_el_self_used, CHP_el_sold= \
         newcity.new_city_evaluation_monte_carlo(City, dict_par_unc)
 
     # Get specific Annuity
@@ -1206,6 +1207,6 @@ if __name__ == '__main__':
                             MC_analyse_total=True, Confident_intervall_pourcentage=90, save_result=True,
                             save_path_mc='D:\jsc-les\\test_lolo\\Results',
                             results_name='mc_results.txt', results_excel_name='mesresultats',
-                            Is_k_building_parameters=True, esys_filename='City_lolo_esys_Sc2.txt',
+                            Is_k_building_parameters=True, esys_filename='City_lolo_esys.txt',
                             gen_e_net=True, network_filename='lolo_networks.txt',
                             city_pickle_name='aachen_kronenberg_3_mfh_ref_1.pkl')
