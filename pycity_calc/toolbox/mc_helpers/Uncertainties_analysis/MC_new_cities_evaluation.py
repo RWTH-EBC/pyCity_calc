@@ -10,7 +10,6 @@ Script to do Monte Carlo simulations
 import copy
 import pycity_calc.toolbox.mc_helpers.Uncertainties_analysis.MC_new_building as newB
 import pycity_calc.cities.scripts.overall_gen_and_dimensioning as City_gen
-import pycity_calc.toolbox.dimensioning.dim_functions as dimfunc
 import numpy as np
 import pycity_calc.simulation.energy_balance_optimization.energy_balance_building as EBB
 import pycity_calc.economic.annuity_calculation as eco_calc
@@ -21,7 +20,6 @@ import pycity_calc.toolbox.mc_helpers.weather.gen_weather_set as wea
 import os
 import pickle
 import matplotlib.pyplot as plt
-import pycity_calc.cities.scripts.street_generator.street_generator as street_gen
 import random as rd
 import pycity_calc.simulation.energy_balance_optimization.Energy_balance_lhn as EB
 
@@ -67,24 +65,25 @@ def new_city_evaluation_monte_carlo(ref_City, dict_sample):
             2. Array holding electrical demand for EBB in kWh as float (sum of buildings demand)
             3. Array holding Gas demands after EBB in kWh as float
             4. Array holding Electrical demands after EBB in kWh as float
-            4. Array holding Annuity in Euro as float, interest medium (current value to 0.05)
-            5 Annuity_results_high: Array holding Annuity in Euro as float, interest high(current value to 0.07)
-            6. Annuity_results_m: Array holding Annuity in Euro as float, interest low (current value to 0.03)
-            7: Annuity_results_ec1: Array holding Annuity in Euro as float, interest medium , ec1 (economic setting 1)
-            8: Annuity_results_ec2: Array holding Annuity in Euro as float, interest medium , ec2 (economic setting 2)
-            9: Annuity_results_ec3: Array holding Annuity in Euro as float, interest medium , ec3 (economic setting 3)
-            10. Array holding GHG emissions in kg as float
-            11. Array holding specific GHG emissions in kg as float
-            12 Lal_rescaled : Boolean, True: Lower Activation limit of boiler is set to 0 and boiler is rescaled of 10%
-            13. rescale_boiler_second_time: Boolean, City with rescaled boilers to cover all city energy demands: 20%
-            14. rescale_boiler_third_time: Boolean, City with rescaled boilers to cover all city energy demands: 50%
-            15. Rescale_tes: Boolean, Tes has been rescaled to avoid error in energy balance:
+            5. Array holding Annuity in Euro as float, interest medium (current value to 0.05)
+            6. Array holding specific annuity in Euro/kwh as float, interest medium (current value to 0.05)
+            7 Annuity_results_high: Array holding Annuity in Euro as float, interest high(current value to 0.07)
+            8. Annuity_results_m: Array holding Annuity in Euro as float, interest low (current value to 0.03)
+            9. Annuity_results_ec1: Array holding Annuity in Euro as float, interest medium , ec1 (economic setting 1)
+            10. Annuity_results_ec2: Array holding Annuity in Euro as float, interest medium , ec2 (economic setting 2)
+            11. Annuity_results_ec3: Array holding Annuity in Euro as float, interest medium , ec3 (economic setting 3)
+            12. Array holding GHG emissions in kg as float
+            13. Array holding specific GHG emissions in kg as float
+            14 Lal_rescaled : Boolean, True: Lower Activation limit of boiler is set to 0 and boiler is rescaled of 10%
+            15. rescale_boiler_second_time: Boolean, City with rescaled boilers to cover all city energy demands: 20%
+            16. rescale_boiler_third_time: Boolean, City with rescaled boilers to cover all city energy demands: 50%
+            17. Rescale_tes: Boolean, Tes has been rescaled to avoid error in energy balance:
                 Big rescale: capacity = 10000000 kg and boiler rescale of *1000% and Electric heater rescaled of 10000%
-            16. Rescale_eh_first_time: Boolean, City with rescaled EH to cover all city energy demands
+            18. Rescale_eh_first_time: Boolean, City with rescaled EH to cover all city energy demands
                 (small: 10% rescaling)
-            17. rescale_eh_second_time : Boolean, City with rescaled EH to cover all city energy demands
+            19. rescale_eh_second_time : Boolean, City with rescaled EH to cover all city energy demands
                 (medium: 20% rescaling)
-            18. Rescal_eh_third_time:  Boolean, City with rescaled EH to cover all city energy demands
+            20. Rescal_eh_third_time:  Boolean, City with rescaled EH to cover all city energy demands
                 (high: 50% rescaling)
 
         """
@@ -100,6 +99,11 @@ def new_city_evaluation_monte_carlo(ref_City, dict_sample):
                                     #  (sum of DHW and Space heating demand)
     el_results_net = np.zeros(Nloop) # Array for electricity need of the city before EBB
 
+    PV_el_sold = np.zeros(Nloop)  #array of annual electricity sold by PV
+    PV_el_self_used = np.zeros(Nloop)  #array of annual electricity self used by PV
+    CHP_el_sold = np.zeros(Nloop)  # array of annual electricity sold by CHP
+    CHP_el_self_used = np.zeros(Nloop)  # array of annual electricity self used by CHP
+
     Nb_Lal_rescaled = 0 # Number of city with rescaled boiler lal (10%)
     Nb_boiler_medium_rescaled = 0  # number of boiler 20 % rescaled (thermal demand to high)
     Nb_boiler_high_rescaled = 0  # number of boiler 50 % rescaled (thermal demand to high)
@@ -113,6 +117,7 @@ def new_city_evaluation_monte_carlo(ref_City, dict_sample):
 
     # Initialisation of arrays
     Annuity_results = np.zeros(Nloop)  # Array of total annuity for the medium interest: current value: 0.05
+    Annuity_spe_results = np.zeros(Nloop)  # Array of specific annuity for the medium interest: current value: 0.05
     GHG_results = np.zeros(Nloop)  # Array for GHG emission
     GHG_spe_results = np.zeros(Nloop)  # Array for GHG emissions specific
 
@@ -135,6 +140,10 @@ def new_city_evaluation_monte_carlo(ref_City, dict_sample):
     interest_medium = dict_sample['interest_medium']
     interest_high = dict_sample['interest_high']
     time = dict_sample['time']
+
+    # primary energy factor related to the the thermal demand energy of the city:
+    # so assuming conventianal energy systems: gas boiler, with the default value define in pyCity: efficiency 0.85
+    pheat_factor_ref = ref_City.environment.co2emissions.pe_gas * 1/0.85
 
     # Initialisation dictionary to keep track of samples list
     # Not used later but it was useful to check eventual problems
@@ -227,7 +236,8 @@ def new_city_evaluation_monte_carlo(ref_City, dict_sample):
 
         # Energy balance calculations
         el_dem, gas_dem, Lal_rescaled, rescale_boiler_second_time, rescale_boiler_third_time, Rescaled_tes, \
-        Rescale_eh_first_time, rescale_eh_second_time, Rescal_eh_third_time = MC_EBB_calc(City)
+        Rescale_eh_first_time, rescale_eh_second_time, Rescal_eh_third_time, pv_sold,\
+        pv_used_self, chp_sold, chp_self_used = MC_EBB_calc(City)
 
         # Counter of rescaled energy systems during EBB
         if Lal_rescaled:
@@ -308,9 +318,15 @@ def new_city_evaluation_monte_carlo(ref_City, dict_sample):
         # Keep track of electrical demand for EBB
         el_results_net[loop] = round(sum(el_city_list), 2)
 
+        PV_el_sold [loop] = pv_sold  # array of annual electricity sold by CHP
+        PV_el_self_used [loop] = pv_used_self  # array of annual electricity self used by CHP
+        CHP_el_sold [loop] = chp_sold # array of annual electricity sold by CHP
+        CHP_el_self_used [loop] = chp_self_used # array of annual electricity self used by CHP
+
         # If tes rescaled don't take Annuity and GHG in account (crazy values)
         if Rescaled_tes:
             Annuity_results[loop] = Annuity_results[loop-1]
+            Annuity_spe_results[loop] = Annuity_spe_results[loop - 1]
             Annuity_results_high[loop] = Annuity_results_high[loop - 1]
             Annuity_results_low[loop] = Annuity_results_low[loop - 1]
             GHG_results[loop] = GHG_results[loop -1]
@@ -323,6 +339,10 @@ def new_city_evaluation_monte_carlo(ref_City, dict_sample):
 
         else:
             Annuity_results[loop] = round(total_annuity_medium, 4)
+            Annuity_spe_results [loop] = round(total_annuity_medium/
+                                               ((annual_sph_dem + annual_dhw_dem)*pheat_factor_ref +
+                                                annual_el_dem*ref_City.environment.co2emissions.pe_total_el_mix) ,4)
+
             Annuity_results_high[loop] = round(total_annuity_high, 4)
             Annuity_results_low[loop] = round(total_annuity_low, 4)
 
@@ -331,8 +351,11 @@ def new_city_evaluation_monte_carlo(ref_City, dict_sample):
             Annuity_results_ec3[loop] = round(total_annuity_ec3, 4)
 
             # Add GHG  to array results
-            GHG_results[loop] = round(GHG_Emission,4)
-            GHG_spe_results[loop] = round(GHG_Emission / (annual_sph_dem + annual_dhw_dem + annual_el_dem),4)
+            GHG_results[loop] = round(GHG_Emission, 4)
+            GHG_spe_results[loop] = round(GHG_Emission /
+                                          ((annual_sph_dem + annual_dhw_dem)*pheat_factor_ref +
+                                           annual_el_dem*ref_City.environment.co2emissions.pe_total_el_mix),4)
+
 
         # Dictionary to keep track of samples list
         # Not used later but it was useful to check eventual problems
@@ -343,10 +366,10 @@ def new_city_evaluation_monte_carlo(ref_City, dict_sample):
             dict_city_pb[buildingnb]['el_ch'].append(dict_eco_Sample_low['el_ch'])
             dict_city_pb[buildingnb]['gas_ch'].append(dict_eco_Sample_low['gas_ch'])
 
-    return Th_results, el_results_net, Gas_results, El_results, Annuity_results,\
+    return Th_results, el_results_net, Gas_results, El_results, Annuity_results, Annuity_spe_results,\
            Annuity_results_high, Annuity_results_low,  Annuity_results_ec1, Annuity_results_ec2, Annuity_results_ec3,\
            GHG_results, GHG_spe_results, Nb_Lal_rescaled, Nb_boiler_medium_rescaled, Nb_boiler_high_rescaled,\
-           Nb_Tes_rescale, Nb_EH_small_rescaled, Nb_EH_medium_rescaled, Nb_EH_high_rescaled
+           Nb_Tes_rescale, Nb_EH_small_rescaled, Nb_EH_medium_rescaled, Nb_EH_high_rescaled, PV_el_self_used, PV_el_sold
 
 
 
@@ -676,6 +699,15 @@ def MC_EBB_calc (City):
             True: City with rescaled EH to cover all city energy demands (medium: 20% rescaling)
         Rescal_eh_third_time:  Boolean
             True: City with rescaled EH to cover all city energy demands (high: 50% rescaling)
+        pv_sold: float
+                Electricity from pv sold on the public market in kWh
+        pv_used_self: float
+                Electricity from pv used for the city supply in kWh
+        chp_sold: float
+                Electricity from chp sold on the public market in kWh
+        chp_self_used: float
+                Electricity from chp used for the city supply in kWh
+
     """
     # Get special invalidind error of EBB
     invalidind = EBB.invalidind
@@ -1029,6 +1061,10 @@ def MC_EBB_calc (City):
     # ## Gas and electrical demand
     el_dem = 0
     gas_dem = 0
+    pv_used_self=0
+    pv_sold=0
+    chp_self_used = 0
+    chp_sold = 0
 
     for n in City.nodes():
         if 'node_type' in City.node[n]:
@@ -1044,8 +1080,28 @@ def MC_EBB_calc (City):
                         gas_dem += sum(City.node[n]['fuel demand']) * \
                                    City.environment.timer.timeDiscretization / 1000 / 3600
 
+
+                    if 'pv_used_self' in City.node[n]:
+                        pv_used_self += sum(City.node[n]['pv_used_self']) * \
+                                   City.environment.timer.timeDiscretization / 1000 / 3600
+
+
+                    if 'pv_sold' in City.node[n]:
+                        pv_sold += sum(City.node[n]['pv_sold']) * \
+                                   City.environment.timer.timeDiscretization / 1000 / 3600
+
+                    if 'chp_used_self' in City.node[n]:
+                        chp_self_used += sum(City.node[n]['pv_used_self']) * \
+                                   City.environment.timer.timeDiscretization / 1000 / 3600
+
+
+                    if 'chp_sold' in City.node[n]:
+                        chp_sold += sum(City.node[n]['pv_sold']) * \
+                                   City.environment.timer.timeDiscretization / 1000 / 3600
+
     return el_dem, gas_dem, Lal_rescaled, rescale_boiler_second_time, rescale_boiler_third_time, Rescaled_tes, \
-        Rescale_eh_first_time, rescale_eh_second_time, Rescal_eh_third_time
+        Rescale_eh_first_time, rescale_eh_second_time, Rescal_eh_third_time, pv_sold, pv_used_self, \
+           chp_sold, chp_self_used
 
 if __name__ == '__main__':
 
@@ -1168,6 +1224,6 @@ if __name__ == '__main__':
     ax23.hist(Annuity_results_high, 50)
     ax23.set_title('Annuity_results high interest 7%')
 
-    plt.show()
-    plt.close()
+    #plt.show()
+    #plt.close()
 

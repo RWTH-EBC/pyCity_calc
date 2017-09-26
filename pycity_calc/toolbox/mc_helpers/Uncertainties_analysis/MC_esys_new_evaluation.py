@@ -112,7 +112,7 @@ def gen_esys_unknown (building, recent_systems=True):
         else:
             building.bes.battery.eta_charge = rd.uniform(0.85, 0.96)
             building.bes.battery.eta_discharge = rd.uniform(0.85, 0.96)
-            building.bes.battery.self_discharge = rd.uniform(0.85, 0.96)
+            building.bes.battery.self_discharge = rd.uniform(0.01, 0.05)
 
     ''' Removed because of some bugs'''
     # Thermal storage
@@ -182,7 +182,7 @@ def gen_esys_unknown (building, recent_systems=True):
         building.bes.heatpump.t_sink = rd.uniform(35,55)
         building.bes.heatpump.quality_grade = \
             (1-rd.normalvariate(mu = 0, sigma = 0.3 ))* ex_building.bes.heatpump.quality_grade
-        print ('--------------------',building.bes.heatpump.quality_grade )
+
     # photovoltaic
     if ex_building.bes.hasPv == True:
 

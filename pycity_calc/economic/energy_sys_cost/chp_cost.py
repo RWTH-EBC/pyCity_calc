@@ -176,11 +176,11 @@ def calc_invest_cost_chp(p_el_nom, method='asue2015', with_inst=True,
 
 
 if __name__ == '__main__':
-    chp_nom_el_power = 30000  # in Watt
-    method = 'asue2015'
+    chp_nom_el_power = 13.1  # in Watt
+    method = 'spieker'
     with_inst = True  # With cost for transport and installation
 
-    chp_el_kW = chp_nom_el_power / 1000
+    chp_el_kW = chp_nom_el_power
 
     #  Calculate specific cost of CHP
     spec_cost = calc_spec_cost_chp(p_el_nom=chp_el_kW, method=method,

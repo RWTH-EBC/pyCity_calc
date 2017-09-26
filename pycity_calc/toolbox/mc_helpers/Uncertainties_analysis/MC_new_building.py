@@ -26,7 +26,7 @@ import pycity_base.functions.changeResolution as chgr
 def new_building_evaluation_mc(building, new_weather, max_retro_year=2014, time_sp_force_retro=40,
                                build_physic_unc=True, MC_analysis=True, nb_occ_unc=True):
     """
-        Modifies building parameters for Monte Carlo Analysis
+        Modification of building parameters for Monte Carlo Analysis
 
         Parameters
     ----------
@@ -35,6 +35,8 @@ def new_building_evaluation_mc(building, new_weather, max_retro_year=2014, time_
     time_sp_force_retro : int, optional
         Timespan, in which a retrofit action is forced to the system.
         (default: 40).
+    new_weather: object
+        Weather object of pyCity_calc
     max_retro_year : int, optional
         Maximal / youngest possible retrofit year for sampling (default: 2014)
     nb_occ_unc : bool, optional
@@ -68,7 +70,7 @@ def new_building_evaluation_mc(building, new_weather, max_retro_year=2014, time_
             'net_floor_area' : Holding net floor area samples list
             'nb_occupants': Holding nb occupants samples list
             'tset-heat': Holding tset heat samples list
-            'el': Holding elctricity demand samples list per year and person
+            'el': Holding electricity demand samples list per year and person
 
 
         el_demand : float

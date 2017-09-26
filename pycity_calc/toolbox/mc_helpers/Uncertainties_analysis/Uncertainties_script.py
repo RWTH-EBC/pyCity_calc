@@ -4,7 +4,7 @@
 '''
 
 Script to perform a Monte Carlo analysis of a city object.
-Output are gas, electrical final demand, uncertain annuity and GHG emissions
+Main considered outputs are gas, electrical final demand, annuity and GHG emissions
 
 Structure:
 ---------
@@ -543,16 +543,16 @@ def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, 
     print('Do the simulations')
     print('***********************************************************************************************************')
 
-    Th_results, el_results_net, Gas_results, El_results, Annuity_results, \
+    Th_results, el_results_net, Gas_results, El_results, Annuity_results, Annuity_spe_results, \
     Annuity_results_high, Annuity_results_low, Annuity_results_ec1, Annuity_results_ec2, Annuity_results_ec3, \
     GHG_results, GHG_spe_results, Nb_Lal_rescaled, Nb_boiler_medium_rescaled, Nb_boiler_high_rescaled, \
-    Nb_Tes_rescale, Nb_EH_small_rescaled, Nb_EH_medium_rescaled, Nb_EH_high_rescaled= \
+    Nb_Tes_rescale, Nb_EH_small_rescaled, Nb_EH_medium_rescaled, Nb_EH_high_rescaled, pv_used_self , pv_sold= \
         newcity.new_city_evaluation_monte_carlo(City, dict_par_unc)
 
     # Get specific Annuity
-    specific_annuity_m = Annuity_results/(Th_results + el_results_net)
-    specific_annuity_l  = Annuity_results_low / (Th_results + el_results_net)
-    specific_annuity_h  = Annuity_results_high / (Th_results + el_results_net)
+    specific_annuity_m = Annuity_spe_results
+    specific_annuity_l  = Annuity_results_low * (Annuity_spe_results) / Annuity_results
+    specific_annuity_h  = Annuity_results_high * (Annuity_spe_results) / Annuity_results
 
     print('***********************************************************************************************************')
     print('Do the Uncertainties analyse')
@@ -759,6 +759,11 @@ def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, 
     confident_inter_a_spe_h = stats.norm.interval(Confident_intervall_pourcentage / 100, loc=mean_annuity_spe_h,
                                                   scale=sigma_annuity_spe_h)
 
+    mean_pv_sold = sum(pv_sold) / len(pv_sold)
+    sigma_pv_sold = np.std(a=pv_sold)
+
+    mean_pv_self_used = sum(pv_used_self) / len(pv_used_self)
+    sigma_pv_self_used = np.std(a=pv_used_self)
 
     print('Number of simulations with small rescaled EH (10%) : ', Nb_EH_small_rescaled)
     print('Number of simulations with medium rescaled EH (20%): ', Nb_EH_medium_rescaled)
@@ -792,7 +797,7 @@ def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, 
         write_results.write('energy systems parameters: ' + str(Is_k_esys_parameters)+ '\n')
         write_results.write('buildings parameters: ' + str(Is_k_building_parameters)+ '\n')
         write_results.write('interest_fix: ' + str(interest_fix) + '\n')
-        write_results.write('network: ' + str(gen_e_net) + '\n')
+        write_results.write('heating network: ' + str(gen_e_net) + '\n')
 
         write_results.write('\n############## City reference ##############\n')
         if load_city == True:
@@ -838,7 +843,7 @@ def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, 
 
         write_results.write('electrical demand before energy balance: ' + str(SaveCity.get_annual_el_demand()) + 'kWh/year'+ '\n')
         write_results.write('thermal demand before energy balance : ' + str( SaveCity.get_total_annual_th_demand()) + 'kWh/year' + '\n')
-        write_results.write('Gas demand aflter energy balance:' + str(gas_dem_ref) + 'kWh/year' +'\n')
+        write_results.write('Gas demand after energy balance:' + str(gas_dem_ref) + 'kWh/year' +'\n')
         write_results.write('electrical demand after energy balance :' + str(el_dem_ref) + 'kWh/year' + '\n')
         write_results.write('Annuity:' + str(total_annuity_ref) + 'Euro/year' +'\n')
         write_results.write('GHG emissions :' + str(GHG_Emission_ref) + 'kg/year' +'\n')
@@ -970,13 +975,13 @@ def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, 
         write_results.write('reference:' + str(GHG_Emission_ref) + '\n')
 
 
-        write_results.write('\n Nboiler Lal rescaled and boiler 10%: ' + str(Nb_Lal_rescaled))
-        write_results.write('\n Nboiler rescaled medium: 20%' + str(Nb_boiler_medium_rescaled))
-        write_results.write('\n Nboiler rescaled: 50%' + str(Nb_boiler_high_rescaled))
-        write_results.write('\n EH rescaled small' + str(Nb_EH_small_rescaled))
-        write_results.write('\n EH rescaled total' + str(Nb_EH_medium_rescaled))
-        write_results.write('\n EH rescaled medium' + str(Nb_EH_high_rescaled))
-        write_results.write('\n Tes rescaled: 100000000 kg + boiler rescale 1000%' + str(Nb_Tes_rescale))
+        write_results.write('\n Nboiler Lal rescaled and boiler 10% : ' + str(Nb_Lal_rescaled))
+        write_results.write('\n Nboiler rescaled medium: 20% : ' + str(Nb_boiler_medium_rescaled))
+        write_results.write('\n Nboiler rescaled: 50% : ' + str(Nb_boiler_high_rescaled))
+        write_results.write('\n EH rescaled small : ' + str(Nb_EH_small_rescaled))
+        write_results.write('\n EH rescaled total: ' + str(Nb_EH_medium_rescaled))
+        write_results.write('\n EH rescaled medium : ' + str(Nb_EH_high_rescaled))
+        write_results.write('\n Tes rescaled: 100000000 kg + boiler rescale 1000% : ' + str(Nb_Tes_rescale))
 
         write_results.close()
 
@@ -1100,8 +1105,8 @@ def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, 
     ax3.hist(Annuity_results, 50, normed=1)
     ax3.set_title('Annuity in  Euro/year')
 
-    ax4.hist(GHG_spe_results, 50 , normed=1)
-    ax4.set_title('GHG specific emission in kg/kWh/year')
+    ax4.hist(GHG_results, 50 , normed=1)
+    ax4.set_title('GHG emission in kg/year')
 
     fig.suptitle('Histogram energy demand in kWh/year for {} simulations '.format(Nsamples))
     fig.savefig(os.path.join(save_path_mc, 'Mainoutput.pdf'))
@@ -1118,10 +1123,10 @@ def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, 
     ax7.boxplot(Annuity_results, showmeans=True, whis=99)
     ax7.set_title('Annuity in  Euro/year')
     ax7.grid(color='b', alpha=0.5, linestyle='dashed', linewidth=0.5)
-    ax8.boxplot(GHG_spe_results, showmeans=True, whis=99)
-    ax8.set_title('GHG specific emission in kg/kWh/year')
+    ax8.boxplot(GHG_results, showmeans=True, whis=99)
+    ax8.set_title('GHG emission in kg/kWh/year')
     ax8.grid(color='b', alpha=0.5, linestyle='dashed', linewidth=0.5)
-    fig2.savefig(os.path.join(save_path_mc,'boxplot1.pdf'))
+    fig2.savefig(os.path.join(save_path_mc,'boxplot_mainoutputs.pdf'))
 
 
     fig3,((ax11,ax12), (ax13,ax14)) = plt.subplots(2, 2, figsize=(17,9))
@@ -1135,18 +1140,15 @@ def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, 
     ax14.set_title('Annual final gas demand in kWh')
     fig3.savefig(os.path.join(save_path_mc,'Energy_demand.pdf'))
 
-    fig4, ((ax21, ax22), (ax23, ax24)) = plt.subplots(2, 2, figsize=(17,9))
-    ax22.hist(Annuity_results_low, 50)
-    ax22.set_title('Annuity results low interest')
+    fig4, ((ax21, ax22)) = plt.subplots(1, 2, figsize=(17,9))
+    ax22.hist(specific_annuity_m, 50)
+    ax22.set_title('Specific annuity results medium interest')
     ax21.hist(Annuity_results, 50)
     ax21.set_title('Annuity results medium interest')
-    ax23.hist(Annuity_results_high, 50)
-    ax23.set_title('Annuity results high interest')
-
-    fig4.savefig(os.path.join(save_path_mc,'Annuity_interest.pdf'))
+    fig4.savefig(os.path.join(save_path_mc,'Annuity_med_interest.pdf'))
 
     # Box plot:
-    fig6, ((ax65, ax66), (ax67, ax68)) = plt.subplots(2, 2, figsize=(17, 9))
+    fig6, ((ax65, ax66,ax67)) = plt.subplots(1, 3, figsize=(17, 9))
 
     ax65.boxplot(specific_annuity_l, showmeans=True, whis=99)
     ax65.set_title('specific annuity - low interest')
@@ -1157,10 +1159,10 @@ def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, 
     ax67.boxplot(specific_annuity_h, showmeans=True, whis=99)
     ax67.set_title('specific annuity - high interest')
     ax67.grid(color='b', alpha=0.5, linestyle='dashed', linewidth=0.5)
-    fig6.savefig(os.path.join(save_path_mc, 'boxplot2.pdf'))
+    fig6.savefig(os.path.join(save_path_mc, 'boxplot_specific_annuity.pdf'))
 
     # Box plot:
-    fig7, ((ax75, ax76), (ax77, ax78)) = plt.subplots(2, 2, figsize=(17, 9))
+    fig7, (ax75, ax76,ax77) = plt.subplots(1, 3, figsize=(17, 9))
 
     ax75.boxplot(Annuity_results_low, showmeans=True, whis=99)
     ax75.set_title('Annuity - low interest')
@@ -1171,10 +1173,10 @@ def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, 
     ax77.boxplot(Annuity_results_high, showmeans=True, whis=99)
     ax77.set_title('Annuity - high interest')
     ax77.grid(color='b', alpha=0.5, linestyle='dashed', linewidth=0.5)
-    fig7.savefig(os.path.join(save_path_mc, 'boxplot2.pdf'))
+    fig7.savefig(os.path.join(save_path_mc, 'boxplot_annuity.pdf'))
 
 
-    fig5, ((ax31, ax32), (ax33, ax34)) = plt.subplots(2, 2, figsize=(17, 9))
+    fig5, (ax31, ax32, ax33) = plt.subplots(1, 3, figsize=(17, 9))
     ax32.hist(specific_annuity_l, 50)
     ax32.set_title('Specific annuity results - low interest')
     ax31.hist(specific_annuity_m, 50)
@@ -1190,16 +1192,20 @@ def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, 
     #plt.hist(El_results, 100)
     #plt.xlabel('Electrical demand after EBB in kWh')
 
-    plt.show()
+    #plt.show()
 
+
+
+    #print (mean_pv_self_used, 'pv_used_self')
+    #print (mean_pv_sold, 'pv_sold')
 
 if __name__ == '__main__':
 
-    do_uncertainty_analysis(Nsamples=10, time=10, Is_k_esys_parameters=True, time_sp_force_retro=40,
+    do_uncertainty_analysis(Nsamples=2, time=10, Is_k_esys_parameters=True, time_sp_force_retro=40,
                             max_retro_year=2014, Is_k_user_parameters=True, interest_fix=0.05,
                             MC_analyse_total=True, Confident_intervall_pourcentage=90, save_result=True,
                             save_path_mc='D:\jsc-les\\test_lolo\\Results',
                             results_name='mc_results.txt', results_excel_name='mesresultats',
-                            Is_k_building_parameters=True, esys_filename='City_lolo_esys_Sc7.txt',
+                            Is_k_building_parameters=True, esys_filename='City_lolo_esys_Sc2.txt',
                             gen_e_net=True, network_filename='lolo_networks.txt',
                             city_pickle_name='aachen_kronenberg_3_mfh_ref_1.pkl')
