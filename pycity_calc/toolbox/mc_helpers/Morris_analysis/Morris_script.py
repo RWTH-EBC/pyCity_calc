@@ -54,10 +54,10 @@ import pickle
 import numpy as np
 
 
-def run_Morris(Nsample = 1,Morris_name = 'Morris_values.txt',Scenario = 'ref', esys_filename = 'City_lolo_esys_Sc7.txt',
-               load_city = True,city_pickle_name = 'aachen_kronenberg_3_mfh_ref_1.pkl', size_esys = False,
-               save_result = True,results_name = 'Morris_results.txt', time = 100,
-               save_path = 'D:\\jsc-les\\test_lolo\\Results'):
+def run_Morris(Nsample = 1, Morris_name = 'Morris_values.txt', Scenario = 'ref', esys_filename = 'City_lolo_esys_Sc7.txt',
+               load_city = True, city_pickle_name = 'aachen_kronenberg_3_mfh_ref_1.pkl', size_esys = False,
+               save_result = True, results_name = 'Morris_results.txt', time = 100,
+               save_path = None):
 
     # Define the Morris parameters
     # #############################################################################################################
@@ -97,7 +97,7 @@ def run_Morris(Nsample = 1,Morris_name = 'Morris_values.txt',Scenario = 'ref', e
     if load_city == True:
         # load pickle City
 
-        load_path = os.path.join(this_path, 'City_generation', 'output', city_pickle_name)
+        load_path = os.path.join(this_path, 'City_generation', 'input', city_pickle_name)
         City = pickle.load(open(load_path, mode='rb'))
 
         print()
@@ -504,6 +504,12 @@ def run_Morris(Nsample = 1,Morris_name = 'Morris_values.txt',Scenario = 'ref', e
 
     if save_result:
         #  Write results file
+        if save_path == None:
+            print('Save path set to None, results are saved in the Output directory')
+            save_path =  os.path.join(this_path,'output')
+
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
 
         #  Log file path
         #this_path = os.path.dirname(os.path.abspath(__file__))

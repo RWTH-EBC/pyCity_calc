@@ -57,7 +57,7 @@ from xlwt import Workbook
 def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, time_sp_force_retro = 40,
                             max_retro_year = 2014,  Is_k_user_parameters = True, interest_fix = 0.05,
                             MC_analyse_total = True , Confident_intervall_pourcentage = 90, save_result = True,
-                            save_path_mc='D:\jsc-les\\test_lolo\Results',
+                            save_path_mc= None,
                             results_name = 'mc_results.txt',city_pickle_name = 'aachen_kronenberg_3_mfh_ref_1.pkl',
                             results_excel_name = 'mesresultats',
                             Is_k_building_parameters = False, esys_filename = 'City_lolo_esys_ref.txt' ,
@@ -780,7 +780,9 @@ def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, 
 
     if save_result:
         #  Write results file
-
+        if save_path_mc == None:
+            print('Save path is None: results are saved in output directory')
+            save_path_mc = os.path.join(this_path, 'output')
         if not os.path.exists(save_path_mc):
             os.makedirs(save_path_mc)
 
@@ -1205,7 +1207,7 @@ if __name__ == '__main__':
     do_uncertainty_analysis(Nsamples=2, time=10, Is_k_esys_parameters=True, time_sp_force_retro=40,
                             max_retro_year=2014, Is_k_user_parameters=True, interest_fix=0.05,
                             MC_analyse_total=True, Confident_intervall_pourcentage=90, save_result=True,
-                            save_path_mc='D:\jsc-les\\test_lolo\\Results',
+                            save_path_mc = None,
                             results_name='mc_results.txt', results_excel_name='mesresultats',
                             Is_k_building_parameters=True, esys_filename='City_lolo_esys.txt',
                             gen_e_net=True, network_filename='lolo_networks.txt',
