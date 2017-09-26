@@ -4,7 +4,6 @@ as being common in the industry.
 Every dimensioned district complies with current legal requirements.
 
 """
-#  Todo: English comments
 
 import os
 import pickle
@@ -13,14 +12,14 @@ from copy import deepcopy
 import xlrd
 import math
 
-#import pycity_calc.cities.city as City
+import matplotlib.pyplot as plt
 import networkx as nx
 
 import pycity_base.classes.supply.BES as BES
 import pycity_base.classes.supply.Boiler as Boiler
 import pycity_base.classes.supply.CHP as CHP
-import pycity_base.classes.supply.HeatPump as HP
-# import pycity_calc.energysystems.heatPumpSimple as HP
+#import pycity_base.classes.supply.HeatPump as HP
+import pycity_calc.energysystems.heatPumpSimple as HP
 #  TOdo: use heatpumpsimple of pycity_calc
 
 import pycity_base.classes.supply.ElectricalHeater as ElectricalHeater
@@ -28,8 +27,9 @@ import pycity_base.classes.supply.Inverter as Inverter
 import pycity_base.classes.supply.PV as PV
 import pycity_calc.energysystems.thermalEnergyStorage as TES
 import pycity_base.classes.demand.SpaceHeating as SpaceHeating
-import pycity_calc.toolbox.networks.network_ops as NW
+import pycity_calc.toolbox.networks.network_ops as net_ops
 import pycity_calc.toolbox.dimensioning.dim_networks as dimnet
+import pycity_calc.visualization.city_visual as citvis
 
 import pycity_calc.economic.energy_sys_cost.boiler_cost as boiler_cost
 import pycity_calc.economic.energy_sys_cost.chp_cost as chp_cost
@@ -89,31 +89,34 @@ def run_approach(city,scenarios,building_con=True,heating_net=True, geothermal=T
 
 #------------------------------------ Dimensionierung der Anlagen -------------------------------------------------
 
-    if dhn_elig >= 3:
+    if dhn_elig > 3:
         print('District Heating eligible!')
         for scenario in scenarios:
-            print('\n---------- Scenario Centralized '+ str(scenarios.index(scenario)),'-----------')
             if 'centralized' in scenario['type']:
                 if approve_scenario(city, scenario, geothermal):
-                    result = dim_centralized(deepcopy(city),scenario)
+                    print('\n---------- Scenario Centralized ' + str(scenarios.index(scenario)), '-----------')
+                    result = dim_centralized(deepcopy(city),scenario, district_type)
                     solutions.append(result)
 
 
     elif dhn_elig < 3:
         print('District Heating not eligible!')
-    #     for scenario in scenarios:
-    #         if 'decentralized' in scenario['type']:
-    #             if approve_scenario(city, scenario, geothermal):
-    #                 solutions.append(dim_decentralized(deepcopy(city),scenario))
-    #
-    # else:
-    #     print('District Heating solutions might be eligible...')
-    #     for scenario in scenarios:
-    #         if approve_scenario(city, scenario, geothermal):
-    #             if 'centralized' in scenario['type']:
-    #                 solutions.append(dim_centralized(deepcopy(city),scenario))
-    #             if 'decentralized' in scenario['type']:
-    #                 solutions.append(dim_decentralized(deepcopy(city),scenario))
+        for scenario in scenarios:
+            if 'decentralized' in scenario['type']:
+                if approve_scenario(city, scenario, geothermal):
+                    print('\n---------- Scenario Decentralized ' + str(scenarios.index(scenario)), '-----------')
+                    solutions.append(dim_decentralized(deepcopy(city),scenario))
+
+    else:
+        print('District Heating solutions might be eligible...')
+        for scenario in scenarios:
+            if approve_scenario(city, scenario, geothermal):
+                if 'centralized' in scenario['type']:
+                    print('\n---------- Scenario Centralized ' + str(scenarios.index(scenario)), '-----------')
+                    solutions.append(dim_centralized(deepcopy(city),scenario,district_type))
+                if 'decentralized' in scenario['type']:
+                    print('\n---------- Scenario Decentralized ' + str(scenarios.index(scenario)), '-----------')
+                    solutions.append(dim_decentralized(deepcopy(city),scenario))
 
     return solutions
 
@@ -137,7 +140,7 @@ def get_city_type(city):
     :param city:
     :return:
     """
-    #  Todo: building.net_floor_area --> Relate to energy
+    #  Todo: building.net_floor_area --> Relate to energy (Wärmeleistungsliniendichte nach Wolff, S.20)
     #  n1 and n2 --> calc_node_distance(graph, node_1, node_2)
     #  get_min_span_tree_for_x_y_positions(city, nodelist)
     #  --> Relate to energy demand
@@ -147,10 +150,12 @@ def get_city_type(city):
     #                        use_street_network=True, network_type='heating',
     #                        plot_stepwise=False)
 
+
+
     b_graph = nx.Graph()
     for bn in city.nodelist_building:
         b_graph.add_node(bn, position=city.node[bn]['position'])
-    min_st = NW.get_min_span_tree(b_graph,city.nodelist_building)
+    min_st = net_ops.get_min_span_tree(b_graph,city.nodelist_building)
     print(min_st)
 
 
@@ -339,7 +344,7 @@ def choose_device(dev_type, q_ideal):
         for dev in chp_list.values():
             eta_th = dev[1]
             q_nom = dev[3]
-            if abs(q_nom*eta_th-q_ideal) < abs(specs[3]*eta_th-q_ideal):    # muss hier eta nicht raus?!
+            if abs(q_nom-q_ideal) < abs(specs[3]-q_ideal):
                 specs = dev[:]
     elif dev_type == 'hp':
         this_path = os.path.dirname(os.path.abspath(__file__))
@@ -417,17 +422,20 @@ def get_chp_ann_op_time(q_nom, th_LDC):
             delta_a = a2 - a1
 
 
-def dim_centralized(city, scenario):
+def dim_centralized(city, scenario, district_type):
     '''
     Set sizes of devices in scenario
     :param scenario:
     :return: scenario with sizes of devices - in welcher form? city_object
     '''
-    # Abstand zwischen Häusern und Wärmezentrale herausfinden
-    #
 
-    # TODO: Netzverluste korrekt integrieren (-> Wolff & Jagnow S.20)
-    eta_transmission = 0.9  # richtigen Faktor suchen
+    if district_type is 'big':    # Abschätzung aus Fraunhofer Umsicht - Leitfaden Nahwärme S.51
+        eta_transmission = 0.93
+    elif district_type is 'small':
+        eta_transmission = 0.85
+    else:
+        eta_transmission = 0.9
+
     [el_curve, th_c] = city.get_power_curves(current_values=False)
     th_curve = th_c/eta_transmission
     th_LDC = get_LDC(th_curve)
@@ -463,6 +471,29 @@ def dim_centralized(city, scenario):
 
     bes = BES.BES(city.environment)
 
+    # ------------- install local heating network -------------
+
+    dimnet.add_lhn_to_city(city, city.nodelist_building, temp_vl=90,
+                           temp_rl=50, c_p=4186, rho=1000,
+                           use_street_network=False, network_type='heating',
+                           plot_stepwise=False)
+    net_ops.add_weights_to_edges(city)
+
+    '''
+    citvis.plot_city_district(city=city, plot_street=False,
+                              plot_lhn=True, offset=None,
+                              plot_build_labels=True,
+                              equal_axis=True, font_size=16,
+                              plt_title=None,
+                              x_label='x-Position in m',
+                              y_label='y-Position in m',
+                              show_plot=True)
+    '''
+
+    # ------------- dimensioning of devices --------------
+
+    bafa_chp_tes = False
+    bafa_lhn = False
 
     for device in scenario['base']:
         if device == 'chp':
@@ -474,7 +505,7 @@ def dim_centralized(city, scenario):
             bafa_lhn = False
             while not bafa_lhn: #TODO: Förderung überprüfen! Nach KWKG 2016 Förderung erst ab 75%
                 # Auslegung auf BAFA Förderung für Wärmenetze (60% Deckungsanteil aus KWK)
-                if t_ann_op >= 6000 and t_x >= 5000 and q_nom*t_ann_op/q_total > 0.6: # Auslegung nur gültig, falls Bedingungen für aot und flh erfüllt sind
+                if t_ann_op >= 6000 and t_x >= 5000 and q_nom*t_ann_op/q_total > 0.75: # Auslegung nur gültig, falls Bedingungen für aot und flh erfüllt sind
                     print('CHP: BAFA Förderung möglich! Gesamtdeckungsanteil: '+ str(round(q_nom*t_ann_op*100/q_total,2)) + '%')
                     bafa_lhn = True
                 else:
@@ -501,9 +532,9 @@ def dim_centralized(city, scenario):
                     if chp_flh > 7500:
                         print('CHP: Fehler bei alternativer Auslegung')
                         break
-                if q_nom/max(th_LDC) < 0.1:
-                    print('CHP ungeeignet für Szenario.')
-                    [eta_el, eta_th, p_nom, q_nom] = [0,0,0,0]
+                #if q_nom/max(th_LDC) < 0.1:    # if CHP q_nom is smaller than 5% of peak demand
+                 #   print('CHP ungeeignet für Szenario.')
+                 #   continue
                 else:
                     print('CHP: BAFA Förderung nicht möglich! Gesamtdeckungsanteil: '+str(q_nom * t_ann_op * 100 / q_total)+'%')
 
@@ -559,14 +590,15 @@ def dim_centralized(city, scenario):
                 if v_tes > 1600: # 1600 liter genügen für Förderung
                     v_tes = 1600 + (q_nom/1000*60-1600)*0.2 # Schätzung um auch Anlagen >30kW mit Speicher zu versorgen
                     # TODO: Wie sieht die Dimensionierung für KWK-Anlagen über 30 kW aus? Sind die 20% realistisch?
+
+
+                # v_tes = 104 + 10 * q_nom    # Dimensionierung nach Wolff & Jagnow 2011, S. 60, evtl. nur für konkretes beispiel
                 tes = TES.thermalEnergyStorageExtended(environment=city.environment,t_init=50,capacity=v_tes)
                 bes.addDevice(tes)
                 print('Added Thermal Energy Storage:', v_tes,'liter ')
                 heg.append(heg_enev['storage'][area_enev]*area_total)
                 if q_nom * t_ann_op * 100 / q_total >= 50:
                     bafa_chp_tes = True
-                else:
-                    bafa_chp_tes = False
 
             # Wärmeerzeuger für Spitzenlast hinzufügen
             if 'boiler' in scenario['peak']:
@@ -680,20 +712,81 @@ def dim_decentralized(city, scenario):
     :param scenario:
     :return: scenario with sizes of devices - in welcher form? city_object
     '''
-    # TODO: Netzverluste korrigieren (siehe dim_centralized)
-    eta_transmission = 0.9  # richtigen Faktor suchen
 
     for b_node in city.nodelist_building:
         building = city.node[b_node]['entity']
-        th_curve = building.get_space_heating_power_curve() + building.get_dhw_power_curve()
-        th_LDC = get_LDC(th_curve / eta_transmission)
-        q_total = sum(th_curve)
+        sh_LDC = get_LDC(building.get_space_heating_power_curve())
+        dhw_LDC = get_LDC(building.get_dhw_power_curve())
 
         bes = BES.BES(city.environment)
 
         for device in scenario['base']:
             if device == 'chp':
+                # TODO: Dimensionierung integrieren/anpassen
+                # Dimensionierung nach:
+                #   - Volllaststunden zwischen 5000 und 7000
+                #   - Förderung Mini-BHKW
+                #   - zwischen 10 und 20% von Maximallast
+                #   - ...
+                #   - EEWärmeG und EnEV prüfen!
+                print('chp')
 
+            elif device == 'hp_air':
+
+                # Hier deckt Wärmepumpe mit integriertem elHeater/Brennwertkessel den Bedarf von Raumwärme und WW
+
+                # TODO: Dimensionierung integrieren
+                # Dimensionierung nach:
+                #   - Kurvenverschiebung wie in zentralisiert (ggf. in Buch nachgucken)
+                #   - nur mit elHeater für peak-Deckung
+
+                # nach VDI 4645!
+
+                tMax = 55  # °C
+                lowerActivationLimit = 0.5
+                tSink = 45
+                # monoenergetic operation
+                t_biv = -5 # bivalence point in °C
+
+                t_dem_ldc = get_t_demand_list(city.environment.weather.tAmbient, building.get_space_heating_power_curve()) # ldc with sh-demand and tAmbient
+                plt.plot(sorted(city.environment.weather.tAmbient), t_dem_ldc)
+
+                for i in range(len(t_dem_ldc)):
+                    if sorted(city.environment.weather.tAmbient)[i] > t_biv:
+                        biv_ind = i-1
+                        q_hp_biv = max(t_dem_ldc[biv_ind:-1]) # highest demand before bivalence point should be met
+                        # q_hp_biv = t_dem_ldc[biv_ind]
+                        break
+                else:
+                    raise Exception('Error in calculation of demand in bivalence point')
+
+                # choose_device('hp',q_hp_biv)
+                plt.plot([min(city.environment.weather.tAmbient),max(city.environment.weather.tAmbient)],[q_hp_biv, q_hp_biv],'r')
+                plt.show()
+
+                heatPump = HP.heatPumpSimple(city.environment,
+                                             q_nominal=q_hp_biv,
+                                             t_max=tMax,
+                                             lower_activation_limit=lowerActivationLimit,
+                                             hp_type='aw',
+                                             t_sink=tSink)
+                bes.addDevice(heatPump)
+                print('Added HP: Q_nom = ' + str(q_hp_biv / 1000) + ' kW at bivalence point (index:', biv_ind,')')
+
+                if 'elHeater' in scenario['peak']:
+                    q_elHeater = max(t_dem_ldc[0:biv_ind]) - q_hp_biv
+                    if q_elHeater > 0:
+                        elHeater = ElectricalHeater.ElectricalHeater(city.environment, q_elHeater, 0.95, 100, 0.2)
+                        bes.addDevice(elHeater)
+                        print('Added elHeater: Q_nom = ' + str(round(q_elHeater / 1000, 2)) + ' kW')
+                    else:
+                        print('No elHeater installed.')
+
+
+
+
+
+                '''
                 chp_flh = 7000  # best possible full-load-hours
                 q_chp = th_LDC[chp_flh]
 
@@ -755,6 +848,7 @@ def dim_decentralized(city, scenario):
                 # Deckung durch WP bis -5°C Außentemperatur. Danach elHeater.
                 # -> Deckung von 2% durch 2.Wärmeerzeuger (elHeater) nach DIN 4701:10 (siehe Dimplex PHB)
                 print('dezentral wp')
+                '''
 
         assert not city.node[b_node]['entity'].hasBes, ('Building ', b_node ,' has already BES. Mistakes may occur!')
         city.node[b_node]['entity'].addEntity(bes)
@@ -781,15 +875,20 @@ def calc_costs_centralized(city, q_base, q_peak, i=0.08, price_gas=0.0661, el_fe
         - Investitionskosten
         - sonstige Förderungen (Recherche!)
 
-    :param city: pycity_calc city_object
-    :param q_base: amount of thermal energy provided by base supply in kWh
-    :param q_peak: amount of thermal energy provided by peak supply in kWh
-    :param i: interest rate
-    :param price_gas: price of gas
-    :param el_feedin_epex: average price for baseload power at EPEX Spot for Q2 2017 in Euro/kWh
-    :param bafa_lhn: indicates if BAFA funding for lhn is applicable
-    :param bafa_chp_tes: indicates if BAFA funding for TES with CHP is applicable
-    :return: tuple of total capital and total operational costs in Euro
+    Parameters
+    ----------
+    city:           pyCity city-object
+    q_base:         amount of thermal energy provided by base supply in kWh
+    q_peak:         amount of thermal energy provided by peak supply in kWh
+    i:              interest rate
+    price_gas:      price of gas
+    el_feedin_epex: average price for baseload power at EPEX Spot for Q2 2017 in Euro/kWh
+    bafa_lhn:       indicates if BAFA funding for lhn is applicable
+    bafa_chp_tes:   indicates if BAFA funding for TES with CHP is applicable
+
+    Returns
+    -------
+    costs:          tuple of total capital and total operational costs in Euro
     """
 
     # Kostenfunktion in Wolff 2011, Kapitel 6.3.6
@@ -808,6 +907,7 @@ def calc_costs_centralized(city, q_base, q_peak, i=0.08, price_gas=0.0661, el_fe
             cost_op = [] # operational costs
             cost_insp = [] # inspection, maintenance and service costs (VDI 2067)
             rev = [] # revenue for electricity feed-in and kwkg
+
 
             # TODO: Heatpump integrieren (vorher auf Heatpump simple umstellen)
             '''
@@ -841,18 +941,19 @@ def calc_costs_centralized(city, q_base, q_peak, i=0.08, price_gas=0.0661, el_fe
 
 
                 # BAFA subsidy for Mini-CHP (CHP device must be listed on BAFA-list)
-                if bes.chp.pNominal < 20000 and bes.tes.capacity/bes.tes.rho >= 0.06:
-                    if bes.chp.pNominal < 1000:
-                        bafa_subs_chp = 1900
-                    elif bes.chp.pNominal < 4000:
-                        bafa_subs_chp = 1900 + (bes.chp.pNominal/1000 - 1) * 300
-                    elif bes.chp.pNominal < 10000:
-                        bafa_subs_chp = 1900 + 3 * 300 + (bes.chp.pNominal/1000 - 4) * 100
-                    else:   # bes.chp.pNominal < 20000:
-                        bafa_subs_chp = 1900 + 3 * 300 + 6 * 100 + (bes.chp.pNominal/1000 - 10) * 10
-                    print('BAFA subsidy for Mini-CHP possible:', bafa_subs_chp, 'Euro')
-                else:
-                    bafa_subs_chp = 0
+                bafa_subs_chp = 0
+                if bes.hasTes:
+                    if bes.chp.pNominal < 20000 and bes.tes.capacity/bes.tes.rho >= 0.06:
+                        if bes.chp.pNominal < 1000:
+                            bafa_subs_chp = 1900
+                        elif bes.chp.pNominal < 4000:
+                            bafa_subs_chp = 1900 + (bes.chp.pNominal/1000 - 1) * 300
+                        elif bes.chp.pNominal < 10000:
+                            bafa_subs_chp = 1900 + 3 * 300 + (bes.chp.pNominal/1000 - 4) * 100
+                        else:   # bes.chp.pNominal < 20000:
+                            bafa_subs_chp = 1900 + 3 * 300 + 6 * 100 + (bes.chp.pNominal/1000 - 10) * 10
+                        print('BAFA subsidy for Mini-CHP possible:', bafa_subs_chp, 'Euro')
+
 
                 # KWKG 2016 revenues for el. feed-in
                 if bes.chp.pNominal < 50000:
@@ -898,47 +999,64 @@ def calc_costs_centralized(city, q_base, q_peak, i=0.08, price_gas=0.0661, el_fe
     else:
         raise Exception('No BES installed!')
 
-    # TODO: Kosten und Förderung für Bau von Wärmenetz integrieren!
+
+    # TODO: Kosten für Hausanschluss?! Bisher Kosten aus pyCity_calc Tabelle (Economic,LHN)
+    cost_pipes_dm = {0.0161:284,0.0217:284.25,0.0273:284.50,0.0372:284.75,0.0431:285,0.0545:301,0.0703:324.5,0.0825:348.5,0.1071:397,0.1325:443,0.1603:485}
+    lhn_length = round(net_ops.sum_up_weights_of_edges(city),2)
+    for d in city.edge[city.nodelist_building[0]].values(): # gibts eine bessere Möglichkeit um an 'd_i' zu kommen?
+        pipe_dm = d['d_i']
+        break
+    for dm in cost_pipes_dm.keys():
+        if pipe_dm < dm:
+            t = 40 # Daumenwert (Quelle: nahwaerme.at)
+            a = i * (1 + i) ** t / ((1 + i) ** t - 1)
+            pipes_invest = cost_pipes_dm[dm]*lhn_length
+            print('Pipe costs:', pipes_invest)
+            cost_cap.append(pipes_invest*a)
+            break
+    else:
+        raise Exception('Pipe diameter too big!')
+
 
     cost_cap_total = round(sum(cost_cap),2)
     cost_op_total = round(sum(cost_op),2)
     cost_insp_total = round(sum(cost_insp),2)
     rev_total = round(sum(rev),2)
 
-    print('\nCapital Cost:', cost_cap_total)
+    print('Capital Cost:', cost_cap_total)
     print('Operational Cost:', cost_op_total)
     print('Costs for inspection, maintenance and service:', cost_insp_total)
     print('Revenue for el feed-in:', rev_total)
-
+    print('\n** Costs per year:', cost_cap_total+cost_op_total+cost_insp_total-rev_total, 'Euro/a **')
     return (cost_cap_total, cost_op_total)
 
-def calc_cost_decentralized():
-    """
-    Calculation for decentralized energy supply
-    :return:
-    """
-    # BAFA Förderung für Mini-KWK Anlagen (< 20kWel)
-
-    if bafa_chp:
-        if bes.chp.pNominal < 1000:
-            bafa_subs_chp = 1900
-        elif bes.chp.pNominal < 4000:
-            bafa_subs_chp = 1900 + (bes.chp.pNominal - 1000) * 300
-        elif bes.chp.pNominal < 10000:
-            bafa_subs_chp = 1900 + (bes.chp.pNominal - 1000) * 300 + (bes.chp.pNominal - 1000) * 100
-        elif bes.chp.pNominal < 20000:
-            bafa_subs_chp = 1900 + (bes.chp.pNominal - 1000) * 300 + (bes.chp.pNominal - 1000) * 100 + (
-                                                                                                   bes.chp.pNominal - 1000) * 10
+# def calc_cost_decentralized():
+#     """
+#     Calculation for decentralized energy supply
+#     :return:
+#     """
+#     # BAFA Förderung für Mini-KWK Anlagen (< 20kWel)
+#
+#     if bafa_chp:
+#         if bes.chp.pNominal < 1000:
+#             bafa_subs_chp = 1900
+#         elif bes.chp.pNominal < 4000:
+#             bafa_subs_chp = 1900 + (bes.chp.pNominal - 1000) * 300
+#         elif bes.chp.pNominal < 10000:
+#             bafa_subs_chp = 1900 + (bes.chp.pNominal - 1000) * 300 + (bes.chp.pNominal - 1000) * 100
+#         elif bes.chp.pNominal < 20000:
+#             bafa_subs_chp = 1900 + (bes.chp.pNominal - 1000) * 300 + (bes.chp.pNominal - 1000) * 100 + (
+#                                                                                                    bes.chp.pNominal - 1000) * 10
 
 
 if __name__ == '__main__':
 
     scenarios = []
     #scenarios.append({'type': ['centralized', 'decentralized'], 'base': [], 'peak': ['boiler']})
-    #scenarios.append({'type': ['decentralized'], 'base': ['hp_air'], 'peak': []})
-    #scenarios.append({'type': ['centralized', 'decentralized'], 'base': ['hp_air'], 'peak': ['boiler']})
-    #scenarios.append({'type': ['centralized', 'decentralized'], 'base': ['hp_air'], 'peak': ['elHeater']})
-    scenarios.append({'type': ['centralized', 'decentralized'], 'base': ['chp'], 'peak': ['boiler']})
+    #scenarios.append({'type': ['decentralized'], 'base': ['hp_air'], 'peak': ['boiler']})
+    scenarios.append({'type': ['decentralized'], 'base': ['hp_air'], 'peak': ['elHeater']})
+    scenarios.append({'type': ['centralized'], 'base': ['chp'], 'peak': ['boiler']})
+
     #scenarios.append({'type': ['centralized', 'decentralized'], 'base': ['hp_geo'], 'peak': ['boiler']})
     # scenarios.append({'type': ['centralized', 'decentralized'], 'base': ['hp_geo'], 'peak': ['elHeater']})
 
