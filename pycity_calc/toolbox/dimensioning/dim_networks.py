@@ -31,7 +31,7 @@ def estimate_u_value(d_i):
     Parameters
     ----------
     d_i : float
-        Inner diameter of pipe
+        Inner diameter of pipe in meters
 
     Returns
     -------
