@@ -786,7 +786,7 @@ class EconomicCalculation(object):
                                 cap_kWh = bes.battery.capacity / (3600 * 1000)
                                 #  In kWh
                                 bat_invest = bat_cost.calc_invest_cost_bat(cap=cap_kWh, method='carmen')
-                                print(bat_invest, "b_invest")
+
                                 # if specific investment uncertain: rescaled specific investment
                                 if cost_spe:
                                     factor = self.calc_cost_spe()
@@ -801,7 +801,7 @@ class EconomicCalculation(object):
                                 q_nom = bes.boiler.qNominal / 1000  # in kW
                                 boil_invest = \
                                     boiler_cost.calc_abs_boiler_cost(q_nom=q_nom, method='spieker')
-                                print(boil_invest, "b_invest")
+
                                 # if specific investment uncertain: rescaled specific investment
                                 if cost_spe:
                                     factor = self.calc_cost_spe(mean_spe=1.0 , sdev=0.1, max_val=1.5, min_val=0.5)
@@ -816,7 +816,7 @@ class EconomicCalculation(object):
                             if bes.hasChp:
                                 p_el_nom = bes.chp.pNominal / 1000  # in kW
                                 chp_invest = chp_cost.calc_invest_cost_chp(p_el_nom=p_el_nom, method='spieker')
-                                print(chp_invest, "chp_invest")
+
                                 # if specific investment uncertain: rescaled specific investment
                                 if cost_spe:
                                     factor = self.calc_cost_spe()
@@ -832,7 +832,7 @@ class EconomicCalculation(object):
                                 q_eh = bes.electricalHeater.qNominal / 1000  # in kW
                                 eh_invest = \
                                     eh_cost.calc_abs_cost_eh(q_nom=q_eh, method='spieker')
-                                print(eh_invest, "eh_invest")
+
                                 # if specific investment uncertain: rescaled specific investment
                                 if cost_spe:
                                     factor = self.calc_cost_spe()
@@ -850,7 +850,7 @@ class EconomicCalculation(object):
 
                                 hp_invest = \
                                     hp_cost.calc_invest_cost_hp(q_nom=q_hp, method='wolf')
-                                print(hp_invest,'hp')
+
                                 # if specific investment uncertain: rescaled specific investment
                                 if cost_spe:
                                     factor = self.calc_cost_spe()
@@ -865,7 +865,7 @@ class EconomicCalculation(object):
                             if bes.hasPv:
                                 pv_area = bes.pv.area
                                 pv_invest = pv_cost.calc_pv_invest(area=pv_area, method='EuPD')
-                                print(pv_invest, "pv_invest")
+
                                 # if specific investment uncertain: rescaled specific investment
                                 if cost_spe:
                                     factor = self.calc_cost_spe()
@@ -881,7 +881,7 @@ class EconomicCalculation(object):
                                 tes_vol = bes.tes.capacity / 1000  # in m3
                                 tes_invest = \
                                     tes_cost.calc_invest_cost_tes(volume=tes_vol, method='spieker')
-                                print(tes_invest, "tes")
+
                                 # if specific investment uncertain: rescaled specific investment
                                 if cost_spe:
                                     factor = self.calc_cost_spe()
