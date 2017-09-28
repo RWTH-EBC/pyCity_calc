@@ -380,30 +380,41 @@ class TestBuildingEnergyBalance():
 
         # #  #################################################################
 
-        # #  ##################################################################
-        # #  Get buiding 1006 (boiler, tes, PV, battery)
-        # #  Add EH to test energy balance for boiler and eh without tes
-        # id = 1006
-        # exbuild = city.node[id]['entity']
-        #
-        # #  Calculate thermal energy balance
-        # buildeb.calc_build_therm_eb(build=exbuild, id=id)
-        #
-        # #  Calculate electric energy balance
-        # buildeb.calc_build_el_eb(build=exbuild)
-        #
-        # q_out = exbuild.bes.boiler.totalQOutput
-        # fuel_in = exbuild.bes.boiler.array_fuel_power
-        # sh_p_array = exbuild.get_space_heating_power_curve()
-        # dhw_p_array = exbuild.get_dhw_power_curve()
-        #
-        # sh_net_energy = sum(sh_p_array) * timestep / (1000 * 3600)  # in kWh
-        # dhw_net_energy = sum(dhw_p_array) * timestep / (1000 * 3600)  # in kWh
-        # boil_th_energy = sum(q_out) * timestep / (1000 * 3600)  # in kWh
-        # fuel_boiler_energy = sum(fuel_in) * timestep / (1000 * 3600)  # in kWh
-        #
-        # assert fuel_boiler_energy >= boil_th_energy
-        # assert abs(boil_th_energy - (sh_net_energy + dhw_net_energy)) <= 0.001
+        #  ##################################################################
+        #  Get buiding 1006 (boiler, tes, PV, battery)
+        #  Add EH to test energy balance for boiler and eh without tes
+        id = 1006
+        exbuild = city.node[id]['entity']
+
+        exbuild.bes.boiler.qNominal *= 5
+        exbuild.bes.tes.capacity *= 2
+
+        #  Calculate thermal energy balance
+        buildeb.calc_build_therm_eb(build=exbuild, id=id)
+
+        #  Calculate electric energy balance
+        buildeb.calc_build_el_eb(build=exbuild)
+
+        q_out = exbuild.bes.boiler.totalQOutput
+        fuel_in = exbuild.bes.boiler.array_fuel_power
+        sh_p_array = exbuild.get_space_heating_power_curve()
+        dhw_p_array = exbuild.get_dhw_power_curve()
+
+        sh_net_energy = sum(sh_p_array) * timestep / (1000 * 3600)  # in kWh
+        dhw_net_energy = sum(dhw_p_array) * timestep / (1000 * 3600)  # in kWh
+        boil_th_energy = sum(q_out) * timestep / (1000 * 3600)  # in kWh
+        fuel_boiler_energy = sum(fuel_in) * timestep / (1000 * 3600)  # in kWh
+
+        #  Thermal storage
+        q_tes_in = exbuild.bes.tes.array_q_charge
+        q_tes_out = exbuild.bes.tes.array_q_discharge
+
+        sum_q_tes_in = sum(q_tes_in) * timestep / (1000 * 3600)
+        sum_q_tes_out = sum(q_tes_out) * timestep / (1000 * 3600)
+
+        assert fuel_boiler_energy >= boil_th_energy
+        assert abs(boil_th_energy + sum_q_tes_out >=
+                   (sh_net_energy + dhw_net_energy + sum_q_tes_in))
 
         #  ##################################################################
 
