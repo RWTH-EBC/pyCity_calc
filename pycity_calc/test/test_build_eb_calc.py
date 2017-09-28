@@ -410,7 +410,7 @@ class TestBuildingEnergyBalance():
         #  ##################################################################
         #  Get building 1002 (no thermal energy system)
         #  and calculate electric energy balance
-        id = 1001
+        id = 1002
         exbuild = city.node[id]['entity']
 
         #  Calculate electric energy balance
