@@ -29,7 +29,6 @@ from pycity_calc.test.pycity_calc_fixtures import fixture_building, \
 
 
 class TestBuildingEnergyBalance():
-
     def test_building_eb_calc(self):
         """
         Generate city district and perform logic checks for thermal and
@@ -408,6 +407,24 @@ class TestBuildingEnergyBalance():
 
         #  ##################################################################
 
+        #  ##################################################################
+        #  Get building 1002 (no thermal energy system)
+        #  and calculate electric energy balance
+        id = 1001
+        exbuild = city.node[id]['entity']
+
+        #  Calculate electric energy balance
+        buildeb.calc_build_el_eb(build=exbuild)
+
+        el_energy = exbuild.get_annual_el_demand()
+
+        grid_import_dem = exbuild.dict_el_eb_res['grid_import_dem']
+        sum_grid_import = sum(grid_import_dem) * timestep / (1000 * 3600)
+
+        assert abs(el_energy - sum_grid_import) <= 0.001
+
+        #  ##################################################################
+
     def test_building_eb_2(self, fixture_building):
         """
         Test, if share of CHP self-consumed and fed-in electric energy is
@@ -436,7 +453,7 @@ class TestBuildingEnergyBalance():
                                  q_nominal=q_nom,
                                  p_nominal=p_nom, eta_total=eta_total)
 
-        tes = sto.thermalEnergyStorageExtended\
+        tes = sto.thermalEnergyStorageExtended \
             (environment=build.environment, t_init=75, capacity=100)
 
         bes = BES.BES(environment=build.environment)
@@ -469,7 +486,8 @@ class TestBuildingEnergyBalance():
         #  Assert CHP el. energy balance
         assert abs(chp_el_energy - (sum_chp_self + sum_chp_feed)) <= 0.001
         #  Assert that share of CHP self consumption is around 1/4
-        assert abs(sum_chp_self / (sum_chp_self + sum_chp_feed) - 1/4) < 0.001
+        assert abs(
+            sum_chp_self / (sum_chp_self + sum_chp_feed) - 1 / 4) < 0.001
         #  Assert that produced CHP thermal energy is larger (losses of TES)
         #  or equal to space heating net energy demand
         assert chp_th_energy >= sh_energy
@@ -721,7 +739,6 @@ class TestBuildingEnergyBalance():
                                                            + sum_grid_import)) \
                <= 0.001
 
-
     def test_el_eb_pv(self, fixture_building):
         """
         Test el. energy balance with PV
@@ -846,9 +863,9 @@ class TestBuildingEnergyBalance():
         sum_q_tes_in = sum(q_tes_in) * timestep / (1000 * 3600)
         sum_q_tes_out = sum(q_tes_out) * timestep / (1000 * 3600)
 
-        assert abs(el_energy + sum_hp_el_energy + sum_eh_el_energy\
-               - (sum_pv_self + sum_grid_import_dem + sum_grid_import_hp +
-                  sum_grid_import_eh)) <= 0.001
+        assert abs(el_energy + sum_hp_el_energy + sum_eh_el_energy \
+                   - (sum_pv_self + sum_grid_import_dem + sum_grid_import_hp +
+                      sum_grid_import_eh)) <= 0.001
         assert sum_hp_el_energy <= sum_grid_import_hp + sum_pv_self
         assert sum_eh_el_energy <= sum_grid_import_eh + sum_pv_self
         assert abs(sum_pv_energy - (sum_pv_self + sum_pv_feed)) <= 0.001
@@ -864,7 +881,6 @@ class TestBuildingEnergyBalance():
                                   + sum_grid_import_dem
                                   - sum_q_tes_in
                                   + sum_q_tes_out)) <= 0.001
-
 
     def test_pv_with_battery_eb(self, fixture_building):
         """
@@ -893,7 +909,7 @@ class TestBuildingEnergyBalance():
 
         #  Set building el. power to 0.99 pv_power_mean
         build.apartments[0].power_el.loadcurve = np.ones(nb_timesteps) \
-                                                * 0.99 * pv_power_mean
+                                                 * 0.99 * pv_power_mean
 
         bes.addMultipleDevices([battery, pv])
 
@@ -1158,7 +1174,8 @@ class TestBuildingEnergyBalance():
         assert abs(fuel_chp_energy - chp_th_energy) - \
                (sum_chp_feed + sum_chp_self_dem + sum_chp_self_eh) <= 0.001
 
-        assert abs(sum_chp_self - (sum_chp_self_dem + sum_chp_self_eh)) <= 0.001
+        assert abs(
+            sum_chp_self - (sum_chp_self_dem + sum_chp_self_eh)) <= 0.001
 
         #  Assert electric heater energy balance
         assert abs(sum_eh_th_energy - sum_eh_el_energy) <= 0.001
@@ -1168,7 +1185,7 @@ class TestBuildingEnergyBalance():
 
         #  Assert net thermal energy balance
         assert abs(sh_energy + dhw_energy - (chp_th_energy + sum_q_boiler
-                   + sum_eh_th_energy + sum_q_tes_out - sum_q_tes_in)) <= 0.001
+                                             + sum_eh_th_energy + sum_q_tes_out - sum_q_tes_in)) <= 0.001
 
         #  Assert net electric energy balance
         assert abs(el_energy - (sum_chp_self_dem + sum_pv_self_dem +
@@ -1176,18 +1193,18 @@ class TestBuildingEnergyBalance():
                <= 0.001
 
         assert abs((sh_energy + dhw_energy + el_energy) - (fuel_chp_energy
-                   + fuel_boiler_energy - sum_chp_feed + sum_q_tes_out
-                   - sum_q_tes_in
-                   + sum_pv_self_dem + sum_pv_self_eh
-                   + sum_grid_import_dem
-                   + sum_grid_import_eh)) <= 0.001
+                                                           + fuel_boiler_energy - sum_chp_feed + sum_q_tes_out
+                                                           - sum_q_tes_in
+                                                           + sum_pv_self_dem + sum_pv_self_eh
+                                                           + sum_grid_import_dem
+                                                           + sum_grid_import_eh)) <= 0.001
 
         assert abs((sh_energy + dhw_energy + el_energy) - (sum_chp_self_dem
-                   + chp_th_energy
-                   + sum_q_tes_out - sum_q_tes_in
-                   + sum_q_boiler + sum_eh_th_energy
-                   + sum_pv_self_dem
-                   + sum_grid_import_dem)) <= 0.001
+                                                           + chp_th_energy
+                                                           + sum_q_tes_out - sum_q_tes_in
+                                                           + sum_q_boiler + sum_eh_th_energy
+                                                           + sum_pv_self_dem
+                                                           + sum_grid_import_dem)) <= 0.001
 
     def test_pv_bat_chp_eh_boiler_static(self, fixture_building):
         """
@@ -1677,7 +1694,7 @@ class TestBuildingEnergyBalance():
 
         #  Assert net thermal energy balance
         assert abs(sh_energy + dhw_energy - (chp_th_energy + sum_q_boiler
-                   + sum_eh_th_energy + sum_q_tes_out - sum_q_tes_in)) <= 0.001
+                                             + sum_eh_th_energy + sum_q_tes_out - sum_q_tes_in)) <= 0.001
 
         #  Assert net electric energy balance
         assert abs(el_energy - (sum_chp_self_dem + sum_pv_self_dem +

@@ -9,6 +9,7 @@ import os
 import copy
 import pickle
 import warnings
+import itertools
 import numpy as np
 import networkx as nx
 
@@ -152,27 +153,11 @@ class CityEBCalculator(object):
         self._list_no_th_esys = \
             get_list_lhn_build_without_th_esys(city=self.city)
 
-    def calc_city_energy_balance(self):
+    def calc_lhn_energy_balance(self):
         """
-        Calculate energy balance of whole city. Save results on city object
+        Calculate thermal energy balance for LHN connected buildings
         """
 
-        # #  Loop over buildings, which are not connected to energy networks
-        # for n in self._list_single_build:
-        #     print()
-        #     print('########################################################')
-        #     print('Process stand-alone building with id: ', n)
-        #
-        #     building = self.city.node[n]['entity']
-        #
-        #     #  Calculate single building thermal energy balance
-        #     beb.calc_build_therm_eb(build=building, id=n)
-        #
-        #     #  Calculate single building electrical energy balance
-        #     beb.calc_build_el_eb(build=building)
-
-        # LHN energy balance
-        #  ################################################################
         #  Add weights to edges
         netop.add_weights_to_edges(graph=self.city)
 
@@ -285,7 +270,7 @@ class CityEBCalculator(object):
                 if th_lhn_power[i] > 0:
                     th_lhn_power[i] += q_lhn_loss
 
-            #  Add LHN electric power demand for pumps
+            # Add LHN electric power demand for pumps
             #  TODO: Add pump el. power demand calculation
 
             #  Hand over network energy demand to feeder node buildings
@@ -307,7 +292,6 @@ class CityEBCalculator(object):
             list_th_esys = list_th_esys_copy
 
             for n in list_th_esys:
-
                 build = self.city.node[n]['entity']
 
                 #  Solve thermal energy balance for single building with
@@ -320,14 +304,47 @@ class CityEBCalculator(object):
                 if abs(th_lhn_power_remain[i]) > 0.001:
                     msg = 'Could not cover LHN thermal energy demand of' \
                           ' ' + str(int(th_lhn_power_remain[i])) + ' Watt' \
-                          ' for timestep ' + str(i) + '.'
+                                                                   ' for timestep ' + str(
+                        i) + '.'
                     raise AssertionError(msg)
 
+    def calc_city_energy_balance(self):
+        """
+        Calculate energy balance of whole city. Save results on city object
+        """
+
+        #  Loop over buildings, which are not connected to energy networks
+        for n in self._list_single_build:
+            print()
+            print('########################################################')
+            print('Process stand-alone building with id: ', n)
+
+            building = self.city.node[n]['entity']
+
+            #  Calculate single building thermal energy balance
+            beb.calc_build_therm_eb(build=building, id=n)
+
+            #  Calculate single building electrical energy balance
+            beb.calc_build_el_eb(build=building)
+
+        # LHN energy balance
+        #  ################################################################
+
+        self.calc_lhn_energy_balance()
+
+        #  Solve electric energy balance for buildings with LHN connection
+        #  which are not connected to DEG
+        for n in list(itertools.chain.from_iterable(self._list_lists_lhn_ids_build)):
+            if n not in list(itertools.chain.from_iterable(self._list_lists_deg_ids_build)):
+
+                build = self.city.node[n]['entity']
+
+                beb.calc_build_el_eb(build=build)
+
         #  Electrical energy balance of subcity (deg subcities)
+        #  TODO: Implement DEG energy balance
 
-            #  Share with deg
-
-            #  Single el. energy balance for remaining buildings
+        #  Share with deg
 
 
 if __name__ == '__main__':

@@ -1878,28 +1878,29 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
 
     # Check building esys
 
-    #  Pointer to bes
-    bes = build.bes
-
     has_bat = False
     has_chp = False
     has_eh = False
     has_hp = False
     has_pv = False
 
-    if bes.hasBattery:
-        has_bat = True
-    if bes.hasChp:
-        has_chp = True
-    if bes.hasElectricalHeater:
-        has_eh = True
-    if bes.hasHeatpump:
-        has_hp = True
-    if bes.hasPv:
-        has_pv = True
+    if build.hasBes:
+        #  Pointer to bes
+        bes = build.bes
 
-        pv_gen_array = build.bes.pv.getPower(currentValues=False,
-                                             updatePower=True)
+        if bes.hasBattery:
+            has_bat = True
+        if bes.hasChp:
+            has_chp = True
+        if bes.hasElectricalHeater:
+            has_eh = True
+        if bes.hasHeatpump:
+            has_hp = True
+        if bes.hasPv:
+            has_pv = True
+
+            pv_gen_array = build.bes.pv.getPower(currentValues=False,
+                                                 updatePower=True)
 
     # Get electric power value
     el_pow_array = build.get_electric_power_curve()
@@ -1958,7 +1959,6 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
             p_el_chp = build.bes.chp.totalPOutput[i]
             p_el_chp_remain = p_el_chp + 0.0
 
-        # TODO: Erase later
         assert p_el_remain >= 0
         assert p_el_chp_remain >= 0
 
@@ -2011,7 +2011,6 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
                     pv_self_eh[i] += p_pv_remain
                     p_pv_remain = 0
 
-        # TODO: Erase later
         assert p_el_remain >= 0
         assert p_el_chp_remain >= 0
 
@@ -2064,7 +2063,6 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
                     chp_self_eh[i] += p_el_chp_remain
                     p_el_chp_remain = 0
 
-        # TODO: Erase later
         assert p_el_remain >= 0
         assert p_el_chp_remain >= 0
 
@@ -2190,7 +2188,6 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
                                                save_res=True,
                                                time_index=i)
 
-        # TODO: Erase later
         assert p_el_remain >= 0
         assert p_el_chp_remain >= 0
 
