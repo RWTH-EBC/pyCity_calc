@@ -511,7 +511,6 @@ class TestBuildingEnergyBalance():
         build = copy.deepcopy(fixture_building)
 
         timestep = build.environment.timer.timeDiscretization
-        nb_timesteps = int(365 * 24 * 3600 / timestep)
 
         sh_day = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -789,8 +788,8 @@ class TestBuildingEnergyBalance():
 
         el_demand = build.get_annual_el_demand()
 
-        assert el_demand - (sum_pv_self + sum_grid_import) <= 0.001
-        assert sum_pv_energy - (sum_pv_self + sum_pv_feed) <= 0.001
+        assert abs(el_demand - (sum_pv_self + sum_grid_import)) <= 0.001
+        assert abs(sum_pv_energy - (sum_pv_self + sum_pv_feed)) <= 0.001
 
     def test_eb_pv_hp_eh_tes_static(self, fixture_building):
         """
@@ -937,7 +936,6 @@ class TestBuildingEnergyBalance():
 
         bat_charge = build.bes.battery.totalPCharge
         bat_discharge = build.bes.battery.totalPDischarge
-        final_soc = build.bes.battery.soc_ratio_current
 
         sum_pv_self = sum(pv_self) * timestep / (1000 * 3600)
         sum_pv_feed = sum(pv_feed) * timestep / (1000 * 3600)
@@ -945,13 +943,6 @@ class TestBuildingEnergyBalance():
 
         sum_bat_charge = sum(bat_charge) * timestep / (1000 * 3600)
         sum_bat_discharge = sum(bat_discharge) * timestep / (1000 * 3600)
-
-        # print('Final state of charge of el. battery:')
-        # print(final_soc)
-        # print('Sum bat. charge energy in kWh:')
-        # print(sum_bat_charge)
-        # print('Sum bat. discharge energy in kWh:')
-        # print(sum_bat_discharge)
 
         assert sum_grid_import == 0
         assert abs(sum_pv_energy - sum_pv_self - sum_pv_feed) <= 0.001
@@ -970,7 +961,6 @@ class TestBuildingEnergyBalance():
         build = copy.deepcopy(fixture_building)
 
         timestep = build.environment.timer.timeDiscretization
-        nb_timesteps = int(365 * 24 * 3600 / timestep)
 
         bes = BES.BES(environment=build.environment)
 
@@ -1036,7 +1026,6 @@ class TestBuildingEnergyBalance():
         build = copy.deepcopy(fixture_building)
 
         timestep = build.environment.timer.timeDiscretization
-        nb_timesteps = int(365 * 24 * 3600 / timestep)
 
         bes = BES.BES(environment=build.environment)
 
@@ -1169,9 +1158,6 @@ class TestBuildingEnergyBalance():
         delta_q_tes = tes.capacity * tes.c_p * (tes.t_current - t_init) \
                       / (1000 * 3600)
 
-        print('Delta Q storage in kWh')
-        print(delta_q_tes)
-
         #  Assert PV energy balance
         assert abs(sum_pv_energy -
                    (sum_pv_feed + sum_pv_self_dem + sum_pv_self_eh)) <= 0.001
@@ -1217,7 +1203,7 @@ class TestBuildingEnergyBalance():
                                                            + sum_pv_self_dem
                                                            + sum_grid_import_dem)) <= 0.001
 
-    def test_pv_bat_chp_eh_boiler_static(self, fixture_building):
+    def test_pv_chp_eh_boiler_static(self, fixture_building):
         """
 
         """
@@ -1227,14 +1213,6 @@ class TestBuildingEnergyBalance():
         nb_timesteps = int(365 * 24 * 3600 / timestep)
 
         bes = BES.BES(environment=build.environment)
-
-        soc_init = 0
-
-        # battery = bat.BatteryExtended(environment=build.environment,
-        #                               soc_init_ratio=soc_init,
-        #                               capacity_kwh=100,
-        #                               self_discharge=0, eta_charge=1,
-        #                               eta_discharge=1)
 
         pv = PV.PV(environment=build.environment, area=100, eta=0.15,
                    temperature_nominal=45,
@@ -1257,8 +1235,8 @@ class TestBuildingEnergyBalance():
                                  q_nominal=q_nom,
                                  p_nominal=p_nom, eta_total=eta_total)
 
-        # boiler = boil.BoilerExtended(environment=build.environment,
-        #                              q_nominal=50000, eta=1)
+        boiler = boil.BoilerExtended(environment=build.environment,
+                                     q_nominal=50000, eta=1)
 
         bes.addMultipleDevices([
             # battery,
@@ -1266,7 +1244,7 @@ class TestBuildingEnergyBalance():
             eh,
             tes,
             chp,
-            # boiler
+            boiler
         ])
 
         build.addEntity(bes)
@@ -1309,12 +1287,12 @@ class TestBuildingEnergyBalance():
         fuel_chp_energy = sum(fuel_chp_in) * timestep / (1000 * 3600)  # in kWh
         chp_el_energy = sum(p_el_chp_out) * timestep / (1000 * 3600)  # in kWh
 
-        # #  Boiler
-        # q_boiler = build.bes.boiler.totalQOutput
-        # sum_q_boiler = sum(q_boiler) * timestep / (1000 * 3600)  # in kWh
-        #
-        # fuel_in = build.bes.boiler.array_fuel_power
-        # fuel_boiler_energy = sum(fuel_in) * timestep / (1000 * 3600)  # in kWh
+        #  Boiler
+        q_boiler = build.bes.boiler.totalQOutput
+        sum_q_boiler = sum(q_boiler) * timestep / (1000 * 3600)  # in kWh
+
+        fuel_in = build.bes.boiler.array_fuel_power
+        fuel_boiler_energy = sum(fuel_in) * timestep / (1000 * 3600)  # in kWh
 
         #  Electric heater
         eh_th_power = build.bes.electricalHeater.totalQOutput
@@ -1419,8 +1397,8 @@ class TestBuildingEnergyBalance():
             + sum_chp_self_eh)) \
                <= 0.001
 
-        # #  Assert boiler energy balance
-        # assert abs(fuel_boiler_energy - sum_q_boiler) <= 0.001
+        #  Assert boiler energy balance
+        assert abs(fuel_boiler_energy - sum_q_boiler) <= 0.001
 
         #  Assert electric heater energy balance
         assert abs(sum_eh_th_energy - sum_eh_el_energy) <= 0.001
@@ -1434,7 +1412,7 @@ class TestBuildingEnergyBalance():
         #  Assert net thermal energy balance
         assert abs(sh_energy + dhw_energy
                    - (chp_th_energy
-                      # + sum_q_boiler
+                      + sum_q_boiler
                       + sum_eh_th_energy
                       + sum_q_tes_out
                       - sum_q_tes_in
@@ -1459,7 +1437,7 @@ class TestBuildingEnergyBalance():
                    + el_energy
                    - (chp_th_energy
                       + sum_chp_self_dem
-                      # + sum_q_boiler
+                      + sum_q_boiler
                       + sum_eh_th_energy
                       - sum_q_tes_in
                       + sum_q_tes_out
@@ -1474,15 +1452,13 @@ class TestBuildingEnergyBalance():
                    + el_energy
                    - (fuel_chp_energy
                       - sum_chp_feed
-                      # + fuel_boiler_energy
+                      + fuel_boiler_energy
                       + sum_grid_import_eh
                       + sum_pv_self_eh
                       + sum_pv_self_dem
                       + sum_grid_import_dem
                       - sum_q_tes_in
                       + sum_q_tes_out
-                      # - sum_bat_in
-                      # + sum_bat_out
                       )) <= 0.001
 
     def test_pv_bat_chp_eh_boiler(self, fixture_building):
@@ -1492,7 +1468,6 @@ class TestBuildingEnergyBalance():
         build = copy.deepcopy(fixture_building)
 
         timestep = build.environment.timer.timeDiscretization
-        nb_timesteps = int(365 * 24 * 3600 / timestep)
 
         bes = BES.BES(environment=build.environment)
 
