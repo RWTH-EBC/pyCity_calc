@@ -595,25 +595,6 @@ if __name__ == '__main__':
         file_path = os.path.join(this_path, 'input', filename)
         pickle.dump(city_object, open(file_path, mode='wb'))
 
-    # Upscale boiler size of building 1006
-    # city_object.node[1006]['entity'].bes.boiler.qNominal *= 10
-    # city_object.node[1006]['entity'].bes.tes.capacity *= 10
-    # city_object.node[1006]['entity'].bes.tes.t_current = 80
-    #
-    # print(city_object.node[1006]['entity'].bes.boiler.qNominal)
-    # print(city_object.node[1006]['entity'].bes.tes.capacity)
-    # print(city_object.node[1006]['entity'].bes.tes.t_current)
-    #
-    # sh_power = city_object.node[1006]['entity'].get_space_heating_power_curve()
-    # dhw_power = city_object.node[1006]['entity'].get_electric_power_curve()
-    #
-    # import matplotlib.pyplot as plt
-    #
-    # plt.plot(sh_power)
-    # plt.plot(dhw_power)
-    # plt.show()
-    # plt.close()
-
     # Construct energy balance
     energy_balance = CityEBCalculator(city=city_object)
 
