@@ -24,7 +24,7 @@ class EnergyBalanceException(Exception):
             Error message
         """
 
-        super().__init__(message)
+        super(EnergyBalanceException, self).__init__(message)
 
 
 def get_tes_status(tes, buffer_low, buffer_high):
