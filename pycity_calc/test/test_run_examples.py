@@ -13,8 +13,6 @@ import pycity_calc.examples.example_city_street as example_city_street
 import pycity_calc.examples.example_co2emissions as example_co2emissions
 import pycity_calc.examples.example_complex_city_generator \
     as example_complex_city_generator
-import pycity_calc.examples.example_economic_annuity_city as \
-    example_economic_annuity_city
 import pycity_calc.examples.example_electricalHeater as \
     example_electricalHeater
 import pycity_calc.examples.example_environment as example_environment
@@ -57,6 +55,7 @@ class Test_RunExamples():
     def test_example_complex_city_generator(self):
         example_complex_city_generator.run_example()
 
+    #  Fixme: Requires new input (city generation instead of pickle file!)
     # def test_example_economic_annuity_city(self):
     #     example_economic_annuity_city.run_example()
 
@@ -79,9 +78,9 @@ class Test_RunExamples():
     def test_example_market(self):
         example_market.run_example()
 
-    # def test_example_teaser(self):
-    #     example_teaser.run_example_exbuild()
-    #     example_teaser.run_example_city()
+    def test_example_teaser(self):
+        example_teaser.run_example_exbuild()
+        example_teaser.run_example_city()
 
     def test_example_thermalEnergyStorage(self):
         example_thermalEnergyStorage.run_test()

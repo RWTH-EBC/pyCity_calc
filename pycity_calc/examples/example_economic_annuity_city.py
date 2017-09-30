@@ -4,6 +4,7 @@
 Script to calculate capital- and operation-related annuity
 """
 from __future__ import division
+
 import os
 import pickle
 
