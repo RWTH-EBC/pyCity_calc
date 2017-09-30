@@ -14,7 +14,10 @@ import pycity_calc.cities.scripts.street_generator.street_generator as strgen
 import pycity_calc.visualization.city_visual as citvis
 
 
-def gen_city_with_street_network_from_csvfile(timestep, year, location,
+def gen_city_with_street_network_from_csvfile(timestep,
+                                              year_timer,
+                                              year_co2,
+                                              location,
                                               th_gen_method,
                                               el_gen_method,
                                               district_data,
@@ -56,8 +59,11 @@ def gen_city_with_street_network_from_csvfile(timestep, year, location,
     ----------
     timestep : int
         Timestep for environment
-    year : int
-        Year of environment
+    year_timer : int
+        Chosen year of analysis
+        (influences initial day for profile generation)
+    year_co2 : int, optional
+        Chose year with specific emission factors
     location : tuple (of floats)
         (latitude, longitude) of the simulated system's position.
     th_gen_method : int
@@ -241,7 +247,9 @@ def gen_city_with_street_network_from_csvfile(timestep, year, location,
     #  Generate city district
     city_object = citygen.run_city_generator(generation_mode=generation_mode,
                                              timestep=timestep,
-                                             year=year, location=location,
+                                             year_timer=year_timer,
+                                             year_co2=year_co2,
+                                             location=location,
                                              th_gen_method=th_gen_method,
                                              el_gen_method=el_gen_method,
                                              use_dhw=use_dhw,
@@ -339,7 +347,8 @@ if __name__ == '__main__':
     #  #----------------------------------------------------------------------
 
     #  Generate environment
-    year = 2010
+    year_timer = 2010
+    year_co2 = 2017
     timestep = 3600  # Timestep in seconds
     # location = (51.529086, 6.944689)  # (latitude, longitude) of Bottrop
     location = (50.775346, 6.083887)  # (latitude, longitude) of Aachen
@@ -508,7 +517,8 @@ if __name__ == '__main__':
 
     city_object = \
         gen_city_with_street_network_from_csvfile(timestep=timestep,
-                                                  year=year,
+                                                  year_timer=year_timer,
+                                                  year_co2=year_co2,
                                                   location=location,
                                                   try_path=try_path,
                                                   th_gen_method=th_gen_method,

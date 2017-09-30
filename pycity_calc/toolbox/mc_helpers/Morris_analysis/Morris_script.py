@@ -328,7 +328,8 @@ def run_Morris(Nsample = 1, Morris_name = 'Morris_values.txt', Scenario = 'ref',
         # # City Generation
 
         City = City_gen.run_overall_gen_and_dim(timestep=timestep,
-                                                year=year,
+                                                year_timer=year,
+                                                year_co2=year,
                                                 location=location,
                                                 try_path=try_path, th_gen_method=th_gen_method,
                                                 el_gen_method=el_gen_method,

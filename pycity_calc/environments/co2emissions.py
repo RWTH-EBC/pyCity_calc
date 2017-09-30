@@ -14,11 +14,11 @@ class Emissions(object):
     factors
     """
 
-    def __init__(self, year=None, co2_factor_oil=0.313,
-                 co2_factor_gas=0.241, co2_factor_liquid_gas=0.261,
-                 co2_factor_hard_coal=0.427, co2_factor_soft_coal=0.449,
-                 co2_factor_woodchip=0.014, co2_factors_wood=0.011,
-                 co2_factor_pellets=0.018, co2_factor_el_mix=0.617,
+    def __init__(self, year=None, co2_factor_oil=0.31,
+                 co2_factor_gas=0.242, co2_factor_liquid_gas=0.258,
+                 co2_factor_hard_coal=0.419, co2_factor_soft_coal=0.417,
+                 co2_factor_woodchip=0.012, co2_factors_wood=0.012,
+                 co2_factor_pellets=0.012, co2_factor_el_mix=0.494,
                  co2_factor_pv_multi=0.062, co2_factor_el_feed_in=0.84,
                  pe_oil=1.1, pe_gas=1.1, pe_liquid_gas=1.1, pe_hard_coal=1.2,
                  pe_soft_coal=1.2, pe_total_biogas=1.5, pe_non_ren_biogas=0.5,
@@ -30,8 +30,11 @@ class Emissions(object):
         Constructor of emissions object in pycity_calc. Holds emission factors
         for Germany, currently for the years:
         - 2010
-        - 2014 (default)
+        - 2014
         (based on IWU GEMIS calculations)
+        - 2017 (default)
+        (based on IFEU
+        https://www.ifeu.de/energie/pdf/ifeu_Endbericht_Weiterentwicklung_PEF.pdf)
 
         If year is set, code tries to import emission values from input data
         file. If this is successful, default values/input values are
@@ -133,9 +136,11 @@ class Emissions(object):
         [4] DIN 18599-1 - Primaerenergiefaktoren
         """
 
+        self.year = year
+
         #  List with years, which have gemis co2 emission factors
         #  within input file
-        gemis_year_list = [2010, 2014]
+        gemis_year_list = [2010, 2014, 2017]
 
         #  Path were this file is executed
         script_dir = os.path.dirname(__file__)
@@ -155,8 +160,9 @@ class Emissions(object):
                         use_column = 2
                     elif year == 2010:  # Use default value for 2010
                         use_column = 1
-                    else:
-                        raise ValueError('Chosen year is not in GEMIS data.')
+                    elif year == 2017:
+                        use_column = 3
+
                     # CO2 factors in kg / kWh final energy (related to lower
                     #  heating value - Unterer Heizwert)
                     co2_factor_oil = co2_dataset[0][use_column] / 1000

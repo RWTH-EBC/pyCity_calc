@@ -53,16 +53,18 @@ def cluster():
 
     city_object = \
         cocity.gen_city_with_street_network_from_csvfile(timestep,
-                                                       year,
-                                                       location,
-                                                      el_gen_method, use_dhw,
-                                                      dhw_method, filename,
-                                                      str_node_path,
-                                                      str_edge_path,
-                                                      generation_mode=0,
-                                                      eff_factor=0.85,
-                                                      save_city=save_city,
-                                                      show_complex_city=False)
+                                                         year,
+                                                         year,
+                                                         location,
+                                                         el_gen_method,
+                                                         use_dhw,
+                                                         dhw_method, filename,
+                                                         str_node_path,
+                                                         str_edge_path,
+                                                         generation_mode=0,
+                                                         eff_factor=0.85,
+                                                         save_city=save_city,
+                                                         show_complex_city=False)
 
     length = len(city_object.nodelist_building)
 

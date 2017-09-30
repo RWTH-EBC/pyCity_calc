@@ -374,7 +374,8 @@ def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, 
         # # City Generation
 
         City = City_gen.run_overall_gen_and_dim(timestep=timestep,
-                                                year=year,
+                                                year_timer=year,
+                                                year_co2=year,
                                                 location=location,
                                                 try_path=try_path, th_gen_method=th_gen_method,
                                                 el_gen_method=el_gen_method,

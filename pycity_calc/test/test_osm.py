@@ -37,7 +37,7 @@ class Test_OSM():
 
         #  Parameters for environment
         timestep = 3600  # in seconds
-        year = 2010
+        year = 2017
         location = (50.781743, 6.083470)
         altitude = 55
         try_path = None
@@ -46,7 +46,9 @@ class Test_OSM():
         #   End of user input  ###############################################
 
         #  Generate environment
-        environment = citgen.generate_environment(timestep=timestep, year=year,
+        environment = citgen.generate_environment(timestep=timestep,
+                                                  year_timer=year,
+                                                  year_co2=year,
                                                   try_path=try_path,
                                                   location=location,
                                                   altitude=altitude)
@@ -83,7 +85,7 @@ class Test_OSM():
         #     (influences initial day for profile generation, market prices
         #     and co2 factors)
         #     If year is set to None, user has to define day_init!
-        year = 2010
+        year = 2017
 
         # try_path : str, optional
         #     Path to TRY weather file (default: None)
@@ -210,7 +212,9 @@ class Test_OSM():
         osm_path = os.path.join(this_path, 'input_generator', filename)
 
         # Generate environment
-        environment = citgen.generate_environment(timestep=timestep, year=year,
+        environment = citgen.generate_environment(timestep=timestep,
+                                                  year_timer=year,
+                                                  year_co2=year,
                                                   try_path=try_path,
                                                   location=location,
                                                   altitude=altitude,
