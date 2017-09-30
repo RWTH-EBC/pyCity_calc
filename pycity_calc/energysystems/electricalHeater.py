@@ -125,14 +125,14 @@ class ElectricalHeaterExtended(EHeat.ElectricalHeater):
 
         return el_power_input
 
-    def calc_el_h_all_results(self, contro_signal, time_index, save_res=True):
+    def calc_el_h_all_results(self, control_signal, time_index, save_res=True):
         """
         Calculate and save all results of electrical heater (thermal power,
         electrical power input)
 
         Parameters
         ----------
-        contro_signal : float
+        control_signal : float
             Desired thermal power output in W
         time_index : int
             Number of timestep (necessary to save results)
@@ -146,7 +146,7 @@ class ElectricalHeaterExtended(EHeat.ElectricalHeater):
             Tuple with results (thermal_power, el_power_in)
         """
 
-        th_power = self.calc_el_heater_thermal_power_output(contro_signal)
+        th_power = self.calc_el_heater_thermal_power_output(control_signal)
 
         el_power_in = self.calc_el_heater_electric_power_input(th_power)
 

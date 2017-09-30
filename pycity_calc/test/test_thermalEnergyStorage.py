@@ -111,7 +111,7 @@ class Test_thermalEnergyStorage():
         t_ambient = 10  # °C
 
         q_out_max = fixture_thermalEnergyStorage.calc_storage_q_out_max(
-            t_ambient)
+            t_ambient, eps=0)
         assert round(q_out_max, 4) == 23251692.5149
 
     def test_calc_storage_q_in_max(self, fixture_thermalEnergyStorage):
@@ -126,7 +126,7 @@ class Test_thermalEnergyStorage():
         fixture_thermalEnergyStorage.use_outside_temp = True
 
         q_in_max = fixture_thermalEnergyStorage.calc_storage_q_in_max(
-            t_ambient)
+            t_ambient, eps=0)
         assert round(q_in_max, 2) == 13958162.13
 
     def test_storage_q_out_possible(self, fixture_thermalEnergyStorage):
