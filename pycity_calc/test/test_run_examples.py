@@ -92,9 +92,10 @@ class Test_RunExamples():
     def test_example_timer(self):
         example_timer.run_example()
 
-    # def test_example_vdi_6007(self):
-    #     example_vdi_6007.run_example_vdi_6007()
-    #
+    def test_example_vdi_6007(self):
+        example_vdi_6007.run_example_vdi_6007()
+
+    #  Fixme: Requires new input (city generation instead of pickle file!)
     # def test_example_vdi_6007_city(self):
     #     example_vdi_6007_city.run_example_vdi_city()
 
