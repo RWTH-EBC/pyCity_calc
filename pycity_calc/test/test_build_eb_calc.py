@@ -1771,11 +1771,16 @@ class TestBuildingEnergyBalance():
         timestep = city.environment.timer.timeDiscretization
         nb_timesteps = 365 * 24 * 3600 / timestep
 
-        sh_day1 = np.ones(int(nb_timesteps)) * 6000
-        sh_day2 = np.ones(int(nb_timesteps)) * 6000
+        sh_1 = np.ones(int(nb_timesteps)) * 6000
+        sh_2 = np.ones(int(nb_timesteps)) * 6000
+        el_1 = np.zeros(int(nb_timesteps))
+        el_2 = np.zeros(int(nb_timesteps))
 
-        building_1.apartments[0].demandSpaceheating.loadcurve = sh_day1
-        building_2.apartments[0].demandSpaceheating.loadcurve = sh_day2
+        building_1.apartments[0].demandSpaceheating.loadcurve = sh_1
+        building_2.apartments[0].demandSpaceheating.loadcurve = sh_2
+
+        building_1.apartments[0].power_el.loadcurve = el_1
+        building_2.apartments[0].power_el.loadcurve = el_2
 
         q_nom = 10000
         eta_total = 1
@@ -1825,6 +1830,9 @@ class TestBuildingEnergyBalance():
 
         sh_dem_1 = building_1.get_annual_space_heat_demand()
         sh_dem_2 = building_2.get_annual_space_heat_demand()
+        el_dem_1 = building_1.get_annual_el_demand()
+
+        assert el_dem_1 <= 0.001
 
         #  CHP
         q_chp_out = building_1.bes.chp.totalQOutput
@@ -1848,6 +1856,21 @@ class TestBuildingEnergyBalance():
         sum_chp_self_dem = sum(chp_self_dem) * timestep / (1000 * 3600)
         sum_chp_feed = sum(chp_feed) * timestep / (1000 * 3600)
 
+        assert abs(sum_q_boiler - fuel_boiler_energy) <= 0.001
+
+        assert abs(chp_th_energy + chp_el_energy - fuel_chp_energy) <= 0.001
+
+        assert chp_el_energy > 0
+        assert sum_chp_self_dem <= 0.001
+        assert sum_chp_feed > 0
+
         #  Check thermal net energy balance
         assert abs(sh_dem_1 + sh_dem_2
                    - (sum_q_boiler + chp_th_energy)) <= 0.001
+
+        #  Electric energy balance
+        assert abs(sum_chp_feed - chp_el_energy) <= 0.001
+
+        #  Check fuel thermal energy balance
+        assert abs(sh_dem_1 + sh_dem_2 + sum_chp_feed
+                   - (fuel_boiler_energy + fuel_chp_energy)) <= 0.001

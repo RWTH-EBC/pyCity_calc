@@ -1905,6 +1905,8 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
     # Get electric power value
     el_pow_array = build.get_electric_power_curve()
 
+    assert len(el_pow_array) > 0
+
     #  Initialize results_dict
     dict_el_eb_res = {}
 
