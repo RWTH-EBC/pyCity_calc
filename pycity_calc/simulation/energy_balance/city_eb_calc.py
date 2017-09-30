@@ -257,7 +257,10 @@ class CityEBCalculator(object):
             #  TODO: Choosing from first node
 
             #  Get first id of buildings without thermal energy systems
-            ref_id = list_no_th_esys[0]
+            if len(list_no_th_esys) > 0:
+                ref_id = list_no_th_esys[0]
+            else:
+                ref_id = list_th_esys[0]
 
             #  Identify neighbors of first building
             list_neighb = nx.neighbors(G=self.city, n=ref_id)
