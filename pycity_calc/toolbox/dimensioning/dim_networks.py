@@ -155,7 +155,7 @@ def calc_diameter_of_lhn_network(max_th_power, length, temp_vl, temp_rl,
     return d_i
 
 
-def add_lhn_to_city(city, list_build_node_nb, temp_vl=90,
+def add_lhn_to_city(city, list_build_node_nb=None, temp_vl=90,
                     temp_rl=50, c_p=4186, rho=1000,
                     use_street_network=False, network_type='heating',
                     plot_stepwise=False):
@@ -172,8 +172,9 @@ def add_lhn_to_city(city, list_build_node_nb, temp_vl=90,
     ----------
     city : object
         City object of pycity_calc
-    list_build_node_nb : list
+    list_build_node_nb : list, optional
         List of building nodes, which should be connected to LHN network
+        (default: None). If set to None, connects all buildings to LHN.
     temp_vl : float, optional
         Inlet flow temperature in degree Celsius
         (default: 90)
@@ -206,12 +207,14 @@ def add_lhn_to_city(city, list_build_node_nb, temp_vl=90,
     assert rho > 0, 'rho must be larger than zero!'
     assert network_type in ['heating', 'heating_and_deg']
 
-    #  Check if all node ids within list_build_node_nb belong to buildings
-    for n in list_build_node_nb:
-        assert n in city.get_list_build_entity_node_ids(), ('Node ' + str(n) +
-                                                            ' does not have' +
-                                                            ' a building ' +
-                                                            'entity.')
+    if list_build_node_nb is None:
+        #  get list of all building entities
+        list_build_node_nb = city.get_list_build_entity_node_ids()
+    else:
+        #  Check if all node ids within list_build_node_nb belong to buildings
+        for n in list_build_node_nb:
+            assert n in city.get_list_build_entity_node_ids(), \
+                ('Node ' + str(n) + ' does not have a building entity.')
 
     # Check if one building is already connected to lhn
     #  If existing heating connection is found, ValueError is raised
