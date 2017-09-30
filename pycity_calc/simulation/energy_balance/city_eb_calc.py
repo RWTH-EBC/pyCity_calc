@@ -76,7 +76,8 @@ def get_list_lhn_build_without_th_esys(city, list_buildings=None):
 
 
 class CityEBCalculator(object):
-    def __init__(self, city, copy_city=False, check_city=True):
+    def __init__(self, city, copy_city=False, check_city=True, loss_buff=1.1,
+                 press_loss=100, eta_pump=0.6):
         """
         Constructor of city energy balance
         Parameters
@@ -91,7 +92,29 @@ class CityEBCalculator(object):
         check_city : bool, optional
             Check, if city object fulfills requirements for energy balance
             calculation (default: True)
+        loss_buff : float, optional
+            Defines factor, which is used to rescale loss power of thermal
+            network (default: 1.1). This factor should account for additional
+            losses during off-time (cooling down etc.), which are not taken
+            into account by regular energy balance, when building demand
+            is zero.
+        press_loss : float, optional
+            Pressure loss factor of pipe in Pa/m (default: 100). Based on:
+            [1] Fraunhofer UMSICHT - Leitfaden Nahwärme (page 46)
+            https://www.umsicht.fraunhofer.de/content/dam/umsicht/de/dokumente/energie/leitfaden-nahwaerme.pdf
+        eta_pump : float, optional
+            Pumping efficiency (default: 0.6)
         """
+
+        if loss_buff < 1:
+            msg = 'loss_buff factor should always be larger or equal to 1!'
+            raise AssertionError(msg)
+        if eta_pump > 1:
+            msg = 'Pumping efficiency factor cannot be larger than 1!'
+            raise AssertionError(msg)
+        if press_loss < 0:
+            msg = 'Pressure loss cannot be negative!'
+            raise AssertionError(msg)
 
         if check_city:
             check_eb.check_eb_requirements(city=city)
@@ -100,6 +123,11 @@ class CityEBCalculator(object):
             self.city = copy.deepcopy(city)
         else:
             self.city = city
+
+        self.loss_buff = loss_buff
+        self.press_loss = press_loss
+        self.eta_pump = eta_pump
+        self.list_pump_energy = None
 
         self._list_lists_lhn_ids = None
         self._list_lists_lhn_ids_build = None
@@ -156,10 +184,27 @@ class CityEBCalculator(object):
     def calc_lhn_energy_balance(self):
         """
         Calculate thermal energy balance for LHN connected buildings
+
+        Returns
+        -------
+        list_pump_energy : list (of floats)
+            List with pump energy in kWh/a for each LHN
         """
+
+        if self.loss_buff < 1:
+            msg = 'loss_buff factor should always be larger or equal to 1!'
+            raise AssertionError(msg)
+        if self.eta_pump > 1:
+            msg = 'Pumping efficiency factor cannot be larger than 1!'
+            raise AssertionError(msg)
+        if self.press_loss < 0:
+            msg = 'Pressure loss cannot be negative!'
+            raise AssertionError(msg)
 
         #  Add weights to edges
         netop.add_weights_to_edges(graph=self.city)
+
+        list_pump_energy = []
 
         #  Loop over subcities
         for list_lhn_build_ids in self._list_lists_lhn_ids_build:
@@ -201,13 +246,17 @@ class CityEBCalculator(object):
                 th_lhn_power += build.get_space_heating_power_curve()
                 th_lhn_power += build.get_dhw_power_curve()
 
-            # Estimate energy network losses
+            #  Get maximum thermal power of buildings (without esys
+            q_dot_max_buildings = max(th_lhn_power)
 
+            # Estimate energy network losses
+            #  ###########################################################
             #  Get lhn network temperatures, env. temperature and diameter
 
             #  TODO: Implement better way to extract LHN pipe data instead of
             #  TODO: Choosing from first node
 
+            #  Get first id of buildings without thermal energy systems
             ref_id = list_no_th_esys[0]
 
             #  Identify neighbors of first building
@@ -227,6 +276,8 @@ class CityEBCalculator(object):
                         temp_vl = self.city.edge[ref_id][n]['temp_vl']
                         temp_rl = self.city.edge[ref_id][n]['temp_rl']
                         d_i = self.city.edge[ref_id][n]['d_i']
+                        rho = self.city.edge[ref_id][n]['rho']
+                        c_p = self.city.edge[ref_id][n]['c_p']
 
                         #  Estimate u-value of pipe in W/mK
                         u_value = dimnet.estimate_u_value(d_i)
@@ -241,7 +292,6 @@ class CityEBCalculator(object):
             list_lhn_weights = \
                 list(self.city.edges_iter(nbunch=list_lhn_build_ids,
                                           data='weight'))
-            # print(list_lhn_weights)
 
             #  Sum up weights to get total network lenght
             lhn_len = 0
@@ -253,12 +303,18 @@ class CityEBCalculator(object):
             print()
 
             #  Estimate heat pipe losses per timestep, where LHN is used
+            #  ###########################################################
+
+            #  Get ground temperature as LHN losses reference temperature
             temp_env = self.city.environment.temp_ground
 
             q_lhn_loss_if = u_value * lhn_len * (temp_vl - temp_env)
             q_lhn_loss_rf = u_value * lhn_len * (temp_rl - temp_env)
 
-            q_lhn_loss = q_lhn_loss_if + q_lhn_loss_rf
+            #  Sum up loss powers and use rescaling factor
+            q_lhn_loss = self.loss_buff * (q_lhn_loss_if + q_lhn_loss_rf)
+
+            q_dot_max = q_dot_max_buildings + q_lhn_loss
 
             print('Total heating power loss of LHN in kW:')
             print(round(q_lhn_loss / 1000, 2))
@@ -270,8 +326,31 @@ class CityEBCalculator(object):
                 if th_lhn_power[i] > 0:
                     th_lhn_power[i] += q_lhn_loss
 
-            # Add LHN electric power demand for pumps
-            #  TODO: Add pump el. power demand calculation
+            #  Add LHN electric power demand for pumps
+            #  ##########################################################
+            #  Estimate total pressure loss
+            delta_p_total = self.press_loss * lhn_len  # in Pa
+
+            #  Estimate mass flow rate in kg/s
+            m_dot = q_dot_max / (c_p * (temp_vl - temp_rl))
+
+            #  Estimate pump power
+            p_pump = delta_p_total * m_dot / (rho * self.eta_pump)
+
+            pump_energy = 0
+            #  Estimate pump energy
+            for i in range(len(th_lhn_power)):
+                if th_lhn_power[i] > 0:
+                    pump_energy += p_pump * timestep
+
+            #  Convert pump energy from Joule to kWh
+            pump_energy /= (1000 * 3600)
+
+            print('Estimated pump energy in kWh/a:')
+            print(round(pump_energy, ndigits=2))
+
+            #  Append pump energy list
+            list_pump_energy.append(pump_energy)
 
             #  Hand over network energy demand to feeder node buildings
             #  and solve thermal energy balance
@@ -307,6 +386,11 @@ class CityEBCalculator(object):
                                                                    ' for timestep ' + str(
                         i) + '.'
                     raise AssertionError(msg)
+
+        #  Save list pump energy on energy balance object
+        self.list_pump_energy = list_pump_energy
+
+        return list_pump_energy
 
     def calc_city_energy_balance(self):
         """

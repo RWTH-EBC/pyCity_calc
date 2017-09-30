@@ -13,6 +13,7 @@ import pycity_base.classes.supply.BES as BES
 import pycity_base.classes.supply.PV as PV
 
 import pycity_calc.simulation.energy_balance.building_eb_calc as buildeb
+import pycity_calc.simulation.energy_balance.city_eb_calc as cityeb
 import pycity_calc.energysystems.chp as chpsys
 import pycity_calc.energysystems.battery as bat
 import pycity_calc.energysystems.boiler as boil
@@ -433,6 +434,26 @@ class TestBuildingEnergyBalance():
         sum_grid_import = sum(grid_import_dem) * timestep / (1000 * 3600)
 
         assert abs(el_energy - sum_grid_import) <= 0.001
+
+        #  ##################################################################
+
+        #  ##################################################################
+
+        id = 1005
+        exbuild = city.node[id]['entity']
+        exbuild.bes.boiler.qNominal *= 10
+        exbuild.bes.tes.capacity *= 2
+
+        id = 1012
+        exbuild = city.node[id]['entity']
+        exbuild.bes.boiler.qNominal *= 10
+        exbuild.bes.tes.capacity *= 2
+
+        #  Run city energy balance test
+        energy_balance = cityeb.CityEBCalculator(city=city)
+
+        #  Calc. city energy balance
+        energy_balance.calc_city_energy_balance()
 
         #  ##################################################################
 
