@@ -25,7 +25,7 @@ class ChpExtended(chp.CHP):
                  q_nominal,
                  p_nominal,
                  t_max=90,
-                 lower_activation_limit=0.6,
+                 lower_activation_limit=0.5,
                  eta_total=0.9,
                  chp_type='ASUE_2015',
                  thermal_operation_mode=True):
