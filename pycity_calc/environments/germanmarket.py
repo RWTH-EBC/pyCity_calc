@@ -20,8 +20,8 @@ class GermanMarket(market.Market):
 
     def __init__(self, reset_pycity_default_values=True,
                  chp_tax_return=0.0055, eeg_pay=0.0688,
-                 eex_baseload=[0.02479 ,0.02826 ,0.0376 ,0.04132],
-                 grid_av_fee=0.0055, hp_day_tarif=0.2, hp_night_tarif=0.18):
+                 eex_baseload=[0.03272, 0.03272, 0.03272, 0.03272],
+                 grid_av_fee=0.0055, hp_day_tarif=0.22, hp_night_tarif=0.2):
         """
         Constructor of GermanMarket object instance
 
@@ -38,16 +38,16 @@ class GermanMarket(market.Market):
             EEG payment in Euro/kWh (default: 0.0688)
         eex_baseload : list (of floats), optional
             List with quarterly EEX baseload prices in Euro/kWh
-            (default: [0.02479 ,0.02826 ,0.0376 ,0.04132])
+            (default: [0.03272, 0.03272, 0.03272, 0.03272])
         grid_av_fee : float, optional
             Grid usage avoidance fee in Euro/kWh
             (default: 0.0055)
         hp_day_tarif : float, optional
             Heat pump day tarif in Euro/kWh
-            (default: 0.2)
+            (default: 0.22)
         hp_night_tarif : float, optional
             Heat pump night tarif in Euro/kWh
-            (default: 0.18)
+            (default: 0.2)
         """
 
         super(GermanMarket, self).__init__(reset_pycity_default_values=

@@ -60,7 +60,9 @@ class Test_City_Generators():
 
         city = citygen.run_city_generator(generation_mode=0,
                                           timestep=timestep,
-                                          year=year, location=location,
+                                          year_timer=year,
+                                          year_co2=year,
+                                          location=location,
                                           th_gen_method=th_gen_method,
                                           el_gen_method=el_gen_method,
                                           use_dhw=use_dhw,
@@ -201,7 +203,9 @@ class Test_City_Generators():
 
         city = citygen.run_city_generator(generation_mode=0,
                                           timestep=timestep,
-                                          year=year, location=location,
+                                          year_timer=year,
+                                          year_co2=year,
+                                          location=location,
                                           th_gen_method=th_gen_method,
                                           el_gen_method=el_gen_method,
                                           use_dhw=use_dhw,
@@ -262,7 +266,9 @@ class Test_City_Generators():
 
         city = citygen.run_city_generator(generation_mode=0,
                                           timestep=timestep,
-                                          year=year, location=location,
+                                          year_timer=year,
+                                          year_co2=year,
+                                          location=location,
                                           th_gen_method=th_gen_method,
                                           el_gen_method=el_gen_method,
                                           use_dhw=use_dhw,
