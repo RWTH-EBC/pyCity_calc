@@ -129,6 +129,7 @@ class CityEBCalculator(object):
         self.eta_pump = eta_pump
         self.list_pump_energy = None  # List with pump energy per LHN
         self.dict_fe_city_balance = None  # Final energy results dict
+        self.co2 = None  # CO2 emissions of city district in kg/a
 
         self._list_lists_lhn_ids = None
         self._list_lists_lhn_ids_build = None
@@ -578,6 +579,66 @@ class CityEBCalculator(object):
 
         return dict_fe_city_balance
 
+    def calc_co2_emissions(self, el_mix_for_chp=True):
+        """
+        Calculate overall CO2 emissions of city district for building energy
+        supply.
+
+        Parameters
+        ----------
+        el_mix_for_chp : bool, optional
+            Defines, if el. mix should be used for CHP fed-in electricity
+            (default: True). If False, uses specific fed-in CHP factor,
+            defined in co2emissions object.
+
+        Returns
+        -------
+        co2 : float
+            CO2 equivalent in kg/a
+        """
+
+        if self.city.environment.co2emissions is None:
+            msg = 'Environment does not hold co2emissions object, which is' \
+                  ' necessary to calculate emissions. You have to add it, ' \
+                  'first. Look within pyCity_calc environments/co2emissions.' \
+                  ' You can add it to the existing environment as attribute ' \
+                  'co2emissions.'
+            raise AssertionError(msg)
+
+        if self.dict_fe_city_balance is None:
+            print('Final energy balance has not been calculated, yet. Thus,'
+                  ' going to call calc_final_energy_balance_city().')
+            self.calc_final_energy_balance_city()
+
+        # Initial co2 emission value
+        co2 = 0
+
+        #  Pointer to emission object instance
+        co2em = self.city.environment.co2emissions
+
+        if el_mix_for_chp:
+            f_chp = co2em.co2_factor_el_mix
+        else:
+            f_chp = co2em.co2_factor_el_feed_in
+
+        # Add emission depending on energy system and fuel
+        co2 += self.dict_fe_city_balance['fuel_boiler'] * co2em.co2_factor_gas
+        co2 += self.dict_fe_city_balance['fuel_chp'] * co2em.co2_factor_gas
+        co2 += self.dict_fe_city_balance['grid_import_dem'] \
+               * co2em.co2_factor_el_mix
+        co2 += self.dict_fe_city_balance['grid_import_hp'] \
+               * co2em.co2_factor_el_mix
+        co2 += self.dict_fe_city_balance['grid_import_eh'] \
+               * co2em.co2_factor_el_mix
+
+        #  Subtract feed in amount
+        co2 -= self.dict_fe_city_balance['chp_feed'] * f_chp
+        co2 -= self.dict_fe_city_balance['pv_feed'] * co2em.co2_factor_el_mix
+
+        self.co2 = co2
+
+        return co2
+
 
 if __name__ == '__main__':
 
@@ -836,6 +897,9 @@ if __name__ == '__main__':
     #  Perform final energy anaylsis
     dict_fe_city = energy_balance.calc_final_energy_balance_city()
 
+    #  Perform emissions calculation
+    co2 = energy_balance.calc_co2_emissions(el_mix_for_chp=True)
+
     fuel_boiler = dict_fe_city['fuel_boiler']
     fuel_chp = dict_fe_city['fuel_chp']
     grid_import_dem = dict_fe_city['grid_import_dem']
@@ -864,3 +928,7 @@ if __name__ == '__main__':
 
     print('LHN electric pump energy in kWh/a:')
     print(round(pump_energy, 0))
+    print()
+
+    print('Total emissions of city district in t/a:')
+    print(round(co2/1000, 0))
