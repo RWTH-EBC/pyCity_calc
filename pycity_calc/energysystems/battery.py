@@ -95,7 +95,7 @@ class BatteryExtended(Batt.Battery):
 
     def get_battery_capacity_in_kwh(self):
         """
-        Returns battery capacity in kwh.
+        Returns maximum battery capacity in kwh.
 
         Returns
         -------
@@ -184,7 +184,8 @@ class BatteryExtended(Batt.Battery):
 
         return soc_ratio_next
 
-    def calc_battery_max_p_el_out(self, soc_ratio_current=None, p_el_in=0):
+    def calc_battery_max_p_el_out(self, soc_ratio_current=None, p_el_in=0,
+                                  eps=0.1):
         """
         Function calculates maximal discharging power possible (over timestep)
         without reaching negative state of charge.
@@ -198,6 +199,10 @@ class BatteryExtended(Batt.Battery):
             ExtendedBattery is used
          p_el_in : float, optional
             input power at same timestep in W (default: 0)
+        eps : float, optional
+            Tolerance value in Watt (default: 0.1). Tolerance is subtracted
+            from q_in_max. In case of negative values, q_in_max is re-set
+            to 0.
 
         Returns
         ------
@@ -217,6 +222,12 @@ class BatteryExtended(Batt.Battery):
                                 (
                                 1 - self.selfDischarge) * soc_ratio_current *
                                 self.capacity / self.environment.timer.timeDiscretization)
+
+        p_el_out_max -= eps
+
+        if p_el_out_max < 0:
+            p_el_out_max = 0
+
         assert p_el_out_max >= 0
         return p_el_out_max
 
@@ -265,7 +276,8 @@ class BatteryExtended(Batt.Battery):
             discharge_possible = False
         return discharge_possible
 
-    def calc_battery_max_p_el_in(self, soc_ratio_current=None, p_el_out=0):
+    def calc_battery_max_p_el_in(self, soc_ratio_current=None, p_el_out=0,
+                                 eps=0.1):
         """
         Function calculates maximal charging power possible (over timestep)
         without going above nominal capacity of battery.
@@ -279,6 +291,10 @@ class BatteryExtended(Batt.Battery):
             ExtendedBattery is used
         p_el_out : float, optional
             Output power at same timestep in W (default: 0)
+        eps : float, optional
+            Tolerance value in Watt (default: 0.1). Tolerance is subtracted
+            from q_in_max. In case of negative values, q_in_max is re-set
+            to 0.
 
         Returns
         ------
@@ -300,6 +316,12 @@ class BatteryExtended(Batt.Battery):
                                             (1 - self.selfDischarge) *
                                             soc_ratio_current * self.capacity /
                                             self.environment.timer.timeDiscretization)
+
+        p_el_in_max -= eps
+
+        if p_el_in_max < 0:
+            p_el_in_max = 0
+
         assert p_el_in_max >= 0
         return p_el_in_max
 

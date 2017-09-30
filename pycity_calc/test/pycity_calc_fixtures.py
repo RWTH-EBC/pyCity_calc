@@ -5,6 +5,7 @@ Pytest fixtures of pycity_calc
 """
 
 from __future__ import division
+
 import pytest
 
 import pycity_calc.environments.market as mark
@@ -27,8 +28,6 @@ import pycity_calc.energysystems.boiler as boiler
 import pycity_calc.energysystems.electricalHeater as eHeater
 import pycity_calc.energysystems.heatPumpSimple as hp
 import pycity_calc.energysystems.thermalEnergyStorage as tES
-
-import pycity_calc.extern_el_grid.PowerGrid as grid
 
 
 @pytest.fixture(scope='module')
@@ -65,7 +64,8 @@ def fixture_environment(year=2010, timestep=900,
     #  Generate emission object of pycity_calc
     emission = co2.Emissions(year=year)
 
-    fixture_environment = env.EnvironmentExtended(timer=timer, weather=weather,
+    fixture_environment = env.EnvironmentExtended(timer=timer,
+                                                  weather=weather,
                                                   prices=market,
                                                   location=location,
                                                   co2em=emission)
