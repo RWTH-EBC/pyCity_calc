@@ -151,7 +151,7 @@ class TestBuildingEnergyBalance():
         eff_factor = 1
 
         #  Define city district input data filename
-        filename = 'city_clust_simple_eb.txt'
+        filename = 'city_clust_simple_no_deg.txt'
 
         txt_path = os.path.join(this_path, 'input_generator', filename)
 
@@ -204,7 +204,7 @@ class TestBuildingEnergyBalance():
         gen_e_net = True  # True - Generate energy networks
 
         #  Path to energy network input file (csv/txt; tab separated)
-        network_filename = 'city_clust_simple_networks.txt'
+        network_filename = 'city_clust_simple_networks_no_deg.txt'
         network_path = os.path.join(this_path, 'input_generator',
                                     network_filename)
 
@@ -212,7 +212,7 @@ class TestBuildingEnergyBalance():
         gen_esys = True  # True - Generate energy networks
 
         #  Path to energy system input file (csv/txt; tab separated)
-        esys_filename = 'city_clust_simple_enersys.txt'
+        esys_filename = 'city_clust_simple_enersys_no_deg.txt'
         esys_path = os.path.join(this_path, 'input_generator',
                                  esys_filename)
 
@@ -438,28 +438,6 @@ class TestBuildingEnergyBalance():
         sum_grid_import = sum(grid_import_dem) * timestep / (1000 * 3600)
 
         assert abs(el_energy - sum_grid_import) <= 0.001
-
-        #  ##################################################################
-
-        #  ##################################################################
-
-        id = 1005
-        exbuild = city.node[id]['entity']
-        exbuild.bes.boiler.qNominal *= 10
-        exbuild.bes.tes.capacity *= 1
-        #  Comment: Rescaling is necessary, as dhw_method = 1 is used.
-        #  This leads to dhw peaks for all buildings at the same timesteps
-
-        id = 1012
-        exbuild = city.node[id]['entity']
-        exbuild.bes.boiler.qNominal *= 10
-        exbuild.bes.tes.capacity *= 1
-
-        #  Run city energy balance test
-        energy_balance = cityeb.CityEBCalculator(city=city)
-
-        #  Calc. city energy balance
-        energy_balance.calc_city_energy_balance()
 
         #  ##################################################################
 
@@ -1751,261 +1729,3 @@ class TestBuildingEnergyBalance():
                       )) <= 0.001
 
     #  TODO: Add further battery tests, as battery seems to cause trouble
-
-    def test_city_eb_with_chp_boiler_lhn(self, fixture_city):
-        """
-        Check city energy balance for city with two buildings,
-        """
-
-        city = copy.deepcopy(fixture_city)
-
-        building_1 = build.BuildingExtended(environment=city.environment)
-        building_2 = build.BuildingExtended(environment=city.environment)
-
-        apart1 = Apartment.Apartment(environment=city.environment)
-        apart2 = Apartment.Apartment(environment=city.environment)
-
-        building_1.addEntity(apart1)
-        building_2.addEntity(apart2)
-
-        timestep = city.environment.timer.timeDiscretization
-        nb_timesteps = 365 * 24 * 3600 / timestep
-
-        sh_1 = np.ones(int(nb_timesteps)) * 6000
-        sh_2 = np.ones(int(nb_timesteps)) * 6000
-        el_1 = np.zeros(int(nb_timesteps))
-        el_2 = np.zeros(int(nb_timesteps))
-
-        building_1.apartments[0].demandSpaceheating.loadcurve = sh_1
-        building_2.apartments[0].demandSpaceheating.loadcurve = sh_2
-
-        building_1.apartments[0].power_el.loadcurve = el_1
-        building_2.apartments[0].power_el.loadcurve = el_2
-
-        q_nom = 10000
-        eta_total = 1
-
-        p_nom = asue.calc_el_power_with_th_power(th_power=q_nom,
-                                                 eta_total=eta_total)
-
-        chp = chpsys.ChpExtended(environment=city.environment,
-                                 q_nominal=q_nom,
-                                 p_nominal=p_nom,
-                                 eta_total=eta_total)
-
-        boiler = boil.BoilerExtended(environment=city.environment,
-                                     q_nominal=10000, eta=1)
-
-        #  Add small tes to prevent start-check assertion error
-        tes = sto.thermalEnergyStorageExtended(environment=city.environment,
-                                               capacity=0.1, k_loss=0,
-                                               t_init=80)
-
-        bes = BES.BES(environment=city.environment)
-
-        bes.addDevice(chp)
-        bes.addDevice(boiler)
-        bes.addDevice(tes)
-
-        building_1.addEntity(bes)
-
-        city.add_extended_building(extended_building=building_1,
-                                   position=point.Point(0, 0))
-        city.add_extended_building(extended_building=building_2,
-                                   position=point.Point(50, 0))
-
-        dimnet.add_lhn_to_city(city=city)
-
-        city.environment.temp_ground = 10
-
-        #  Set inlet-flow and return-flow temperatures to environment
-        #  temperatures to eliminate losses of LHN system
-        city.edge[1001][1002]['temp_vl'] = 10
-        city.edge[1001][1002]['temp_rl'] = 9.999999999999
-
-        #  Calculate city energy balance
-        city_eb = cityeb.CityEBCalculator(city=city)
-
-        city_eb.calc_city_energy_balance()
-
-        sh_dem_1 = building_1.get_annual_space_heat_demand()
-        sh_dem_2 = building_2.get_annual_space_heat_demand()
-        el_dem_1 = building_1.get_annual_el_demand()
-
-        assert el_dem_1 <= 0.001
-
-        #  CHP
-        q_chp_out = building_1.bes.chp.totalQOutput
-        p_el_chp_out = building_1.bes.chp.totalPOutput
-        fuel_chp_in = building_1.bes.chp.array_fuel_power
-
-        chp_th_energy = sum(q_chp_out) * timestep / (1000 * 3600)  # in kWh
-        fuel_chp_energy = sum(fuel_chp_in) * timestep / (1000 * 3600)  # in kWh
-        chp_el_energy = sum(p_el_chp_out) * timestep / (1000 * 3600)  # in kWh
-
-        #  Boiler
-        q_boiler = building_1.bes.boiler.totalQOutput
-        sum_q_boiler = sum(q_boiler) * timestep / (1000 * 3600)  # in kWh
-
-        fuel_in = building_1.bes.boiler.array_fuel_power
-        fuel_boiler_energy = sum(fuel_in) * timestep / (1000 * 3600)  # in kWh
-
-        chp_self_dem = building_1.dict_el_eb_res['chp_self_dem']
-        chp_feed = building_1.dict_el_eb_res['chp_feed']
-
-        sum_chp_self_dem = sum(chp_self_dem) * timestep / (1000 * 3600)
-        sum_chp_feed = sum(chp_feed) * timestep / (1000 * 3600)
-
-        assert abs(sum_q_boiler - fuel_boiler_energy) <= 0.001
-
-        assert abs(chp_th_energy + chp_el_energy - fuel_chp_energy) <= 0.001
-
-        assert chp_el_energy > 0
-        assert sum_chp_self_dem <= 0.001
-        assert sum_chp_feed > 0
-
-        #  Check thermal net energy balance
-        assert abs(sh_dem_1 + sh_dem_2
-                   - (sum_q_boiler + chp_th_energy)) <= 0.001
-
-        #  Electric energy balance
-        assert abs(sum_chp_feed - chp_el_energy) <= 0.001
-
-        #  Check fuel thermal energy balance
-        assert abs(sh_dem_1 + sh_dem_2 + sum_chp_feed
-                   - (fuel_boiler_energy + fuel_chp_energy)) <= 0.001
-
-    def test_city_lhn_eb_with_feeders_only(self, fixture_city):
-        """
-        Check city energy balance with LHN and feeder nodes, only
-        """
-
-        city = copy.deepcopy(fixture_city)
-
-        building_1 = build.BuildingExtended(environment=city.environment)
-        building_2 = build.BuildingExtended(environment=city.environment)
-
-        apart1 = Apartment.Apartment(environment=city.environment)
-        apart2 = Apartment.Apartment(environment=city.environment)
-
-        building_1.addEntity(apart1)
-        building_2.addEntity(apart2)
-
-        timestep = city.environment.timer.timeDiscretization
-        nb_timesteps = 365 * 24 * 3600 / timestep
-
-        sh_1 = np.ones(int(nb_timesteps)) * 6000
-        sh_2 = np.ones(int(nb_timesteps)) * 6000
-        el_1 = np.zeros(int(nb_timesteps))
-        el_2 = np.zeros(int(nb_timesteps))
-
-        building_1.apartments[0].demandSpaceheating.loadcurve = sh_1
-        building_2.apartments[0].demandSpaceheating.loadcurve = sh_2
-
-        building_1.apartments[0].power_el.loadcurve = el_1
-        building_2.apartments[0].power_el.loadcurve = el_2
-
-        q_nom = 2000
-        eta_total = 1
-
-        p_nom = asue.calc_el_power_with_th_power(th_power=q_nom,
-                                                 eta_total=eta_total)
-
-        chp = chpsys.ChpExtended(environment=city.environment,
-                                 q_nominal=q_nom,
-                                 p_nominal=p_nom,
-                                 eta_total=eta_total)
-
-        boiler = boil.BoilerExtended(environment=city.environment,
-                                     q_nominal=10000, eta=1)
-
-        boiler2 = boil.BoilerExtended(environment=city.environment,
-                                     q_nominal=6000, eta=1)
-
-        #  Add small tes to prevent start-check assertion error
-        tes = sto.thermalEnergyStorageExtended(environment=city.environment,
-                                               capacity=0.01, k_loss=0,
-                                               t_init=80)
-
-        tes2 = copy.deepcopy(tes)
-
-        bes = BES.BES(environment=city.environment)
-        bes.addDevice(chp)
-        bes.addDevice(boiler)
-        bes.addDevice(tes)
-
-        bes2 = BES.BES(environment=city.environment)
-        bes2.addDevice(boiler2)
-        bes2.addDevice(tes2)
-
-        building_1.addEntity(bes)
-        building_2.addEntity(bes2)
-
-        city.add_extended_building(extended_building=building_1,
-                                   position=point.Point(0, 0))
-        city.add_extended_building(extended_building=building_2,
-                                   position=point.Point(50, 0))
-
-        dimnet.add_lhn_to_city(city=city)
-
-        city.environment.temp_ground = 10
-
-        #  Calculate city energy balance
-        city_eb = cityeb.CityEBCalculator(city=city)
-
-        city_eb.calc_city_energy_balance()
-
-        sh_dem_1 = building_1.get_annual_space_heat_demand()
-        sh_dem_2 = building_2.get_annual_space_heat_demand()
-        el_dem_1 = building_1.get_annual_el_demand()
-
-        assert el_dem_1 <= 0.001
-
-        #  CHP
-        q_chp_out = building_1.bes.chp.totalQOutput
-        p_el_chp_out = building_1.bes.chp.totalPOutput
-        fuel_chp_in = building_1.bes.chp.array_fuel_power
-
-        chp_th_energy = sum(q_chp_out) * timestep / (1000 * 3600)  # in kWh
-        fuel_chp_energy = sum(fuel_chp_in) * timestep / (1000 * 3600)  # in kWh
-        chp_el_energy = sum(p_el_chp_out) * timestep / (1000 * 3600)  # in kWh
-
-        #  Boiler1
-        q_boiler = building_1.bes.boiler.totalQOutput
-        sum_q_boiler = sum(q_boiler) * timestep / (1000 * 3600)  # in kWh
-
-        fuel_in = building_1.bes.boiler.array_fuel_power
-        fuel_boiler_energy = sum(fuel_in) * timestep / (1000 * 3600)  # in kWh
-
-        #  Boiler2
-        q_boiler2 = building_2.bes.boiler.totalQOutput
-        sum_q_boiler2 = sum(q_boiler2) * timestep / (1000 * 3600)  # in kWh
-
-        fuel_in2 = building_2.bes.boiler.array_fuel_power
-        fuel_boiler_energy2 = sum(fuel_in2) * timestep / (1000 * 3600)  # in kWh
-
-        chp_self_dem = building_1.dict_el_eb_res['chp_self_dem']
-        chp_feed = building_1.dict_el_eb_res['chp_feed']
-
-        sum_chp_self_dem = sum(chp_self_dem) * timestep / (1000 * 3600)
-        sum_chp_feed = sum(chp_feed) * timestep / (1000 * 3600)
-
-        assert abs(sum_q_boiler - fuel_boiler_energy) <= 0.001
-
-        assert abs(chp_th_energy + chp_el_energy - fuel_chp_energy) <= 0.001
-
-        assert chp_el_energy > 0
-        assert sum_chp_self_dem <= 0.001
-        assert sum_chp_feed > 0
-
-        #  Check thermal net energy balance
-        assert abs(sh_dem_1 + sh_dem_2
-                   - (sum_q_boiler + sum_q_boiler2 + chp_th_energy)) <= 0.001
-
-        #  Electric energy balance
-        assert abs(sum_chp_feed - chp_el_energy) <= 0.001
-
-        #  Check fuel thermal energy balance
-        assert abs(sh_dem_1 + sh_dem_2 + sum_chp_feed
-                   - (fuel_boiler_energy+ fuel_boiler_energy2
-                      + fuel_chp_energy)) <= 0.001

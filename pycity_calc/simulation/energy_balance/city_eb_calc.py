@@ -9,7 +9,6 @@ import os
 import copy
 import pickle
 import warnings
-import itertools
 import numpy as np
 import networkx as nx
 
@@ -131,6 +130,9 @@ class CityEBCalculator(object):
         self.dict_fe_city_balance = None  # Final energy results dict
         self.co2 = None  # CO2 emissions of city district in kg/a
 
+        self.list_th_done = None
+        self.list_el_done = None
+
         self._list_lists_lhn_ids = None
         self._list_lists_lhn_ids_build = None
         self._list_lists_deg_ids = None
@@ -247,6 +249,8 @@ class CityEBCalculator(object):
 
                 th_lhn_power += build.get_space_heating_power_curve()
                 th_lhn_power += build.get_dhw_power_curve()
+
+                self.list_th_done.append(n)
 
             # Get maximum thermal power of buildings (without esys
             q_dot_max_buildings = max(th_lhn_power)
@@ -384,6 +388,8 @@ class CityEBCalculator(object):
                                         id=n,
                                         th_lhn_pow_rem=th_lhn_power_remain)
 
+                self.list_th_done.append(n)
+
             for i in range(len(th_lhn_power_remain)):
                 if abs(th_lhn_power_remain[i]) > 0.001:
                     msg = 'Could not cover LHN thermal energy demand of' \
@@ -402,6 +408,10 @@ class CityEBCalculator(object):
         Calculate energy balance of whole city. Save results on city object
         """
 
+        #  Dummy list for processed buildings
+        self.list_th_done = []
+        self.list_el_done = []
+
         #  Loop over buildings, which are not connected to energy networks
         for n in self._list_single_build:
             print()
@@ -413,28 +423,64 @@ class CityEBCalculator(object):
             #  Calculate single building thermal energy balance
             beb.calc_build_therm_eb(build=building, id=n)
 
+            self.list_th_done.append(n)
+
             #  Calculate single building electrical energy balance
             beb.calc_build_el_eb(build=building)
+
+            self.list_el_done.append(n)
 
         # LHN energy balance
         #  ################################################################
 
         self.calc_lhn_energy_balance()
 
+        #  Make flat lists with all buildings in LHN and DEG networks
+        list_lhn_all_b = []
+        list_deg_all_b = []
+
+        for list_lhn in self._list_lists_lhn_ids_build:
+            for id in list_lhn:
+                list_lhn_all_b.append(id)
+
+        for list_deg in self._list_lists_deg_ids_build:
+            for id in list_deg:
+                list_deg_all_b.append(id)
+
         #  Solve electric energy balance for buildings with LHN connection
         #  which are not connected to DEG
-        for n in list(
-                itertools.chain.from_iterable(self._list_lists_lhn_ids_build)):
-            if n not in list(itertools.chain.from_iterable(
-                    self._list_lists_deg_ids_build)):
+        for n in list_lhn_all_b:
+            if n not in list_deg_all_b:
                 build = self.city.node[n]['entity']
 
                 beb.calc_build_el_eb(build=build)
+
+                self.list_el_done.append(n)
 
                 #  Electrical energy balance of subcity (deg subcities)
                 #  TODO: Implement DEG energy balance
 
                 #  Share with deg
+
+        #  Control check, if all buildings have been processed
+        list_buildings = copy.deepcopy(
+            self.city.get_list_build_entity_node_ids())
+
+        if sorted(list_buildings) != sorted(self.list_th_done):
+            diff = list(set(list_buildings) - set(self.list_th_done))
+            msg = 'The following buildings have not been processed with' \
+                  ' thermal energy balance:' + str(diff)
+            raise AssertionError(msg)
+
+        if sorted(list_buildings) != sorted(self.list_el_done):
+            diff = list(set(list_buildings) - set(self.list_el_done))
+            msg = 'The following buildings have not been processed with' \
+                  ' electric energy balance:' + str(diff)
+            raise AssertionError(msg)
+
+        #  Reset lists
+        self.list_th_done = None
+        self.list_el_done = None
 
     def calc_final_energy_balance_building(self, id):
         """
@@ -463,6 +509,10 @@ class CityEBCalculator(object):
         dict_fe_balance = {}
 
         build = self.city.node[id]['entity']
+
+        if not hasattr(build, 'dict_el_eb_res'):
+            msg = 'Building ' + str(id) + ' does not have dict_el_eb_res.'
+            raise AssertionError(msg)
 
         timestep = build.environment.timer.timeDiscretization
 
