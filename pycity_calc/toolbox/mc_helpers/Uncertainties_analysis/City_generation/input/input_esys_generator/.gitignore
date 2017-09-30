@@ -3,7 +3,8 @@
 
 # But not these files...
 !.gitignore
-
+!README.txt
+!City_lolo_esys.txt
 
 # ...even if they are in subdirectories
 !*/

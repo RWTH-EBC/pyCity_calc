@@ -64,7 +64,7 @@ def calc_list_mod_years_single_build(nb_samples, year_of_constr, max_year,
     return list_mod_years
 
 
-def calc_inf_samples(nb_samples, mean=0, sdev=1, max_val=3):
+def calc_inf_samples(nb_samples, mean=0, sdev=1, max_val=2):
     """
     Performs building infiltration rate sampling based on log normal
     distribution.
@@ -79,7 +79,7 @@ def calc_inf_samples(nb_samples, mean=0, sdev=1, max_val=3):
     sdev : float, optional
         Standard deviation of log normal distribution (default: 1)
     max_val : float, optional
-        Maximal allowed value for natural infiltration rate (default: 3)
+        Maximal allowed value for natural infiltration rate (default: 2)
 
     Returns
     -------
@@ -98,7 +98,7 @@ def calc_inf_samples(nb_samples, mean=0, sdev=1, max_val=3):
 
     list_inf /= 6
 
-    #  Reset values larger than 3 to 0.26
+    #  Reset values larger than 2 to 0.26
     for i in range(len(list_inf)):
         if list_inf[i] > max_val:
             list_inf[i] = 0.26
