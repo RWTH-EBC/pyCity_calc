@@ -42,7 +42,7 @@ class TestCityEnergyBalance():
 
         #  Generate environment
         #  ######################################################
-        year = 2010
+        year = 2017
         timestep = 900  # Timestep in seconds
         # location = (51.529086, 6.944689)  # (latitude, longitude) of Bottrop
         location = (50.775346, 6.083887)  # (latitude, longitude) of Aachen
@@ -214,7 +214,8 @@ class TestCityEnergyBalance():
         district_data = citygen.get_district_data_from_txt(txt_path)
 
         city = overall.run_overall_gen_and_dim(timestep=timestep,
-                                               year=year,
+                                               year_timer=year,
+                                               year_co2=year,
                                                location=location,
                                                try_path=try_path,
                                                th_gen_method=th_gen_method,
