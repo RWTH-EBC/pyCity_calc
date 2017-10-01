@@ -8,10 +8,13 @@ from __future__ import division
 import os
 import copy
 import numpy as np
+import shapely.geometry.point as point
 
 import pycity_base.classes.supply.BES as BES
 import pycity_base.classes.supply.PV as PV
+import pycity_base.classes.demand.Apartment as Apartment
 
+import pycity_calc.buildings.building as build
 import pycity_calc.simulation.energy_balance.building_eb_calc as buildeb
 import pycity_calc.simulation.energy_balance.city_eb_calc as cityeb
 import pycity_calc.energysystems.chp as chpsys
@@ -23,6 +26,7 @@ import pycity_calc.energysystems.thermalEnergyStorage as sto
 import pycity_calc.energysystems.Input.chp_asue_2015 as asue
 import pycity_calc.cities.scripts.city_generator.city_generator as citygen
 import pycity_calc.cities.scripts.overall_gen_and_dimensioning as overall
+import pycity_calc.toolbox.dimensioning.dim_networks as dimnet
 
 from pycity_calc.test.pycity_calc_fixtures import fixture_building, \
     fixture_environment, fixture_city, fixture_apartment, fixture_th_demand, \
@@ -46,7 +50,8 @@ class TestBuildingEnergyBalance():
 
         #  Generate environment
         #  ######################################################
-        year = 2010
+        year_timer = 2010
+        year_co2 = 2010
         timestep = 900  # Timestep in seconds
         # location = (51.529086, 6.944689)  # (latitude, longitude) of Bottrop
         location = (50.775346, 6.083887)  # (latitude, longitude) of Aachen
@@ -147,7 +152,7 @@ class TestBuildingEnergyBalance():
         eff_factor = 1
 
         #  Define city district input data filename
-        filename = 'city_clust_simple_eb.txt'
+        filename = 'city_clust_simple_no_deg.txt'
 
         txt_path = os.path.join(this_path, 'input_generator', filename)
 
@@ -200,7 +205,7 @@ class TestBuildingEnergyBalance():
         gen_e_net = True  # True - Generate energy networks
 
         #  Path to energy network input file (csv/txt; tab separated)
-        network_filename = 'city_clust_simple_networks.txt'
+        network_filename = 'city_clust_simple_networks_no_deg.txt'
         network_path = os.path.join(this_path, 'input_generator',
                                     network_filename)
 
@@ -208,7 +213,7 @@ class TestBuildingEnergyBalance():
         gen_esys = True  # True - Generate energy networks
 
         #  Path to energy system input file (csv/txt; tab separated)
-        esys_filename = 'city_clust_simple_enersys.txt'
+        esys_filename = 'city_clust_simple_enersys_no_deg.txt'
         esys_path = os.path.join(this_path, 'input_generator',
                                  esys_filename)
 
@@ -218,7 +223,8 @@ class TestBuildingEnergyBalance():
         district_data = citygen.get_district_data_from_txt(txt_path)
 
         city = overall.run_overall_gen_and_dim(timestep=timestep,
-                                               year=year,
+                                               year_timer=year_timer,
+                                               year_co2=year_co2,
                                                location=location,
                                                try_path=try_path,
                                                th_gen_method=th_gen_method,
@@ -434,28 +440,6 @@ class TestBuildingEnergyBalance():
         sum_grid_import = sum(grid_import_dem) * timestep / (1000 * 3600)
 
         assert abs(el_energy - sum_grid_import) <= 0.001
-
-        #  ##################################################################
-
-        #  ##################################################################
-
-        id = 1005
-        exbuild = city.node[id]['entity']
-        exbuild.bes.boiler.qNominal *= 10
-        exbuild.bes.tes.capacity *= 1
-        #  Comment: Rescaling is necessary, as dhw_method = 1 is used.
-        #  This leads to dhw peaks for all buildings at the same timesteps
-
-        id = 1012
-        exbuild = city.node[id]['entity']
-        exbuild.bes.boiler.qNominal *= 10
-        exbuild.bes.tes.capacity *= 1
-
-        #  Run city energy balance test
-        energy_balance = cityeb.CityEBCalculator(city=city)
-
-        #  Calc. city energy balance
-        energy_balance.calc_city_energy_balance()
 
         #  ##################################################################
 

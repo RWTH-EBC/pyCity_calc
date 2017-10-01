@@ -155,10 +155,13 @@ def evaluate(City, values):
         location = (row[0], row[1])  # (latitude, longitude)
         altitude = row[2]  # Altitude of location in m
 
-        new_environment = City_generator.generate_environment(timestep=timestep, year=year,
-                                           location=location,
-                                           try_path=None,
-                                           altitude=altitude)
+        new_environment = City_generator.generate_environment(
+            timestep=timestep,
+            year_timer=year,
+            year_co2=year,
+            location=location,
+            try_path=None,
+            altitude=altitude)
 
         City.environment = new_environment
 

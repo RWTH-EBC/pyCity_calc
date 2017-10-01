@@ -1848,7 +1848,6 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                       '' + str(i) + ' at building ' + str(id)
                 EnergyBalanceException(msg)
 
-
 def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
     """
     Calculate building electric energy balance.
@@ -1904,6 +1903,8 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
 
     # Get electric power value
     el_pow_array = build.get_electric_power_curve()
+
+    assert len(el_pow_array) > 0
 
     #  Initialize results_dict
     dict_el_eb_res = {}

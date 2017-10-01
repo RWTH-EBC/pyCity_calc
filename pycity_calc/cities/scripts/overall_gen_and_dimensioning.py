@@ -16,7 +16,8 @@ import pycity_calc.cities.scripts.energy_sys_generator as esysgen
 import pycity_calc.visualization.city_visual as citvis
 
 
-def run_overall_gen_and_dim(timestep, year, location, th_gen_method,
+def run_overall_gen_and_dim(timestep, year_timer, year_co2,
+                            location, th_gen_method,
                             el_gen_method,
                             district_data, gen_str,
                             str_node_path,
@@ -58,8 +59,11 @@ def run_overall_gen_and_dim(timestep, year, location, th_gen_method,
     ----------
     timestep : int
         Timestep for environment
-    year : int
-        Year of environment
+    year_timer : int
+        Chosen year of analysis
+        (influences initial day for profile generation)
+    year_co2 : int, optional
+        Chose year with specific emission factors
     location : tuple (of floats)
         (latitude, longitude) of the simulated system's position.
     th_gen_method : int
@@ -219,7 +223,9 @@ def run_overall_gen_and_dim(timestep, year, location, th_gen_method,
     #  Generate city district
     city_object = citygen.run_city_generator(generation_mode=generation_mode,
                                              timestep=timestep,
-                                             year=year, location=location,
+                                             year_timer=year_timer,
+                                             year_co2=year_co2,
+                                             location=location,
                                              th_gen_method=th_gen_method,
                                              el_gen_method=el_gen_method,
                                              use_dhw=use_dhw,
@@ -305,7 +311,8 @@ if __name__ == '__main__':
 
     #  Generate environment
     #  ######################################################
-    year = 2010
+    year_timer = 2017
+    year_co2 = 2017
     timestep = 3600  # Timestep in seconds
     # location = (51.529086, 6.944689)  # (latitude, longitude) of Bottrop
     location = (50.775346, 6.083887)  # (latitude, longitude) of Aachen
@@ -481,7 +488,8 @@ if __name__ == '__main__':
     district_data = citygen.get_district_data_from_txt(txt_path)
 
     run_overall_gen_and_dim(timestep=timestep,
-                            year=year,
+                            year_timer=year_timer,
+                            year_co2=year_co2,
                             location=location,
                             try_path=try_path, th_gen_method=th_gen_method,
                             el_gen_method=el_gen_method,

@@ -9,7 +9,6 @@ import os
 import copy
 import pickle
 import warnings
-import itertools
 import numpy as np
 import networkx as nx
 
@@ -127,7 +126,12 @@ class CityEBCalculator(object):
         self.loss_buff = loss_buff
         self.press_loss = press_loss
         self.eta_pump = eta_pump
-        self.list_pump_energy = None
+        self.list_pump_energy = None  # List with pump energy per LHN
+        self.dict_fe_city_balance = None  # Final energy results dict
+        self.co2 = None  # CO2 emissions of city district in kg/a
+
+        self.list_th_done = None
+        self.list_el_done = None
 
         self._list_lists_lhn_ids = None
         self._list_lists_lhn_ids_build = None
@@ -201,7 +205,7 @@ class CityEBCalculator(object):
             msg = 'Pressure loss cannot be negative!'
             raise AssertionError(msg)
 
-        #  Add weights to edges
+        # Add weights to edges
         netop.add_weights_to_edges(graph=self.city)
 
         list_pump_energy = []
@@ -246,7 +250,9 @@ class CityEBCalculator(object):
                 th_lhn_power += build.get_space_heating_power_curve()
                 th_lhn_power += build.get_dhw_power_curve()
 
-            #  Get maximum thermal power of buildings (without esys
+                self.list_th_done.append(n)
+
+            # Get maximum thermal power of buildings (without esys
             q_dot_max_buildings = max(th_lhn_power)
 
             # Estimate energy network losses
@@ -257,9 +263,12 @@ class CityEBCalculator(object):
             #  TODO: Choosing from first node
 
             #  Get first id of buildings without thermal energy systems
-            ref_id = list_no_th_esys[0]
+            if len(list_no_th_esys) > 0:
+                ref_id = list_no_th_esys[0]
+            else:
+                ref_id = list_th_esys[0]
 
-            #  Identify neighbors of first building
+            # Identify neighbors of first building
             list_neighb = nx.neighbors(G=self.city, n=ref_id)
 
             temp_vl = None
@@ -326,7 +335,7 @@ class CityEBCalculator(object):
                 if th_lhn_power[i] > 0:
                     th_lhn_power[i] += q_lhn_loss
 
-            #  Add LHN electric power demand for pumps
+            # Add LHN electric power demand for pumps
             #  ##########################################################
             #  Estimate total pressure loss
             delta_p_total = self.press_loss * lhn_len  # in Pa
@@ -343,7 +352,7 @@ class CityEBCalculator(object):
                 if th_lhn_power[i] > 0:
                     pump_energy += p_pump * timestep
 
-            #  Convert pump energy from Joule to kWh
+            # Convert pump energy from Joule to kWh
             pump_energy /= (1000 * 3600)
 
             print('Estimated pump energy in kWh/a:')
@@ -379,6 +388,8 @@ class CityEBCalculator(object):
                                         id=n,
                                         th_lhn_pow_rem=th_lhn_power_remain)
 
+                self.list_th_done.append(n)
+
             for i in range(len(th_lhn_power_remain)):
                 if abs(th_lhn_power_remain[i]) > 0.001:
                     msg = 'Could not cover LHN thermal energy demand of' \
@@ -387,7 +398,7 @@ class CityEBCalculator(object):
                         i) + '.'
                     raise AssertionError(msg)
 
-        #  Save list pump energy on energy balance object
+        # Save list pump energy on energy balance object
         self.list_pump_energy = list_pump_energy
 
         return list_pump_energy
@@ -396,6 +407,10 @@ class CityEBCalculator(object):
         """
         Calculate energy balance of whole city. Save results on city object
         """
+
+        #  Dummy list for processed buildings
+        self.list_th_done = []
+        self.list_el_done = []
 
         #  Loop over buildings, which are not connected to energy networks
         for n in self._list_single_build:
@@ -408,27 +423,271 @@ class CityEBCalculator(object):
             #  Calculate single building thermal energy balance
             beb.calc_build_therm_eb(build=building, id=n)
 
+            self.list_th_done.append(n)
+
             #  Calculate single building electrical energy balance
             beb.calc_build_el_eb(build=building)
+
+            self.list_el_done.append(n)
 
         # LHN energy balance
         #  ################################################################
 
         self.calc_lhn_energy_balance()
 
+        #  Make flat lists with all buildings in LHN and DEG networks
+        list_lhn_all_b = []
+        list_deg_all_b = []
+
+        for list_lhn in self._list_lists_lhn_ids_build:
+            for id in list_lhn:
+                list_lhn_all_b.append(id)
+
+        for list_deg in self._list_lists_deg_ids_build:
+            for id in list_deg:
+                list_deg_all_b.append(id)
+
         #  Solve electric energy balance for buildings with LHN connection
         #  which are not connected to DEG
-        for n in list(itertools.chain.from_iterable(self._list_lists_lhn_ids_build)):
-            if n not in list(itertools.chain.from_iterable(self._list_lists_deg_ids_build)):
-
+        for n in list_lhn_all_b:
+            if n not in list_deg_all_b:
                 build = self.city.node[n]['entity']
 
                 beb.calc_build_el_eb(build=build)
 
-        #  Electrical energy balance of subcity (deg subcities)
-        #  TODO: Implement DEG energy balance
+                self.list_el_done.append(n)
 
-        #  Share with deg
+                #  Electrical energy balance of subcity (deg subcities)
+                #  TODO: Implement DEG energy balance
+
+                #  Share with deg
+
+        #  Control check, if all buildings have been processed
+        list_buildings = copy.deepcopy(
+            self.city.get_list_build_entity_node_ids())
+
+        if sorted(list_buildings) != sorted(self.list_th_done):
+            diff = list(set(list_buildings) - set(self.list_th_done))
+            msg = 'The following buildings have not been processed with' \
+                  ' thermal energy balance:' + str(diff)
+            raise AssertionError(msg)
+
+        if sorted(list_buildings) != sorted(self.list_el_done):
+            diff = list(set(list_buildings) - set(self.list_el_done))
+            msg = 'The following buildings have not been processed with' \
+                  ' electric energy balance:' + str(diff)
+            raise AssertionError(msg)
+
+        #  Reset lists
+        self.list_th_done = None
+        self.list_el_done = None
+
+    def calc_final_energy_balance_building(self, id):
+        """
+        Calculate final energy balance of building with id
+
+        Parameters
+        ----------
+        id : int
+            Building node id
+
+        Returns
+        -------
+        dict_fe_balance : dict (of floats)
+            Final energy balance results dictionary. Holding the following
+            parameters:
+            - fuel_boiler: Boiler fuel energy in kWh/a
+            - fuel_chp: CHP fuel energy in kWh/a
+            - grid_import_dem: Imported electric energy (for demand) in kWh/a
+            - grid_import_hp: Imported electric energy for HP in kWh/a
+            - grid_import_eh: Imported electric energy for EH in kWh/a
+            - chp_feed: Exported CHP electric energy in kWh/a
+            - pv_feed: Exported PV electric energy in kWh/a
+        """
+
+        #  Dictionary with final energy demand results
+        dict_fe_balance = {}
+
+        build = self.city.node[id]['entity']
+
+        if not hasattr(build, 'dict_el_eb_res'):
+            msg = 'Building ' + str(id) + ' does not have dict_el_eb_res.'
+            raise AssertionError(msg)
+
+        timestep = build.environment.timer.timeDiscretization
+
+        if build.hasBes:
+            if build.bes.hasBoiler:
+                #  Boiler gas final energy demand in kWh/a
+                fuel_b_power = build.bes.boiler.array_fuel_power
+                fuel_boiler = sum(fuel_b_power) * timestep \
+                              / (1000 * 3600)  # in kWh
+                dict_fe_balance['fuel_boiler'] = fuel_boiler
+            else:
+                dict_fe_balance['fuel_boiler'] = 0
+        else:
+            dict_fe_balance['fuel_boiler'] = 0
+
+        # CHP gas final energy demand in kWh/a
+        if build.hasBes:
+            if build.bes.hasChp:
+                fuel_chp_power = build.bes.chp.array_fuel_power
+                fuel_chp = sum(fuel_chp_power) * timestep \
+                           / (1000 * 3600)  # in kWh
+                dict_fe_balance['fuel_chp'] = fuel_chp
+            else:
+                dict_fe_balance['fuel_chp'] = 0
+        else:
+            dict_fe_balance['fuel_chp'] = 0
+
+        # General electric energy import (without HP and EH) in kWh/a
+        grid_import_dem_p = build.dict_el_eb_res['grid_import_dem']
+        grid_import_dem = sum(grid_import_dem_p) * timestep \
+                          / (1000 * 3600)  # in kWh
+        dict_fe_balance['grid_import_dem'] = grid_import_dem
+
+        #  Electric energy import for HP in kWh/a
+        grid_import_hp_p = build.dict_el_eb_res['grid_import_hp']
+        grid_import_hp = sum(grid_import_hp_p) * timestep \
+                         / (1000 * 3600)  # in kWh
+        dict_fe_balance['grid_import_hp'] = grid_import_hp
+
+        #  Electric energy import for EH in kWh/a
+        grid_import_eh_p = build.dict_el_eb_res['grid_import_eh']
+        grid_import_eh = sum(grid_import_eh_p) * timestep \
+                         / (1000 * 3600)  # in kWh
+        dict_fe_balance['grid_import_eh'] = grid_import_eh
+
+        #  CHP electric energy export in kWh/a
+        chp_feed_p = build.dict_el_eb_res['chp_feed']
+        chp_feed = sum(chp_feed_p) * timestep \
+                   / (1000 * 3600)  # in kWh
+        dict_fe_balance['chp_feed'] = chp_feed
+
+        #  PV electric energy export in kWh/a
+        pv_feed_p = build.dict_el_eb_res['pv_feed']
+        pv_feed = sum(pv_feed_p) * timestep \
+                  / (1000 * 3600)  # in kWh
+        dict_fe_balance['pv_feed'] = pv_feed
+
+        return dict_fe_balance
+
+    def calc_final_energy_balance_city(self):
+        """
+        Calculate final energy balance of whole city district.
+        Requires, that thermal and electric energy balance have been calculated
+        for city district!
+
+        Returns
+        -------
+        dict_fe_city_balance : dict
+            Results dict for final energy balance, holding the following
+            parameters:
+            - fuel_boiler: Boiler fuel energy in kWh/a
+            - fuel_chp: CHP fuel energy in kWh/a
+            - grid_import_dem: Imported electric energy (for demand) in kWh/a
+            - grid_import_hp: Imported electric energy for HP in kWh/a
+            - grid_import_eh: Imported electric energy for EH in kWh/a
+            - chp_feed: Exported CHP electric energy in kWh/a
+            - pv_feed: Exported PV electric energy in kWh/a
+        """
+
+        dict_fe_city_balance = {}
+        dict_fe_city_balance['fuel_boiler'] = 0
+        dict_fe_city_balance['fuel_chp'] = 0
+        dict_fe_city_balance['grid_import_dem'] = 0
+        dict_fe_city_balance['grid_import_hp'] = 0
+        dict_fe_city_balance['grid_import_eh'] = 0
+        dict_fe_city_balance['chp_feed'] = 0
+        dict_fe_city_balance['pv_feed'] = 0
+
+        #  If system has LHN and pump energy losses
+        pump_energy = 0
+        if self.list_pump_energy is not None:
+            for p_energy in self.list_pump_energy:
+                pump_energy += p_energy
+
+        dict_fe_city_balance['pump_energy'] = pump_energy
+
+        list_buildings = self.city.get_list_build_entity_node_ids()
+
+        for n in list_buildings:
+            dict_fe_build = self.calc_final_energy_balance_building(id=n)
+
+            dict_fe_city_balance['fuel_boiler'] += dict_fe_build['fuel_boiler']
+            dict_fe_city_balance['fuel_chp'] += dict_fe_build['fuel_chp']
+            dict_fe_city_balance['grid_import_dem'] \
+                += dict_fe_build['grid_import_dem']
+            dict_fe_city_balance['grid_import_hp'] \
+                += dict_fe_build['grid_import_hp']
+            dict_fe_city_balance['grid_import_eh'] \
+                += dict_fe_build['grid_import_eh']
+            dict_fe_city_balance['chp_feed'] += dict_fe_build['chp_feed']
+            dict_fe_city_balance['pv_feed'] += dict_fe_build['pv_feed']
+
+        self.dict_fe_city_balance = dict_fe_city_balance
+
+        return dict_fe_city_balance
+
+    def calc_co2_emissions(self, el_mix_for_chp=True):
+        """
+        Calculate overall CO2 emissions of city district for building energy
+        supply.
+
+        Parameters
+        ----------
+        el_mix_for_chp : bool, optional
+            Defines, if el. mix should be used for CHP fed-in electricity
+            (default: True). If False, uses specific fed-in CHP factor,
+            defined in co2emissions object.
+
+        Returns
+        -------
+        co2 : float
+            CO2 equivalent in kg/a
+        """
+
+        if self.city.environment.co2emissions is None:
+            msg = 'Environment does not hold co2emissions object, which is' \
+                  ' necessary to calculate emissions. You have to add it, ' \
+                  'first. Look within pyCity_calc environments/co2emissions.' \
+                  ' You can add it to the existing environment as attribute ' \
+                  'co2emissions.'
+            raise AssertionError(msg)
+
+        if self.dict_fe_city_balance is None:
+            print('Final energy balance has not been calculated, yet. Thus,'
+                  ' going to call calc_final_energy_balance_city().')
+            self.calc_final_energy_balance_city()
+
+        # Initial co2 emission value
+        co2 = 0
+
+        #  Pointer to emission object instance
+        co2em = self.city.environment.co2emissions
+
+        if el_mix_for_chp:
+            f_chp = co2em.co2_factor_el_mix
+        else:
+            f_chp = co2em.co2_factor_el_feed_in
+
+        # Add emission depending on energy system and fuel
+        co2 += self.dict_fe_city_balance['fuel_boiler'] * co2em.co2_factor_gas
+        co2 += self.dict_fe_city_balance['fuel_chp'] * co2em.co2_factor_gas
+        co2 += self.dict_fe_city_balance['grid_import_dem'] \
+               * co2em.co2_factor_el_mix
+        co2 += self.dict_fe_city_balance['grid_import_hp'] \
+               * co2em.co2_factor_el_mix
+        co2 += self.dict_fe_city_balance['grid_import_eh'] \
+               * co2em.co2_factor_el_mix
+
+        #  Subtract feed in amount
+        co2 -= self.dict_fe_city_balance['chp_feed'] * f_chp
+        co2 -= self.dict_fe_city_balance['pv_feed'] * co2em.co2_factor_el_mix
+
+        self.co2 = co2
+
+        return co2
 
 
 if __name__ == '__main__':
@@ -456,7 +715,8 @@ if __name__ == '__main__':
 
         #  Generate environment
         #  ######################################################
-        year = 2010
+        year_timer = 2017
+        year_co2 = 2017
         timestep = 3600  # Timestep in seconds
         # location = (51.529086, 6.944689)  # (latitude, longitude) of Bottrop
         location = (50.775346, 6.083887)  # (latitude, longitude) of Aachen
@@ -633,7 +893,8 @@ if __name__ == '__main__':
         district_data = citygen.get_district_data_from_txt(txt_path)
 
         city_object = overall.run_overall_gen_and_dim(timestep=timestep,
-                                                      year=year,
+                                                      year_timer=year_timer,
+                                                      year_co2=year_co2,
                                                       location=location,
                                                       try_path=try_path,
                                                       th_gen_method=th_gen_method,
@@ -684,3 +945,42 @@ if __name__ == '__main__':
 
     #  Calc. city energy balance
     energy_balance.calc_city_energy_balance()
+
+    #  Perform final energy anaylsis
+    dict_fe_city = energy_balance.calc_final_energy_balance_city()
+
+    #  Perform emissions calculation
+    co2 = energy_balance.calc_co2_emissions(el_mix_for_chp=True)
+
+    fuel_boiler = dict_fe_city['fuel_boiler']
+    fuel_chp = dict_fe_city['fuel_chp']
+    grid_import_dem = dict_fe_city['grid_import_dem']
+    grid_import_hp = dict_fe_city['grid_import_hp']
+    grid_import_eh = dict_fe_city['grid_import_eh']
+    chp_feed = dict_fe_city['chp_feed']
+    pv_feed = dict_fe_city['pv_feed']
+    pump_energy = dict_fe_city['pump_energy']
+
+    print('Boiler fuel demand in kWh/a: ')
+    print(round(fuel_boiler, 0))
+
+    print('CHP fuel demand in kWh/a: ')
+    print(round(fuel_chp, 0))
+    print()
+
+    print('Imported electricity in kWh/a: ')
+    print(round(grid_import_dem + grid_import_eh + grid_import_hp, 0))
+
+    print('Exported CHP electricity in kWh/a: ')
+    print(round(chp_feed, 0))
+
+    print('Exported PV electricity in kWh/a: ')
+    print(round(pv_feed, 0))
+    print()
+
+    print('LHN electric pump energy in kWh/a:')
+    print(round(pump_energy, 0))
+    print()
+
+    print('Total emissions of city district in t/a:')
+    print(round(co2/1000, 0))
