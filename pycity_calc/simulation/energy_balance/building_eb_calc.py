@@ -7,6 +7,7 @@ from __future__ import division
 
 import os
 import pickle
+import copy
 import warnings
 import numpy as np
 
@@ -1848,7 +1849,8 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                       '' + str(i) + ' at building ' + str(id)
                 EnergyBalanceException(msg)
 
-def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
+def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False,
+                     eeg_pv_limit=False):
     """
     Calculate building electric energy balance.
 
@@ -1863,6 +1865,10 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
         Defines
     has_deg : bool, optional
         Defines, if building is connected to deg (default: False)
+    eeg_pv_limit : bool, optional
+        Defines, if EEG PV feed-in limitation of 70 % of peak load is active
+        (default: False). If limitation is active, maximal 70 % of PV peak
+        load are fed into the grid. However, self-consumption is used, first.
 
     Returns
     -------
@@ -1901,6 +1907,26 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
             pv_gen_array = build.bes.pv.getPower(currentValues=False,
                                                  updatePower=True)
 
+            if eeg_pv_limit:
+                # Estimate PV peak load
+                pv_ideal = copy.deepcopy(build.bes.pv)
+
+                #  Set nominal values
+                pv_ideal.temperature_nominal = 45
+                pv_ideal.alpha = 0
+                pv_ideal.beta = 0
+                pv_ideal.gamma = 0
+                pv_ideal.tau_alpha = 0.9
+
+                pv_peak = max (pv_ideal.getPower(currentValues=False,
+                                                 updatePower=True))
+
+                #  Logiccheck if weather file radiation is low
+                if pv_peak/pv_ideal.area < 125:  # 125 W/m2
+                    pv_peak = 125 * pv_ideal.area
+
+                pv_p_limit = 0.7 * pv_peak
+
     # Get electric power value
     el_pow_array = build.get_electric_power_curve()
 
@@ -1916,6 +1942,7 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
     pv_self_eh = np.zeros(len(el_pow_array))
     pv_self_bat = np.zeros(len(el_pow_array))
     pv_feed = np.zeros(len(el_pow_array))
+    pv_off = np.zeros(len(el_pow_array))
 
     chp_self = np.zeros(len(el_pow_array))
     chp_self_dem = np.zeros(len(el_pow_array))
@@ -2210,6 +2237,12 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
             p_el_eh_remain = 0
 
         if has_pv:
+            if eeg_pv_limit:
+                if p_pv_remain > pv_p_limit:
+                    #  Limit p_pv_remain to pv_p_limit
+                    pv_off[i] += p_pv_remain - pv_p_limit
+                    p_pv_remain = pv_p_limit + 0.0
+
             pv_feed[i] += p_pv_remain
             p_pv_remain = 0
         if has_chp:
@@ -2224,6 +2257,8 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
     dict_el_eb_res['pv_self_hp'] = pv_self_hp
     dict_el_eb_res['pv_self_eh'] = pv_self_eh
     dict_el_eb_res['pv_self_bat'] = pv_self_bat
+    dict_el_eb_res['pv_off'] = pv_off  # "lost" PV energy due to EEG fed in
+    #  limitation
 
     dict_el_eb_res['chp_self'] = chp_self
     dict_el_eb_res['chp_feed'] = chp_feed
