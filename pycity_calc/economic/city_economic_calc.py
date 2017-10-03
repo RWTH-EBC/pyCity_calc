@@ -479,6 +479,78 @@ class CityAnnuityCalc(object):
 
         return dem_rel_annuity
 
+    def calc_proceeds_annuity_building(self, id):
+        """
+        Returns annualized proceedings of single building
+
+        Parameters
+        ----------
+        id : int
+            Building id
+
+        Returns
+        -------
+        proc_ann_build : float
+            Annualized proceedings of single building in Euro/a
+        """
+
+        #  Building pointer
+        build = self.energy_balance.city.node[id]['entity']
+
+        #  Get final energy results dict of building
+        dict_fe = build.dict_fe_balance
+
+        #  Final energy in kWh
+        fuel_chp = dict_fe['fuel_chp']
+
+        #  Get net electric energy demand results
+        dict_el_eb = build.dict_el_eb_res
+
+        #  PV energy
+        pv_feed = dict_el_eb['pv_feed']
+
+        #  CHP electric energy
+        chp_self = dict_el_eb['chp_self']
+        chp_feed = dict_el_eb['chp_feed']
+
+        #  Calculate PV fed-in proceedings
+
+
+        #  Check full-load runtime of CHP
+
+        #  If runtime exceeds maximum subsidies runtime, use maximum
+        #  subsidies runtime
+
+        #  Split runtime to shares of chp sold and chp self energy
+
+        #  Calculate CHP self subsidy
+
+        #  Calc CHP sold subsidy (with sub, eex baseload and gu)
+
+        #  Calc CHP tax return
+
+
+
+
+    def calc_proceeds_annuity_city(self):
+        """
+        Returns annualized proceedings of city
+
+        Returns
+        -------
+        proc_ann : float
+            Annualized proceedings of city in Euro/a
+        """
+
+        proc_ann = 0
+
+        for n in self._list_buildings:
+            proc_ann_build = self.calc_proceeds_annuity_building(id=n)
+
+            proc_ann += proc_ann_build
+
+        return proc_ann
+
     def calc_eeg_self_con(self, en_chp_self=0, en_pv_self=0):
         """
         Calculate annuity EEG payment on self-produced and consumed electric
