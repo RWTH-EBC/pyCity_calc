@@ -1850,7 +1850,7 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                 EnergyBalanceException(msg)
 
 def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False,
-                     eeg_pv_limit=False):
+                     eeg_pv_limit=False, save_eb_dict=True):
     """
     Calculate building electric energy balance.
 
@@ -1869,6 +1869,9 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False,
         Defines, if EEG PV feed-in limitation of 70 % of peak load is active
         (default: False). If limitation is active, maximal 70 % of PV peak
         load are fed into the grid. However, self-consumption is used, first.
+    save_eb_dict : bool, optional
+        Defines, if electric energy balance results dict should be saved as
+        dict_el_eb_res attribute on building object (default: True)
 
     Returns
     -------
@@ -2276,8 +2279,9 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False,
     dict_el_eb_res['bat_out_hp'] = bat_out_hp
     dict_el_eb_res['bat_out_eh'] = bat_out_eh
 
-    #  Add dict to building
-    build.dict_el_eb_res = dict_el_eb_res
+    if save_eb_dict:
+        #  Add dict to building
+        build.dict_el_eb_res = dict_el_eb_res
 
     return dict_el_eb_res
 

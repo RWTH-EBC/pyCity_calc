@@ -34,7 +34,7 @@ class EconomicCalculation(object):
                  price_ch_chp_self=1,
                  price_ch_chp_tax_return=1,
                  price_ch_pv_sub=1,
-                 price_ch_dem_el_hp=1):
+                 price_ch_dem_el_hp=1.03):
 
         """
         Constructor of Economic calculator instance.
@@ -104,7 +104,7 @@ class EconomicCalculation(object):
             (default: 1)
         price_ch_dem_el_hp : float, optional
             Price change factor on special tariff for heat pump electricity need
-            (default: 1)
+            (default: 1.03)
         """
 
         #  TODO: Erase dublicates of CHP and PV price factors
@@ -759,7 +759,8 @@ class EconomicCalculation(object):
             Sum of cooling energy demand, which has to be payed (in kWh)
             (default: 0)
         sum_el_hp_e:  float, optional
-            Sum of electrical energy demand for heat pump, which has to be payed (in kWh)
+            Sum of electrical energy demand for heat pump, which has to be
+            payed (in kWh)
             (default: 0)
         price_el : float, optional
             Specific price of electricity (in Euro/kWh)

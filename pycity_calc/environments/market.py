@@ -176,7 +176,7 @@ class Market(Price.Prices):
         spec_cost_gas : float
             Specific cost of gas in Euro/kWh
         """
-        list_of_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016]
+        list_of_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017]
         assert year in list_of_years, 'Year must be in list_of_years!'
 
         #  Find column index according to year
@@ -227,7 +227,7 @@ class Market(Price.Prices):
         spec_cost_el : float
             Specific cost of gas in Euro/kWh
         """
-        list_of_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016]
+        list_of_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017]
         assert year in list_of_years, 'Year must be in list_of_years!'
 
         #  Find column index according to year

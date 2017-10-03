@@ -482,7 +482,7 @@ class CityEBCalculator(object):
         self.list_th_done = None
         self.list_el_done = None
 
-    def calc_final_energy_balance_building(self, id):
+    def calc_final_energy_balance_building(self, id, save_fe_dict=True):
         """
         Calculate final energy balance of building with id
 
@@ -490,6 +490,9 @@ class CityEBCalculator(object):
         ----------
         id : int
             Building node id
+        save_fe_dict : bool, optional
+            Defines, if final energy results dictionary should be saved as
+            dict_fe_balance attribute on building object (default: True)
 
         Returns
         -------
@@ -569,6 +572,10 @@ class CityEBCalculator(object):
         pv_feed = sum(pv_feed_p) * timestep \
                   / (1000 * 3600)  # in kWh
         dict_fe_balance['pv_feed'] = pv_feed
+
+        if save_fe_dict:
+            #  Save results dict
+            build.dict_fe_balance = dict_fe_balance
 
         return dict_fe_balance
 

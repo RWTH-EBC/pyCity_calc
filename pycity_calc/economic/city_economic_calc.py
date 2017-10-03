@@ -27,7 +27,20 @@ import pycity_calc.economic.energy_sys_cost.pv_cost as pv_cost
 import pycity_calc.economic.energy_sys_cost.tes_cost as tes_cost
 
 
-class CityAnnuityCalc():
+class CityAnnuityCalc(object):
+    """
+    Annuity calculation class for city
+
+    Attributes
+    ----------
+    annuity_obj : object
+        Annuity object of pyCity_calc
+    energy_balance : object
+        City energy balance object of pyCity_calc
+    _list_buildings : list (of ints)
+        List of building entity ids in city (calculated within __init__)
+    """
+
     def __init__(self, annuity_obj, energy_balance):
         """
         Constructor of CityAnnuityCalc object instance
@@ -42,6 +55,9 @@ class CityAnnuityCalc():
 
         self.annuity_obj = annuity_obj
         self.energy_balance = energy_balance
+
+        self._list_buildings = \
+            self.energy_balance.city.get_list_build_entity_node_ids()
 
     def calc_cap_rel_annuity_city(self):
         """
@@ -65,99 +81,93 @@ class CityAnnuityCalc():
 
         #  Get capital-related annuities per energy system unit
         #  ###################################################################
-        for n in self.energy_balance.city.nodes():
-            if 'node_type' in self.energy_balance.city.node[n]:
-                #  If node_type is building
-                if self.energy_balance.city.node[n]['node_type'] == 'building':
-                    #  If entity is kind building
-                    if self.energy_balance.city.node[n][
-                        'entity']._kind == 'building':
-                        build = self.energy_balance.city.node[n]['entity']
-                        if build.hasBes:
-                            #  BES pointer
-                            bes = build.bes
+        for n in self._list_buildings:
+            build = self.energy_balance.city.node[n]['entity']
+            if build.hasBes:
+                #  BES pointer
+                bes = build.bes
 
-                            if bes.hasBattery:
-                                cap_kWh = bes.battery.capacity / (3600 * 1000)
-                                #  In kWh
-                                bat_invest = \
-                                    bat_cost.calc_invest_cost_bat(cap=cap_kWh)
-                                cap_rel_ann += \
-                                    self.annuity_obj.calc_capital_rel_annuity_with_type(
-                                        invest=bat_invest, type='BAT')
-                                #  Add to lists
-                                list_invest.append(bat_invest)
-                                list_type.append('BAT')
+                if bes.hasBattery:
+                    cap_kWh = bes.battery.capacity / (3600 * 1000)
+                    #  In kWh
+                    bat_invest = \
+                        bat_cost.calc_invest_cost_bat(cap=cap_kWh)
+                    cap_rel_ann += \
+                        self.annuity_obj.calc_capital_rel_annuity_with_type(
+                            invest=bat_invest, type='BAT')
+                    #  Add to lists
+                    list_invest.append(bat_invest)
+                    list_type.append('BAT')
 
-                            if bes.hasBoiler:
-                                q_nom = bes.boiler.qNominal / 1000  # in kW
-                                boil_invest = \
-                                    boiler_cost.calc_abs_boiler_cost(
-                                        q_nom=q_nom)
-                                cap_rel_ann += \
-                                    self.annuity_obj.calc_capital_rel_annuity_with_type(
-                                        invest=boil_invest, type='B')
-                                #  Add to lists
-                                list_invest.append(boil_invest)
-                                list_type.append('B')
+                if bes.hasBoiler:
+                    q_nom = bes.boiler.qNominal / 1000  # in kW
+                    boil_invest = \
+                        boiler_cost.calc_abs_boiler_cost(
+                            q_nom=q_nom)
+                    cap_rel_ann += \
+                        self.annuity_obj.calc_capital_rel_annuity_with_type(
+                            invest=boil_invest, type='B')
+                    #  Add to lists
+                    list_invest.append(boil_invest)
+                    list_type.append('B')
 
-                            if bes.hasChp:
-                                p_el_nom = bes.chp.pNominal / 1000  # in kW
-                                chp_invest = \
-                                    chp_cost.calc_invest_cost_chp(p_el_nom=
-                                                                  p_el_nom)
-                                cap_rel_ann += \
-                                    self.annuity_obj.calc_capital_rel_annuity_with_type(
-                                        invest=chp_invest, type='CHP')
-                                #  Add to lists
-                                list_invest.append(chp_invest)
-                                list_type.append('CHP')
+                if bes.hasChp:
+                    p_el_nom = bes.chp.pNominal / 1000  # in kW
+                    chp_invest = \
+                        chp_cost.calc_invest_cost_chp(p_el_nom=
+                                                      p_el_nom)
+                    cap_rel_ann += \
+                        self.annuity_obj.calc_capital_rel_annuity_with_type(
+                            invest=chp_invest, type='CHP')
+                    #  Add to lists
+                    list_invest.append(chp_invest)
+                    list_type.append('CHP')
 
-                            if bes.hasElectricalHeater:
-                                q_eh = \
-                                    bes.electricalHeater.qNominal / 1000  # in kW
-                                eh_invest = \
-                                    eh_cost.calc_abs_cost_eh(q_nom=q_eh)
-                                cap_rel_ann += \
-                                    self.annuity_obj.calc_capital_rel_annuity_with_type(
-                                        invest=eh_invest, type='EH')
-                                #  Add to lists
-                                list_invest.append(eh_invest)
-                                list_type.append('EH')
+                if bes.hasElectricalHeater:
+                    q_eh = \
+                        bes.electricalHeater.qNominal / 1000  # in kW
+                    eh_invest = \
+                        eh_cost.calc_abs_cost_eh(q_nom=q_eh)
+                    cap_rel_ann += \
+                        self.annuity_obj.calc_capital_rel_annuity_with_type(
+                            invest=eh_invest, type='EH')
+                    #  Add to lists
+                    list_invest.append(eh_invest)
+                    list_type.append('EH')
 
-                            if bes.hasHeatpump:
-                                q_hp = bes.heatpump.qNominal / 1000  # in kW
-                                hp_invest = \
-                                    hp_cost.calc_invest_cost_hp(q_nom=q_hp)
-                                cap_rel_ann += \
-                                    self.annuity_obj.calc_capital_rel_annuity_with_type(
-                                        invest=hp_invest, type='HP')
-                                #  Add to lists
-                                list_invest.append(hp_invest)
-                                list_type.append('HP')
+                if bes.hasHeatpump:
+                    q_hp = bes.heatpump.qNominal / 1000  # in kW
+                    hp_invest = \
+                        hp_cost.calc_invest_cost_hp(q_nom=q_hp)
+                    cap_rel_ann += \
+                        self.annuity_obj.calc_capital_rel_annuity_with_type(
+                            invest=hp_invest, type='HP')
+                    #  Add to lists
+                    list_invest.append(hp_invest)
+                    list_type.append('HP')
 
-                            if bes.hasPv:
-                                pv_area = bes.pv.area
-                                pv_invest = pv_cost.calc_pv_invest(
-                                    area=pv_area)
-                                cap_rel_ann += \
-                                    self.annuity_obj.calc_capital_rel_annuity_with_type(
-                                        invest=pv_invest, type='PV')
-                                #  Add to lists
-                                list_invest.append(pv_invest)
-                                list_type.append('PV')
+                if bes.hasPv:
+                    pv_area = bes.pv.area
+                    pv_invest = pv_cost.calc_pv_invest(
+                        area=pv_area)
+                    cap_rel_ann += \
+                        self.annuity_obj.calc_capital_rel_annuity_with_type(
+                            invest=pv_invest, type='PV')
+                    #  Add to lists
+                    list_invest.append(pv_invest)
+                    list_type.append('PV')
 
-                            if bes.hasTes:
-                                tes_vol = bes.tes.capacity / 1000  # in m3
-                                tes_invest = \
-                                    tes_cost.calc_invest_cost_tes(
-                                        volume=tes_vol)
-                                cap_rel_ann += \
-                                    self.annuity_obj.calc_capital_rel_annuity_with_type(
-                                        invest=tes_invest, type='TES')
-                                #  Add to lists
-                                list_invest.append(tes_invest)
-                                list_type.append('TES')
+                if bes.hasTes:
+                    tes_vol = bes.tes.capacity / 1000  # in m3
+                    tes_invest = \
+                        tes_cost.calc_invest_cost_tes(
+                            volume=tes_vol)
+                    cap_rel_ann += \
+                        self.annuity_obj.calc_capital_rel_annuity_with_type(
+                            invest=tes_invest, type='TES')
+                    #  Add to lists
+                    list_invest.append(tes_invest)
+                    list_type.append('TES')
 
         # Get capital-related annuities per LHN network
         #  ###################################################################
@@ -193,7 +203,8 @@ class CityAnnuityCalc():
                             #  If entity is kind building
                             if self.energy_balance.city.node[n][
                                 'entity']._kind == 'building':
-                                build = self.energy_balance.city.node[n]['entity']
+                                build = self.energy_balance.city.node[n][
+                                    'entity']
                                 th_pow = \
                                     dimfunc.get_max_power_of_building(build,
                                                                       with_dhw=False)
@@ -213,11 +224,13 @@ class CityAnnuityCalc():
                 for u in sublist:
                     for v in sublist:
                         if self.energy_balance.city.has_edge(u, v):
-                            if 'network_type' in self.energy_balance.city.edge[u][
-                                v]:
+                            if 'network_type' in \
+                                    self.energy_balance.city.edge[u][
+                                        v]:
                                 if (self.energy_balance.city.edge[u][v][
                                         'network_type'] == 'heating' or
-                                            self.energy_balance.city.edge[u][v][
+                                            self.energy_balance.city.edge[u][
+                                                v][
                                                 'network_type'] == 'heating_and_deg'):
                                     #  Pointer to pipe (edge)
                                     pipe = self.energy_balance.city.edge[u][v]
@@ -285,16 +298,19 @@ class CityAnnuityCalc():
                 for u in sublist:
                     for v in sublist:
                         if self.energy_balance.city.has_edge(u, v):
-                            if 'network_type' in self.energy_balance.city.edge[u][
-                                v]:
+                            if 'network_type' in \
+                                    self.energy_balance.city.edge[u][
+                                        v]:
                                 if self.energy_balance.city.edge[u][v][
                                     'network_type'] == 'electricity':
                                     deg_len += \
-                                    self.energy_balance.city.edge[u][v]['weight']
+                                        self.energy_balance.city.edge[u][v][
+                                            'weight']
                                 elif self.energy_balance.city.edge[u][v][
                                     'network_type'] == 'heating_and_deg':
                                     deg_len_w_lhn += \
-                                    self.energy_balance.city.edge[u][v]['weight']
+                                        self.energy_balance.city.edge[u][v][
+                                            'weight']
 
                 # Calculate deg investment cost for (sub-)deg
                 deg_invest += \
@@ -346,83 +362,127 @@ class CityAnnuityCalc():
 
         return (cap_rel_ann, op_rel_ann)
 
-    # def calc_dem_rel_annuity_city (self):
-    #     """
-    #     In the city object the energy parameters are calculated in [W] and
-    #     the time is calculated in [s], so it is
-    #     necessary divided by (3600*1000) in order to get the [kWh] as unit.
-    #
-    #     Attention to the el/gas price, in fact there are 2 different values
-    #     depending on the building type
-    #     (residential or industrial).
-    #
-    #     Distinction between electricity for heating pump and electricity for
-    #     daily life: different tariff
-    #
-    #     Returns
-    #     -------
-    #     dem_rel_annuity : float
-    #         Demand related annuity in Euro/a
-    #     """
-    #     gas_dem = 0
-    #     dem_rel_annuity = 0
-    #     el_price = 0
-    #     gas_price = 0
-    #     curr_el_dem_normal = np.zeros(len(city_object.environment.timer.time_vector()))
-    #     curr_el_dem_hp = np.zeros(len(city_object.environment.timer.time_vector()))
-    #
-    #
-    #     for n in city_object.nodes():
-    #         if 'node_type' in city_object.node[n]:
-    #             #  If node_type is building
-    #             if city_object.node[n]['node_type'] == 'building':
-    #                 #  If entity is kind building
-    #                 if city_object.node[n]['entity']._kind == 'building':
-    #
-    #                     if 'electrical demand normal usage' in city_object.node[n]:
-    #                         el_dem_normal = city_object.node[n]['electrical demand normal usage']
-    #                         # Sum power curve to obtain total energy demand in kWh
-    #                         curr_el_dem_normal = sum(el_dem_normal)\
-    #                                              * city_object.environment.timer.timeDiscretization / 1000 / 3600
-    #
-    #                     if 'fuel demand' in city_object.node[n]:
-    #                         gas_dem = sum(city_object.node[n]['fuel demand'])\
-    #                                   *city_object.environment.timer.timeDiscretization /1000 /3600
-    #
-    #                     if 'electrical demand hp' in city_object.node[n]:
-    #                         el_dem_hp = city_object.node[n]['electrical demand hp']
-    #                         curr_el_dem_hp = sum(el_dem_hp) * city_object.environment.timer.timeDiscretization / 1000 / 3600
-    #
-    #                     # residential building
-    #                     if city_object.node[n]['entity'].build_type == 0:
-    #                         el_price = self.germanmarket.get_spec_el_cost('res', city_object.environment.timer.year,
-    #                                                                       curr_el_dem_normal)
-    #                         gas_price = self.germanmarket.get_spec_gas_cost('res', city_object.environment.timer.year,
-    #                                                                         gas_dem)
-    #
-    #                     # industrial building
-    #                     elif city_object.node[n]['entity'].build_type != 0:
-    #                         el_price = self.germanmarket.get_spec_el_cost('ind', city_object.environment.timer.year,
-    #                                                                     curr_el_dem_normal)
-    #                         gas_price =self.germanmarket.get_spec_gas_cost('ind', city_object.environment.timer.year,
-    #                                                                       gas_dem)
-    #                     # special price for el. hp
-    #                     price_el_hp = self.germanmarket.hp_day_tarif
-    #                     # TODO: hp_price night and hp_price_day difference
-    #
-    #                     # Add to final demand counter
-    #                     #dem_rel_annuity += price_el_hp*curr_el_dem_hp
-    #
-    #                     dem_rel_annuity += self.calc_dem_rel_annuity(sum_el_e=curr_el_dem_normal, sum_gas_e=gas_dem,
-    #                                                                 price_el=el_price, price_gas=gas_price,
-    #                                                                 price_el_hp=price_el_hp, sum_el_hp_e=curr_el_dem_hp)
-    #
-    #     return dem_rel_annuity
+    def calc_dem_rel_annuity_building(self, id, save_dem_rel_res=True):
+        """
+        Returns demand related annuity for single building of city
+
+        Parameters
+        ----------
+        id : int
+            Building node id
+        save_dem_rel_res : bool, optional
+            Defines, if dem_rel_build should be saved on buildinb object
+            (default: True)
+
+        Returns
+        -------
+        dem_rel_build : float
+            Demand related annuity of single buiding in Euro/a
+        """
+
+        #  Building pointer
+        build = self.energy_balance.city.node[id]['entity']
+
+        #  Get final energy results dict of building
+        dict_fe = build.dict_fe_balance
+
+        #  Final energy in kWh
+        fuel_boiler = dict_fe['fuel_boiler']
+        fuel_chp = dict_fe['fuel_chp']
+        grid_import_dem = dict_fe['grid_import_dem']
+        grid_import_hp = dict_fe['grid_import_hp']
+        grid_import_eh = dict_fe['grid_import_eh']
+
+        #  Get net electric energy demand results
+        dict_el_eb = build.dict_el_eb_res
+
+        #  Self produced and consumed electric energy
+        pv_self = dict_el_eb['pv_self']
+        chp_self = dict_el_eb['chp_self']
+
+        year = self.energy_balance.city.environment.timer.year
+
+        if build.build_type == 0:
+            type = 'res'
+        else:
+            type = 'ind'
+
+        # Calculate specific cost values for energy demands
+        spec_cost_gas = \
+            self.energy_balance.city.environment.prices. \
+                get_spec_gas_cost(type=type,
+                                  year=year,
+                                  annual_demand=fuel_boiler + fuel_chp)
+
+        spec_cost_el = self.energy_balance.city.environment.prices. \
+            get_spec_el_cost(type=type,
+                             year=year,
+                             annual_demand=grid_import_dem)
+
+        #  Heat pump tariffs
+        if build.hasBes:
+            if type == 'res' and build.bes.hasHeatpump:
+                hp_tariff = self.energy_balance.city. \
+                                environment.prices.hp_day_tarif + 0.0
+            else:
+                #  Use regular prices
+                hp_tariff = spec_cost_el + 0.0
+        else:
+            #  Use regular prices
+            hp_tariff = spec_cost_el + 0.0
+
+        # #  Electric heater tariff
+        # if build.bes.hasHeatpump:
+        #     #  Use hp_tariff
+        #     eh_tariff = hp_tariff + 0.0
+        # else:
+        #     #  Use regular prices
+        #     eh_tariff = spec_cost_el + 0.0
+
+        #  Calculate demand related annuity for gas and electricity purchases
+        #  (without EEG)
+        dem_rel_annuity = self.annuity_obj. \
+            calc_dem_rel_annuity(sum_el_e=grid_import_dem,
+                                 price_el=spec_cost_el,
+                                 sum_gas_e=fuel_boiler + fuel_chp,
+                                 price_gas=spec_cost_gas,
+                                 sum_el_hp_e=grid_import_hp + grid_import_eh,
+                                 price_el_hp=hp_tariff)
+
+        #  Calculate EEG payments on self consumed and produced electricity
+        dem_rel_eeg_annuity = self.calc_eeg_self_con(en_chp_self=chp_self,
+                                                     en_pv_self=pv_self)
+
+        dem_rel_build = dem_rel_annuity + dem_rel_eeg_annuity
+
+        if save_dem_rel_res:
+            build.dem_rel_build = dem_rel_build
+
+        return dem_rel_build
+
+    def calc_dem_rel_annuity_city(self):
+        """
+        Returns demand related annuity of whole city district
+
+        Returns
+        -------
+        dem_rel_annuity : float
+            Demand related annuity in Euro/a
+        """
+
+        dem_rel_annuity = 0
+
+        for n in self._list_buildings:
+            dem_rel_build = self.calc_dem_rel_annuity_building(id=n)
+
+            dem_rel_annuity += dem_rel_build
+
+        return dem_rel_annuity
 
     def calc_eeg_self_con(self, en_chp_self=0, en_pv_self=0):
         """
-        Calculate EEG payment on self-produced and consumed electric energy of
-        PV and CHP systems
+        Calculate annuity EEG payment on self-produced and consumed electric
+        energy of PV and CHP systems
 
         Parameters
         ----------
@@ -440,19 +500,21 @@ class CityAnnuityCalc():
         #  TODO: Add function to check if prices object is GermanMarket
 
         #  Pointers to price dynamic factors
-        b_eeg_chp = self.price_dyn_eeg_chp
-        b_eeg_pv = self.price_dyn_eeg_pv
+        b_eeg_chp = self.annuity_obj.price_dyn_eeg_chp
+        b_eeg_pv = self.annuity_obj.price_dyn_eeg_pv
 
         eeg_chp = \
-            self.energy_balance.city.environment.prices.get_eeg_payment(type='chp')
+            self.energy_balance.city.environment. \
+                prices.get_eeg_payment(type='chp')
         eeg_pv = \
-            self.energy_balance.city.environment.prices.get_eeg_payment(type='pv')
+            self.energy_balance.city.environment. \
+                prices.get_eeg_payment(type='pv')
 
         # Calculate EEG payment
         eeg_payment = b_eeg_chp * en_chp_self * eeg_chp \
                       + b_eeg_pv * en_pv_self * eeg_pv
 
-        return eeg_payment * self.ann_factor
+        return eeg_payment * self.annuity_obj.ann_factor
 
     def calc_sub_chp_sold(self, en_chp_sold=None, pnominal=None):
         """
@@ -482,9 +544,11 @@ class CityAnnuityCalc():
         b_eex_base = self.price_dyn_eex
 
         # Get specific prices
-        sub_chp_sold = self.energy_balance.city.environment.prices.get_sub_chp(p_nom=pnominal)
+        sub_chp_sold = self.energy_balance.city.environment.prices.get_sub_chp(
+            p_nom=pnominal)
         #  Todo: Consider adding one EEX price?
-        sub_eex = sum(self.energy_balance.city.environment.prices.eex_baseload) / len(
+        sub_eex = sum(
+            self.energy_balance.city.environment.prices.eex_baseload) / len(
             self.energy_balance.city.environment.prices.eex_baseload)
         sub_avoid_grid_use = self.energy_balance.city.environment.prices.grid_av_fee
 
@@ -520,10 +584,11 @@ class CityAnnuityCalc():
         b_chp_sub_used = self.price_dyn_chp_self
 
         # Get specific price
-        sub_chp_sold = self.energy_balance.city.environment.prices.get_sub_chp_self(p_nom=pnominal)
+        sub_chp_sold = self.energy_balance.city.environment.prices.get_sub_chp_self(
+            p_nom=pnominal)
 
         # Calculate specific income [Euro/kWh]
-        sub_payment_chp_used = b_chp_sub_used*sub_chp_sold*en_chp_used
+        sub_payment_chp_used = b_chp_sub_used * sub_chp_sold * en_chp_used
 
         return sub_payment_chp_used * self.ann_factor
 
@@ -553,11 +618,12 @@ class CityAnnuityCalc():
         tax_exep_chp = self.energy_balance.city.environment.prices.chp_tax_return
 
         # Calculate specific income [Euro/kWh]
-        tax_exep_chp_used = b_chp_sub_used*tax_exep_chp*en_chp_used
+        tax_exep_chp_used = b_chp_sub_used * tax_exep_chp * en_chp_used
 
         return tax_exep_chp_used * self.ann_factor
 
-    def calc_sub_pv_sold(self, en_pv_sold=None, pv_peak_load=None, is_res=True):
+    def calc_sub_pv_sold(self, en_pv_sold=None, pv_peak_load=None,
+                         is_res=True):
         """
         Specific income referred to State subsidies, which are related to the
         amount of electricity sold
@@ -587,160 +653,160 @@ class CityAnnuityCalc():
         b_pv_sub_sold = self.price_dyn_pv_sub
 
         # Get specific price
-        pv_sub_sold = self.energy_balance.city.environment.prices.get_sub_pv(pv_peak_load=pv_peak_load, is_res=is_res)
+        pv_sub_sold = self.energy_balance.city.environment.prices.get_sub_pv(
+            pv_peak_load=pv_peak_load, is_res=is_res)
 
         # Calculate specific income [Euro/kWh]
-        sub_pv_sold = b_pv_sub_sold*pv_sub_sold*en_pv_sold
+        sub_pv_sold = b_pv_sub_sold * pv_sub_sold * en_pv_sold
 
         return sub_pv_sold * self.ann_factor
 
-    # def calc_proc_annuity_multi_comp_city(self, city_object):
-    #
-    #     """
-    #
-    #         Parameters
-    #         ----------
-    #         city_object: object from pycity_calc
-    #         City object from pycity_calc holding list of sold and used energy
-    #
-    #     Returns
-    #         -------
-    #         proc_annuity : float
-    #             Annuity of proceedings for multi components in Euro
-    #
-    #
-    #     Comment:
-    #
-    #         The proceedings realities annuity has to be calculated for the PV and CHP taking in account all the several
-    #         specific incomes existing for each one of them.
-    #
-    #
-    #         For the CHP proceedings there are 4 different specific_income and each one of them is related to a type
-    #         of energy:
-    #
-    #             - Tax referred to the EEG-Umlage (fee for specific share), which is related to the amount of own electricity
-    #               consumed: proc_rel_annuity_chp1;
-    #
-    #             - Specific incomes (EEX baseload price + avoided grid-usage fee + chp subsidy by the state(CHP law 2016))
-    #               referred to State subsidies, which are related to the amount of electricity sold: proc_rel_annuity_chp2;
-    #
-    #             - Specific income referred to a subsidy payment for CHP el. energy, which is related to the amount of
-    #               electricity used to cover the own demand: proc_rel_annuity_chp3;
-    #
-    #             - Specific income referred to a tax exception on gas for the CHP, which is related to the amount of
-    #               gas energy used by the CHP: proc_rel_annuity_chp4;
-    #
-    #
-    #         For the PV proceedings there are 2 different specific_income:
-    #
-    #             - Tax referred to the EEG-Umlage (fee for specific share), which is related to the amount of own electricity
-    #               consumed: proc_rel_annuity_pv1;
-    #
-    #             - Specific income referred to State subsidies, which are related to the amount of electricity sold:
-    #               proc_rel_annuity_pv2.
-    #
-    #     """
-    #
-    #     # initialisation
-    #     total_proc_annuity = 0
-    #
-    #     for n in city_object.nodes():
-    #         if 'node_type' in city_object.node[n]:
-    #             #  If node_type is building
-    #             if city_object.node[n]['node_type'] == 'building':
-    #                 #  If entity is kind building
-    #                 if city_object.node[n]['entity']._kind == 'building':
-    #                     build = city_object.node[n]['entity']
-    #                     if build.hasBes:
-    #                         #  BES pointer
-    #                         bes = build.bes
-    #
-    #                         if bes.hasChp:
-    #
-    #                             # ## Tax referred to the EEG-Umlage
-    #                             # electricity self consumed [kWh]
-    #                             en_chp_self = sum(city_object.node[n]['chp_used_self']) * city_object.environment.\
-    #                                 timer.timeDiscretization / 1000 / 3600
-    #
-    #                             # Specific income[€/kWh]el
-    #                             proc_rel_annuity_chp1 = self.calc_eeg_self_con(en_chp_self=en_chp_self)
-    #
-    #                             # ## Specific incomes : EEX baseload price + avoided grid-usage fee # + chp subsidy
-    #                             # CHP law 2016
-    #                             # electricity sold [kWh]
-    #                             en_chp_sold= sum(city_object.node[n]['chp_sold'])* city_object.environment.\
-    #                                 timer.timeDiscretization / 1000 / 3600
-    #                             # Specific income[€/kWh]el
-    #                             proc_rel_annuity_chp2 = self.calc_sub_chp_sold(en_chp_sold=en_chp_sold,
-    #                                                                            pnominal=bes.chp.pNominal)
-    #
-    #                             # ## Specific income referred to a subsidy payment for CHP el. energy used to cover
-    #                             #  the own demand
-    #
-    #                             # electricity consumed [kWh]
-    #                             en_chp_used = sum(city_object.node[n]['chp_used_self']) * city_object.environment.\
-    #                                 timer.timeDiscretization / 1000 / 3600
-    #                             # Specific income[€/kWh]el
-    #                             proc_rel_annuity_chp3 = self.calc_sub_chp_el_used(en_chp_used=en_chp_used,
-    #                                                                               pnominal=bes.chp.pNominal)
-    #
-    #                             # ## Specific income tax exception on gas for the CHP [€/kWh]th
-    #                             # gas consumed [kWh]
-    #                             en_gas_used=sum(city_object.node[n]['entity'].bes.chp.array_fuel_power) *\
-    #                                         city_object.environment.timer.timeDiscretization / 1000 / 3600
-    #                             # Specific income[€/kWh]th
-    #                             proc_rel_annuity_chp4 = self.calc_sub_chp_gas_used(en_chp_used=en_gas_used)
-    #
-    #                             # Sum of all proc_annuity for this building
-    #                             proc_rel_annuity = - proc_rel_annuity_chp1 + proc_rel_annuity_chp2 +\
-    #                                                proc_rel_annuity_chp3 + proc_rel_annuity_chp4
-    #
-    #                             # Add building proc annuity to total proc_annuity for the city
-    #                             total_proc_annuity += proc_rel_annuity
-    #
-    #                         if bes.hasPv:
-    #
-    #                             # ## Tax referred to the EEG-Umlage
-    #                             # Total peak power
-    #                             peak_power_pv = bes.pv.area * 1000
-    #
-    #                             if peak_power_pv >= 10000:
-    #                                 # electricity self consumed [kWh]
-    #                                 en_pv_con = sum( city_object.node[n]['pv_used_self']) * city_object.environment.\
-    #                                     timer.timeDiscretization / 1000 / 3600
-    #                                 # Specific income[€/kWh]el
-    #                                 proc_rel_annuity_pv1 = self.calc_eeg_self_con(en_pv_self=en_pv_con)
-    #                             else:
-    #                                 proc_rel_annuity_pv1 = 0
-    #
-    #                             # Specific income [€/kWh]el
-    #                             # subsidy payments depend on installed peak power. According to EEG 2017
-    #                             peak_power_pv = bes.pv.area * 1000
-    #                             # electricity sold [kWh]
-    #                             pv_sold = sum(city_object.node[n]['pv_sold']) * city_object.environment.\
-    #                                 timer.timeDiscretization / 1000 / 3600
-    #
-    #                             # Define building type
-    #                             if build.build_type == 0:
-    #                                 is_res = True
-    #                             else:
-    #                                 is_res = False
-    #
-    #                             # Specific income [€/kWh]el
-    #                             proc_rel_annuity_pv2 = self.calc_sub_pv_sold(en_pv_sold=pv_sold,
-    #                                                                          pv_peak_load=peak_power_pv, is_res=is_res)
-    #
-    #                             # Sum of all proc_annuity for this building
-    #                             proc_rel_annuity = - proc_rel_annuity_pv1 + proc_rel_annuity_pv2
-    #
-    #                             # Add building proc annuity to total proc_annuity for the city
-    #                             total_proc_annuity += proc_rel_annuity
-    #
-    #     return total_proc_annuity
+        # def calc_proc_annuity_multi_comp_city(self, city_object):
+        #
+        #     """
+        #
+        #         Parameters
+        #         ----------
+        #         city_object: object from pycity_calc
+        #         City object from pycity_calc holding list of sold and used energy
+        #
+        #     Returns
+        #         -------
+        #         proc_annuity : float
+        #             Annuity of proceedings for multi components in Euro
+        #
+        #
+        #     Comment:
+        #
+        #         The proceedings realities annuity has to be calculated for the PV and CHP taking in account all the several
+        #         specific incomes existing for each one of them.
+        #
+        #
+        #         For the CHP proceedings there are 4 different specific_income and each one of them is related to a type
+        #         of energy:
+        #
+        #             - Tax referred to the EEG-Umlage (fee for specific share), which is related to the amount of own electricity
+        #               consumed: proc_rel_annuity_chp1;
+        #
+        #             - Specific incomes (EEX baseload price + avoided grid-usage fee + chp subsidy by the state(CHP law 2016))
+        #               referred to State subsidies, which are related to the amount of electricity sold: proc_rel_annuity_chp2;
+        #
+        #             - Specific income referred to a subsidy payment for CHP el. energy, which is related to the amount of
+        #               electricity used to cover the own demand: proc_rel_annuity_chp3;
+        #
+        #             - Specific income referred to a tax exception on gas for the CHP, which is related to the amount of
+        #               gas energy used by the CHP: proc_rel_annuity_chp4;
+        #
+        #
+        #         For the PV proceedings there are 2 different specific_income:
+        #
+        #             - Tax referred to the EEG-Umlage (fee for specific share), which is related to the amount of own electricity
+        #               consumed: proc_rel_annuity_pv1;
+        #
+        #             - Specific income referred to State subsidies, which are related to the amount of electricity sold:
+        #               proc_rel_annuity_pv2.
+        #
+        #     """
+        #
+        #     # initialisation
+        #     total_proc_annuity = 0
+        #
+        #     for n in city_object.nodes():
+        #         if 'node_type' in city_object.node[n]:
+        #             #  If node_type is building
+        #             if city_object.node[n]['node_type'] == 'building':
+        #                 #  If entity is kind building
+        #                 if city_object.node[n]['entity']._kind == 'building':
+        #                     build = city_object.node[n]['entity']
+        #                     if build.hasBes:
+        #                         #  BES pointer
+        #                         bes = build.bes
+        #
+        #                         if bes.hasChp:
+        #
+        #                             # ## Tax referred to the EEG-Umlage
+        #                             # electricity self consumed [kWh]
+        #                             en_chp_self = sum(city_object.node[n]['chp_used_self']) * city_object.environment.\
+        #                                 timer.timeDiscretization / 1000 / 3600
+        #
+        #                             # Specific income[€/kWh]el
+        #                             proc_rel_annuity_chp1 = self.calc_eeg_self_con(en_chp_self=en_chp_self)
+        #
+        #                             # ## Specific incomes : EEX baseload price + avoided grid-usage fee # + chp subsidy
+        #                             # CHP law 2016
+        #                             # electricity sold [kWh]
+        #                             en_chp_sold= sum(city_object.node[n]['chp_sold'])* city_object.environment.\
+        #                                 timer.timeDiscretization / 1000 / 3600
+        #                             # Specific income[€/kWh]el
+        #                             proc_rel_annuity_chp2 = self.calc_sub_chp_sold(en_chp_sold=en_chp_sold,
+        #                                                                            pnominal=bes.chp.pNominal)
+        #
+        #                             # ## Specific income referred to a subsidy payment for CHP el. energy used to cover
+        #                             #  the own demand
+        #
+        #                             # electricity consumed [kWh]
+        #                             en_chp_used = sum(city_object.node[n]['chp_used_self']) * city_object.environment.\
+        #                                 timer.timeDiscretization / 1000 / 3600
+        #                             # Specific income[€/kWh]el
+        #                             proc_rel_annuity_chp3 = self.calc_sub_chp_el_used(en_chp_used=en_chp_used,
+        #                                                                               pnominal=bes.chp.pNominal)
+        #
+        #                             # ## Specific income tax exception on gas for the CHP [€/kWh]th
+        #                             # gas consumed [kWh]
+        #                             en_gas_used=sum(city_object.node[n]['entity'].bes.chp.array_fuel_power) *\
+        #                                         city_object.environment.timer.timeDiscretization / 1000 / 3600
+        #                             # Specific income[€/kWh]th
+        #                             proc_rel_annuity_chp4 = self.calc_sub_chp_gas_used(en_chp_used=en_gas_used)
+        #
+        #                             # Sum of all proc_annuity for this building
+        #                             proc_rel_annuity = - proc_rel_annuity_chp1 + proc_rel_annuity_chp2 +\
+        #                                                proc_rel_annuity_chp3 + proc_rel_annuity_chp4
+        #
+        #                             # Add building proc annuity to total proc_annuity for the city
+        #                             total_proc_annuity += proc_rel_annuity
+        #
+        #                         if bes.hasPv:
+        #
+        #                             # ## Tax referred to the EEG-Umlage
+        #                             # Total peak power
+        #                             peak_power_pv = bes.pv.area * 1000
+        #
+        #                             if peak_power_pv >= 10000:
+        #                                 # electricity self consumed [kWh]
+        #                                 en_pv_con = sum( city_object.node[n]['pv_used_self']) * city_object.environment.\
+        #                                     timer.timeDiscretization / 1000 / 3600
+        #                                 # Specific income[€/kWh]el
+        #                                 proc_rel_annuity_pv1 = self.calc_eeg_self_con(en_pv_self=en_pv_con)
+        #                             else:
+        #                                 proc_rel_annuity_pv1 = 0
+        #
+        #                             # Specific income [€/kWh]el
+        #                             # subsidy payments depend on installed peak power. According to EEG 2017
+        #                             peak_power_pv = bes.pv.area * 1000
+        #                             # electricity sold [kWh]
+        #                             pv_sold = sum(city_object.node[n]['pv_sold']) * city_object.environment.\
+        #                                 timer.timeDiscretization / 1000 / 3600
+        #
+        #                             # Define building type
+        #                             if build.build_type == 0:
+        #                                 is_res = True
+        #                             else:
+        #                                 is_res = False
+        #
+        #                             # Specific income [€/kWh]el
+        #                             proc_rel_annuity_pv2 = self.calc_sub_pv_sold(en_pv_sold=pv_sold,
+        #                                                                          pv_peak_load=peak_power_pv, is_res=is_res)
+        #
+        #                             # Sum of all proc_annuity for this building
+        #                             proc_rel_annuity = - proc_rel_annuity_pv1 + proc_rel_annuity_pv2
+        #
+        #                             # Add building proc annuity to total proc_annuity for the city
+        #                             total_proc_annuity += proc_rel_annuity
+        #
+        #     return total_proc_annuity
 
 
 if __name__ == '__main__':
-
     this_path = os.path.dirname(os.path.abspath(__file__))
 
     city_name = 'city_clust_simple_with_esys.pkl'
@@ -787,5 +853,14 @@ if __name__ == '__main__':
     #  Perform economic calculations
     #  #####################################################################
 
+    #  Calculate capital and operation related annuity
     (cap_rel_ann, op_rel_ann) = \
         city_eco_calc.calc_cap_and_op_rel_annuity_city()
+
+    #  Calculate demand related annuity
+    dem_rel_annuity = city_eco_calc.calc_dem_rel_annuity_city()
+
+    #  Calculate proceedings
+
+
+    #  Calculate total annuity
