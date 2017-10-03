@@ -150,6 +150,35 @@ class GermanMarket(market.Market):
 
         return sub_chp
 
+    def get_max_total_runtime_chp_sub(self, p_el_nom):
+        """
+        Returns maximal full-load hours runtime of CHP for getting
+        payments of German CHP law (KWKG)
+
+        Parameters
+        ----------
+        p_el_nom : float
+            Nominal electric power of CHP in Watt
+
+        Returns
+        -------
+        sub_chp_runtime : int
+            Maximum CHP runtime, which is used to get subsidy payments, in
+            hours
+
+        Annotations
+        -----------
+        http://www.bhkw-jetzt.de/foerderung/nach-kwk-g/
+        """
+
+        assert p_el_nom >= 0
+
+        if p_el_nom <= 50 * 1000:
+            return 60000
+        else:  # Larger than 50 kW el.
+            return 30000
+
+
     def get_sub_pv(self, pv_peak_load, is_res=True):
         """
         Returns the subsidy payment for sold pv electricity

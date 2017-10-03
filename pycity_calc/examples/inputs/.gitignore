@@ -7,3 +7,9 @@
 !street_edges_example_complex_city_generator.csv
 !street_nodes_example_complex_city_generator.csv
 !test.osm
+!city_clust_simple.txt
+!city_clust_simple_eb.txt
+!city_clust_simple_enersys.txt
+!city_clust_simple_networks.txt
+!street_edges_cluster_simple.csv
+!street_nodes_cluster_simple.csv
