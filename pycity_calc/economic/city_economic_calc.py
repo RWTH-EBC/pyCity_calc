@@ -400,6 +400,8 @@ class CityAnnuityCalc(object):
         pv_self = sum(dict_el_eb['pv_self']) * timestep / (1000 * 3600)
         chp_self = sum(dict_el_eb['chp_self']) * timestep / (1000 * 3600)
 
+        #  Use same year as co2 emission factors
+        #  TODO: Extract year for annuity calculation
         year = self.energy_balance.city.environment.timer.year
 
         if build.build_type == 0:
