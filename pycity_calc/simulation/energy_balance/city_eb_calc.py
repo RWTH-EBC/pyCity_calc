@@ -699,8 +699,6 @@ class CityEBCalculator(object):
 
 if __name__ == '__main__':
 
-    this_path = os.path.dirname(os.path.abspath(__file__))
-
     import pycity_calc.cities.scripts.city_generator.city_generator as citygen
     import pycity_calc.cities.scripts.overall_gen_and_dimensioning as overall
 

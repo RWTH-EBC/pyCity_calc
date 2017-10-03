@@ -6,9 +6,7 @@ Script to calculate annuities of city district
 from __future__ import division
 
 import os
-import warnings
 import pickle
-import numpy as np
 
 import pycity_calc.environments.germanmarket as gmarket
 import pycity_calc.simulation.energy_balance.city_eb_calc as citeb
@@ -834,164 +832,310 @@ class CityAnnuityCalc(object):
 
         return sub_pv_sold * self.annuity_obj.ann_factor
 
-        # def calc_proc_annuity_multi_comp_city(self, city_object):
-        #
-        #     """
-        #
-        #         Parameters
-        #         ----------
-        #         city_object: object from pycity_calc
-        #         City object from pycity_calc holding list of sold and used energy
-        #
-        #     Returns
-        #         -------
-        #         proc_annuity : float
-        #             Annuity of proceedings for multi components in Euro
-        #
-        #
-        #     Comment:
-        #
-        #         The proceedings realities annuity has to be calculated for the PV and CHP taking in account all the several
-        #         specific incomes existing for each one of them.
-        #
-        #
-        #         For the CHP proceedings there are 4 different specific_income and each one of them is related to a type
-        #         of energy:
-        #
-        #             - Tax referred to the EEG-Umlage (fee for specific share), which is related to the amount of own electricity
-        #               consumed: proc_rel_annuity_chp1;
-        #
-        #             - Specific incomes (EEX baseload price + avoided grid-usage fee + chp subsidy by the state(CHP law 2016))
-        #               referred to State subsidies, which are related to the amount of electricity sold: proc_rel_annuity_chp2;
-        #
-        #             - Specific income referred to a subsidy payment for CHP el. energy, which is related to the amount of
-        #               electricity used to cover the own demand: proc_rel_annuity_chp3;
-        #
-        #             - Specific income referred to a tax exception on gas for the CHP, which is related to the amount of
-        #               gas energy used by the CHP: proc_rel_annuity_chp4;
-        #
-        #
-        #         For the PV proceedings there are 2 different specific_income:
-        #
-        #             - Tax referred to the EEG-Umlage (fee for specific share), which is related to the amount of own electricity
-        #               consumed: proc_rel_annuity_pv1;
-        #
-        #             - Specific income referred to State subsidies, which are related to the amount of electricity sold:
-        #               proc_rel_annuity_pv2.
-        #
-        #     """
-        #
-        #     # initialisation
-        #     total_proc_annuity = 0
-        #
-        #     for n in city_object.nodes():
-        #         if 'node_type' in city_object.node[n]:
-        #             #  If node_type is building
-        #             if city_object.node[n]['node_type'] == 'building':
-        #                 #  If entity is kind building
-        #                 if city_object.node[n]['entity']._kind == 'building':
-        #                     build = city_object.node[n]['entity']
-        #                     if build.hasBes:
-        #                         #  BES pointer
-        #                         bes = build.bes
-        #
-        #                         if bes.hasChp:
-        #
-        #                             # ## Tax referred to the EEG-Umlage
-        #                             # electricity self consumed [kWh]
-        #                             en_chp_self = sum(city_object.node[n]['chp_used_self']) * city_object.environment.\
-        #                                 timer.timeDiscretization / 1000 / 3600
-        #
-        #                             # Specific income[€/kWh]el
-        #                             proc_rel_annuity_chp1 = self.calc_eeg_self_con(en_chp_self=en_chp_self)
-        #
-        #                             # ## Specific incomes : EEX baseload price + avoided grid-usage fee # + chp subsidy
-        #                             # CHP law 2016
-        #                             # electricity sold [kWh]
-        #                             en_chp_sold= sum(city_object.node[n]['chp_sold'])* city_object.environment.\
-        #                                 timer.timeDiscretization / 1000 / 3600
-        #                             # Specific income[€/kWh]el
-        #                             proc_rel_annuity_chp2 = self.calc_sub_chp_sold(en_chp_sold=en_chp_sold,
-        #                                                                            pnominal=bes.chp.pNominal)
-        #
-        #                             # ## Specific income referred to a subsidy payment for CHP el. energy used to cover
-        #                             #  the own demand
-        #
-        #                             # electricity consumed [kWh]
-        #                             en_chp_used = sum(city_object.node[n]['chp_used_self']) * city_object.environment.\
-        #                                 timer.timeDiscretization / 1000 / 3600
-        #                             # Specific income[€/kWh]el
-        #                             proc_rel_annuity_chp3 = self.calc_sub_chp_el_used(en_chp_used=en_chp_used,
-        #                                                                               pnominal=bes.chp.pNominal)
-        #
-        #                             # ## Specific income tax exception on gas for the CHP [€/kWh]th
-        #                             # gas consumed [kWh]
-        #                             en_gas_used=sum(city_object.node[n]['entity'].bes.chp.array_fuel_power) *\
-        #                                         city_object.environment.timer.timeDiscretization / 1000 / 3600
-        #                             # Specific income[€/kWh]th
-        #                             proc_rel_annuity_chp4 = self.calc_sub_chp_gas_used(en_chp_used=en_gas_used)
-        #
-        #                             # Sum of all proc_annuity for this building
-        #                             proc_rel_annuity = - proc_rel_annuity_chp1 + proc_rel_annuity_chp2 +\
-        #                                                proc_rel_annuity_chp3 + proc_rel_annuity_chp4
-        #
-        #                             # Add building proc annuity to total proc_annuity for the city
-        #                             total_proc_annuity += proc_rel_annuity
-        #
-        #                         if bes.hasPv:
-        #
-        #                             # ## Tax referred to the EEG-Umlage
-        #                             # Total peak power
-        #                             peak_power_pv = bes.pv.area * 1000
-        #
-        #                             if peak_power_pv >= 10000:
-        #                                 # electricity self consumed [kWh]
-        #                                 en_pv_con = sum( city_object.node[n]['pv_used_self']) * city_object.environment.\
-        #                                     timer.timeDiscretization / 1000 / 3600
-        #                                 # Specific income[€/kWh]el
-        #                                 proc_rel_annuity_pv1 = self.calc_eeg_self_con(en_pv_self=en_pv_con)
-        #                             else:
-        #                                 proc_rel_annuity_pv1 = 0
-        #
-        #                             # Specific income [€/kWh]el
-        #                             # subsidy payments depend on installed peak power. According to EEG 2017
-        #                             peak_power_pv = bes.pv.area * 1000
-        #                             # electricity sold [kWh]
-        #                             pv_sold = sum(city_object.node[n]['pv_sold']) * city_object.environment.\
-        #                                 timer.timeDiscretization / 1000 / 3600
-        #
-        #                             # Define building type
-        #                             if build.build_type == 0:
-        #                                 is_res = True
-        #                             else:
-        #                                 is_res = False
-        #
-        #                             # Specific income [€/kWh]el
-        #                             proc_rel_annuity_pv2 = self.calc_sub_pv_sold(en_pv_sold=pv_sold,
-        #                                                                          pv_peak_load=peak_power_pv, is_res=is_res)
-        #
-        #                             # Sum of all proc_annuity for this building
-        #                             proc_rel_annuity = - proc_rel_annuity_pv1 + proc_rel_annuity_pv2
-        #
-        #                             # Add building proc annuity to total proc_annuity for the city
-        #                             total_proc_annuity += proc_rel_annuity
-        #
-        #     return total_proc_annuity
+    def perform_overall_energy_balance_and_economic_calc(self):
+        """
+        Script runs energy balance and annuity calculation for city in
+        energy_balance object
+
+        Returns
+        -------
+        res_tuple : tuple (of floats)
+            Results tuple (annuity, co2) with
+            annuity : float
+                Annuity in Euro/a
+            co2 : float
+                Emissions in kg/a
+        """
+
+        #  ##################################################################
+        #  Run energy balance
+        #  ##################################################################
+
+        #  Calc. city energy balance
+        self.energy_balance.calc_city_energy_balance()
+
+        #  Perform final energy anaylsis
+        self.energy_balance.calc_final_energy_balance_city()
+
+        #  Perform emissions calculation
+        co2 = self.energy_balance.calc_co2_emissions(
+            el_mix_for_chp=True)
+
+        #  ##################################################################
+        #  Perform economic calculations
+        #  ##################################################################
+
+        #  Calculate capital and operation related annuity
+        (cap_rel_ann, op_rel_ann) = \
+            self.calc_cap_and_op_rel_annuity_city()
+
+        #  Calculate demand related annuity
+        dem_rel_annuity = self.calc_dem_rel_annuity_city()
+
+        #  Calculate proceedings
+        proc_rel_annuity = self.calc_proceeds_annuity_city()
+
+        #  Calculate total annuity
+        annuity = self.annuity_obj. \
+            calc_total_annuity(ann_capital=cap_rel_ann,
+                               ann_demand=dem_rel_annuity,
+                               ann_op=op_rel_ann,
+                               ann_proc=proc_rel_annuity)
+
+        return (annuity, co2)
 
 
 if __name__ == '__main__':
+
+    import pycity_calc.cities.scripts.city_generator.city_generator as citygen
+    import pycity_calc.cities.scripts.overall_gen_and_dimensioning as overall
+
     this_path = os.path.dirname(os.path.abspath(__file__))
 
-    city_name = 'city_clust_simple_with_esys.pkl'
+    #  Check requirements for pycity_deap
+    pycity_deap = False
 
-    city_path = os.path.join(this_path, 'inputs', city_name)
+    try:
+        #  Try loading city pickle file
+        filename = 'city_clust_simple_with_esys.pkl'
+        file_path = os.path.join(this_path, 'inputs', filename)
+        city = pickle.load(open(file_path, mode='rb'))
+
+    except:
+        print('Could not load city pickle file. Going to generate a new one.')
+        #  # Userinputs
+        #  #----------------------------------------------------------------------
+
+        #  Generate environment
+        #  ######################################################
+        year_timer = 2017
+        year_co2 = 2017
+        timestep = 3600  # Timestep in seconds
+        # location = (51.529086, 6.944689)  # (latitude, longitude) of Bottrop
+        location = (50.775346, 6.083887)  # (latitude, longitude) of Aachen
+        altitude = 266  # Altitude of location in m (Aachen)
+
+        #  Weather path
+        try_path = None
+        #  If None, used default TRY (region 5, 2010)
+
+        new_try = False
+        #  new_try has to be set to True, if you want to use TRY data of 2017
+        #  or newer! Else: new_try = False
+
+        #  Space heating load generation
+        #  ######################################################
+        #  Thermal generation method
+        #  1 - SLP (standardized load profile)
+        #  2 - Load and rescale Modelica simulation profile
+        #  (generated with TRY region 12, 2010)
+        #  3 - VDI 6007 calculation (requires el_gen_method = 2)
+        th_gen_method = 3
+        #  For non-residential buildings, SLPs are generated automatically.
+
+        #  Manipulate thermal slp to fit to space heating demand?
+        slp_manipulate = False
+        #  True - Do manipulation
+        #  False - Use original profile
+        #  Only relevant, if th_gen_method == 1
+        #  Sets thermal power to zero in time spaces, where average daily outdoor
+        #  temperature is equal to or larger than 12 °C. Rescales profile to
+        #  original demand value.
+
+        #  Manipulate vdi space heating load to be normalized to given annual net
+        #  space heating demand in kWh
+        vdi_sh_manipulate = False
+
+        #  Electrical load generation
+        #  ######################################################
+        #  Choose electric load profile generation method (1 - SLP; 2 - Stochastic)
+        #  Stochastic profile is only generated for residential buildings,
+        #  which have a defined number of occupants (otherwise, SLP is used)
+        el_gen_method = 2
+        #  If user defindes method_3_nb or method_4_nb within input file
+        #  (only valid for non-residential buildings), SLP will not be used.
+        #  Instead, corresponding profile will be loaded (based on measurement
+        #  data, see ElectricalDemand.py within pycity)
+
+        #  Do normalization of el. load profile
+        #  (only relevant for el_gen_method=2).
+        #  Rescales el. load profile to expected annual el. demand value in kWh
+        do_normalization = True
+
+        #  Randomize electrical demand value (residential buildings, only)
+        el_random = False
+
+        #  Prevent usage of electrical heating and hot water devices in
+        #  electrical load generation
+        prev_heat_dev = True
+        #  True: Prevent electrical heating device usage for profile generation
+        #  False: Include electrical heating devices in electrical load generation
+
+        #  Use cosine function to increase winter lighting usage and reduce
+        #  summer lighting usage in richadson el. load profiles
+        #  season_mod is factor, which is used to rescale cosine wave with
+        #  lighting power reference (max. lighting power)
+        season_mod = 0.3
+        #  If None, do not use cosine wave to estimate seasonal influence
+        #  Else: Define float
+        #  (only relevant if el_gen_method == 2)
+
+        #  Hot water profile generation
+        #  ######################################################
+        #  Generate DHW profiles? (True/False)
+        use_dhw = True  # Only relevant for residential buildings
+
+        #  DHW generation method? (1 - Annex 42; 2 - Stochastic profiles)
+        #  Choice of Anex 42 profiles NOT recommended for multiple builings,
+        #  as profile stays the same and only changes scaling.
+        #  Stochastic profiles require defined nb of occupants per residential
+        #  building
+        dhw_method = 2  # Only relevant for residential buildings
+
+        #  Define dhw volume per person and day (use_dhw=True)
+        dhw_volumen = None  # Only relevant for residential buildings
+
+        #  Randomize choosen dhw_volume reference value by selecting new value
+        #  from gaussian distribution with 20 % standard deviation
+        dhw_random = False
+
+        #  Use dhw profiles for esys dimensioning
+        dhw_dim_esys = True
+
+        #  Plot city district with pycity_calc visualisation
+        plot_pycity_calc = False
+
+        #  Efficiency factor of thermal energy systems
+        #  Used to convert input values (final energy demand) to net energy demand
+        eff_factor = 1
+
+        #  Define city district input data filename
+        filename = 'city_clust_simple.txt'
+
+        txt_path = os.path.join(this_path, 'input', filename)
+
+        #  Define city district output file
+        save_filename = None
+        # save_path = os.path.join(this_path, 'output_overall', save_filename)
+        save_path = None
+
+        #  #####################################
+        t_set_heat = 20  # Heating set temperature in degree Celsius
+        t_set_night = 16  # Night set back temperature in degree Celsius
+        t_set_cool = 70  # Cooling set temperature in degree Celsius
+
+        #  Air exchange rate (required for th_gen_method = 3 (VDI 6007 sim.))
+        air_vent_mode = 2
+        #  int; Define mode for air ventilation rate generation
+        #  0 : Use constant value (vent_factor in 1/h)
+        #  1 : Use deterministic, temperature-dependent profile
+        #  2 : Use stochastic, user-dependent profile
+        #  False: Use static ventilation rate value
+
+        vent_factor = 0.5  # Constant. ventilation rate
+        #  (only used, if air_vent_mode = 0)
+        #  #####################################
+
+        #  Use TEASER to generate typebuildings?
+        call_teaser = False
+        teaser_proj_name = filename[:-4]
+
+        merge_windows = False
+        # merge_windows : bool, optional
+        # Defines TEASER project setting for merge_windows_calc
+        # (default: False). If set to False, merge_windows_calc is set to False.
+        # If True, Windows are merged into wall resistances.
+
+        #  Log file for city_generator
+        do_log = False  # True, generate log file
+        log_path = os.path.join(this_path, 'input',
+                                'city_gen_overall_log.txt')
+
+        #  Generate street networks
+        gen_str = True  # True - Generate street network
+
+        #  Street node and edges input filenames
+        str_node_filename = 'street_nodes_cluster_simple.csv'
+        str_edge_filename = 'street_edges_cluster_simple.csv'
+
+        #  Load street data from csv
+        str_node_path = os.path.join(this_path, 'input',
+                                     str_node_filename)
+        str_edge_path = os.path.join(this_path, 'input',
+                                     str_edge_filename)
+
+        #  Add energy networks to city
+        gen_e_net = True  # True - Generate energy networks
+
+        #  Path to energy network input file (csv/txt; tab separated)
+        network_filename = 'city_clust_simple_networks.txt'
+        network_path = os.path.join(this_path, 'input',
+                                    network_filename)
+
+        #  Add energy systems to city
+        gen_esys = True  # True - Generate energy networks
+
+        #  Path to energy system input file (csv/txt; tab separated)
+        esys_filename = 'city_clust_simple_enersys.txt'
+        esys_path = os.path.join(this_path, 'input',
+                                 esys_filename)
+
+        #  #----------------------------------------------------------------------
+
+        #  Load district_data file
+        district_data = citygen.get_district_data_from_txt(txt_path)
+
+        city = overall.run_overall_gen_and_dim(timestep=timestep,
+                                               year_timer=year_timer,
+                                               year_co2=year_co2,
+                                               location=location,
+                                               try_path=try_path,
+                                               th_gen_method=th_gen_method,
+                                               el_gen_method=el_gen_method,
+                                               use_dhw=use_dhw,
+                                               dhw_method=dhw_method,
+                                               district_data=district_data,
+                                               gen_str=gen_str,
+                                               str_node_path=str_node_path,
+                                               str_edge_path=str_edge_path,
+                                               generation_mode=0,
+                                               eff_factor=eff_factor,
+                                               save_path=save_path,
+                                               altitude=altitude,
+                                               do_normalization=do_normalization,
+                                               dhw_volumen=dhw_volumen,
+                                               gen_e_net=gen_e_net,
+                                               network_path=network_path,
+                                               gen_esys=gen_esys,
+                                               esys_path=esys_path,
+                                               dhw_dim_esys=dhw_dim_esys,
+                                               plot_pycity_calc=plot_pycity_calc,
+                                               slp_manipulate=slp_manipulate,
+                                               call_teaser=call_teaser,
+                                               teaser_proj_name=teaser_proj_name,
+                                               do_log=do_log,
+                                               log_path=log_path,
+                                               air_vent_mode=air_vent_mode,
+                                               vent_factor=vent_factor,
+                                               t_set_heat=t_set_heat,
+                                               t_set_cool=t_set_cool,
+                                               t_night=t_set_night,
+                                               vdi_sh_manipulate=vdi_sh_manipulate,
+                                               el_random=el_random,
+                                               dhw_random=dhw_random,
+                                               prev_heat_dev=prev_heat_dev,
+                                               season_mod=season_mod,
+                                               merge_windows=merge_windows,
+                                               new_try=new_try)
+
+        # Save new pickle file
+        filename = 'city_clust_simple_with_esys.pkl'
+        file_path = os.path.join(this_path, 'input', filename)
+        pickle.dump(city, open(file_path, mode='wb'))
 
     #  #####################################################################
     #  Generate object instances
     #  #####################################################################
-
-    #  Load city object instance
-    city = pickle.load(open(city_path, mode='rb'))
 
     #  Generate german market instance
     ger_market = gmarket.GermanMarket()

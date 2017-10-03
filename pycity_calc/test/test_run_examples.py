@@ -28,6 +28,7 @@ import pycity_calc.examples.example_timer as example_timer
 import pycity_calc.examples.example_vdi_6007 as example_vdi_6007
 import pycity_calc.examples.example_vdi_6007_city as example_vdi_6007_city
 import pycity_calc.examples.example_osm as example_osm
+import pycity_calc.examples.example_city_annuity_calculation as city_ann
 
 
 class Test_RunExamples():
@@ -101,3 +102,6 @@ class Test_RunExamples():
 
     def test_example_osm(self):
         example_osm.run_osm_example()
+
+    def test_city_eb_and_annuity_calc(self):
+        city_ann.run_example_city_energy_balance_and_annuity_calc()
