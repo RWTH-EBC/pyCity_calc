@@ -383,6 +383,8 @@ class CityAnnuityCalc(object):
         #  Building pointer
         build = self.energy_balance.city.node[id]['entity']
 
+        timestep = build.environment.timer.timeDiscretization
+
         #  Get final energy results dict of building
         dict_fe = build.dict_fe_balance
 
@@ -396,9 +398,9 @@ class CityAnnuityCalc(object):
         #  Get net electric energy demand results
         dict_el_eb = build.dict_el_eb_res
 
-        #  Self produced and consumed electric energy
-        pv_self = dict_el_eb['pv_self']
-        chp_self = dict_el_eb['chp_self']
+        #  Self produced and consumed electric energy in kWh
+        pv_self = sum(dict_el_eb['pv_self']) * timestep / (1000 * 3600)
+        chp_self = sum(dict_el_eb['chp_self']) * timestep / (1000 * 3600)
 
         year = self.energy_balance.city.environment.timer.year
 
@@ -479,7 +481,7 @@ class CityAnnuityCalc(object):
 
         return dem_rel_annuity
 
-    def calc_proceeds_annuity_building(self, id):
+    def calc_proceeds_annuity_building(self, id, pv_peak_per_area=125):
         """
         Returns annualized proceedings of single building
 
@@ -487,6 +489,8 @@ class CityAnnuityCalc(object):
         ----------
         id : int
             Building id
+        pv_peak_per_area : float, optional
+            PV peak load per area in W/m2 (default: 125)
 
         Returns
         -------
@@ -496,6 +500,8 @@ class CityAnnuityCalc(object):
 
         #  Building pointer
         build = self.energy_balance.city.node[id]['entity']
+
+        timestep = build.environment.timer.timeDiscretization
 
         #  Get final energy results dict of building
         dict_fe = build.dict_fe_balance
@@ -507,29 +513,94 @@ class CityAnnuityCalc(object):
         dict_el_eb = build.dict_el_eb_res
 
         #  PV energy
-        pv_feed = dict_el_eb['pv_feed']
+        pv_feed = sum(dict_el_eb['pv_feed']) * timestep / (1000 * 3600)
 
         #  CHP electric energy
-        chp_self = dict_el_eb['chp_self']
-        chp_feed = dict_el_eb['chp_feed']
+        chp_self = sum(dict_el_eb['chp_self']) * timestep / (1000 * 3600)
+        chp_feed = sum(dict_el_eb['chp_feed']) * timestep / (1000 * 3600)
 
         #  Calculate PV fed-in proceedings
+        if build.build_type == 0:  # Residential
+            is_res = True
+        else:
+            is_res = False
 
+        #  Dummy value
+        annuity_pv = 0
+
+        if build.hasBes:
+            if build.bes.hasPv:
+                #  Estimate PV peak load
+                pv_peak_load = pv_peak_per_area * build.bes.pv.area
+
+                annuity_pv = self.calc_sub_pv_sold(en_pv_sold=pv_feed,
+                                                   pv_peak_load=pv_peak_load,
+                                                   is_res=is_res)
+
+        #  Dummy values
+        annuity_chp_eex_sold = 0
+        annuity_chp_sub_sold = 0
+        annuity_chp_sub_self = 0
+        annuity_chp_tax_return = 0
 
         #  Check full-load runtime of CHP
+        if build.hasBes:
+            if build.bes.hasChp:
 
-        #  If runtime exceeds maximum subsidies runtime, use maximum
-        #  subsidies runtime
+                p_el_nom = build.bes.chp.pNominal
 
-        #  Split runtime to shares of chp sold and chp self energy
+                chp_runtime = self.energy_balance.city.environment.\
+                    prices.get_max_total_runtime_chp_sub(p_el_nom=p_el_nom)
 
-        #  Calculate CHP self subsidy
+                chp_runtime_per_year = chp_runtime / self.annuity_obj.time
 
-        #  Calc CHP sold subsidy (with sub, eex baseload and gu)
+                chp_runtime_used_per_year = (chp_self + chp_feed) \
+                                            * 1000 / p_el_nom
 
-        #  Calc CHP tax return
+                #  If runtime exceeds maximum subsidies runtime, use maximum
+                #  subsidies runtime
+                if chp_runtime_per_year >=chp_runtime_used_per_year:
+                    chp_runtime_sub = chp_runtime_used_per_year + 0.0
+                else:
+                    chp_runtime_sub = chp_runtime_per_year + 0.0
 
+                #  Split runtime to shares of chp sold and chp self energy
+                share_self = chp_self / (chp_self + chp_feed)
+                share_feed = 1 - share_self
 
+                #  Runtime for sold and self consumed energy
+                r_time_self = chp_runtime_sub * share_self
+                r_time_feed = chp_runtime_sub * share_feed
+
+                #  Subsidies amount of electric energy in kWh
+                chp_en_self = r_time_self * p_el_nom / 1000
+                chp_en_feed = r_time_feed * p_el_nom / 1000
+
+                #  Calc. EEX and grid avoidance payment for chp fed-in
+                annuity_chp_eex_sold = self.calc_chp_sold(en_chp_sold=chp_feed)
+
+                #  Calculate CHP sold subsidies, depending on size and
+                #  maximum runtime
+                annuity_chp_sub_sold = self.\
+                    calc_sub_chp_el_sold(en_chp_sold=chp_en_feed,
+                                         pnominal=p_el_nom)
+
+                #  Calculate CHP self subsidies, depending on size and
+                #  maximum runtime
+                annuity_chp_sub_self = self.\
+                    calc_sub_chp_el_used(en_chp_used=chp_en_self,
+                                         pnominal=p_el_nom)
+
+                #  Calc CHP tax return
+                annuity_chp_tax_return = self.\
+                    calc_sub_chp_gas_used(gas_chp_used=fuel_chp)
+
+        #  Sum up proceeding related annuities
+        annuity_proceeds = annuity_pv + annuity_chp_eex_sold \
+                           + annuity_chp_sub_sold + annuity_chp_sub_self \
+                           + annuity_chp_tax_return
+
+        return annuity_proceeds
 
 
     def calc_proceeds_annuity_city(self):
@@ -551,7 +622,7 @@ class CityAnnuityCalc(object):
 
         return proc_ann
 
-    def calc_eeg_self_con(self, en_chp_self=0, en_pv_self=0):
+    def calc_eeg_self_con(self, en_chp_self, en_pv_self):
         """
         Calculate annuity EEG payment on self-produced and consumed electric
         energy of PV and CHP systems
@@ -588,50 +659,78 @@ class CityAnnuityCalc(object):
 
         return eeg_payment * self.annuity_obj.ann_factor
 
-    def calc_sub_chp_sold(self, en_chp_sold=None, pnominal=None):
+    def calc_chp_sold(self, en_chp_sold):
         """
-        Calculate specific incomes : EEX baseload price, avoided grid-usage
-        fee, chp subsidies by the state
-        related to the amount of electricity sold for CHP
+        Calculate specific incomes : EEX baseload price and avoided grid-usage
+        fee (without CHP subsidies)
 
         Parameters
         ----------
         en_chp_sold : float
             Amount of sold el. energy of CHP in kWh/a
-        pnominal : int
-            Nominal electrical CHP power in W
 
         Returns
         -------
         sub_payment_chp_sold : float
-            Annualized specific incomes for chp refered to sold electric
+            Annualized specific incomes for chp related to sold electric
             energy in Euro/a
         """
 
         #  TODO: Add function to check if prices object is GermanMarket
 
         #  Pointers to price dynamic factors
-        b_chp_sub = self.price_dyn_chp_sub
-        b_avoid_grid_usage = self.price_dyn_grid_use
-        b_eex_base = self.price_dyn_eex
+        b_avoid_grid_usage = self.annuity_obj.price_dyn_grid_use
+        b_eex_base = self.annuity_obj.price_dyn_eex
 
-        # Get specific prices
-        sub_chp_sold = self.energy_balance.city.environment.prices.get_sub_chp(
-            p_nom=pnominal)
-        #  Todo: Consider adding one EEX price?
+        #  Calc. average EEX baseload
         sub_eex = sum(
             self.energy_balance.city.environment.prices.eex_baseload) / len(
             self.energy_balance.city.environment.prices.eex_baseload)
-        sub_avoid_grid_use = self.energy_balance.city.environment.prices.grid_av_fee
+        #  Get grid usage avoidance fee
+        sub_avoid_grid_use = self.energy_balance.city.environment.\
+            prices.grid_av_fee
 
         # Calculate specific incomes [EUro/kWh]
-        sub_payment_chp_sold = (b_chp_sub * sub_chp_sold
-                                + b_avoid_grid_usage * sub_avoid_grid_use
+        payment_chp_sold = (b_avoid_grid_usage * sub_avoid_grid_use
                                 + b_eex_base * sub_eex) * en_chp_sold
 
-        return sub_payment_chp_sold * self.ann_factor
+        return payment_chp_sold * self.annuity_obj.ann_factor
 
-    def calc_sub_chp_el_used(self, en_chp_used=None, pnominal=None):
+    def calc_sub_chp_el_sold(self, en_chp_sold, pnominal):
+        """
+        Calculate proceeding related annuity for subsidies on sold
+        CHP electric energy
+
+        Parameters
+        ----------
+        en_chp_sold : float
+            Produced and sold electric energy of CHP in kWh
+        pnominal : float
+            Nominal electric power of CHP system in Watt
+
+        Returns
+        -------
+        annuity_chp_sub : float
+            Annualized proceedings of subsidies for sold electric energy of
+            CHP in Euro/a
+        """
+
+        assert en_chp_sold >= 0
+        assert pnominal > 0
+
+        #  Pointers to price dynamic factors
+        b_chp_sub = self.annuity_obj.price_dyn_chp_sub
+
+        #  Calculate specific subsidy payment in Euro/kWh
+        spec_chp_sub = self.energy_balance.city.environment.\
+            prices.get_sub_chp(p_nom=pnominal)
+
+        annuity_chp_sub = b_chp_sub * spec_chp_sub * en_chp_sold * \
+                          self.annuity_obj.ann_factor
+
+        return annuity_chp_sub
+
+    def calc_sub_chp_el_used(self, en_chp_used, pnominal):
         """
         Calculate specific incomes for CHP related to the amount of
         electricity used to cover the own demand
@@ -653,25 +752,26 @@ class CityAnnuityCalc(object):
         #  TODO: Add function to check if prices object is GermanMarket
 
         #  Pointers to price dynamic factors
-        b_chp_sub_used = self.price_dyn_chp_self
+        b_chp_sub_used = self.annuity_obj.price_dyn_chp_self
 
         # Get specific price
-        sub_chp_sold = self.energy_balance.city.environment.prices.get_sub_chp_self(
+        sub_chp_sold = self.energy_balance.city.environment.\
+            prices.get_sub_chp_self(
             p_nom=pnominal)
 
         # Calculate specific income [Euro/kWh]
         sub_payment_chp_used = b_chp_sub_used * sub_chp_sold * en_chp_used
 
-        return sub_payment_chp_used * self.ann_factor
+        return sub_payment_chp_used * self.annuity_obj.ann_factor
 
-    def calc_sub_chp_gas_used(self, en_chp_used=None):
+    def calc_sub_chp_gas_used(self, gas_chp_used):
         """
         Calculate a tax exception on gas for the CHP related to the amount
         of gas used
 
         Parameters
         ----------
-        en_chp_used : float
+        gas_chp_used : float
             Amount of used gas energy of CHP in kWh/a
 
         Returns
@@ -684,15 +784,16 @@ class CityAnnuityCalc(object):
         #  TODO: Add function to check if prices object is GermanMarket
 
         #  Pointers to price dynamic factors
-        b_chp_sub_used = self.price_dyn_chp_tax_return
+        b_chp_sub_used = self.annuity_obj.price_dyn_chp_tax_return
 
         # Get specific price
-        tax_exep_chp = self.energy_balance.city.environment.prices.chp_tax_return
+        tax_exep_chp = self.energy_balance.city.environment.\
+            prices.chp_tax_return
 
         # Calculate specific income [Euro/kWh]
-        tax_exep_chp_used = b_chp_sub_used * tax_exep_chp * en_chp_used
+        tax_exep_chp_used = b_chp_sub_used * tax_exep_chp * gas_chp_used
 
-        return tax_exep_chp_used * self.ann_factor
+        return tax_exep_chp_used * self.annuity_obj.ann_factor
 
     def calc_sub_pv_sold(self, en_pv_sold=None, pv_peak_load=None,
                          is_res=True):
@@ -722,7 +823,7 @@ class CityAnnuityCalc(object):
         #  TODO: Add function to check if prices object is GermanMarket
 
         #  Pointers to price dynamic factors
-        b_pv_sub_sold = self.price_dyn_pv_sub
+        b_pv_sub_sold = self.annuity_obj.price_dyn_pv_sub
 
         # Get specific price
         pv_sub_sold = self.energy_balance.city.environment.prices.get_sub_pv(
@@ -731,7 +832,7 @@ class CityAnnuityCalc(object):
         # Calculate specific income [Euro/kWh]
         sub_pv_sold = b_pv_sub_sold * pv_sub_sold * en_pv_sold
 
-        return sub_pv_sold * self.ann_factor
+        return sub_pv_sold * self.annuity_obj.ann_factor
 
         # def calc_proc_annuity_multi_comp_city(self, city_object):
         #
@@ -933,6 +1034,38 @@ if __name__ == '__main__':
     dem_rel_annuity = city_eco_calc.calc_dem_rel_annuity_city()
 
     #  Calculate proceedings
-
+    proc_rel_annuity = city_eco_calc.calc_proceeds_annuity_city()
 
     #  Calculate total annuity
+    total_annuity = city_eco_calc.annuity_obj.\
+        calc_total_annuity(ann_capital=cap_rel_ann,
+                           ann_demand=dem_rel_annuity,
+                           ann_op=op_rel_ann,
+                           ann_proc=proc_rel_annuity)
+
+    print('Capital related annuity in Euro/a:')
+    print(round(cap_rel_ann, 0))
+    print()
+
+    print('Demand related annuity in Euro/a:')
+    print(round(dem_rel_annuity, 0))
+    print()
+
+    print('Operations related annuity in Euro/a:')
+    print(round(op_rel_ann, 0))
+    print()
+
+    print('Proceedings related annuity in Euro/a:')
+    print(round(proc_rel_annuity, 0))
+    print()
+
+    print('##########################################')
+    print()
+
+    print('CO2 emissions in kg/a:')
+    print(round(co2, 0))
+    print()
+
+    print('Total annuity in Euro/a:')
+    print(round(total_annuity, 0))
+    print()
