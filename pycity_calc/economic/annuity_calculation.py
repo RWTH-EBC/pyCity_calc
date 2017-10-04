@@ -939,11 +939,13 @@ class EconomicCalculation(object):
     #  #################################################################
     def calc_total_annuity(self, ann_capital, ann_demand, ann_op, ann_proc):
         """
-        Calculate total annuity.
+        Calculate total annuity, based on VDI 2067.
 
-        Input values need to be positive. Capital, demand and operation
-        related annuities get a minus sign, while proceeding related annuity
-        get a positive sign for calculation.
+        Capital-related, demand-related and operation-related cost get a
+        positive algebraic sign (+), while proceedings get a negative
+        algebraic sign (-).
+        Thus, the total annuity represents the cost (+) or the profit (-)
+        of the energy system.
 
         Parameters
         ----------
@@ -962,12 +964,12 @@ class EconomicCalculation(object):
             Total annuity in Euro
         """
 
-        # assert ann_capital >= 0, 'Annuity has to be positive. Check input.'
-        # assert ann_demand >= 0, 'Annuity has to be positive. Check input.'
-        # assert ann_op >= 0, 'Annuity has to be positive. Check input.'
-        # assert ann_proc >= 0, 'Annuity has to be positive. Check input.'
+        assert ann_capital >= 0, 'Annuity has to be positive. Check input.'
+        assert ann_demand >= 0, 'Annuity has to be positive. Check input.'
+        assert ann_op >= 0, 'Annuity has to be positive. Check input.'
+        assert ann_proc >= 0, 'Annuity has to be positive. Check input.'
 
-        return ann_proc - (ann_capital + ann_demand + ann_op)
+        return - ann_proc + (ann_capital + ann_demand + ann_op)
 
 
 if __name__ == '__main__':
@@ -1136,5 +1138,6 @@ if __name__ == '__main__':
                                     ann_demand=dem_rel_annuity,
                                     ann_op=op_rel_annuity,
                                     ann_proc=ann_proc)
-    print('Total annuity in Euro:')
+    print('Total annuity in Euro/a (+ means total annualized cost /'
+          ' - is annualized profit):')
     print(round(total_annuity, 2))

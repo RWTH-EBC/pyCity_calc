@@ -42,7 +42,7 @@ def run_example_city_energy_balance_and_annuity_calc():
     #  ######################################################
     year_timer = 2010
     year_co2 = 2010
-    timestep = 3600  # Timestep in seconds
+    timestep = 900  # Timestep in seconds
     # location = (51.529086, 6.944689)  # (latitude, longitude) of Bottrop
     location = (50.775346, 6.083887)  # (latitude, longitude) of Aachen
     altitude = 266  # Altitude of location in m (Aachen)
@@ -260,10 +260,10 @@ def run_example_city_energy_balance_and_annuity_calc():
                                            merge_windows=merge_windows,
                                            new_try=new_try)
 
-    city.node[1005]['entity'].bes.boiler.qNominal *= 100
-    city.node[1005]['entity'].bes.tes.capacity *= 100
-    city.node[1012]['entity'].bes.boiler.qNominal *= 100
-    city.node[1012]['entity'].bes.tes.capacity *= 100
+    city.node[1005]['entity'].bes.boiler.qNominal *= 10
+    city.node[1005]['entity'].bes.tes.capacity *= 10
+    city.node[1012]['entity'].bes.boiler.qNominal *= 10
+    city.node[1012]['entity'].bes.tes.capacity *= 10
     city.node[1009]['entity'].bes.electricalHeater.qNominal *= 10
 
     # # Save new pickle file
@@ -300,7 +300,8 @@ def run_example_city_energy_balance_and_annuity_calc():
     print(round(co2, 0))
     print()
 
-    print('Total annuity in Euro/a:')
+    print('Total annuity in Euro/a (+ means total annualized cost /'
+          ' - is annualized profit):')
     print(round(total_annuity, 0))
     print()
 
