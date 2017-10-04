@@ -482,7 +482,7 @@ class CityEBCalculator(object):
         self.list_th_done = None
         self.list_el_done = None
 
-    def calc_final_energy_balance_building(self, id):
+    def calc_final_energy_balance_building(self, id, save_fe_dict=True):
         """
         Calculate final energy balance of building with id
 
@@ -490,6 +490,9 @@ class CityEBCalculator(object):
         ----------
         id : int
             Building node id
+        save_fe_dict : bool, optional
+            Defines, if final energy results dictionary should be saved as
+            dict_fe_balance attribute on building object (default: True)
 
         Returns
         -------
@@ -569,6 +572,10 @@ class CityEBCalculator(object):
         pv_feed = sum(pv_feed_p) * timestep \
                   / (1000 * 3600)  # in kWh
         dict_fe_balance['pv_feed'] = pv_feed
+
+        if save_fe_dict:
+            #  Save results dict
+            build.dict_fe_balance = dict_fe_balance
 
         return dict_fe_balance
 
@@ -692,8 +699,6 @@ class CityEBCalculator(object):
 
 if __name__ == '__main__':
 
-    this_path = os.path.dirname(os.path.abspath(__file__))
-
     import pycity_calc.cities.scripts.city_generator.city_generator as citygen
     import pycity_calc.cities.scripts.overall_gen_and_dimensioning as overall
 
@@ -741,7 +746,7 @@ if __name__ == '__main__':
         #  For non-residential buildings, SLPs are generated automatically.
 
         #  Manipulate thermal slp to fit to space heating demand?
-        slp_manipulate = False
+        slp_manipulate = True
         #  True - Do manipulation
         #  False - Use original profile
         #  Only relevant, if th_gen_method == 1
@@ -793,7 +798,7 @@ if __name__ == '__main__':
         use_dhw = True  # Only relevant for residential buildings
 
         #  DHW generation method? (1 - Annex 42; 2 - Stochastic profiles)
-        #  Choice of Anex 42 profiles NOT recommended for multiple builings,
+        #  Choice of Annex 42 profiles NOT recommended for multiple buildings,
         #  as profile stays the same and only changes scaling.
         #  Stochastic profiles require defined nb of occupants per residential
         #  building
@@ -934,6 +939,9 @@ if __name__ == '__main__':
                                                       season_mod=season_mod,
                                                       merge_windows=merge_windows,
                                                       new_try=new_try)
+
+        city_object.node[1006]['entity'].bes.boiler.qNominal *= 5
+        city_object.node[1006]['entity'].bes.tes.capacity *= 5
 
         # Save new pickle file
         filename = 'city_clust_simple_with_esys.pkl'

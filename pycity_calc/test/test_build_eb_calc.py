@@ -420,8 +420,8 @@ class TestBuildingEnergyBalance():
         sum_q_tes_out = sum(q_tes_out) * timestep / (1000 * 3600)
 
         assert fuel_boiler_energy >= boil_th_energy
-        assert abs(boil_th_energy + sum_q_tes_out >=
-                   (sh_net_energy + dhw_net_energy + sum_q_tes_in))
+        assert abs(boil_th_energy + sum_q_tes_out -
+                   (sh_net_energy + dhw_net_energy + sum_q_tes_in)) <= 0.001
 
         #  ##################################################################
 
