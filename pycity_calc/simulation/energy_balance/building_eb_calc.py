@@ -1509,7 +1509,7 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
             #  Calculate tes status
             #  ##############################################################
             tes_status = get_tes_status(tes=build.bes.tes,
-                                        buffer_low=0.85,
+                                        buffer_low=0.9,
                                         buffer_high=buffer_high)
 
             #  Get required thermal power values
@@ -1528,7 +1528,7 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
 
             q_tes_in = None
 
-            if tes_status == 1 or tes_status == 2:
+            if tes_status == 1:
                 #  Do not charge TES
 
                 #  Try covering power with boiler
@@ -1626,7 +1626,7 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                           '' + str(i) + ' at building ' + str(id)
                     EnergyBalanceException(msg)
 
-            elif tes_status == 3:
+            elif tes_status == 3 or tes_status == 2:
                 # Use boiler and/or EH to load TES
 
                 q_tes_in_remain = q_in_max + 0.0
