@@ -40,8 +40,8 @@ def run_example_city_energy_balance_and_annuity_calc():
 
     #  Generate environment
     #  ######################################################
-    year_timer = 2017
-    year_co2 = 2017
+    year_timer = 2010
+    year_co2 = 2010
     timestep = 3600  # Timestep in seconds
     # location = (51.529086, 6.944689)  # (latitude, longitude) of Bottrop
     location = (50.775346, 6.083887)  # (latitude, longitude) of Aachen

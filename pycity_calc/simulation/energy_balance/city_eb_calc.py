@@ -742,7 +742,7 @@ if __name__ == '__main__':
         #  2 - Load and rescale Modelica simulation profile
         #  (generated with TRY region 12, 2010)
         #  3 - VDI 6007 calculation (requires el_gen_method = 2)
-        th_gen_method = 1
+        th_gen_method = 3
         #  For non-residential buildings, SLPs are generated automatically.
 
         #  Manipulate thermal slp to fit to space heating demand?
@@ -763,7 +763,7 @@ if __name__ == '__main__':
         #  Choose electric load profile generation method (1 - SLP; 2 - Stochastic)
         #  Stochastic profile is only generated for residential buildings,
         #  which have a defined number of occupants (otherwise, SLP is used)
-        el_gen_method = 1
+        el_gen_method = 2
         #  If user defindes method_3_nb or method_4_nb within input file
         #  (only valid for non-residential buildings), SLP will not be used.
         #  Instead, corresponding profile will be loaded (based on measurement
@@ -802,7 +802,7 @@ if __name__ == '__main__':
         #  as profile stays the same and only changes scaling.
         #  Stochastic profiles require defined nb of occupants per residential
         #  building
-        dhw_method = 1  # Only relevant for residential buildings
+        dhw_method = 2  # Only relevant for residential buildings
 
         #  Define dhw volume per person and day (use_dhw=True)
         dhw_volumen = None  # Only relevant for residential buildings
@@ -939,6 +939,9 @@ if __name__ == '__main__':
                                                       season_mod=season_mod,
                                                       merge_windows=merge_windows,
                                                       new_try=new_try)
+
+        city_object.node[1006]['entity'].bes.boiler.qNominal *= 5
+        city_object.node[1006]['entity'].bes.tes.capacity *= 5
 
         # Save new pickle file
         filename = 'city_clust_simple_with_esys.pkl'
