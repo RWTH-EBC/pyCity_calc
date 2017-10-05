@@ -25,7 +25,7 @@ class BuildingExtended(build.Building):
                  residential_layout=None, attic=None, cellar=None,
                  construction_type=None, dormer=None, with_ahu=None,
                  office_layout=None, window_layout=None,
-                 retrofit_state = None):
+                 retrofit_state=None):
         """
         Constructor of extended building. Inheritance from PyCity Building
         object.
