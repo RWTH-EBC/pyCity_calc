@@ -377,10 +377,11 @@ def merge_buildings_in_city(city, list_lists_merge):
         city_copy.node[list_merge[0]]['entity'] = new_build
 
         #  Erase all remaining building nodes, which have been merged
-        for n in list_merge:
-            if n != 0:
+        for i in range(len(list_merge)):
+            if i != 0:
+                id = list_merge[i]
                 #  Remove building node with uesgraph method
-                city.remove_building(n)
+                city_copy.remove_building(id)
 
     return city_copy
 
