@@ -121,7 +121,7 @@ def add_street_network_to_city(city_object, name_list, pos_list, edge_list):
 if __name__ == '__main__':
 
     #  Generate environment
-    year = 2010
+    year = 2017
     timestep = 3600  # Timestep in seconds
     location = (51.529086, 6.944689)  # (latitude, longitute) of Bottrop
     altitude = 55  # Altitude of Bottrop
@@ -129,7 +129,9 @@ if __name__ == '__main__':
     str_node_filename = 'street_nodes.csv'
     str_edge_filename = 'street_edges.csv'
 
-    environment = city_gen.generate_environment(timestep=timestep, year=year,
+    environment = city_gen.generate_environment(timestep=timestep,
+                                                year_timer=year,
+                                                year_co2=year,
                                                 location=location,
                                                 altitude=altitude)
 

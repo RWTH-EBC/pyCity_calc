@@ -20,7 +20,8 @@ def run_example(printcitydata=False):
     #  #----------------------------------------------------------------------
 
     #  Year, timestep and location
-    year = 2010
+    year_timer = 2017
+    year_co2 = 2017
     timestep = 3600  # Timestep in seconds
     location = (51.529086, 6.944689)  # (latitude, longitute) of Bottrop
     altitude = 55  # Altitude of Bottrop
@@ -102,7 +103,8 @@ def run_example(printcitydata=False):
     city_object = \
         complex_city_generator.gen_city_with_street_network_from_csvfile(
             timestep=timestep,
-            year=year,
+            year_timer=year_timer,
+            year_co2=year_co2,
             location=location,
             try_path=try_path,
             th_gen_method=th_gen_method,

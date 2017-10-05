@@ -26,7 +26,7 @@ def gen_city_w_buildings(district_data):
     """
 
     city = city_gen.run_city_generator(generation_mode=0, timestep=3600,
-                                       year=2010,
+                                       year_timer=2010, year_co2=2010,
                                        location=(51.529086, 6.944689),
                                        el_gen_method=1, use_dhw=False,
                                        dhw_method=1, th_gen_method=2,

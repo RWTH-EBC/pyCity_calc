@@ -29,10 +29,10 @@ class Test_Battery():
                                        capacity_kwh=100, self_discharge=0,
                                        eta_charge=1, eta_discharge=1)
         p_out_max = battery.calc_battery_max_p_el_out(soc_ratio_current=
-                                                      soc_init_ratio)
+                                                      soc_init_ratio, eps=0)
         assert p_out_max == 400000  # Max output power is 400 kW
 
-        p_out_max = battery.calc_battery_max_p_el_out()
+        p_out_max = battery.calc_battery_max_p_el_out(eps=0)
         assert p_out_max == 400000  # Max output power is 400 kW
 
 
@@ -54,12 +54,13 @@ class Test_Battery():
                                        soc_init_ratio=0,
                                        capacity_kwh=100, self_discharge=0,
                                        eta_charge=1, eta_discharge=1)
-        p_max_in = battery.calc_battery_max_p_el_in()
+        p_max_in = battery.calc_battery_max_p_el_in(eps=0)
 
         assert p_max_in == 400000
 
         soc_ratio_new = 0.5
-        p_max_in = battery.calc_battery_max_p_el_in(soc_ratio_current=soc_ratio_new)
+        p_max_in = battery.calc_battery_max_p_el_in(soc_ratio_current=soc_ratio_new,
+                                                    eps=0)
 
         assert p_max_in == 200000
 

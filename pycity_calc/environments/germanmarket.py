@@ -20,8 +20,8 @@ class GermanMarket(market.Market):
 
     def __init__(self, reset_pycity_default_values=True,
                  chp_tax_return=0.0055, eeg_pay=0.0688,
-                 eex_baseload=[0.02479 ,0.02826 ,0.0376 ,0.04132],
-                 grid_av_fee=0.0055, hp_day_tarif=0.2, hp_night_tarif=0.18):
+                 eex_baseload=[0.03272, 0.03272, 0.03272, 0.03272],
+                 grid_av_fee=0.0055, hp_day_tarif=0.22, hp_night_tarif=0.2):
         """
         Constructor of GermanMarket object instance
 
@@ -38,16 +38,16 @@ class GermanMarket(market.Market):
             EEG payment in Euro/kWh (default: 0.0688)
         eex_baseload : list (of floats), optional
             List with quarterly EEX baseload prices in Euro/kWh
-            (default: [0.02479 ,0.02826 ,0.0376 ,0.04132])
+            (default: [0.03272, 0.03272, 0.03272, 0.03272])
         grid_av_fee : float, optional
             Grid usage avoidance fee in Euro/kWh
             (default: 0.0055)
         hp_day_tarif : float, optional
             Heat pump day tarif in Euro/kWh
-            (default: 0.2)
+            (default: 0.22)
         hp_night_tarif : float, optional
             Heat pump night tarif in Euro/kWh
-            (default: 0.18)
+            (default: 0.2)
         """
 
         super(GermanMarket, self).__init__(reset_pycity_default_values=
@@ -149,6 +149,35 @@ class GermanMarket(market.Market):
             sub_chp = self._sub_chp_self[2]
 
         return sub_chp
+
+    def get_max_total_runtime_chp_sub(self, p_el_nom):
+        """
+        Returns maximal full-load hours runtime of CHP for getting
+        payments of German CHP law (KWKG)
+
+        Parameters
+        ----------
+        p_el_nom : float
+            Nominal electric power of CHP in Watt
+
+        Returns
+        -------
+        sub_chp_runtime : int
+            Maximum CHP runtime, which is used to get subsidy payments, in
+            hours
+
+        Annotations
+        -----------
+        http://www.bhkw-jetzt.de/foerderung/nach-kwk-g/
+        """
+
+        assert p_el_nom >= 0
+
+        if p_el_nom <= 50 * 1000:
+            return 60000
+        else:  # Larger than 50 kW el.
+            return 30000
+
 
     def get_sub_pv(self, pv_peak_load, is_res=True):
         """
