@@ -80,6 +80,7 @@ def erase_none_val_from_list(list_values):
 
     return list_no_nones
 
+
 def check_compare_list_val(list_comp, name=None):
     """
     Compares list values. Yields warning, if list values are different
@@ -210,7 +211,8 @@ def make_building_merge(environment, list_building_obj):
         list_build_years = erase_none_val_from_list(list_values=
                                                     list_build_years)
         #  Use average value of build_years
-        build_new.build_year = int(sum(list_build_years)/len(list_build_years))
+        build_new.build_year = int(
+            sum(list_build_years) / len(list_build_years))
 
     all_none = check_if_all_entries_are_none(list_values=list_mod_years)
     if all_none is True:
@@ -222,7 +224,7 @@ def make_building_merge(environment, list_building_obj):
         build_new.mod_year = int(
             sum(list_mod_years) / len(list_mod_years))
 
-    #  Use first index for build type
+    # Use first index for build type
     build_new.build_type = list_build_types[0]
 
     all_none = check_if_all_entries_are_none(list_values=list_usabl_pv_areas)
@@ -248,7 +250,7 @@ def make_building_merge(environment, list_building_obj):
         build_new.ground_area = None
     else:
         list_ground_areas = erase_none_val_from_list(list_values=
-                                                        list_ground_areas)
+                                                     list_ground_areas)
         #  Build sum
         build_new.ground_area = sum(list_ground_areas)
 
@@ -259,7 +261,7 @@ def make_building_merge(environment, list_building_obj):
         list_height_of_floors = erase_none_val_from_list(list_values=
                                                          list_height_of_floors)
         #  Build average
-        build_new.height_of_floors = sum(list_height_of_floors)/\
+        build_new.height_of_floors = sum(list_height_of_floors) / \
                                      len(list_height_of_floors)
 
     all_none = check_if_all_entries_are_none(list_values=list_nb_floors)
@@ -270,9 +272,10 @@ def make_building_merge(environment, list_building_obj):
                                                   list_nb_floors)
         #  Build average
         build_new.nb_of_floors = sum(list_nb_floors) / \
-                                     len(list_nb_floors)
+                                 len(list_nb_floors)
 
-    all_none = check_if_all_entries_are_none(list_values=list_neighbour_buildings)
+    all_none = check_if_all_entries_are_none(
+        list_values=list_neighbour_buildings)
     if all_none is True:
         build_new.neighbour_buildings = None
     else:
@@ -311,7 +314,7 @@ def make_building_merge(environment, list_building_obj):
         #  Build average
         build_new.cellar = int(sum(list_cellars) / len(list_cellars))
 
-    #  Use first index
+    # Use first index
     build_new.construction_type = list_construction_types[0]
 
     all_none = check_if_all_entries_are_none(
@@ -369,7 +372,7 @@ def merge_buildings_in_city(city, list_lists_merge):
             build = city_copy.node[n]['entity']
             list_build.append(build)
 
-        #  Generate new building entity
+        # Generate new building entity
         new_build = make_building_merge(environment=city_copy.environment,
                                         list_building_obj=list_build)
 
@@ -388,87 +391,105 @@ def merge_buildings_in_city(city, list_lists_merge):
 
 if __name__ == '__main__':
 
+    #  Decide, if you want to load an existing city district pickle file
+    #  or if you want to generate a test city
+    load_city = False
+    #  If True, load city pickle file (requires name and path)
+    #  If False, runs test city generation below
+
+    #  Save city
+    do_save = False
+
     #  Pathes
     #  ######################################################################
     this_path = os.path.dirname(os.path.abspath(__file__))
 
-    city_save_name = 'city_merged.pkl'
+    city_input_name = 'city.pkl'
+    city_path = os.path.join(this_path, 'input', city_input_name)
 
+    city_save_name = 'city_merged.pkl'
     path_save = os.path.join(this_path, 'output', city_save_name)
     #  ######################################################################
 
     #  List of lists of buildings, which should be merged together
     list_lists_merge = [[1001, 1002], [1003, 1004]]
 
-    #  Generate test city
-    #  ######################################################################
+    if load_city:
+        city_object = pickle.load(open(city_path, mode='rb'))
 
-    #  Create extended environment of pycity_calc
-    year = 2017
-    timestep = 900  # Timestep in seconds
-    location = (51.529086, 6.944689)  # (latitude, longitute) of Bottrop
-    altitude = 55  # Altitude of Bottrop
+    else:
+        #  Generate test city
+        #  ######################################################################
 
-    #  Generate timer object
-    timer = time.TimerExtended(timestep=timestep, year=year)
+        #  Create extended environment of pycity_calc
+        year = 2017
+        timestep = 900  # Timestep in seconds
+        location = (51.529086, 6.944689)  # (latitude, longitute) of Bottrop
+        altitude = 55  # Altitude of Bottrop
 
-    #  Generate weather object
-    weather = Weather.Weather(timer, useTRY=True, location=location,
-                              altitude=altitude)
+        #  Generate timer object
+        timer = time.TimerExtended(timestep=timestep, year=year)
 
-    #  Generate market object
-    market = germarkt.GermanMarket()
+        #  Generate weather object
+        weather = Weather.Weather(timer, useTRY=True, location=location,
+                                  altitude=altitude)
 
-    #  Generate co2 emissions object
-    co2em = co2.Emissions(year=year)
+        #  Generate market object
+        market = germarkt.GermanMarket()
 
-    #  Generate environment
-    environment = env.EnvironmentExtended(timer, weather, prices=market,
-                                          location=location, co2em=co2em)
+        #  Generate co2 emissions object
+        co2em = co2.Emissions(year=year)
 
-    #  Generate city object
-    city_object = cit.City(environment=environment)
+        #  Generate environment
+        environment = env.EnvironmentExtended(timer, weather, prices=market,
+                                              location=location, co2em=co2em)
 
-    #  Iterate 4 times to generate 3 building objects
-    for i in range(4):
-        #  Create demands (with standardized load profiles (method=1))
-        heat_demand = SpaceHeating.SpaceHeating(environment,
-                                                method=1,
-                                                profile_type='HEF',
-                                                livingArea=100,
-                                                specificDemand=120)
+        #  Generate city object
+        city_object = cit.City(environment=environment)
 
-        el_demand = ElectricalDemand.ElectricalDemand(environment, method=1,
-                                                      annualDemand=3000,
-                                                      profileType="H0")
+        #  Iterate 4 times to generate 3 building objects
+        for i in range(4):
+            #  Create demands (with standardized load profiles (method=1))
+            heat_demand = SpaceHeating.SpaceHeating(environment,
+                                                    method=1,
+                                                    profile_type='HEF',
+                                                    livingArea=100,
+                                                    specificDemand=120)
 
-        #  Create apartment
-        apartment = Apartment.Apartment(environment)
+            el_demand = ElectricalDemand.ElectricalDemand(environment,
+                                                          method=1,
+                                                          annualDemand=3000,
+                                                          profileType="H0")
 
-        #  Add demands to apartment
-        apartment.addMultipleEntities([heat_demand, el_demand])
+            #  Create apartment
+            apartment = Apartment.Apartment(environment)
 
-        extended_building = build_ex.BuildingExtended(environment,
-                                                      build_year=1962,
-                                                      mod_year=2003,
-                                                      build_type=0,
-                                                      roof_usabl_pv_area=30,
-                                                      net_floor_area=150,
-                                                      height_of_floors=3,
-                                                      nb_of_floors=2,
-                                                      neighbour_buildings=0,
-                                                      residential_layout=0,
-                                                      attic=0, cellar=1,
-                                                      construction_type='heavy',
-                                                      dormer=0)
+            #  Add demands to apartment
+            apartment.addMultipleEntities([heat_demand, el_demand])
 
-        #  Add apartment to extended building
-        extended_building.addEntity(entity=apartment)
+            extended_building = \
+                build_ex.BuildingExtended(environment,
+                                          build_year=1962,
+                                          mod_year=2003,
+                                          build_type=0,
+                                          roof_usabl_pv_area=30,
+                                          net_floor_area=150,
+                                          height_of_floors=3,
+                                          nb_of_floors=2,
+                                          neighbour_buildings=0,
+                                          residential_layout=0,
+                                          attic=0, cellar=1,
+                                          construction_type='heavy',
+                                          dormer=0)
 
-        position = point.Point(i * 10, 0)
+            #  Add apartment to extended building
+            extended_building.addEntity(entity=apartment)
 
-        city_object.add_extended_building(extended_building=extended_building,
-                                          position=position)
+            position = point.Point(i * 10, 0)
+
+            city_object.add_extended_building(
+                extended_building=extended_building,
+                position=position)
 
     # ######################################################################
 
@@ -479,4 +500,5 @@ if __name__ == '__main__':
     merge_buildings_in_city(city=city_object,
                             list_lists_merge=list_lists_merge)
 
-    # pickle.dump(city, open(path_save, mode='rb'))
+    if do_save:
+        pickle.dump(city_object, open(path_save, mode='rb'))
