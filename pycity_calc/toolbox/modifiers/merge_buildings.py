@@ -369,8 +369,18 @@ def merge_buildings_in_city(city, list_lists_merge):
             build = city_copy.node[n]['entity']
             list_build.append(build)
 
+        #  Generate new building entity
         new_build = make_building_merge(environment=city_copy.environment,
                                         list_building_obj=list_build)
+
+        #  Save building entity to first index / node id in list_merge
+        city_copy.node[list_merge[0]]['entity'] = new_build
+
+        #  Erase all remaining building nodes, which have been merged
+        for n in list_merge:
+            if n != 0:
+                #  Remove building node with uesgraph method
+                city.remove_building(n)
 
     return city_copy
 
