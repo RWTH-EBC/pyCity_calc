@@ -497,8 +497,8 @@ if __name__ == '__main__':
     # city_object.node[1004]['entity'].build_year = None
 
     #  Merge buildings together
-    merge_buildings_in_city(city=city_object,
-                            list_lists_merge=list_lists_merge)
+    city_new = merge_buildings_in_city(city=city_object,
+                                       list_lists_merge=list_lists_merge)
 
     if do_save:
-        pickle.dump(city_object, open(path_save, mode='rb'))
+        pickle.dump(city_new, open(path_save, mode='wb'))
