@@ -44,7 +44,7 @@ def dim_decentral_chp(th_LDC, q_total, method=0):
         (t_ann_op_max, t_x_max) = get_chp_ann_op_time(q_nom, th_LDC)  # (annual operation time, full load hours)
 
         # Set minimum for flh
-        chp_flh = 4000
+        chp_flh = 4500
         q_chp = th_LDC[chp_flh]
         [eta_el, eta_th, p_nom, q_nom] = choose_chp(q_chp)
         (t_ann_op_min, t_x_min) = get_chp_ann_op_time(q_nom, th_LDC)
@@ -179,12 +179,12 @@ def dim_central_chp(th_LDC, q_total, district_type, method=0):
     # ---------------- Method 0: Krimmling and interviews ----------------
     if method == 0:
         print('Method 0')
-        # Set minimum for q_chp
+        # Set minimum for q_chp (-> t_x_max)
         q_chp = 0.1*max(th_LDC)
         [eta_el, eta_th, p_nom, q_nom] = choose_chp(q_chp)
         (t_ann_op_max, t_x_max) = get_chp_ann_op_time(q_nom, th_LDC)  # (annual operation time, full load hours)
 
-        # Set minimum for flh
+        # Set minimum for flh (-> t_x_min)
         chp_flh = 4500
         q_chp = th_LDC[chp_flh]
         [eta_el, eta_th, p_nom, q_nom] = choose_chp(q_chp)
@@ -403,9 +403,11 @@ def get_chp_ann_op_time(q_nom, th_LDC):
 
     # Find point in time, when area between t:t_x and t_x:8760 are the same size (see Krimmling p.131, Abb.4-15)
     delta_a = 8760 * th_LDC[0]
+    ldc = np.array(th_LDC)
+
     for t in range(t_x, 8760):
-        a1 = q_m * (t - t_x) - sum(th_LDC[t_x:t])
-        a2 = sum(th_LDC[t:8760])
+        a1 = q_m * (t - t_x) - np.sum(ldc[t_x:t])
+        a2 = np.sum(ldc[t:8760])
         if delta_a <= abs(a2 - a1):
             t_ann_operation = t - 1
             return t_ann_operation, t_x
