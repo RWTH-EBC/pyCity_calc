@@ -687,6 +687,8 @@ class CityEBCalculator(object):
                * co2em.co2_factor_el_mix
         co2 += self.dict_fe_city_balance['grid_import_eh'] \
                * co2em.co2_factor_el_mix
+        co2 += self.dict_fe_city['pump_energy'] \
+               * co2em.co2_factor_el_mix
 
         #  Subtract feed in amount
         co2 -= self.dict_fe_city_balance['chp_feed'] * f_chp
