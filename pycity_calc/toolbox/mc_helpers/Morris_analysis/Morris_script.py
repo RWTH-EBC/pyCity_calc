@@ -49,32 +49,37 @@ from SALib.plotting.morris import horizontal_bar_plot, covariance_plot, sample_h
 import pycity_calc.economic.annuity_calculation as eco_calc
 import pycity_calc.simulation.energy_balance_optimization.energy_balance_building as EBB
 import pycity_calc.economic.calc_CO2_emission as GHG_calc
+import pycity_calc.toolbox.mc_helpers.Uncertainties_analysis.MC_esys_new_evaluation as esys_gen
 import pickle
 import numpy as np
 
 
-def run_Morris():
+def run_Morris(Nsample = 1, Morris_name = 'Morris_values.txt', Scenario = 'ref', esys_filename = 'City_lolo_esys_Sc7.txt',
+               load_city = True, city_pickle_name = 'aachen_kronenberg_3_mfh_ref_1.pkl', size_esys = False,
+               save_result = True, results_name = 'Morris_results.txt', time = 100,
+               save_path = None):
 
     # Define the Morris parameters
     # #############################################################################################################
 
     # number of samples
-    Nsample = 5
+    Nsample = Nsample
     print(Nsample)
-    Morris_name = 'Morris_values.txt' # filename of the parameters definition variation space for the Morris analysis
-    Scenario = 1
+    Morris_name = Morris_name # filename of the parameters definition variation space for the Morris analysis
+    Scenario = Scenario
 
     # City generation mode
-    load_city = True  # load a pickle City file
+    load_city = load_city # load a pickle City file
     # if set to False: generation of a City with city_generator
-    city_pickle_name = 'aachen_kronenberg_3_mfh_ref_1.pkl'
+    city_pickle_name = city_pickle_name
+    size_esys = size_esys
 
     # results
-    save_result = True  # if set to false: no generation of results txt file
-    results_name = 'Morris_results.txt'
+    save_result = save_result  # if set to false: no generation of results txt file
+    results_name = results_name
 
     # Ecomomic
-    time = 10  # Years
+    time = time  # Years
 
     print('***********************************************************************************************************')
     print('Initialisation: Reference City Generation')
@@ -92,7 +97,7 @@ def run_Morris():
     if load_city == True:
         # load pickle City
 
-        load_path = os.path.join(this_path, 'City_generation', 'output', city_pickle_name)
+        load_path = os.path.join(this_path, 'City_generation', 'input', city_pickle_name)
         City = pickle.load(open(load_path, mode='rb'))
 
         print()
@@ -101,20 +106,20 @@ def run_Morris():
 
         #  Add energy systems to city
         gen_esys = True  # True - Generate energy networks
-        dhw_dim_esys = True  # Use dhw profiles for esys dimensioning
 
         #  Path to energy system input file (csv/txt; tab separated)
-        esys_filename = 'lolo_esys.txt'
+        esys_filename = esys_filename
         esys_path = os.path.join(this_path, 'City_generation', 'input', 'input_esys_generator', esys_filename)
 
         # Generate energy systems for city district
         if gen_esys:
             #  Load energy networks planing data
-            list_esys = City_gen.esysgen.load_enersys_input_data(esys_path)
-            print ('Add energy systems')
+            list_esys = esys_gen.load_enersys_input_data(esys_path)
+            print('Add energy systems')
 
             #  Generate energy systems
-            City_gen.esysgen.gen_esys_for_city(city=City, list_data=list_esys, dhw_scale=dhw_dim_esys)
+            esys_gen.gen_esys_for_city(city=City, list_data=list_esys, size_esys=size_esys)
+            # else enter all the parameter your self
 
     else:
         # Generate City with City_generator
@@ -323,7 +328,8 @@ def run_Morris():
         # # City Generation
 
         City = City_gen.run_overall_gen_and_dim(timestep=timestep,
-                                                year=year,
+                                                year_timer=year,
+                                                year_co2=year,
                                                 location=location,
                                                 try_path=try_path, th_gen_method=th_gen_method,
                                                 el_gen_method=el_gen_method,
@@ -458,7 +464,7 @@ def run_Morris():
     print('***********************************************************************************************************')
     # Run the "model" -- this will happen offline for external models
     (Gas_results, El_results, Emissions_results, Annuity_results, Spe_Emission_results, liste_max_dhw, liste_max_el,
-     liste_max_sph, liste_shp_curve, liste_el_curve, liste_dhw_curve,Nboiler_rescaled) =\
+     liste_max_sph, liste_shp_curve, liste_el_curve, liste_dhw_curve) =\
         model_evaluation.evaluate(City, param_values)
 
     print('***********************************************************************************************************')
@@ -499,10 +505,16 @@ def run_Morris():
 
     if save_result:
         #  Write results file
+        if save_path == None:
+            print('Save path set to None, results are saved in the Output directory')
+            save_path =  os.path.join(this_path,'output')
+
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
 
         #  Log file path
-        this_path = os.path.dirname(os.path.abspath(__file__))
-        results_path = os.path.join(this_path, 'output', results_name)
+        #this_path = os.path.dirname(os.path.abspath(__file__))
+        results_path = os.path.join(save_path, results_name)
 
         write_results = open(results_path, mode='w')
         write_results.write(' Morris analysis -Test Modernisation year 1970-2015 \n ')
@@ -600,7 +612,6 @@ def run_Morris():
                                                                                         Si_ghg['sigma'][j]))
         write_results.write('\n------------------------------------------------------------------\n')
         write_results.write('\n  Number of City generated {}\n'.format(Nsample*(Nparameters+1)))
-        write_results.write('\n Number of City with boiler rescaled {} \n'.format(Nboiler_rescaled))
         write_results.close()
 
     print('***********************************************************************************************************')
@@ -609,33 +620,37 @@ def run_Morris():
     print ()
     print ('Number of samples: {} '.format(Nsample))
     print ('Number of City generated {}'.format(Nsample*(Nparameters+1)))
-    print ('Number of City with boiler rescaled {} '.format(Nboiler_rescaled))
 
-    fig, (ax1, ax2) = plt.subplots(1, 2)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(17,9))
     horizontal_bar_plot(ax1, Si_gas,{}, sortby='mu_star', unit=r"gas_dem[kWh]/year")
     covariance_plot(ax2, Si_gas, {}, unit=r"gas_dem[kWh]/year")
     fig.suptitle('Gas demand analysis for {} samples, Sc n°{}'.format(Nsample, Scenario))
+    fig.savefig(os.path.join(save_path, 'Gas demand analysis'))
 
-    fig2, (ax3, ax4) = plt.subplots(1, 2)
+    fig2, (ax3, ax4) = plt.subplots(1, 2,  figsize=(17,9))
     horizontal_bar_plot(ax3, Si_el, {}, sortby='mu_star', unit=r"el_dem[kWh]/year")
     covariance_plot(ax4, Si_el, {}, unit=r"el_dem[kWh]/year")
     fig2.suptitle('Electrical demand analysis for {} samples, Sc n°{}'.format(Nsample, Scenario))
+    fig2.savefig(os.path.join(save_path, 'Electrical demand analysis'))
 
-    fig3, (ax5, ax6) = plt.subplots(1, 2)
+    fig3, (ax5, ax6) = plt.subplots(1, 2,  figsize=(17,9))
     horizontal_bar_plot(ax5, Si_ghg, {}, sortby='mu_star', unit=r"GHG[kg]/year")
     covariance_plot(ax6, Si_ghg, {}, unit=r"GHG [kg]/year")
     fig3.suptitle ('GHG analysis for {} samples, Sc n°{}'.format(Nsample,Scenario))
+    fig3.savefig(os.path.join(save_path, 'GHG analysis'))
 
-    fig6, (ax9, ax10) = plt.subplots(1, 2)
+    fig6, (ax9, ax10) = plt.subplots(1, 2,  figsize=(17,9))
     horizontal_bar_plot(ax9, Si_ghg_spe, {}, sortby='mu_star', unit=r"GHG[kg]/kWh*year")
     covariance_plot(ax10, Si_ghg_spe, {}, unit=r"GHG [kg]/kWh*year")
     fig6.suptitle('Specific GHG analysis for {} samples, Sc n°{}, '.format(Nsample, Scenario))
+    fig6.savefig(os.path.join(save_path, 'Specific GHG analysis'))
 
-    fig4, (ax7, ax8) = plt.subplots(1, 2)
+    fig4, (ax7, ax8) = plt.subplots(1, 2,  figsize=(17,9))
     horizontal_bar_plot(ax7, Si_a, {}, sortby='mu_star', unit=r"Annuity[Euro]/year")
     covariance_plot(ax8, Si_a, {}, unit=r"Annuity[Euro]/year")
 
     fig4.suptitle('Annuity analysis for {} samples, Sc n°{}'.format(Nsample, Scenario))
+    fig4.savefig(os.path.join(save_path, 'Annuity analysis'))
 
     '''# visualisation demand curves
     fig5, axarr = plt.subplots(2, 2)
@@ -660,7 +675,7 @@ def run_Morris():
     axarr[1, 1].set_title('Maximal thermal demand in kWh, City_ref: {} kWh'.format(round(SaveCity.get_total_annual_th_demand(), 2)))
 
     fig5.suptitle('Energy demand curves in kW ')'''
-    plt.show()
+    #plt.show()
 
 
 if __name__ == '__main__':

@@ -260,4 +260,4 @@ class Test_EconomicCalculation():
         #  Check if dimension is correct (cannot be same value, because
         #  of simplification to one device / not taking all sub-components
         #  into account)
-        assert abs(total_annuity + 5633.44) <= 600
+        assert abs(-total_annuity + 5633.44) <= 600

@@ -2,24 +2,17 @@
 """
 Script for energy balance calculation. Holds calculator class.
 """
+from __future__ import division
 
 __author__ = 'tsh-dor'
 
 import os
 import pickle
-import copy
-import time as ti
 import itertools
 import numpy as np
-import matplotlib.pyplot as plt
 import pycity_calc.toolbox.networks.network_ops as netop
 import pycity_calc.environments.timer as time
 import pycity_calc.visualization.city_visual as citvis
-import pycity_calc.toolbox.dimensioning.dim_networks as dimnet
-import pycity_calc.toolbox.dimensioning.dhw_manipulator as dhwman
-import pycity_calc.energysystems.thermalEnergyStorage as tes
-import operator
-import warnings
 
 # define invalid Individual Error.
 class invalidind(Exception):
@@ -232,8 +225,7 @@ class calculator(object):
 
 
             #  Pointer to current node
-            Node = self.city_object.node[
-                dict_city_data[index]['Buildings in subcity'][i]]#TODO:'Buildings in subcity'
+            Node = self.city_object.node[dict_city_data[index]['Buildings in subcity'][i]]#TODO:'Buildings in subcity'
 
 
             #  Check if single building holds bes
@@ -282,8 +274,7 @@ class calculator(object):
                 eh_qNominal = Node['entity'].bes.electricalHeater.qNominal
 
                 #  Get space heating demand of building
-                sph_demand_building = Node[
-                    'entity'].get_space_heating_power_curve()
+                sph_demand_building = Node['entity'].get_space_heating_power_curve()
 
                 #  Get building hot water demand
                 dhw_demand_building = Node['entity'].get_dhw_power_curve()
@@ -303,11 +294,13 @@ class calculator(object):
 
                     #  Loop over thermal demand of building
                     for ii in range(len(thermal_demand_building)):
+                        #print('timestep', ii)
                         #print('#######node: ', str(dict_city_data[index]['Buildings in subcity'][i]), '\n','#######timestep: ', ii)
 
                         ####print('case0')
 
                         #  Define max. possible input/output power of tes
+                        #print ('first calcul of max in and out power')
                         q_out_max_tes = Bes.tes.calc_storage_q_out_max(
                             t_ambient=20, q_in=0)
                         q_in_max_tes = Bes.tes.calc_storage_q_in_max(
@@ -316,11 +309,15 @@ class calculator(object):
                         # for numerical reasons
                         if Bes.tes.tMax - Bes.tes.t_current < 0.01:
                             q_in_max_tes = 0
+                            #print('---------- differrence de temperature trop faible')
+
+                        if Bes.tes.t_current - Bes.tes.t_min < 0.1:
+                            q_out_max_tes = 0
+                            #print('---------- differrence de temperature trop faible')
 
                         #  Calculate max load power (max. supply mimus
                         #  current demand)
-                        load_power_max = hp_qNominal + eh_qNominal - \
-                                         thermal_demand_building[ii]
+                        load_power_max = hp_qNominal + eh_qNominal - thermal_demand_building[ii]
                         #  Calculate max hp load power (max. hp power minus
                         #  current demand)
                         load_power = hp_qNominal - thermal_demand_building[
@@ -328,7 +325,7 @@ class calculator(object):
 
                         #  #---------------------------------------------
                         if load_power_max < 0:
-                            ####print('case1')
+                            #print('case1')
                             #  Thermal building demand is larger than
                             #  nominal hp and eh power!
                             #  In case of peak load eh has to run under
@@ -336,14 +333,14 @@ class calculator(object):
 
                             if q_out_max_tes < -load_power_max:
                                 if (dict_city_data[index]['hasLHN']) == False:
-
                                     print('Invalid Individual: TES is now emtpy and can not be unloaded')
                                     raise invalidind # raise the invalid Individual Error
 
-                                # else:
-                                #     #tes is empty, can't be unloaded. Energy from LHN is needed
-                                #     load_power_max=0
-
+                                else:
+                                    print('LHN needed')
+                                    #   #tes is empty, can't be unloaded. Energy from LHN is needed
+                                    #   load_power_max=0
+                            #print('load power max', -load_power_max)
                             #  Calc. temperature of next timestep
                             t_tes = \
                                 Bes.tes.calc_storage_temp_for_next_timestep(
@@ -352,7 +349,7 @@ class calculator(object):
                                     set_new_temperature=True,
                                     save_res=True,
                                     time_index=ii)
-                            print ('timestep' , ii,'-----',t_tes)
+                            #print ('timestep' , ii,'-----',t_tes)
                             #  Calculate power of heat pump (max.)
                             power_hp, power_hp_in = \
                                 Bes.heatpump.calc_hp_all_results(
@@ -375,7 +372,7 @@ class calculator(object):
 
 
                         elif load_power < 0 and load_power_max >= 0:
-                            ####print('case4')
+                            #print('case4')
 
                             #TODO: added a if case to check if hp is below partload
                             # sph_demand_building[ii] + 3 / 4 *dhw_demand_building[ii] needs to be supplied by HP
@@ -484,8 +481,7 @@ class calculator(object):
                         #  possible part load power of hp, but smaller than
                         #  nominal hp power --> HP can supply full power
                         #  and charge storage
-                        elif thermal_demand_building[
-                            ii] > hp_lal * hp_qNominal and load_power >= 0:
+                        elif thermal_demand_building[ii] > hp_lal * hp_qNominal and load_power >= 0:
                             ####print('case2')
 
                             if q_in_max_tes >= 0 and load_power >= q_in_max_tes:
@@ -572,8 +568,7 @@ class calculator(object):
                         # #---------------------------------------------
                         #  Thermal demand power of building is smaller than
                         #  part load behavior of heat pump
-                        elif thermal_demand_building[
-                            ii] <= hp_lal * hp_qNominal:
+                        elif thermal_demand_building[ii] <= hp_lal * hp_qNominal:
                             ####print('case3')
 
                             # unvered demand
@@ -775,7 +770,7 @@ class calculator(object):
             # #------------------------------------------------------
             #  E. balance for chp usage
             if (Node['entity'].bes.hasChp) == True:
-                ####print('################################### hasCHP')
+                #print('################################### hasCHP')
                 # Script for Building with CHP, Boiler and Tes
 
                 tes_object = Bes.tes
@@ -787,12 +782,12 @@ class calculator(object):
                 boiler_qNominal = Node['entity'].bes.boiler.qNominal
                 boiler_lal = Node['entity'].bes.boiler.lowerActivationLimit
 
-                sph_demand_building = Node[
-                    'entity'].get_space_heating_power_curve()
+                sph_demand_building = Node['entity'].get_space_heating_power_curve()
+
 
                 dhw_demand_building = Node['entity'].get_dhw_power_curve()
-                thermal_demand_building = sph_demand_building + \
-                                          dhw_demand_building
+                thermal_demand_building = sph_demand_building + dhw_demand_building
+
                 # Start temperature of the storage is set as tInit
                 t_tes = Bes.tes.tInit
 
@@ -808,7 +803,7 @@ class calculator(object):
                 #  Loop over every timestep
                 #  #-----------------------------------------------------
                 for ii in range(len(thermal_demand_building)):
-                    print('timestep', ii)
+                    #print(ii, '-2-', thermal_demand_building[ii])
                     #print('#######node: ', str(dict_city_data[index]['Buildings in subcity'][i]), '\n',
                     #          '#######timestep: ', ii)
 
@@ -818,11 +813,14 @@ class calculator(object):
                         t_ambient=20, q_out=0)
 
                     # for numerical reasons
-                    if Bes.tes.tMax - Bes.tes.t_current < 0.01:
+                    if Bes.tes.tMax - Bes.tes.t_current < 0.1:
                         q_in_max_tes = 0
 
-                    load_power = chp_qNominal - \
-                                 thermal_demand_building[ii]
+                    # for numerical reasons
+                    if Bes.tes.t_current - Bes.tes.t_min < 0.1:
+                        q_out_max_tes = 0
+
+                    load_power = chp_qNominal - thermal_demand_building[ii]
 
                     #  #-------------------------------------------------
                     if thermal_demand_building[ii] > chp_qNominal:
@@ -830,16 +828,14 @@ class calculator(object):
                         #  Thermal demand power  of building is larger than
                         #  nominal thermal chp power
 
-                        if thermal_demand_building[ii] > (
-                                    boiler_qNominal + chp_qNominal):
+                        if thermal_demand_building[ii] > (boiler_qNominal + chp_qNominal):
                             ####print('case1.1')
                             #  Thermal demand power of building is larger
                             #  than boiler and chp nominals. Requires
                             #  thermal storage usage
 
                             #  Power differenz
-                            diff = thermal_demand_building[
-                                       ii] - boiler_qNominal - chp_qNominal
+                            diff = thermal_demand_building[ii] - boiler_qNominal - chp_qNominal
 
                             #  Check if tes can provide enough power
                             #assert q_out_max_tes > diff, ("TES is now "
@@ -1019,10 +1015,8 @@ class calculator(object):
                                     total_heat_demand_for_chp[ii]=chp_qNominal # demand which has to be covered by chp, the actual supplied energy might be higher when LAL condition
 
 
-                    elif thermal_demand_building[
-                        ii] > chp_lal * chp_qNominal and \
-                                    thermal_demand_building[
-                                        ii] <= chp_qNominal:
+                    elif thermal_demand_building[ ii] > chp_lal * chp_qNominal and \
+                                    thermal_demand_building[ii] <= chp_qNominal:
                         # chp is running and loads the tes if possible;
                         # TES off
                         # In this case the TES is filled up using the load_power(energy from CHP, so is covenient
@@ -1100,8 +1094,7 @@ class calculator(object):
                             total_heat_demand_for_chp[ii]=thermal_demand_building[ii] # demand which has to be covered by chp, the actual supplied energy might be higher when LAL condition
 
 
-                    elif thermal_demand_building[
-                        ii] <= chp_lal * chp_qNominal and thermal_demand_building[ii] != 0:
+                    elif thermal_demand_building[ii] <= chp_lal * chp_qNominal and thermal_demand_building[ii] != 0:
                         # under chp minimum condition. Use tes or run chp_lal an charge tes
                         ####print('case3')
 
@@ -1171,6 +1164,8 @@ class calculator(object):
 
 
                     elif thermal_demand_building[ii] == 0:
+                        #print(ii)
+                        #print(thermal_demand_building[ii])
                         ####print('case4')
                         t_tes = tes_object.calc_storage_temp_for_next_timestep(
                                 q_in=0, q_out=0,
@@ -1237,8 +1232,7 @@ class calculator(object):
                 Node['heat_demand_for_chp'] = total_heat_demand_for_chp # demand which has to be covered by chp, the actual supplied energy might be higher when LAL condition
 
             # #---------------------------------------------------------
-            if (Node['entity'].bes.hasBoiler) == True and (
-                        Node['entity'].bes.hasChp == False):
+            if (Node['entity'].bes.hasBoiler) == True and (Node['entity'].bes.hasChp == False):
                 ####print('################################### hasBoiler only')
                 # Script for Building with Boiler and Tes only
 
@@ -1264,7 +1258,7 @@ class calculator(object):
 
 
                     for ii in range(len(thermal_demand_building)):
-                        print('timestep', ii)
+                        #print('timestep', ii)
                         ####print('#######node: ', str(dict_city_data[index]['Buildings in subcity'][i]), '\n',
                               ####'#######timestep: ', ii)
 
@@ -1275,6 +1269,9 @@ class calculator(object):
                         # for numerical reasons
                         if Bes.tes.tMax - Bes.tes.t_current < 0.01:
                             q_in_max_tes = 0
+
+                        if Bes.tes.t_current - Bes.tes.t_min < 0.01:
+                            q_out_max_tes = 0
 
                         # when t_tes almost equal to t_tes_max tes_object.calc_storage_temp_for_next_timestep was unstable
                         #if q_in_max_tes <= 0.1:
@@ -1512,7 +1509,7 @@ class calculator(object):
                                 raise invalidind  # raise the invalid Individual Error
 
                     for ii in range(len(thermal_demand_building)):
-
+                        #print ('timestep', ii)
                         ####print('#######node: ', str(dict_city_data[index]['Buildings in subcity'][i]), '\n',
                               ####'#######timestep: ', ii)
                         if thermal_demand_building[ii]>= boiler_qNominal*boiler_lal:
@@ -1581,6 +1578,7 @@ class calculator(object):
         ###########################################                     ######################################################################
         ######################################################################################################################################
         if dict_city_data[index]['hasLHN'] == True:
+            print('#######################################LHN')
             import pycity_calc.simulation.energy_balance_optimization.Energy_balance_lhn as EB
             self.city_object, dict_supply = EB.city_energy_balance(self.city_object, dict_Qlhn, subcity_building_nodes=dict_city_data[index]['Buildings in subcity'])
         else:
@@ -1662,8 +1660,7 @@ class calculator(object):
 
                             # pv electricity is very expensive and therefore more important to use than chp!
                             # Initialisation pv arrays
-                            supply_pv = self.city_object.node[dict_city_data[index]['Buildings in subcity'][i]]
-                            ['entity'].bes.pv.getPower()#TODO:'Buildings in subcity'
+                            supply_pv = self.city_object.node[dict_city_data[index]['Buildings in subcity'][i]]['entity'].bes.pv.getPower(currentValues=False, updatePower=True)#TODO:'Buildings in subcity'
                             pv_used = np.zeros(len(time_vector.time_vector()))
                             pv_sold = np.zeros(len(time_vector.time_vector()))
                             demand_after_pv = np.zeros(len(time_vector.time_vector()))
@@ -1876,8 +1873,7 @@ class calculator(object):
                             # THEREFORE it was necessary to implement a case for PV AND CHP!
 
                             # Initialisation pv arrays
-                            supply_pv = self.city_object.node[dict_city_data[index]['Buildings in subcity'][i]][
-                                'entity'].bes.pv.getPower()#TODO:'Buildings in subcity'
+                            supply_pv = self.city_object.node[dict_city_data[index]['Buildings in subcity'][i]]['entity'].bes.pv.getPower(currentValues=False, updatePower=True)#TODO:'Buildings in subcity'
                             pv_used = np.zeros(len(time_vector.time_vector()))
                             pv_sold = np.zeros(len(time_vector.time_vector()))
                             demand_after_pv = np.zeros(len(time_vector.time_vector()))
@@ -2053,8 +2049,7 @@ class calculator(object):
                         if (Node['entity'].bes.hasPv):
 
                             # pv electricity is very expensive and therefore more important to use than chp!
-                            supply_pv = self.city_object.node[dict_city_data[index]['Buildings in subcity'][
-                                    i]]['entity'].bes.pv.getPower()#TODO:'Buildings in subcity'
+                            supply_pv = self.city_object.node[dict_city_data[index]['Buildings in subcity'][i]]['entity'].bes.pv.getPower(currentValues=False, updatePower=True)#TODO:'Buildings in subcity'
 
                             # Initialisation
                             pv_sold = np.zeros(len(time_vector.time_vector()))
@@ -2539,52 +2534,267 @@ class calculator(object):
         #filename.close()
 
 if __name__ == '__main__':
-    import pycity_calc.cities.scripts.complex_city_generator_2 as citygen
+
+    import pycity_calc.cities.scripts.city_generator.city_generator as citygen
+    import pycity_calc.cities.scripts.overall_gen_and_dimensioning as overall
     import pycity_calc.simulation.energy_balance_optimization.Plot as Plot
-    city_object=citygen.run_city_generator(list_types=['BTES','CHP','HP','B'],year = 2010,
-                timestep = 3600,
-                livingArea=[120,120,120,120],
-                b_Space_heat_demand=True,
-                specificDemandSH=[100,100,100,100],
-                annualDemandel=[3000,3000,3000,3000],
-                profileType=['H0','H0','H0','H0'],
-                methodel=[1,1,1,1],
-                b_domestic_hot_water=False,
-                b_el_demand=True,
-                roof_usabl_pv_area=[30,30,30,30],
-                boiler_q_nominal=[4000,4000,4000,5000],
-                boiler_eta=[0.9,0.9,0.9,0.9],
-                boiler_lal=[0.5,0.5,0.5,0.5],
-                tes_capacity=[700,700,700,700],
-                tes_k_loss=[3,3,3,3],
-                tes_t_max=[95,95,95,95],
-                eh_q_nominal=[3000,3000,3000,3000],
-                hp_q_nominal=[3000,3000,3000,3000],
-                hp_lal=[0.5,0.5,0.5,0.5],
-                chp_p_nominal=[1000,1000,1000,1000],
-                chp_q_nominal=[3000,3000,3000,3000],
-                chp_eta_total=[0.9,0.9,0.9,0.9],
-                chp_lal=[0.5,0.5,0.5,0.5],
-                PVarea=[10,0,10,10],
-                bat_capacity=[4,4,0,0],
-                list_etaCharge=[0.96,0.96,0.96,0.96],
-                list_etaDischarge=[0.95,0.95,0.95,0.95]
-                )
 
-    citvis.plot_city_district(city=city_object, plot_lhn=True, plot_deg=True, plot_esys=True)
+    import pycity_base.classes.supply.BES as BES
 
+    this_path = os.path.dirname(os.path.abspath(__file__))
 
-    ########## commented to avoid error ############
-    # Plot city
+    try:
+        filename = 'city_clust_simple_with_esys.pkl'
+        file_path = os.path.join(this_path, 'input', filename)
+        city_object = pickle.load(open(file_path, mode='rb'))
+    except:
+        print('Could not load city pickle file. Going to generate a new one.')
+        #  # Userinputs
+        #  #----------------------------------------------------------------------
+
+        #  Generate environment
+        #  ######################################################
+        year = 2010
+        timestep = 3600  # Timestep in seconds
+        # location = (51.529086, 6.944689)  # (latitude, longitude) of Bottrop
+        location = (50.775346, 6.083887)  # (latitude, longitude) of Aachen
+        altitude = 266  # Altitude of location in m (Aachen)
+
+        #  Weather path
+        try_path = None
+        #  If None, used default TRY (region 5, 2010)
+
+        new_try = False
+        #  new_try has to be set to True, if you want to use TRY data of 2017
+        #  or newer! Else: new_try = False
+
+        #  Space heating load generation
+        #  ######################################################
+        #  Thermal generation method
+        #  1 - SLP (standardized load profile)
+        #  2 - Load and rescale Modelica simulation profile
+        #  (generated with TRY region 12, 2010)
+        #  3 - VDI 6007 calculation (requires el_gen_method = 2)
+        th_gen_method = 1
+        #  For non-residential buildings, SLPs are generated automatically.
+
+        #  Manipulate thermal slp to fit to space heating demand?
+        slp_manipulate = False
+        #  True - Do manipulation
+        #  False - Use original profile
+        #  Only relevant, if th_gen_method == 1
+        #  Sets thermal power to zero in time spaces, where average daily outdoor
+        #  temperature is equal to or larger than 12 °C. Rescales profile to
+        #  original demand value.
+
+        #  Manipulate vdi space heating load to be normalized to given annual net
+        #  space heating demand in kWh
+        vdi_sh_manipulate = False
+
+        #  Electrical load generation
+        #  ######################################################
+        #  Choose electric load profile generation method (1 - SLP; 2 - Stochastic)
+        #  Stochastic profile is only generated for residential buildings,
+        #  which have a defined number of occupants (otherwise, SLP is used)
+        el_gen_method = 1
+        #  If user defindes method_3_nb or method_4_nb within input file
+        #  (only valid for non-residential buildings), SLP will not be used.
+        #  Instead, corresponding profile will be loaded (based on measurement
+        #  data, see ElectricalDemand.py within pycity)
+
+        #  Do normalization of el. load profile
+        #  (only relevant for el_gen_method=2).
+        #  Rescales el. load profile to expected annual el. demand value in kWh
+        do_normalization = True
+
+        #  Randomize electrical demand value (residential buildings, only)
+        el_random = True
+
+        #  Prevent usage of electrical heating and hot water devices in
+        #  electrical load generation
+        prev_heat_dev = True
+        #  True: Prevent electrical heating device usage for profile generation
+        #  False: Include electrical heating devices in electrical load generation
+
+        #  Use cosine function to increase winter lighting usage and reduce
+        #  summer lighting usage in richadson el. load profiles
+        #  season_mod is factor, which is used to rescale cosine wave with
+        #  lighting power reference (max. lighting power)
+        season_mod = 0.3
+        #  If None, do not use cosine wave to estimate seasonal influence
+        #  Else: Define float
+        #  (only relevant if el_gen_method == 2)
+
+        #  Hot water profile generation
+        #  ######################################################
+        #  Generate DHW profiles? (True/False)
+        use_dhw = False  # Only relevant for residential buildings
+
+        #  DHW generation method? (1 - Annex 42; 2 - Stochastic profiles)
+        #  Choice of Anex 42 profiles NOT recommended for multiple builings,
+        #  as profile stays the same and only changes scaling.
+        #  Stochastic profiles require defined nb of occupants per residential
+        #  building
+        dhw_method = 1  # Only relevant for residential buildings
+
+        #  Define dhw volume per person and day (use_dhw=True)
+        dhw_volumen = None  # Only relevant for residential buildings
+
+        #  Randomize choosen dhw_volume reference value by selecting new value
+        #  from gaussian distribution with 20 % standard deviation
+        dhw_random = True
+
+        #  Use dhw profiles for esys dimensioning
+        dhw_dim_esys = True
+
+        #  Plot city district with pycity_calc visualisation
+        plot_pycity_calc = False
+
+        #  Efficiency factor of thermal energy systems
+        #  Used to convert input values (final energy demand) to net energy demand
+        eff_factor = 1
+
+        #  Define city district input data filename
+        filename = 'city_clust_simple.txt'
+
+        txt_path = os.path.join(this_path, 'input', filename)
+
+        #  Define city district output file
+        save_filename = None
+        # save_path = os.path.join(this_path, 'output_overall', save_filename)
+        save_path = None
+
+        #  #####################################
+        t_set_heat = 20  # Heating set temperature in degree Celsius
+        t_set_night = 16  # Night set back temperature in degree Celsius
+        t_set_cool = 70  # Cooling set temperature in degree Celsius
+
+        #  Air exchange rate (required for th_gen_method = 3 (VDI 6007 sim.))
+        air_vent_mode = 1
+        #  int; Define mode for air ventilation rate generation
+        #  0 : Use constant value (vent_factor in 1/h)
+        #  1 : Use deterministic, temperature-dependent profile
+        #  2 : Use stochastic, user-dependent profile
+        #  False: Use static ventilation rate value
+
+        vent_factor = 0.5  # Constant. ventilation rate
+        #  (only used, if air_vent_mode = 0)
+        #  #####################################
+
+        #  Use TEASER to generate typebuildings?
+        call_teaser = False
+        teaser_proj_name = filename[:-4]
+
+        merge_windows = False
+        # merge_windows : bool, optional
+        # Defines TEASER project setting for merge_windows_calc
+        # (default: False). If set to False, merge_windows_calc is set to False.
+        # If True, Windows are merged into wall resistances.
+
+        #  Log file for city_generator
+        do_log = False  # True, generate log file
+        log_path = os.path.join(this_path, 'input',
+                                'city_gen_overall_log.txt')
+
+        #  Generate street networks
+        gen_str = True  # True - Generate street network
+
+        #  Street node and edges input filenames
+        str_node_filename = 'street_nodes_cluster_simple.csv'
+        str_edge_filename = 'street_edges_cluster_simple.csv'
+
+        #  Load street data from csv
+        str_node_path = os.path.join(this_path, 'input',
+                                     str_node_filename)
+        str_edge_path = os.path.join(this_path, 'input',
+                                     str_edge_filename)
+
+        #  Add energy networks to city
+        gen_e_net = True  # True - Generate energy networks
+
+        #  Path to energy network input file (csv/txt; tab separated)
+        network_filename = 'city_clust_simple_networks.txt'
+        network_path = os.path.join(this_path, 'input',
+                                    network_filename)
+
+        #  Add energy systems to city
+        gen_esys = True  # True - Generate energy networks
+
+        #  Path to energy system input file (csv/txt; tab separated)
+        esys_filename = 'city_clust_simple_enersys.txt'
+        esys_path = os.path.join(this_path, 'input',
+                                 esys_filename)
+
+        #  #----------------------------------------------------------------------
+
+        #  Load district_data file
+        district_data = citygen.get_district_data_from_txt(txt_path)
+
+        city_object = overall.run_overall_gen_and_dim(timestep=timestep,
+                                                      year=year,
+                                                      location=location,
+                                                      try_path=try_path,
+                                                      th_gen_method=th_gen_method,
+                                                      el_gen_method=el_gen_method,
+                                                      use_dhw=use_dhw,
+                                                      dhw_method=dhw_method,
+                                                      district_data=district_data,
+                                                      gen_str=gen_str,
+                                                      str_node_path=str_node_path,
+                                                      str_edge_path=str_edge_path,
+                                                      generation_mode=0,
+                                                      eff_factor=eff_factor,
+                                                      save_path=save_path,
+                                                      altitude=altitude,
+                                                      do_normalization=do_normalization,
+                                                      dhw_volumen=dhw_volumen,
+                                                      gen_e_net=gen_e_net,
+                                                      network_path=network_path,
+                                                      gen_esys=gen_esys,
+                                                      esys_path=esys_path,
+                                                      dhw_dim_esys=dhw_dim_esys,
+                                                      plot_pycity_calc=plot_pycity_calc,
+                                                      slp_manipulate=slp_manipulate,
+                                                      call_teaser=call_teaser,
+                                                      teaser_proj_name=teaser_proj_name,
+                                                      do_log=do_log,
+                                                      log_path=log_path,
+                                                      air_vent_mode=air_vent_mode,
+                                                      vent_factor=vent_factor,
+                                                      t_set_heat=t_set_heat,
+                                                      t_set_cool=t_set_cool,
+                                                      t_night=t_set_night,
+                                                      vdi_sh_manipulate=vdi_sh_manipulate,
+                                                      el_random=el_random,
+                                                      dhw_random=dhw_random,
+                                                      prev_heat_dev=prev_heat_dev,
+                                                      season_mod=season_mod,
+                                                      merge_windows=merge_windows,
+                                                      new_try=new_try)
+
+        for n in city_object.nodes():
+            #  Workaround: To prevent AssertionError with non-existent BES,
+            #  BES are added to all buildings
+            if 'entity' in city_object.node[n]:
+                build = city_object.node[n]['entity']
+
+                if build.hasBes == False:
+                    bes = BES.BES(environment=city_object.environment)
+                    build.addEntity(bes)
+
+        #  Save new pickle file
+        filename = 'city_clust_simple_with_esys.pkl'
+        file_path = os.path.join(this_path, 'input', filename)
+        pickle.dump(city_object, open(file_path, mode='wb'))
+
     citvis.plot_city_district(city=city_object, plot_lhn=True, plot_deg=True,
-                             plot_esys=True)
+                              plot_esys=True)
 
     Calculator = calculator(city_object)
     dict_bes_data = Calculator.assembler()
     print('Dict city data', dict_bes_data)
     for i in range(len(dict_bes_data)):
-        city_object, dict_Qlhn, dict_supply = Calculator.eb_balances(dict_bes_data, i)
+        city_object, dict_Qlhn, dict_supply = Calculator.eb_balances(
+            dict_bes_data, i)
 
-
-    Plot.plot_all_results(city_object,dict_supply,t_start=0,t_stop=8759)
-
+    # Plot.plot_all_results(city_object, dict_supply, t_start=0, t_stop=8759)

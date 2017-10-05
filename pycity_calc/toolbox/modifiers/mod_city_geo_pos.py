@@ -18,7 +18,7 @@ import pycity_calc.cities.city as cit
 import pycity_calc.visualization.city_visual as citvis
 
 
-def gen_test_city(timestep=3600, year=2010, try_path=None,
+def gen_test_city(timestep=3600, year=2017, try_path=None,
                   location=(51.529086, 6.944689), altitude=55):
     """
     Generate test city district
@@ -48,7 +48,9 @@ def gen_test_city(timestep=3600, year=2010, try_path=None,
     """
 
     #  Generate environment
-    environment = citgen.generate_environment(timestep=timestep, year=year,
+    environment = citgen.generate_environment(timestep=timestep,
+                                              year_timer=year,
+                                              year_co2=year,
                                               try_path=try_path,
                                               location=location,
                                               altitude=altitude)

@@ -1,12 +1,12 @@
-Prozess	CO2 (2010) in g/kWhEnd	CO2 (2014) in g/kWhEnd
-Heizöl / Oil	302	313
-Erdgas / Natural gas	244	241
-Flüssiggas / LNG	263	261
-Steinkohle / Hard coal	438	427
-Braunkohle / Soft Coal	451	449
-Holzhackschnitzel / Woodchip	35	14
-Brennholz / Wood	6	11
-Holz-Pellets / Wood pellets	41	18
-Strom-mix / Electricity mix	633	617
-PV  (multi) 	62	62
-Verdrängungsstrom / feed-in	840	840
+Prozess	CO2 (2010) in g/kWhEnd	CO2 (2014) in g/kWhEnd	CO2 (2017) in g/kWh End 
+Heizöl / Oil	302	313	310
+Erdgas / Natural gas	244	241	242
+Flüssiggas / LNG	263	261	258
+Steinkohle / Hard coal	438	427	419
+Braunkohle / Soft Coal	451	449	417
+Holzhackschnitzel / Woodchip	35	14	12
+Brennholz / Wood	6	11	12
+Holz-Pellets / Wood pellets	41	18	12
+Strom-mix / Electricity mix	633	617	494
+PV  (multi) 	62	62	62
+Verdrängungsstrom / feed-in	840	840	840
