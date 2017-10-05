@@ -777,30 +777,36 @@ def calc_chp_el_sizes_for_opt(city, nb_sizes, mode, with_dhw=False):
 
         #  From 1 to 1000 kW el.
         list_choice = list_small + list_medium + list_big
-
         print(list_choice)
-
-        #  Find closest value to p_el_ref in list_choice
-        upper_val = take_closest(list_val=list_choice, number=p_el_ref)
-
-        index_up = list_choice.index(upper_val)
-
-        index_low = 0
 
         list_chp_size_el = []
 
-        for i in range(nb_sizes):
-            if i % 2 == 0:  # Even
-                list_chp_size_el.append(list_choice[index_low])
-                index_low += 1
-            else:  # Odd
-                list_chp_size_el.append(list_choice[index_up])
-                index_up -= 1
+        if p_el_ref <= list_small[nb_sizes-1]:
+            for i in range(nb_sizes):
+                list_chp_size_el.append(list_choice[i])
+
+        else:
+            #  Find closest value to p_el_ref in list_choice
+            upper_val = take_closest(list_val=list_choice, number=p_el_ref)
+
+            index_up = list_choice.index(upper_val)
+
+            index_low = 0
+
+            for i in range(nb_sizes):
+                if i % 2 == 0:  # Even
+                    list_chp_size_el.append(list_choice[index_low])
+                    index_low += 1
+                else:  # Odd
+                    list_chp_size_el.append(list_choice[index_up])
+                    index_up -= 1
 
         for i in range(len(list_chp_size_el)):
             list_chp_size_el[i] *= 1000  # Convert from kW to W
 
         list_chp_size_el.sort()
+
+
 
     if mode == 0 or mode == 1 or mode == 2:
         for i in range(len(list_chp_th)):
