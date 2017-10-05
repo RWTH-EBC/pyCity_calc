@@ -414,6 +414,9 @@ class TestCityEnergyBalance():
         assert abs(sh_dem_1 + sh_dem_2 + sum_chp_feed
                    - (fuel_boiler_energy + fuel_chp_energy)) <= 0.001
 
+        #  Check if pump energy is required for LHN usage
+        assert max(city_eb.list_pump_energy) > 0
+
     def test_city_lhn_eb_with_feeders_only(self, fixture_city):
         """
         Check city energy balance with LHN and feeder nodes, only
