@@ -229,7 +229,9 @@ if __name__ == '__main__':
     #                             'Diss_Quartiere', city_filename)
 
     #  Generate environment
-    environment = citgen.generate_environment(timestep=timestep, year=year,
+    environment = citgen.generate_environment(timestep=timestep,
+                                              year_timer=year,
+                                              year_co2=year,
                                               try_path=try_path,
                                               location=location,
                                               altitude=altitude)

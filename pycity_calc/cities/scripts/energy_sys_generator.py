@@ -21,6 +21,7 @@ import pycity_calc.energysystems.thermalEnergyStorage as tes
 import pycity_calc.energysystems.heatPumpSimple as hpsys
 import pycity_calc.energysystems.electricalHeater as ehsys
 import pycity_calc.energysystems.battery as batt
+import pycity_calc.energysystems.Input.chp_asue_2015 as asue
 
 
 def load_enersys_input_data(esys_path):
@@ -59,7 +60,7 @@ def load_enersys_input_data(esys_path):
 
 
 def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
-                      boiler_buffer_factor=1.15):
+                      buffer_factor=2, lhn_buffer=1.2):
     """
     Generate and dimensions energy systems within city district, based on
     user defined energy system types and method within txt input file.
@@ -78,8 +79,11 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
     tes_default : float, optional
         Default value for smallest thermal storage size in kg
         (default: 100)
-    boiler_buffer_factor : float, optional
-        Factor for boiler oversizing (default: 1.15)
+    buffer_factor : float, optional
+        Factor for boiler/EH oversizing (default: 2)
+    lhn_buffer : float, optional
+        Factor for LHN connection oversizing (default: 1.2). Relevant to
+        account for LHN losses in Boiler/CHP sytem dimensioning
     """
 
     #  Check if all node ids exist within city object
@@ -159,7 +163,7 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
                     get_max_power_of_building(build, with_dhw=False)
 
             # Add boiler buffer factor
-            boiler_th_power *= boiler_buffer_factor
+            boiler_th_power *= buffer_factor
 
             # Round results
             boiler_th_power = dimfunc.round_esys_size(boiler_th_power,
@@ -334,14 +338,13 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
                                       timestep=
                                       city.environment.timer.timeDiscretization)
 
-            chp_el_th_ratio = dimfunc.calc_asue_el_th_ratio(chp_th_power)
+            chp_el_th_ratio = asue.calc_asue_el_th_ratio(chp_th_power)
             chp_el_power = chp_el_th_ratio * chp_th_power
 
             #  Round results
             if has_lhn_con:
-                # if lhn: thermal losses are +/- 10% of overall losses!
                 chp_th_power = dimfunc.round_esys_size(
-                    power=chp_th_power) * 1.1
+                    power=chp_th_power) * lhn_buffer
             else:
                 chp_th_power = dimfunc.round_esys_size(power=chp_th_power)
 
@@ -357,15 +360,15 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
 
             #  Round results
             if has_lhn_con:
-                # if lhn: thermal losses are +/- 10% of overall losses!
                 boiler_th_power = dimfunc.round_esys_size(boiler_th_power,
-                                                          round_up=True) * 1.4
+                                                          round_up=True) \
+                                  * lhn_buffer
             else:
                 boiler_th_power = dimfunc.round_esys_size(boiler_th_power,
                                                           round_up=True)
 
             #  Add boiler buffer factor
-            boiler_th_power *= boiler_buffer_factor
+            boiler_th_power *= buffer_factor
 
             print('Chosen boiler size in kW:')
             print(boiler_th_power / 1000)
@@ -436,7 +439,7 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
                                             q_nominal=hp_th_power)
 
             #  TODO: Size el. heater based on max. space heating and dhw power
-            el_h_space_h_power = hp_th_power / 3
+            el_h_space_h_power = hp_th_power * buffer_factor
 
             if dhw_scale:
                 #  Size el. heater according to max. dhw power of building
@@ -458,8 +461,8 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
 
             #  TES sizing
             #  Storage should be capable of storing full hp thermal
-            #  power for 1 hour (T_spread = 30 Kelvin)
-            mass_tes = hp_th_power * 1 * 3600 / (4180 * 30)
+            #  power for 3 hour (T_spread = 30 Kelvin)
+            mass_tes = hp_th_power * 3 * 3600 / (4180 * 30)
 
             #  Round to realistic storage size
             mass_tes = dimfunc.storage_rounding(mass_tes)

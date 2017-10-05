@@ -4,10 +4,12 @@
 Extended thermal energy storage class (based on battery object of pycity)
 """
 from __future__ import division
+
 import math
+import numpy as np
+
 import pycity_base.classes.supply.ThermalEnergyStorage as TES
 import pycity_calc.toolbox.unit_conversion as unitcon
-import numpy as np
 
 
 class thermalEnergyStorageExtended(TES.ThermalEnergyStorage):
@@ -21,7 +23,7 @@ class thermalEnergyStorageExtended(TES.ThermalEnergyStorage):
                  t_surroundings=20.0, k_loss=0.3, h_d_ratio=3.5,
                  use_outside_temp=False):
         """
-        Construcotr of extended thermal storage system
+        Constructor of extended thermal storage system
 
         Parameters
         ----------
@@ -242,9 +244,9 @@ class thermalEnergyStorageExtended(TES.ThermalEnergyStorage):
 
         # check if charging or discharging is possible
         assert q_out <= self.calc_storage_q_out_max(t_ambient=t_ambient,
-                                                   q_in=q_in), 'Discharging is not possible'
+                                                    q_in=q_in), 'Discharging is not possible'
         assert q_in <= self.calc_storage_q_in_max(t_ambient=t_ambient,
-                                                 q_out=q_out), 'Charging is not possible'
+                                                  q_out=q_out), 'Charging is not possible'
 
         #  If environment outside temp should be used
         if self.use_outside_temp:
@@ -268,8 +270,8 @@ class thermalEnergyStorageExtended(TES.ThermalEnergyStorage):
                                       'minimum temperature. Check your ' +
                                       'control system.')
         assert t_next <= self.tMax, ('Temperature should not go above ' +
-                                      'maximal temperature. Check your ' +
-                                      'control system.')
+                                     'maximal temperature. Check your ' +
+                                     'control system.')
 
         #  Save t_next as new internal temperature value
         if set_new_temperature:
@@ -299,6 +301,39 @@ class thermalEnergyStorageExtended(TES.ThermalEnergyStorage):
             tes_energy_joule)  # Convert J (Ws) to kWh
 
         return tes_energy
+
+    def calc_storage_max_amount_of_energy(self):
+        """
+        Returns maximum amount of storable energy within thermal storage.
+
+        Returns
+        -------
+        max_energy : float
+            Maximum amount of stored energy within thermal storage in kWh
+        """
+
+        max_energy_joule = self.capacity * self.c_p * (
+            self.tMax - self.t_min)  # Energy in Joule
+        max_energy = unitcon.con_joule_to_kwh(
+            max_energy_joule)  # Convert J (Ws) to kWh
+
+        return max_energy
+
+    def calc_curr_state_of_charge(self):
+        """
+        Returns relative state of charge (factor of current stored amount of
+        energy related to maximum possible amount of energy, e.g. 0.6 means
+        60 % state of charge)
+
+        Returns
+        -------
+        soc : float
+            Current state of charge
+        """
+        curr_energy = self.calc_storage_curr_amount_of_energy()
+        max_energy = self.calc_storage_max_amount_of_energy()
+
+        return curr_energy / max_energy
 
     def calc_storage_q_out_max(self, t_ambient=None, q_in=0, eps=0.1):
         """
@@ -463,4 +498,3 @@ class thermalEnergyStorageExtended(TES.ThermalEnergyStorage):
             q_in_possible = False
 
         return q_in_possible
-

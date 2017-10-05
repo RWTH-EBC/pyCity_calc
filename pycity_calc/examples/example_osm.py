@@ -39,7 +39,7 @@ def run_osm_example(plot_res=False):
 
     #  Parameters for environment
     timestep = 3600  # in seconds
-    year = 2010
+    year = 2017
     location = (50.781743, 6.083470)  # Aachen
     #  location = (51.529086, 6.944689)  # Bottrop
     altitude = 55
@@ -49,7 +49,9 @@ def run_osm_example(plot_res=False):
     #   End of user input  ###################################################
 
     #  Generate environment
-    environment = citgen.generate_environment(timestep=timestep, year=year,
+    environment = citgen.generate_environment(timestep=timestep,
+                                              year_timer=year,
+                                              year_co2=year,
                                               try_path=try_path,
                                               location=location,
                                               altitude=altitude)

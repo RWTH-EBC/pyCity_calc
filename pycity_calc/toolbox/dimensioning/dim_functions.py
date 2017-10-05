@@ -3,11 +3,14 @@
 """
 Script with dimensioning functions of pycity_calc
 """
+from __future__ import division
 
 import math
+import warnings
 import numpy as np
 
 import pycity_base.functions.process_city as prcity
+import pycity_calc.energysystems.Input.chp_asue_2015 as asue
 
 
 #  # General dimensioning functions
@@ -594,27 +597,6 @@ def calc_chp_nom_th_power_building(building, with_dhw=False,
                                           force_min_runtime=force_min_runtime)
     return chp_nom_power
 
-def calc_asue_el_th_ratio(th_power):
-    """
-    Calculate Stromkennzahl according to ASUE 2015 data sets
-
-    Parameters
-    ----------
-    th_power : float
-        Thermal power in Watt
-
-    Returns
-    -------
-    el_th_ratio : float
-        Current el. to th. power ratio (Stromkennzahl)
-    """
-
-    assert th_power >= 0
-
-    el_th_ratio = 0.0799 * th_power ** 0.1783
-
-    return el_th_ratio
-
 #  # Storage size dimensioning
 #  #-----------------------------------------------------------------------
 
@@ -664,3 +646,99 @@ def storage_rounding(capacity):
         capacity_sel = math.ceil(capacity/1000)*1000
 
     return capacity_sel
+
+def calc_chp_el_sizes_for_opt(city, nb_sizes, mode, with_dhw=False):
+    """
+    Returns list of possible CHP sizes (el. nominal power in Watt) for
+    pyCity_opt, based on city and single building thermal power curves
+
+    Minimum possible size is defined with 1 kW el. power.
+
+    Parameters
+    ----------
+    city : object
+        City object of pyCity_calc
+    nb_sizes : int
+        Number of chp sizes
+    mode : int
+        Integer to select generation mode. Options:
+        0 - For single buildings and city (equidistant space between
+        th. power of smallest peak load building and whole city district th.
+        power
+        1 - For single buildings only
+        2 - For force LHN / whole district, only
+    with_dhw : bool, optional
+        Defines, if hot water demand should also be taken into account
+        (default: False)
+
+    Returns
+    -------
+    list_chp_size_el : list (of floats)
+        List with different possible CHP nominal electric power sizes in
+        Watt
+    """
+
+    assert mode in [0, 1, 2], 'Unknown mode'
+    assert nb_sizes > 0
+
+    if nb_sizes <= 2:
+        msg = 'Small number of CHPs chosen. Consider increasing nb_sizes.'
+        warnings.warn(msg)
+
+    list_chp_size_el = []
+
+    #  Get id of max. th. power building
+    id_max = get_id_max_th_power(city=city, with_dhw=with_dhw, find_max=True)
+    #  Get id of building with min. max. thermal power
+    id_min = get_id_max_th_power(city=city, with_dhw=with_dhw, find_max=False)
+
+    #  Get max. th. power of building with largest thermal power
+    q_dot_b_peak_max = \
+        get_max_power_of_building(building=city.node[id_max]['entity'],
+                                  with_dhw=with_dhw)
+    #  Get max. th. power of building with smallest, max. power demand
+    q_dot_b_peak_min = \
+        get_max_power_of_building(building=city.node[id_min]['entity'],
+                                  with_dhw=with_dhw)
+
+    #  Get max. thermal power of city
+    q_dot_city_peak = \
+        get_max_p_of_city(city_object=city, with_dhw=with_dhw)
+
+    if mode == 0:  # For city and single buildings (equidistant)
+        array_chp_th = np.linspace(start=1/8 * q_dot_b_peak_min,
+                                   stop=1/4 * q_dot_city_peak,
+                                   num=nb_sizes)
+
+        list_chp_th = array_chp_th.tolist()
+
+    elif mode == 1:  # Sizing for single buildings, only
+        array_chp_th = np.linspace(start=1/8 * q_dot_b_peak_min,
+                                   stop=1/4 * q_dot_b_peak_max,
+                                   num=nb_sizes)
+
+        list_chp_th = array_chp_th.tolist()
+
+    elif mode == 2: # For force LHN / whole district
+        array_chp_th = np.linspace(start=1 / 10 * q_dot_city_peak,
+                                   stop=1 / 2 * q_dot_city_peak,
+                                   num=nb_sizes)
+
+        list_chp_th = array_chp_th.tolist()
+
+    for i in range(len(list_chp_th)):
+
+        th_power = list_chp_th[i]
+
+        #  Get el./th. ratio (Stromkennzahl)
+        el_th_ratio = asue.calc_asue_el_th_ratio(th_power=th_power)
+
+        #  Convert to el. power
+        el_power = round(th_power * el_th_ratio/1000, ndigits=0)*1000
+
+        if el_power < 1000:
+            el_power = 1000
+
+        list_chp_size_el.append(el_power)
+
+    return list_chp_size_el

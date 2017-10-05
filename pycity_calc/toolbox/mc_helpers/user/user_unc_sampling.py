@@ -189,7 +189,7 @@ def calc_sampling_occ_per_app(nb_samples, method='destatis',
 
     elif method == 'destatis':
         for i in range(nb_samples):
-            rand_nb = rd.randint(0, 1000000) / 10000
+            rand_nb = rd.randint(0, 100)
 
             #  Destatis values from 2015 about nb. of occupants per apartment
             if rand_nb <= 41.4:
@@ -595,8 +595,7 @@ if __name__ == '__main__':
 
     list_dhw_per_app_2 = []
     for nb_occ in list_occ_in_app:
-        sample_dhw = calc_sampling_dhw_per_apartment(nb_samples=1,
-                                                     nb_persons=nb_occ)[0]
+        sample_dhw = calc_sampling_dhw_per_apartment(nb_samples=1, nb_persons=nb_occ)[0]
         list_dhw_per_app_2.append(sample_dhw)
 
     fig = plt.figure()

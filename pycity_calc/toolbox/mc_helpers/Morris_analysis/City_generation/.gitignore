@@ -1,0 +1,7 @@
+# ignore everything
+*
+
+# But not these files...
+!.gitignore
+!.Morris_values.txt
+

@@ -20,7 +20,8 @@ import pycity_base.classes.demand.DomesticHotWater as DomesticHotWater
 import pycity_base.classes.demand.Occupancy as occup
 
 import pycity_calc.environments.timer as time
-import pycity_calc.environments.market as price
+# import pycity_calc.environments.market as price
+import pycity_calc.environments.germanmarket as germanmarket
 import pycity_calc.environments.environment as env
 import pycity_calc.environments.co2emissions as co2
 import pycity_calc.buildings.building as build_ex
@@ -377,8 +378,12 @@ def redistribute_occ(occ_list):
                              'Check inputs and/or redistribute_occ() call.')
 
 
-def generate_environment(timestep=3600, year=2010, try_path=None,
-                         location=(51.529086, 6.944689), altitude=55,
+def generate_environment(timestep=3600,
+                         year_timer=2017,
+                         year_co2=2017,
+                         try_path=None,
+                         location=(51.529086, 6.944689),
+                         altitude=55,
                          new_try=False):
     """
     Returns environment object. Total number of timesteps is automatically
@@ -388,11 +393,11 @@ def generate_environment(timestep=3600, year=2010, try_path=None,
     ----------
     timestep : int
         Timestep in seconds
-    year : int, optional
+    year_timer : int, optional
         Chosen year of analysis (default: 2010)
-        (influences initial day for profile generation, market prices
-        and co2 factors)
-        If year is set to None, user has to define day_init!
+        (influences initial day for profile generation)
+    year_co2 : int, optional
+        Chose year with specific emission factors (default: 2017)
     try_path : str, optional
         Path to TRY weather file (default: None)
         If set to None, uses default weather TRY file (2010, region 5)
@@ -415,17 +420,21 @@ def generate_environment(timestep=3600, year=2010, try_path=None,
     """
 
     #  Create environment
-    timer = time.TimerExtended(timestep=timestep, year=year)
+    timer = time.TimerExtended(timestep=timestep, year=year_timer)
 
     weather = weath.Weather(timer, useTRY=True, pathTRY=try_path,
                             location=location, altitude=altitude,
                             new_try=new_try)
 
-    prices = price.Market()
-    co2em = co2.Emissions(year=year)
+    market = germanmarket.GermanMarket()
+    co2em = co2.Emissions(year=year_co2)
 
-    environment = env.EnvironmentExtended(timer, weather, prices, location,
-                                          co2em)
+    environment = env.EnvironmentExtended(timer=timer,
+                                          weather=weather,
+                                          prices=market,
+                                          location=location,
+                                          co2em=co2em)
+
     return environment
 
 
@@ -1565,7 +1574,9 @@ def calc_dhw_dem_ap(nb_occ, dhw_random, type, delta_t=35, c_p_water=4182,
     return dhw_dem
 
 
-def run_city_generator(generation_mode, timestep, year, location,
+def run_city_generator(generation_mode, timestep,
+                       year_timer, year_co2,
+                       location,
                        th_gen_method,
                        el_gen_method, district_data, use_dhw=False,
                        dhw_method=1, try_path=None,
@@ -1595,8 +1606,11 @@ def run_city_generator(generation_mode, timestep, year, location,
         generation_mode = 0: Load data from csv/txt file (tab seperated)
     timestep : int
         Timestep in seconds
-    year : int
-        Chosen year
+    year_timer : int
+        Chosen year of analysis
+        (influences initial day for profile generation)
+    year_co2 : int, optional
+        Chose year with specific emission factors
     location : Tuple
         (latitude, longitude) of the simulated system's position.
     th_gen_method : int
@@ -1823,7 +1837,9 @@ def run_city_generator(generation_mode, timestep, year, location,
         log_file.write('Date: ' + str(datetime.datetime.now()) + '\n')
         log_file.write('generation_mode: ' + str(generation_mode) + '\n')
         log_file.write('timestep in seconds: ' + str(timestep) + '\n')
-        log_file.write('Year: ' + str(year) + '\n')
+        log_file.write('Year for timer: ' + str(year_timer) + '\n')
+        log_file.write('Year for CO2 emission factors: '
+                       + str(year_co2) + '\n')
         log_file.write('Location: ' + str(location) + '\n')
         log_file.write('altitude: ' + str(altitude) + '\n')
         if generation_mode == 0:
@@ -1934,7 +1950,9 @@ def run_city_generator(generation_mode, timestep, year, location,
         #  Generate city district
 
         #  Generate extended environment of pycity_calc
-        environment = generate_environment(timestep=timestep, year=year,
+        environment = generate_environment(timestep=timestep,
+                                           year_timer=year_timer,
+                                           year_co2=year_co2,
                                            location=location,
                                            try_path=try_path,
                                            altitude=altitude,
@@ -2665,7 +2683,8 @@ if __name__ == '__main__':
 
     #  Generate environment
     #  ######################################################
-    year = 2010
+    year_timer = 2017
+    year_co2 = 2017
     timestep = 3600  # Timestep in seconds
     # location = (51.529086, 6.944689)  # (latitude, longitude) of Bottrop
     location = (50.775346, 6.083887)  # (latitude, longitude) of Aachen
@@ -2858,7 +2877,9 @@ if __name__ == '__main__':
     # Generate city district
     city = run_city_generator(generation_mode=generation_mode,
                               timestep=timestep,
-                              year=year, location=location,
+                              year_timer=year_timer,
+                              year_co2=year_co2,
+                              location=location,
                               th_gen_method=th_gen_method,
                               el_gen_method=el_gen_method, use_dhw=use_dhw,
                               dhw_method=dhw_method,
@@ -2886,25 +2907,3 @@ if __name__ == '__main__':
                               new_try=new_try,
                               path_save_city=path_save_city,
                               do_save=do_save)
-
-    # if call_teaser:
-    #     #  Search for residential building
-    #     for n in city.nodes():
-    #         if 'node_type' in city.node[n]:
-    #             #  If node_type is building
-    #             if city.node[n]['node_type'] == 'building':
-    #                 #  If entity is of type pv
-    #                 if city.node[n]['entity']._kind == 'building':
-    #                     if city.node[n]['entity'].build_type == 0:
-    #                         break
-    #
-    #     type_building = city.node[n]['type_building']
-    #     print(type_building)
-
-    # el_power = city.get_aggr_el_power_curve()
-    #
-    # import matplotlib.pyplot as plt
-    #
-    # plt.plot(el_power)
-    # plt.show()
-    # plt.close()

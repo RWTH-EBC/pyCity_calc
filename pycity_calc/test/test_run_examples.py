@@ -13,8 +13,6 @@ import pycity_calc.examples.example_city_street as example_city_street
 import pycity_calc.examples.example_co2emissions as example_co2emissions
 import pycity_calc.examples.example_complex_city_generator \
     as example_complex_city_generator
-import pycity_calc.examples.example_economic_annuity_city as \
-    example_economic_annuity_city
 import pycity_calc.examples.example_electricalHeater as \
     example_electricalHeater
 import pycity_calc.examples.example_environment as example_environment
@@ -30,6 +28,7 @@ import pycity_calc.examples.example_timer as example_timer
 import pycity_calc.examples.example_vdi_6007 as example_vdi_6007
 import pycity_calc.examples.example_vdi_6007_city as example_vdi_6007_city
 import pycity_calc.examples.example_osm as example_osm
+import pycity_calc.examples.example_city_annuity_calculation as city_ann
 
 
 class Test_RunExamples():
@@ -57,6 +56,7 @@ class Test_RunExamples():
     def test_example_complex_city_generator(self):
         example_complex_city_generator.run_example()
 
+    #  Fixme: Requires new input (city generation instead of pickle file!)
     # def test_example_economic_annuity_city(self):
     #     example_economic_annuity_city.run_example()
 
@@ -79,9 +79,9 @@ class Test_RunExamples():
     def test_example_market(self):
         example_market.run_example()
 
-    # def test_example_teaser(self):
-    #     example_teaser.run_example_exbuild()
-    #     example_teaser.run_example_city()
+    def test_example_teaser(self):
+        example_teaser.run_example_exbuild()
+        example_teaser.run_example_city()
 
     def test_example_thermalEnergyStorage(self):
         example_thermalEnergyStorage.run_test()
@@ -93,11 +93,15 @@ class Test_RunExamples():
     def test_example_timer(self):
         example_timer.run_example()
 
-    # def test_example_vdi_6007(self):
-    #     example_vdi_6007.run_example_vdi_6007()
-    #
+    def test_example_vdi_6007(self):
+        example_vdi_6007.run_example_vdi_6007()
+
+    #  Fixme: Requires new input (city generation instead of pickle file!)
     # def test_example_vdi_6007_city(self):
     #     example_vdi_6007_city.run_example_vdi_city()
 
     def test_example_osm(self):
         example_osm.run_osm_example()
+
+    def test_city_eb_and_annuity_calc(self):
+        city_ann.run_example_city_energy_balance_and_annuity_calc()
