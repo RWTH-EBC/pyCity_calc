@@ -501,4 +501,4 @@ if __name__ == '__main__':
                             list_lists_merge=list_lists_merge)
 
     if do_save:
-        pickle.dump(city_object, open(path_save, mode='rb'))
+        pickle.dump(city_object, open(path_save, mode='wb'))
