@@ -5,9 +5,12 @@ Script with dimensioning functions of pycity_calc
 """
 from __future__ import division
 
+import os
+import pickle
 import math
 import warnings
 import numpy as np
+from bisect import bisect_left
 
 import pycity_base.functions.process_city as prcity
 import pycity_calc.energysystems.Input.chp_asue_2015 as asue
@@ -647,6 +650,38 @@ def storage_rounding(capacity):
 
     return capacity_sel
 
+
+def take_closest(list_val, number):
+    """
+    Finds closest value in list_val to number
+
+    Parameters
+    ----------
+    list_val : list (of floats)
+        Search list
+    number : float
+        Search number
+
+    Returns
+    -------
+    closest_val : float
+        Value of list_val, which is closest to number input
+    """
+
+    list_val.sort()
+
+    pos = bisect_left(list_val, number)
+    if pos == 0:
+        return list_val[0]
+    if pos == len(list_val):
+        return list_val[-1]
+    before = list_val[pos - 1]
+    after = list_val[pos]
+    if after - number < number - before:
+       return after
+    else:
+       return before
+
 def calc_chp_el_sizes_for_opt(city, nb_sizes, mode, with_dhw=False):
     """
     Returns list of possible CHP sizes (el. nominal power in Watt) for
@@ -667,6 +702,10 @@ def calc_chp_el_sizes_for_opt(city, nb_sizes, mode, with_dhw=False):
         power
         1 - For single buildings only
         2 - For force LHN / whole district, only
+        3 - Fill up with discrete steps [1, 2, 3, 5, 10, 20, 30, 40, 50, 60,
+        70, 80, 90, 100, 150, 200, 250, 300, 350, 400, 450, 500, 1000,
+        1500, 2000],
+        depending on city max. thermal power demand
     with_dhw : bool, optional
         Defines, if hot water demand should also be taken into account
         (default: False)
@@ -678,7 +717,7 @@ def calc_chp_el_sizes_for_opt(city, nb_sizes, mode, with_dhw=False):
         Watt
     """
 
-    assert mode in [0, 1, 2], 'Unknown mode'
+    assert mode in [0, 1, 2, 3], 'Unknown mode'
     assert nb_sizes > 0
 
     if nb_sizes <= 2:
@@ -726,19 +765,86 @@ def calc_chp_el_sizes_for_opt(city, nb_sizes, mode, with_dhw=False):
 
         list_chp_th = array_chp_th.tolist()
 
-    for i in range(len(list_chp_th)):
+    elif mode == 3:
 
-        th_power = list_chp_th[i]
+        #  Ref. electric energy demand in kW
+        p_el_ref = 1/4 * q_dot_city_peak * \
+                   asue.calc_asue_el_th_ratio(th_power=q_dot_city_peak) / 1000
 
-        #  Get el./th. ratio (Stromkennzahl)
-        el_th_ratio = asue.calc_asue_el_th_ratio(th_power=th_power)
+        list_small = [1, 2, 3, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90]
+        list_medium = np.arange(100, 500, 50).tolist()
+        list_big = np.arange(500, 2500, 500).tolist()
 
-        #  Convert to el. power
-        el_power = round(th_power * el_th_ratio/1000, ndigits=0)*1000
+        #  From 1 to 1000 kW el.
+        list_choice = list_small + list_medium + list_big
+        print(list_choice)
 
-        if el_power < 1000:
-            el_power = 1000
+        list_chp_size_el = []
 
-        list_chp_size_el.append(el_power)
+        if p_el_ref <= list_small[nb_sizes-1]:
+            for i in range(nb_sizes):
+                list_chp_size_el.append(list_choice[i])
+
+        else:
+            #  Find closest value to p_el_ref in list_choice
+            upper_val = take_closest(list_val=list_choice, number=p_el_ref)
+
+            index_up = list_choice.index(upper_val)
+
+            index_low = 0
+
+            for i in range(nb_sizes):
+                if i % 2 == 0:  # Even
+                    list_chp_size_el.append(list_choice[index_low])
+                    index_low += 1
+                else:  # Odd
+                    list_chp_size_el.append(list_choice[index_up])
+                    index_up -= 1
+
+        for i in range(len(list_chp_size_el)):
+            list_chp_size_el[i] *= 1000  # Convert from kW to W
+
+        list_chp_size_el.sort()
+
+
+
+    if mode == 0 or mode == 1 or mode == 2:
+        for i in range(len(list_chp_th)):
+
+            th_power = list_chp_th[i]
+
+            #  Get el./th. ratio (Stromkennzahl)
+            el_th_ratio = asue.calc_asue_el_th_ratio(th_power=th_power)
+
+            #  Convert to el. power
+            el_power = round(th_power * el_th_ratio/1000, ndigits=0)*1000
+
+            if el_power < 1000:
+                el_power = 1000
+
+            list_chp_size_el.append(el_power)
 
     return list_chp_size_el
+
+if __name__ == '__main__':
+
+    #  Estimate CHP sized
+    this_path = os.path.dirname(os.path.abspath(__file__))
+
+    city_file_name = 'city.pkl'
+
+    city_path = os.path.join(this_path, 'input', city_file_name)
+
+    city = pickle.load(open(city_path, mode='rb'))
+
+    nb_sizes = 10
+    chp_mode = 3
+    with_dhw = False
+
+    list_chp_size_el = calc_chp_el_sizes_for_opt(city=city,
+                                                 nb_sizes=nb_sizes,
+                                                 mode=chp_mode,
+                                                 with_dhw=with_dhw)
+
+    print('List of CHP nominal el. powers in Watt:')
+    print(list_chp_size_el)
