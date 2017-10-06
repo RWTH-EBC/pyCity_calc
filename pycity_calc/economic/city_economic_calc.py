@@ -462,6 +462,36 @@ class CityAnnuityCalc(object):
 
         return dem_rel_build
 
+    def calc_lhn_pump_dem_rel_annuity(self):
+        """
+        Calculate demand related annuity of LHN pump electric consumption
+
+        Returns
+        -------
+        dem_rel_annuity_pump : float
+            Demand related annuity of LHN pump in Euro/a
+        """
+
+        #  Get pump_energy from dict_fe_city
+        pump_energy = self.energy_balance.dict_fe_city_balance['pump_energy']
+
+        year = self.energy_balance.city.environment.timer.year
+
+        #  Get specific el. cost
+        spec_cost_el = self.energy_balance.city.environment.prices. \
+            get_spec_el_cost(type='ind',
+                             year=year,
+                             annual_demand=pump_energy)
+
+        #  Calculate demand related annuity for gas and electricity purchases
+        #  (without EEG)
+        dem_rel_annuity_pump = self.annuity_obj. \
+            calc_dem_rel_annuity(sum_el_e=pump_energy,
+                                 price_el=spec_cost_el)
+
+        return dem_rel_annuity_pump
+
+
     def calc_dem_rel_annuity_city(self):
         """
         Returns demand related annuity of whole city district
@@ -474,10 +504,14 @@ class CityAnnuityCalc(object):
 
         dem_rel_annuity = 0
 
+        #  Calculate demand related annuity per building
         for n in self._list_buildings:
             dem_rel_build = self.calc_dem_rel_annuity_building(id=n)
 
             dem_rel_annuity += dem_rel_build
+
+        #  Add demand related annuity of LHN pump
+        dem_rel_annuity += self.calc_lhn_pump_dem_rel_annuity()
 
         return dem_rel_annuity
 
