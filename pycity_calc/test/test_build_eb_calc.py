@@ -420,8 +420,8 @@ class TestBuildingEnergyBalance():
         sum_q_tes_out = sum(q_tes_out) * timestep / (1000 * 3600)
 
         assert fuel_boiler_energy >= boil_th_energy
-        assert abs(boil_th_energy + sum_q_tes_out >=
-                   (sh_net_energy + dhw_net_energy + sum_q_tes_in))
+        assert abs(boil_th_energy + sum_q_tes_out -
+                   (sh_net_energy + dhw_net_energy + sum_q_tes_in)) <= 0.001
 
         #  ##################################################################
 
@@ -1729,5 +1729,62 @@ class TestBuildingEnergyBalance():
                       - sum_q_tes_in + sum_q_tes_out
                      # - sum_bat_in + sum_bat_out
                       )) <= 0.001
+
+    def test_check_pv_eeg_feed_in_limit(self, fixture_building):
+        """
+        Check EEG PV feed in limitation of 70 % of peak load
+        """
+        build = copy.deepcopy(fixture_building)
+
+        timestep = build.environment.timer.timeDiscretization
+
+        nb_timesteps = int(365 * 3600 * 24 / timestep)
+
+        bes = BES.BES(environment=build.environment)
+
+        pv = PV.PV(environment=build.environment, area=1, eta=0.15,
+                   temperature_nominal=45,
+                   alpha=0, beta=0, gamma=0, tau_alpha=0.9)
+
+        bes.addDevice(pv)
+
+        build.addEntity(bes)
+
+        build.apartments[0].demandSpaceheating.loadcurve = \
+            np.zeros(nb_timesteps)
+        build.apartments[0].power_el.loadcurve = np.zeros(nb_timesteps)
+
+        #  Calculate el. energy balance
+        #  with EEG max. PV feed-in power
+        buildeb.calc_build_el_eb(build=build, eeg_pv_limit=True)
+
+        #  Analyse results
+
+        #  Demands
+        el_energy = build.get_annual_el_demand()
+
+        #  PV
+        pv_power = pv.getPower(currentValues=False, updatePower=True)
+        sum_pv_energy = sum(pv_power) * timestep / (3600 * 1000)
+
+        pv_self = build.dict_el_eb_res['pv_self']
+        pv_feed = build.dict_el_eb_res['pv_feed']
+        pv_self_dem = build.dict_el_eb_res['pv_self_dem']
+        pv_off = build.dict_el_eb_res['pv_off']
+
+        sum_pv_self = sum(pv_self) * timestep / (1000 * 3600)
+        sum_pv_feed = sum(pv_feed) * timestep / (1000 * 3600)
+        sum_pv_self_dem = sum(pv_self_dem) * timestep / (1000 * 3600)
+        sum_pv_off = sum(pv_off) * timestep / (1000 * 3600)
+
+        assert el_energy == 0
+        assert sum_pv_energy > 0
+        assert sum_pv_feed > 0
+        assert sum_pv_self_dem == 0
+        assert sum_pv_self == 0
+        assert sum_pv_off > 0
+
+        for i in range(len(pv_feed)):
+            assert pv_feed[i] <= 0.7 * 125 * pv.area
 
     #  TODO: Add further battery tests, as battery seems to cause trouble

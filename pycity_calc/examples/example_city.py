@@ -15,9 +15,8 @@ import pycity_calc.buildings.building as build_ex
 import pycity_calc.cities.city as city
 import pycity_calc.environments.co2emissions as co2
 import pycity_calc.environments.environment as env
-import pycity_calc.environments.market as mark
+import pycity_calc.environments.germanmarket as germarkt
 import pycity_calc.environments.timer as time
-# import pycity_calc.toolbox.dimensioning.dim_functions as dimfunc
 
 
 def run_example():
@@ -39,7 +38,7 @@ def run_example():
                               altitude=altitude)
 
     #  Generate market object
-    market = mark.Market()
+    market = germarkt.GermanMarket()
 
     #  Generate co2 emissions object
     co2em = co2.Emissions(year=year)

@@ -7,6 +7,7 @@ from __future__ import division
 
 import os
 import pickle
+import copy
 import warnings
 import numpy as np
 
@@ -69,7 +70,7 @@ def get_tes_status(tes, buffer_low, buffer_high):
         return 1
 
 
-def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
+def calc_build_therm_eb(build, soc_init=0.75, boiler_full_pl=True,
                         eh_full_pl=True, buffer_low=0.1, buffer_high=0.98,
                         id=None, th_lhn_pow_rem=None):
     """
@@ -82,7 +83,7 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
         Extended building object of pyCity_calc
     soc_init : float, optional
         Factor of relative state of charge of thermal storage (if thermal
-        storage is existent)
+        storage is existent) (default: 0.75)
     boiler_full_pl : bool, optional
         Defines, if boiler should be set to full part load ability
         (default: True)
@@ -388,9 +389,9 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                             dhw_pow_remain = 0
                             sh_pow_remain = 0
                         else:
-                            th_lhn_pow_rem[i] -= q_out_max \
+                            th_lhn_pow_rem[i] -= (q_out_max \
                                                  - sh_pow_remain \
-                                                 - dhw_pow_remain
+                                                 - dhw_pow_remain)
                             dhw_pow_remain = 0
                             sh_pow_remain = 0
 
@@ -441,9 +442,9 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                                 dhw_pow_remain = 0
                                 sh_pow_remain = 0
                             else:
-                                th_lhn_pow_rem[i] -= q_nom_boi \
+                                th_lhn_pow_rem[i] -= (q_nom_boi \
                                                      - sh_pow_remain \
-                                                     - dhw_pow_remain
+                                                     - dhw_pow_remain)
                                 dhw_pow_remain = 0
                                 sh_pow_remain = 0
 
@@ -493,9 +494,9 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                                 dhw_pow_remain = 0
                                 sh_pow_remain = 0
                             else:
-                                th_lhn_pow_rem[i] -= q_nom_eh \
+                                th_lhn_pow_rem[i] -= (q_nom_eh \
                                                      - sh_pow_remain \
-                                                     - dhw_pow_remain
+                                                     - dhw_pow_remain)
                                 dhw_pow_remain = 0
                                 sh_pow_remain = 0
 
@@ -840,7 +841,8 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
 
                         chp_lal = chp.lowerActivationLimit
 
-                        if ((sh_pow_remain + dhw_pow_remain + q_tes_in_max)
+                        if ((sh_pow_remain + dhw_pow_remain + q_tes_in_max +
+                                 th_lhn_pow_rem[i])
                                 < chp_lal * q_nom_chp):
                             #  Required power is below part load performance,
                             #  thus, chp cannot be used
@@ -1027,18 +1029,25 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                         q_tes_in_remain = 0
                         th_lhn_pow_rem[i] = 0
 
+                if q_tes_in is None:
+                    q_tes_in = 0
+
                 # If uncovered demand, use TES
                 if (sh_pow_remain > 0 or dhw_pow_remain > 0
                     or th_lhn_pow_rem[i] > 0):
                     #  Use tes to cover demands
                     q_out_requ = sh_pow_remain + dhw_pow_remain
 
-                    q_out_max = tes.calc_storage_q_out_max()
+                    q_out_max = tes.calc_storage_q_out_max(q_in=q_tes_in)
 
                     if q_out_max > q_out_requ:
                         #  Use storage to cover remaining LHN power demands
-                        th_lhn_pow_rem[i] -= q_out_max - q_out_requ
-                        q_out_requ = q_out_max + 0.0
+                        if th_lhn_pow_rem[i] >= (q_out_max - q_out_requ):
+                            th_lhn_pow_rem[i] -= (q_out_max - q_out_requ)
+                            q_out_requ = q_out_max + 0.0
+                        else:
+                            q_out_requ = th_lhn_pow_rem[i] + 0.0
+                            th_lhn_pow_rem[i] = 0
 
                     if q_out_max < q_out_requ:
                         msg = 'TES stored energy cannot cover remaining ' \
@@ -1050,9 +1059,6 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                     q_out_requ = 0
 
                 temp_prior = tes.t_current
-
-                if q_tes_in is None:
-                    q_tes_in = 0
 
                 # Calc. storage energy balance for this timestep
                 tes.calc_storage_temp_for_next_timestep(q_in=q_tes_in,
@@ -1508,7 +1514,7 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
             #  Calculate tes status
             #  ##############################################################
             tes_status = get_tes_status(tes=build.bes.tes,
-                                        buffer_low=0.85,
+                                        buffer_low=0.9,
                                         buffer_high=buffer_high)
 
             #  Get required thermal power values
@@ -1527,7 +1533,7 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
 
             q_tes_in = None
 
-            if tes_status == 1 or tes_status == 2:
+            if tes_status == 1:
                 #  Do not charge TES
 
                 #  Try covering power with boiler
@@ -1588,6 +1594,9 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                         th_pow_remain = 0
                         th_lhn_pow_rem[i] = 0
 
+                if q_tes_in is None:
+                    q_tes_in = 0
+
                 if th_pow_remain > 0 or th_lhn_pow_rem[i]:
                     #  Use TES to cover remaining demand
                     #  Use tes to cover demands
@@ -1595,8 +1604,12 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
 
                     if q_out_max > q_out_requ:
                         #  Use storage to cover remaining LHN power demands
-                        th_lhn_pow_rem[i] -= q_out_max - q_out_requ
-                        q_out_requ = q_out_max + 0.0
+                        if th_lhn_pow_rem[i] >= (q_out_max - q_out_requ):
+                            th_lhn_pow_rem[i] -= (q_out_max - q_out_requ)
+                            q_out_requ = q_out_max + 0.0
+                        else:
+                            q_out_requ = th_lhn_pow_rem[i] + 0.0
+                            th_lhn_pow_rem[i] = 0
 
                     if q_out_max < q_out_requ:
                         msg = 'TES stored energy cannot cover remaining ' \
@@ -1608,9 +1621,6 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                     q_out_requ = 0
 
                 temp_prior = tes.t_current
-
-                if q_tes_in is None:
-                    q_tes_in = 0
 
                 # Calc. storage energy balance for this timestep
                 tes.calc_storage_temp_for_next_timestep(q_in=q_tes_in,
@@ -1625,7 +1635,7 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                           '' + str(i) + ' at building ' + str(id)
                     EnergyBalanceException(msg)
 
-            elif tes_status == 3:
+            elif tes_status == 3 or tes_status == 2:
                 # Use boiler and/or EH to load TES
 
                 q_tes_in_remain = q_in_max + 0.0
@@ -1729,6 +1739,9 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
 
                 tes = build.bes.tes
 
+                if q_tes_in is None:
+                    q_tes_in = 0
+
                 if th_pow_remain > 0 or th_lhn_pow_rem[i] > 0:
                     #  Use TES to cover remaining demand
                     #  Use tes to cover demands
@@ -1738,8 +1751,12 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
 
                     if q_out_max > q_out_requ:
                         #  Use storage to cover remaining LHN power demands
-                        th_lhn_pow_rem[i] -= q_out_max - q_out_requ
-                        q_out_requ = q_out_max + 0.0
+                        if th_lhn_pow_rem[i] >= (q_out_max - q_out_requ):
+                            th_lhn_pow_rem[i] -= (q_out_max - q_out_requ)
+                            q_out_requ = q_out_max + 0.0
+                        else:
+                            q_out_requ = th_lhn_pow_rem[i] + 0.0
+                            th_lhn_pow_rem[i] = 0
 
                     if q_out_max < q_out_requ:
                         msg = 'TES stored energy cannot cover remaining ' \
@@ -1751,9 +1768,6 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                     q_out_requ = 0
 
                 temp_prior = tes.t_current
-
-                if q_tes_in is None:
-                    q_tes_in = 0
 
                 # Calc. storage energy balance for this timestep
                 tes.calc_storage_temp_for_next_timestep(q_in=q_tes_in,
@@ -1848,7 +1862,8 @@ def calc_build_therm_eb(build, soc_init=0.5, boiler_full_pl=True,
                       '' + str(i) + ' at building ' + str(id)
                 EnergyBalanceException(msg)
 
-def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
+def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False,
+                     eeg_pv_limit=False, save_eb_dict=True):
     """
     Calculate building electric energy balance.
 
@@ -1863,6 +1878,13 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
         Defines
     has_deg : bool, optional
         Defines, if building is connected to deg (default: False)
+    eeg_pv_limit : bool, optional
+        Defines, if EEG PV feed-in limitation of 70 % of peak load is active
+        (default: False). If limitation is active, maximal 70 % of PV peak
+        load are fed into the grid. However, self-consumption is used, first.
+    save_eb_dict : bool, optional
+        Defines, if electric energy balance results dict should be saved as
+        dict_el_eb_res attribute on building object (default: True)
 
     Returns
     -------
@@ -1901,6 +1923,26 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
             pv_gen_array = build.bes.pv.getPower(currentValues=False,
                                                  updatePower=True)
 
+            if eeg_pv_limit:
+                # Estimate PV peak load
+                pv_ideal = copy.deepcopy(build.bes.pv)
+
+                #  Set nominal values
+                pv_ideal.temperature_nominal = 45
+                pv_ideal.alpha = 0
+                pv_ideal.beta = 0
+                pv_ideal.gamma = 0
+                pv_ideal.tau_alpha = 0.9
+
+                pv_peak = max (pv_ideal.getPower(currentValues=False,
+                                                 updatePower=True))
+
+                #  Logiccheck if weather file radiation is low
+                if pv_peak/pv_ideal.area < 125:  # 125 W/m2
+                    pv_peak = 125 * pv_ideal.area
+
+                pv_p_limit = 0.7 * pv_peak
+
     # Get electric power value
     el_pow_array = build.get_electric_power_curve()
 
@@ -1916,6 +1958,7 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
     pv_self_eh = np.zeros(len(el_pow_array))
     pv_self_bat = np.zeros(len(el_pow_array))
     pv_feed = np.zeros(len(el_pow_array))
+    pv_off = np.zeros(len(el_pow_array))
 
     chp_self = np.zeros(len(el_pow_array))
     chp_self_dem = np.zeros(len(el_pow_array))
@@ -2210,6 +2253,12 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
             p_el_eh_remain = 0
 
         if has_pv:
+            if eeg_pv_limit:
+                if p_pv_remain > pv_p_limit:
+                    #  Limit p_pv_remain to pv_p_limit
+                    pv_off[i] += p_pv_remain - pv_p_limit
+                    p_pv_remain = pv_p_limit + 0.0
+
             pv_feed[i] += p_pv_remain
             p_pv_remain = 0
         if has_chp:
@@ -2224,6 +2273,8 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
     dict_el_eb_res['pv_self_hp'] = pv_self_hp
     dict_el_eb_res['pv_self_eh'] = pv_self_eh
     dict_el_eb_res['pv_self_bat'] = pv_self_bat
+    dict_el_eb_res['pv_off'] = pv_off  # "lost" PV energy due to EEG fed in
+    #  limitation
 
     dict_el_eb_res['chp_self'] = chp_self
     dict_el_eb_res['chp_feed'] = chp_feed
@@ -2241,8 +2292,9 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False):
     dict_el_eb_res['bat_out_hp'] = bat_out_hp
     dict_el_eb_res['bat_out_eh'] = bat_out_eh
 
-    #  Add dict to building
-    build.dict_el_eb_res = dict_el_eb_res
+    if save_eb_dict:
+        #  Add dict to building
+        build.dict_el_eb_res = dict_el_eb_res
 
     return dict_el_eb_res
 
@@ -2251,16 +2303,255 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import pycity_calc.visualization.city_visual as citvis
     import pycity_calc.energysystems.electricalHeater as elheat
+    import pycity_calc.cities.scripts.city_generator.city_generator as citygen
+    import pycity_calc.cities.scripts.overall_gen_and_dimensioning as overall
 
-    #  Load city
-    #  ####################################################################
     this_path = os.path.dirname(os.path.abspath(__file__))
 
-    city_name = 'city_clust_simple_with_esys.pkl'
+    #  Check requirements for pycity_deap
+    pycity_deap = False
 
-    city_path = os.path.join(this_path, 'input', city_name)
+    try:
+        #  Try loading city pickle file
+        filename = 'city_clust_simple_with_esys.pkl'
+        file_path = os.path.join(this_path, 'input', filename)
+        city = pickle.load(open(file_path, mode='rb'))
 
-    city = pickle.load(open(city_path, mode='rb'))
+    except:
+        print('Could not load city pickle file. Going to generate a new one.')
+        #  # Userinputs
+        #  #----------------------------------------------------------------------
+
+        #  Generate environment
+        #  ######################################################
+        year_timer = 2017
+        year_co2 = 2017
+        timestep = 3600  # Timestep in seconds
+        # location = (51.529086, 6.944689)  # (latitude, longitude) of Bottrop
+        location = (50.775346, 6.083887)  # (latitude, longitude) of Aachen
+        altitude = 266  # Altitude of location in m (Aachen)
+
+        #  Weather path
+        try_path = None
+        #  If None, used default TRY (region 5, 2010)
+
+        new_try = False
+        #  new_try has to be set to True, if you want to use TRY data of 2017
+        #  or newer! Else: new_try = False
+
+        #  Space heating load generation
+        #  ######################################################
+        #  Thermal generation method
+        #  1 - SLP (standardized load profile)
+        #  2 - Load and rescale Modelica simulation profile
+        #  (generated with TRY region 12, 2010)
+        #  3 - VDI 6007 calculation (requires el_gen_method = 2)
+        th_gen_method = 3
+        #  For non-residential buildings, SLPs are generated automatically.
+
+        #  Manipulate thermal slp to fit to space heating demand?
+        slp_manipulate = True
+        #  True - Do manipulation
+        #  False - Use original profile
+        #  Only relevant, if th_gen_method == 1
+        #  Sets thermal power to zero in time spaces, where average daily outdoor
+        #  temperature is equal to or larger than 12 °C. Rescales profile to
+        #  original demand value.
+
+        #  Manipulate vdi space heating load to be normalized to given annual net
+        #  space heating demand in kWh
+        vdi_sh_manipulate = False
+
+        #  Electrical load generation
+        #  ######################################################
+        #  Choose electric load profile generation method (1 - SLP; 2 - Stochastic)
+        #  Stochastic profile is only generated for residential buildings,
+        #  which have a defined number of occupants (otherwise, SLP is used)
+        el_gen_method = 2
+        #  If user defindes method_3_nb or method_4_nb within input file
+        #  (only valid for non-residential buildings), SLP will not be used.
+        #  Instead, corresponding profile will be loaded (based on measurement
+        #  data, see ElectricalDemand.py within pycity)
+
+        #  Do normalization of el. load profile
+        #  (only relevant for el_gen_method=2).
+        #  Rescales el. load profile to expected annual el. demand value in kWh
+        do_normalization = True
+
+        #  Randomize electrical demand value (residential buildings, only)
+        el_random = False
+
+        #  Prevent usage of electrical heating and hot water devices in
+        #  electrical load generation
+        prev_heat_dev = True
+        #  True: Prevent electrical heating device usage for profile generation
+        #  False: Include electrical heating devices in electrical load generation
+
+        #  Use cosine function to increase winter lighting usage and reduce
+        #  summer lighting usage in richadson el. load profiles
+        #  season_mod is factor, which is used to rescale cosine wave with
+        #  lighting power reference (max. lighting power)
+        season_mod = 0.3
+        #  If None, do not use cosine wave to estimate seasonal influence
+        #  Else: Define float
+        #  (only relevant if el_gen_method == 2)
+
+        #  Hot water profile generation
+        #  ######################################################
+        #  Generate DHW profiles? (True/False)
+        use_dhw = True  # Only relevant for residential buildings
+
+        #  DHW generation method? (1 - Annex 42; 2 - Stochastic profiles)
+        #  Choice of Annex 42 profiles NOT recommended for multiple buildings,
+        #  as profile stays the same and only changes scaling.
+        #  Stochastic profiles require defined nb of occupants per residential
+        #  building
+        dhw_method = 2  # Only relevant for residential buildings
+
+        #  Define dhw volume per person and day (use_dhw=True)
+        dhw_volumen = None  # Only relevant for residential buildings
+
+        #  Randomize choosen dhw_volume reference value by selecting new value
+        #  from gaussian distribution with 20 % standard deviation
+        dhw_random = False
+
+        #  Use dhw profiles for esys dimensioning
+        dhw_dim_esys = True
+
+        #  Plot city district with pycity_calc visualisation
+        plot_pycity_calc = False
+
+        #  Efficiency factor of thermal energy systems
+        #  Used to convert input values (final energy demand) to net energy demand
+        eff_factor = 1
+
+        #  Define city district input data filename
+        filename = 'city_clust_simple.txt'
+
+        txt_path = os.path.join(this_path, 'input', filename)
+
+        #  Define city district output file
+        save_filename = None
+        # save_path = os.path.join(this_path, 'output_overall', save_filename)
+        save_path = None
+
+        #  #####################################
+        t_set_heat = 20  # Heating set temperature in degree Celsius
+        t_set_night = 16  # Night set back temperature in degree Celsius
+        t_set_cool = 70  # Cooling set temperature in degree Celsius
+
+        #  Air exchange rate (required for th_gen_method = 3 (VDI 6007 sim.))
+        air_vent_mode = 2
+        #  int; Define mode for air ventilation rate generation
+        #  0 : Use constant value (vent_factor in 1/h)
+        #  1 : Use deterministic, temperature-dependent profile
+        #  2 : Use stochastic, user-dependent profile
+        #  False: Use static ventilation rate value
+
+        vent_factor = 0.5  # Constant. ventilation rate
+        #  (only used, if air_vent_mode = 0)
+        #  #####################################
+
+        #  Use TEASER to generate typebuildings?
+        call_teaser = False
+        teaser_proj_name = filename[:-4]
+
+        merge_windows = False
+        # merge_windows : bool, optional
+        # Defines TEASER project setting for merge_windows_calc
+        # (default: False). If set to False, merge_windows_calc is set to False.
+        # If True, Windows are merged into wall resistances.
+
+        #  Log file for city_generator
+        do_log = False  # True, generate log file
+        log_path = os.path.join(this_path, 'input',
+                                'city_gen_overall_log.txt')
+
+        #  Generate street networks
+        gen_str = True  # True - Generate street network
+
+        #  Street node and edges input filenames
+        str_node_filename = 'street_nodes_cluster_simple.csv'
+        str_edge_filename = 'street_edges_cluster_simple.csv'
+
+        #  Load street data from csv
+        str_node_path = os.path.join(this_path, 'input',
+                                     str_node_filename)
+        str_edge_path = os.path.join(this_path, 'input',
+                                     str_edge_filename)
+
+        #  Add energy networks to city
+        gen_e_net = True  # True - Generate energy networks
+
+        #  Path to energy network input file (csv/txt; tab separated)
+        network_filename = 'city_clust_simple_networks.txt'
+        network_path = os.path.join(this_path, 'input',
+                                    network_filename)
+
+        #  Add energy systems to city
+        gen_esys = True  # True - Generate energy networks
+
+        #  Path to energy system input file (csv/txt; tab separated)
+        esys_filename = 'city_clust_simple_enersys.txt'
+        esys_path = os.path.join(this_path, 'input',
+                                 esys_filename)
+
+        #  #----------------------------------------------------------------------
+
+        #  Load district_data file
+        district_data = citygen.get_district_data_from_txt(txt_path)
+
+        city = overall.run_overall_gen_and_dim(timestep=timestep,
+                                                      year_timer=year_timer,
+                                                      year_co2=year_co2,
+                                                      location=location,
+                                                      try_path=try_path,
+                                                      th_gen_method=th_gen_method,
+                                                      el_gen_method=el_gen_method,
+                                                      use_dhw=use_dhw,
+                                                      dhw_method=dhw_method,
+                                                      district_data=district_data,
+                                                      gen_str=gen_str,
+                                                      str_node_path=str_node_path,
+                                                      str_edge_path=str_edge_path,
+                                                      generation_mode=0,
+                                                      eff_factor=eff_factor,
+                                                      save_path=save_path,
+                                                      altitude=altitude,
+                                                      do_normalization=do_normalization,
+                                                      dhw_volumen=dhw_volumen,
+                                                      gen_e_net=gen_e_net,
+                                                      network_path=network_path,
+                                                      gen_esys=gen_esys,
+                                                      esys_path=esys_path,
+                                                      dhw_dim_esys=dhw_dim_esys,
+                                                      plot_pycity_calc=plot_pycity_calc,
+                                                      slp_manipulate=slp_manipulate,
+                                                      call_teaser=call_teaser,
+                                                      teaser_proj_name=teaser_proj_name,
+                                                      do_log=do_log,
+                                                      log_path=log_path,
+                                                      air_vent_mode=air_vent_mode,
+                                                      vent_factor=vent_factor,
+                                                      t_set_heat=t_set_heat,
+                                                      t_set_cool=t_set_cool,
+                                                      t_night=t_set_night,
+                                                      vdi_sh_manipulate=vdi_sh_manipulate,
+                                                      el_random=el_random,
+                                                      dhw_random=dhw_random,
+                                                      prev_heat_dev=prev_heat_dev,
+                                                      season_mod=season_mod,
+                                                      merge_windows=merge_windows,
+                                                      new_try=new_try)
+
+        city.node[1006]['entity'].bes.boiler.qNominal *= 5
+        city.node[1006]['entity'].bes.tes.capacity *= 5
+
+        # Save new pickle file
+        filename = 'city_clust_simple_with_esys.pkl'
+        file_path = os.path.join(this_path, 'input', filename)
+        pickle.dump(city, open(file_path, mode='wb'))
+
     #  ####################################################################
 
     #  Uncomment, if you would like to deactivate plotting)

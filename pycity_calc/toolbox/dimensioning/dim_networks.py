@@ -199,6 +199,15 @@ def add_lhn_to_city(city, list_build_node_nb=None, temp_vl=90,
         Options: 'heating' or 'heating_and_deg' (deg: decentralized, el. grid)
     plot_stepwise : bool, optional
         Plot stepwise graph search and lhn generation (default: False)
+
+    Returns
+    -------
+    res_tuple : tuple (of floats)
+        Results tuple of kind (d_i, length)
+        d_i : float
+            Inner diameter of pipe in meters
+        length : float
+            Total network length in meters
     """
 
     #  Assert functions
@@ -387,6 +396,8 @@ def add_lhn_to_city(city, list_build_node_nb=None, temp_vl=90,
                 #  Add network edge to city
                 city.add_edge(u, v, network_type=network_type, temp_vl=temp_vl,
                               temp_rl=temp_rl, c_p=c_p, rho=rho, d_i=d_i)
+
+    return (d_i, length)
 
 
 def add_deg_to_city(city, list_build_node_nb, use_street_network=False):
