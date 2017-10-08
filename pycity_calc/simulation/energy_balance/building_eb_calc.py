@@ -1421,6 +1421,9 @@ def calc_build_therm_eb(build, soc_init=0.75, boiler_full_pl=True,
                 # Use EH
                 if has_eh:
 
+                    if q_tes_in is None:
+                        q_tes_in = 0
+
                     #  if sh_pow_remain > 0 or dhw_pow_remain > 0, use eh
 
                     #  eh pointer
