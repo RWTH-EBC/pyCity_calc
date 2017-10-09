@@ -36,7 +36,7 @@ def estimate_u_value(d_i):
     Returns
     -------
     u_pipe : float
-        U-value of pipe in W/m
+        U-value of pipe in W/mK
     """
 
     u_pipe = 0.9264 * d_i ** 0.501
