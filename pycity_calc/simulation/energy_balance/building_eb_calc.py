@@ -2155,8 +2155,6 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False,
                         p_bat_charge += p_pv_remain
                         p_pv_remain = 0
 
-            print('p_bat_charge', p_bat_charge)
-            print('p_bat_charge_max', p_bat_charge_max)
             assert p_bat_charge - 0.001 <= p_bat_charge_max
 
             if has_chp:
@@ -2179,9 +2177,6 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False,
                         p_el_chp_remain = 0
 
                     assert p_el_chp_remain >= 0
-
-            print('p_bat_charge', p_bat_charge)
-            print('p_bat_charge_max', p_bat_charge_max)
 
             if p_bat_charge - 0.001 > p_bat_charge_max:
                 msg = 'p_bat_charge %s. p_bat_charge_max %s' % \
