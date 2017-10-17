@@ -593,9 +593,8 @@ def plot_city_district(city, city_list=None, plot_buildings=True,
                 except:
                     warnings.warn('Could not save figure as tikz')
 
-            elif os.path.isfile(save_path):
-
-                plt.savefig(save_path)
+            else:
+                plt.savefig(save_path, dpi=dpi)
 
     if show_plot:
         plt.show()

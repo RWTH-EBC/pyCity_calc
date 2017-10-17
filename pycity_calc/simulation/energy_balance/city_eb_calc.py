@@ -396,7 +396,7 @@ class CityEBCalculator(object):
                           ' ' + str(int(th_lhn_power_remain[i])) + ' Watt' \
                                                                    ' for timestep ' + str(
                         i) + '.'
-                    raise AssertionError(msg)
+                    raise beb.EnergyBalanceException(msg)
 
         # Save list pump energy on energy balance object
         self.list_pump_energy = list_pump_energy
