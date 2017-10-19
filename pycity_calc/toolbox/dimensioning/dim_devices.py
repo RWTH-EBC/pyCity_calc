@@ -12,7 +12,7 @@ import pycity_calc.economic.energy_sys_cost.boiler_cost as boiler_cost
 
 import pycity_calc.energysystems.heatPumpSimple as HP
 
-def dim_decentral_hp(environment, sh_curve, t_biv=-5, tMax=55, lowerActivationLimit=0.5, tSink=45):
+def dim_decentral_hp(environment, sh_curve, t_biv=-5, tMax=55, lowerActivationLimit=0.3, tSink=45):
 
     # monoenergetic operation
     t_dem_ldc = get_t_demand_list(environment.weather.tAmbient, sh_curve)  # ldc with sh-demand and tAmbient
@@ -21,11 +21,23 @@ def dim_decentral_hp(environment, sh_curve, t_biv=-5, tMax=55, lowerActivationLi
     for i in range(len(t_dem_ldc)):
         if sorted(environment.weather.tAmbient)[i] > t_biv:
             biv_ind = i - 1
-            q_hp_biv = max(t_dem_ldc[biv_ind:-1])  # highest demand before bivalence point should be met
+            # q_hp_biv = 0.6*max(t_dem_ldc[biv_ind:-1])  # 60% of highest demand before bivalence point should be met
+            # q_hp_biv = np.sum(t_dem_ldc[biv_ind:biv_ind+24])/24     # average demand around bivalence point
             # q_hp_biv = t_dem_ldc[biv_ind]
+
+            q_hp_biv = max(sh_curve) / (min(environment.weather.tAmbient) - 20) * (t_biv - 20)  # Leistung im Bivalenzpunkt
+            q2 = 0
+            for q in sh_curve:
+                if q > q_hp_biv:
+                    q2 += q - q_hp_biv
+            print('peak supply produces ' + str(np.round(q2*100/np.sum(sh_curve),2)) + '% of annual heat demand.')
+
             break
     else:
         raise Exception('Error in calculation of demand in bivalence point')
+
+
+
 
     # choose_device('hp',q_hp_biv)
     #plt.plot([min(environment.weather.tAmbient), max(environment.weather.tAmbient)], [q_hp_biv, q_hp_biv],'r')
@@ -34,6 +46,8 @@ def dim_decentral_hp(environment, sh_curve, t_biv=-5, tMax=55, lowerActivationLi
     return q_hp_biv, tMax, lowerActivationLimit, tSink, t_dem_ldc, biv_ind
 
 def dim_decentral_chp(th_LDC, q_total, method=0):
+
+    # TODO: Methode verändern für decentralized - Einfacher, keine Dreiecke um Grenzen zu setzen
 
     # ---------------- Method 0: Krimmling and interviews ----------------
     if method == 0:
@@ -44,7 +58,7 @@ def dim_decentral_chp(th_LDC, q_total, method=0):
         (t_ann_op_max, t_x_max) = get_chp_ann_op_time(q_nom, th_LDC)  # (annual operation time, full load hours)
 
         # Set minimum for flh
-        chp_flh = 4500
+        chp_flh = 3000
         q_chp = th_LDC[chp_flh]
         [eta_el, eta_th, p_nom, q_nom] = choose_chp(q_chp)
         (t_ann_op_min, t_x_min) = get_chp_ann_op_time(q_nom, th_LDC)
@@ -185,7 +199,7 @@ def dim_central_chp(th_LDC, q_total, district_type, method=0):
         (t_ann_op_max, t_x_max) = get_chp_ann_op_time(q_nom, th_LDC)  # (annual operation time, full load hours)
 
         # Set minimum for flh (-> t_x_min)
-        chp_flh = 4500
+        chp_flh = 5000
         q_chp = th_LDC[chp_flh]
         [eta_el, eta_th, p_nom, q_nom] = choose_chp(q_chp)
         (t_ann_op_min, t_x_min) = get_chp_ann_op_time(q_nom, th_LDC)
