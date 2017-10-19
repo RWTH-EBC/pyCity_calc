@@ -5,6 +5,8 @@ Example script of Nadine Lermer for pypower usage with pycity
 from __future__ import division
 __author__ = 'jsc-nle'
 
+import warnings
+
 import pycity_base.classes.Weather as Weather
 import pycity_base.classes.Environment as Environment
 import pycity_base.classes.Prices as Prices
@@ -112,11 +114,15 @@ def run_example_1():
     #   power flow calculation
     results = power_grid.power_flow_calculation(save=False, start=25, end=45)
 
+    msg = 'Evaluate power flow and power flow animation are currently ' \
+          'uncommented, as they cause errors (see #61 on Github)'
+    warnings.warn(msg)
+
     # print('Evaluate power flow results')
     # print('###########################################')
     # print()
 
-    #  FIXME: Not working, any more
+    #  FIXME: Not working, any more (see #61)
 
     # #   power flow evaluation
     # res_city_district = power_grid.power_flow_evaluation(results)
@@ -128,7 +134,7 @@ def run_example_1():
     # print('Start power flow visualization')
     # print('###########################################')
     # print()
-
+    #
     # #   animation
     # power_grid.power_flow_animation(res_city_district)
 

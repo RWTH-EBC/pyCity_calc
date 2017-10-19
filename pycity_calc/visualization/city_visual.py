@@ -563,8 +563,11 @@ def plot_city_district(city, city_list=None, plot_buildings=True,
             #  Save as eps and png to __file__ directory
             save_eps = str(os.path.join(save_path, 'city_district.eps'))
             save_png = str(os.path.join(save_path, 'city_district.png'))
+            save_svg = str(os.path.join(save_path, 'city_district.svg'))
+
             plt.savefig(save_eps, format='eps', dpi=dpi)
             plt.savefig(save_png, format='png', dpi=dpi)
+            plt.savefig(save_svg, format='svg', dpi=dpi)
 
             try:
                 path_tikz = os.path.join(save_path, 'city_district.tikz')
@@ -582,8 +585,11 @@ def plot_city_district(city, city_list=None, plot_buildings=True,
                 #  Save as eps and png to __file__ directory
                 save_eps = str(os.path.join(save_path, 'city_district.eps'))
                 save_png = str(os.path.join(save_path, 'city_district.png'))
+                save_svg = str(os.path.join(save_path, 'city_district.svg'))
+
                 plt.savefig(save_eps, format='eps', dpi=dpi)
                 plt.savefig(save_png, format='png', dpi=dpi)
+                plt.savefig(save_svg, format='svg', dpi=dpi)
 
                 try:
                     path_tikz = os.path.join(save_path, 'city_district.tikz')
@@ -593,9 +599,14 @@ def plot_city_district(city, city_list=None, plot_buildings=True,
                 except:
                     warnings.warn('Could not save figure as tikz')
 
-            elif os.path.isfile(save_path):
+            else:
+                plt.savefig(save_path, dpi=dpi)
 
-                plt.savefig(save_path)
+        print()
+        print('###############################################')
+        print('Saved city_district figures to %s' % (save_path))
+        print('###############################################')
+        print()
 
     if show_plot:
         plt.show()
@@ -969,12 +980,20 @@ if __name__ == '__main__':
         addEntity(entity=bes)
 
     #  Plot city
-    plot_city_district(city=city_object, plot_buildings=True, plot_street=True,
-                       plot_lhn=True, plot_deg=True, plot_esys=True,
+    plot_city_district(city=city_object,
+                       plot_buildings=True,
+                       plot_street=True,
+                       plot_lhn=True,
+                       plot_deg=True,
+                       plot_esys=True,
                        offset=2,
-                       plot_build_labels=True, plot_str_labels=False,
-                       equal_axis=False, font_size=16, save_plot=False,
-                       plot_str_dist=plot_str_dist, plot_color=True,
+                       plot_build_labels=True,
+                       plot_str_labels=False,
+                       equal_axis=False,
+                       font_size=16,
+                       save_plot=False,
+                       plot_str_dist=plot_str_dist,
+                       plot_color=True,
                        fig_adjust=None)
 
     #  Plot multi city district files

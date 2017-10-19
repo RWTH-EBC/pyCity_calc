@@ -396,7 +396,7 @@ class CityEBCalculator(object):
                           ' ' + str(int(th_lhn_power_remain[i])) + ' Watt' \
                                                                    ' for timestep ' + str(
                         i) + '.'
-                    raise AssertionError(msg)
+                    raise beb.EnergyBalanceException(msg)
 
         # Save list pump energy on energy balance object
         self.list_pump_energy = list_pump_energy
@@ -686,6 +686,8 @@ class CityEBCalculator(object):
         co2 += self.dict_fe_city_balance['grid_import_hp'] \
                * co2em.co2_factor_el_mix
         co2 += self.dict_fe_city_balance['grid_import_eh'] \
+               * co2em.co2_factor_el_mix
+        co2 += self.dict_fe_city_balance['pump_energy'] \
                * co2em.co2_factor_el_mix
 
         #  Subtract feed in amount

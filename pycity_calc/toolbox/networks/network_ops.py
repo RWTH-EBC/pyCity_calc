@@ -1241,6 +1241,8 @@ def gen_min_span_tree_along_street(city, nodelist, plot_graphs=False):
     #  New node number init (necessary to prevent handing over ids, which
     #  already exist within original city object
     id_new = city.new_node_number()
+    while id_new in city.nodes():
+        id_new += 1
 
     #  Loop over all building nodes and add intersect points and new segments
     for n in nodelist:

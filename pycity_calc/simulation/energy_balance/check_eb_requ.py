@@ -12,6 +12,20 @@ import warnings
 import pycity_calc.toolbox.networks.network_ops as netop
 
 
+
+class EnergySupplyException(Exception):
+    def __init__(self, message):
+        """
+        Constructor of own Energy Supply Exception
+
+        Parameters
+        ----------
+        message : str
+            Error message
+        """
+
+        super(EnergySupplyException, self).__init__(message)
+
 def check_eb_build_requ(build):
     """
     Check requirements for energy balance for single building.
@@ -60,12 +74,12 @@ def check_eb_build_requ(build):
         msg = 'Building has no thermal energy' \
               ' supply! Cannot run' \
               ' energy balance!'
-        raise AssertionError(msg)
+        raise EnergySupplyException(msg)
 
     if tes_okay is False:
         msg = 'Building has CHP or HP, but no TES, which is required for ' \
               'energy balance calculation!'
-        raise AssertionError(msg)
+        raise EnergySupplyException(msg)
 
 def check_eb_requirements(city, pycity_deap=False):
     """
@@ -133,12 +147,13 @@ def check_eb_requirements(city, pycity_deap=False):
                     city.edge[id][i]['network_type'] == 'heating_and_deg'):
                     status_okay = True
                     found_lhn = True
+                    break
 
         if status_okay is False:
             msg = 'Building with id ' + str(id) + ' has no thermal energy' \
                                                   ' supply! Cannot run' \
                                                   ' energy balance!'
-            raise AssertionError(msg)
+            raise EnergySupplyException(msg)
 
         if found_lhn:
             #  Check, if each LHN network has, at least, one feeder node
@@ -176,7 +191,7 @@ def check_eb_requirements(city, pycity_deap=False):
                 if lhn_status is False:
                     msg = 'LHN network has no feeder node (LHN network ' \
                           'with node ids ' + str(list_lhn) + '.'
-                    raise AssertionError(msg)
+                    raise EnergySupplyException(msg)
 
     print('Energy balance input check has been sucessful')
 
