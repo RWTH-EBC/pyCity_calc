@@ -693,6 +693,7 @@ def analyze_demands_hist(mc_res, key, mode, output_path, dpi=1000,
 
     print('Standard deviation of ' + str(e_name) + ' value in kWh:')
     stdev = np.std(a=list_dem)
+    print(stdev)
     print()
 
     print('Median  ' + str(e_name) + '  value in kWh:')
@@ -2202,8 +2203,8 @@ if __name__ == '__main__':
     #  User input
     #  ###############################################
 
-    mc_city = True
-    all_cities = True  # all cities / all buildings or only specific key
+    mc_city = False
+    all_cities = False  # all cities / all buildings or only specific key
 
     with_outliners = True
     dpi = 1000
@@ -2256,12 +2257,12 @@ if __name__ == '__main__':
         #                     output_filename=key, dpi=300,
         #                     mc_city=True, fontsize=fontsize)
 
-        # #  Perform space heating demand analysis for single district
-        # #  #####################################################################
-        # analyze_demands_hist(mc_res=mc_res, key=key, mode='sh',
-        #                      output_path=output_path, dpi=dpi,
-        #                      mc_city=mc_city, fontsize=fontsize)
-        #
+        #  Perform space heating demand analysis for single district
+        #  #####################################################################
+        analyze_demands_hist(mc_res=mc_res, key=key, mode='sh',
+                             output_path=output_path, dpi=dpi,
+                             mc_city=mc_city, fontsize=fontsize)
+
         # #  Perform space heating power analysis for single district
         # #  #####################################################################
         # analyze_sh_powers_hist(mc_res=mc_res, key=key, output_path=output_path,
@@ -2284,34 +2285,34 @@ if __name__ == '__main__':
 
         print('Analysis for all districts')
 
-        # #  Perform space heating box plot analysis for all districts
-        # #  Plot boxplots with three axes
-        # #  #####################################################################
-        output_path_curr = os.path.join(output_path, 'th_dem_three_axes')
-        box_plot_analysis_triple_plot(mc_res=mc_res, output_path=output_path_curr,
-                                      output_filename=output_filename, dpi=dpi,
-                                      with_outliners=with_outliners,
-                                      list_order=list_order, mode='sh',
-                                      mc_city=mc_city)
-
-        # #  Perform electric energy box plot analysis for all districts
-        # #  Plot boxplots with three axes
-        # #  #####################################################################
-        output_path_curr = os.path.join(output_path, 'el_dem_three_axes')
-        box_plot_analysis_triple_plot(mc_res=mc_res, output_path=output_path_curr,
-                                      output_filename=output_filename, dpi=dpi,
-                                      with_outliners=with_outliners,
-                                      list_order=list_order, mode='el',
-                                      mc_city=mc_city)
-
-        # #  Perform hot water energy box plot analysis for all districts
-        # #  Plot boxplots with three axes
-        # #  #####################################################################
-        output_path_curr = os.path.join(output_path, 'dhw_dem_three_axes')
-        box_plot_analysis_triple_plot(mc_res=mc_res, output_path=output_path_curr,
-                                      output_filename=output_filename, dpi=dpi,
-                                      with_outliners=with_outliners,
-                                      list_order=list_order, mode='dhw',
-                                      mc_city=mc_city)
+        # # #  Perform space heating box plot analysis for all districts
+        # # #  Plot boxplots with three axes
+        # # #  #####################################################################
+        # output_path_curr = os.path.join(output_path, 'th_dem_three_axes')
+        # box_plot_analysis_triple_plot(mc_res=mc_res, output_path=output_path_curr,
+        #                               output_filename=output_filename, dpi=dpi,
+        #                               with_outliners=with_outliners,
+        #                               list_order=list_order, mode='sh',
+        #                               mc_city=mc_city)
+        #
+        # # #  Perform electric energy box plot analysis for all districts
+        # # #  Plot boxplots with three axes
+        # # #  #####################################################################
+        # output_path_curr = os.path.join(output_path, 'el_dem_three_axes')
+        # box_plot_analysis_triple_plot(mc_res=mc_res, output_path=output_path_curr,
+        #                               output_filename=output_filename, dpi=dpi,
+        #                               with_outliners=with_outliners,
+        #                               list_order=list_order, mode='el',
+        #                               mc_city=mc_city)
+        #
+        # # #  Perform hot water energy box plot analysis for all districts
+        # # #  Plot boxplots with three axes
+        # # #  #####################################################################
+        # output_path_curr = os.path.join(output_path, 'dhw_dem_three_axes')
+        # box_plot_analysis_triple_plot(mc_res=mc_res, output_path=output_path_curr,
+        #                               output_filename=output_filename, dpi=dpi,
+        #                               with_outliners=with_outliners,
+        #                               list_order=list_order, mode='dhw',
+        #                               mc_city=mc_city)
 
     print('Saved results to ' + str(output_path))
