@@ -18,16 +18,12 @@ import networkx as nx
 import dim_devices
 
 import pycity_base.classes.supply.BES as BES
-import pycity_base.classes.supply.Boiler as Boiler
-import pycity_base.classes.supply.CHP as CHP
-#import pycity_base.classes.supply.HeatPump as HP
+import pycity_calc.energysystems.boiler as Boiler
+import pycity_calc.energysystems.chp as CHP
 import pycity_calc.energysystems.heatPumpSimple as HP
-#  TOdo: use heatpumpsimple of pycity_calc
-
-import pycity_base.classes.supply.ElectricalHeater as ElectricalHeater
-import pycity_base.classes.supply.Inverter as Inverter
-import pycity_base.classes.supply.PV as PV
+import pycity_calc.energysystems.electricalHeater as ElectricalHeater
 import pycity_calc.energysystems.thermalEnergyStorage as TES
+
 import pycity_base.classes.demand.SpaceHeating as SpaceHeating
 import pycity_calc.toolbox.networks.network_ops as net_ops
 import pycity_calc.toolbox.dimensioning.dim_networks as dimnet
@@ -42,7 +38,7 @@ import pycity_calc.economic.energy_sys_cost.tes_cost as tes_cost
 
 
 
-def run_approach(city,scenarios,building_con=True,heating_net=True, geothermal=True):
+def run_approach(city,scenarios,geothermal=True):
     """
     Main method to coordinate the planning process.
 
@@ -73,17 +69,31 @@ def run_approach(city,scenarios,building_con=True,heating_net=True, geothermal=T
                                            livingArea=ap.net_floor_area,
                                            specificDemand=spec_th_dem)
 
-
 #----------------------- Check Eligibility for District Heating Network ----------------------------------
 
     # Energiekennwert des Quartiers (Keine Unterscheidung der Gebäude - nur Betrachtung als Gesamtes zur Abschätzung)
     th_total = city.get_annual_space_heating_demand() + city.get_annual_dhw_demand()
 
     area_total = 0
+    edge_count = 0
     for n in city.nodelist_building:
         area_total += city.node[n]['entity'].get_net_floor_area_of_building() #sum area of buildings
+        if city.edge[n] != {}:
+            edge_count += 1
+
     ekw = th_total/area_total #in kWh/(m2*a)
 
+    # Check for existing LHN and building connections
+    if edge_count/len(city.nodelist_building) > 0.5:
+        heating_net = True
+        building_con = True
+    else:
+        heating_net = False
+        building_con = False
+
+    # Overwrite results from existing lhn check
+    heating_net = True
+    building_con = True
 
     district_type = get_city_type(city)
 
@@ -250,6 +260,7 @@ def get_eligibility_dhn(district_type, ekw, heating_net=False, building_con=Fals
     :param building_con: Building connection to dhn already installed (True/False)
     :return: elig_val = value of eligibility for usage of district heating: 1(very bad) - 5(very good)
     '''
+    # TODO: Für 2 Gebäude testen! -> Nichteignung für CHP?!
     if district_type == 'big':
         if heating_net:
             if building_con:
@@ -451,7 +462,7 @@ def dim_centralized(city, scenario, district_type):
                            use_street_network=False, network_type='heating',
                            plot_stepwise=False)
     net_ops.add_weights_to_edges(city)
-
+    print("ready")
     '''
     citvis.plot_city_district(city=city, plot_street=False,
                               plot_lhn=True, offset=None,
@@ -482,7 +493,7 @@ def dim_centralized(city, scenario, district_type):
             if not check_eewaermeg(city, 'chp', t_ann_op, q_total):
                 raise Warning('Energysystem with CHP not according to EEWaermeG!')
 
-            chp = CHP.CHP(city.environment, p_nom, q_nom, eta_el + eta_th)
+            chp = CHP.ChpExtended(city.environment,q_nom,p_nom, eta_el + eta_th)
             bes.addDevice(chp)
             print('CHP: Q_nom = ' + str(q_nom / 1000) + ' kW (' + str(round(q_nom * 100 / max(th_curve), 2)) +
                   '% of Q_max) ->', t_x, 'full-load hours.')
@@ -499,7 +510,7 @@ def dim_centralized(city, scenario, district_type):
             qPEF.append(get_factor_enev('pef','gas',area_total) * q_chp_ann - get_factor_enev('pef','el_chp_out',area_total) * w_el_chp_out) # KWK-Anlage mit Erdgas betrieben?!
 
             # Pufferspeicher hinzufügen falls Leistung über 20% von Maximalverbrauch
-            if q_nom/max(th_LDC) > 0.2:
+            if True:    #q_nom/max(th_LDC) > 0.2:
                 v_tes = q_nom/1000*60 # Förderung von Speichern für Mini-BHKW durch BAFA bei Speichergrößen über 60 l/kW_th
                 if v_tes > 1600: # 1600 liter genügen für Förderung
                     v_tes = 1600 + (q_nom/1000*60-1600)*0.2 # Schätzung um auch Anlagen >30kW mit Speicher zu versorgen
@@ -514,8 +525,8 @@ def dim_centralized(city, scenario, district_type):
 
             # Wärmeerzeuger für Spitzenlast hinzufügen
             if 'boiler' in scenario['peak']:
-                q_boiler = max(th_LDC) - q_nom
-                boiler = Boiler.Boiler(city.environment, q_boiler, 0.8)
+                q_boiler = (max(th_LDC) - q_nom) * 1.1  # 10% safety
+                boiler = Boiler.BoilerExtended(city.environment, q_boiler, 0.8)
                 bes.addDevice(boiler)
                 print('Added Boiler: Q_nom = '+str(round(q_boiler/1000,2))+' kW')
                 if q_boiler >= 4000 and q_boiler < 400000:
@@ -532,6 +543,17 @@ def dim_centralized(city, scenario, district_type):
         print(' hp geothermie')
         # result['hp_geo'] = 1 # dummy
 
+    elif 'boiler' in scenario['base']:
+        q_boiler = max(th_curve)
+        boiler = Boiler.BoilerExtended(city.environment, q_boiler, 0.8)
+        bes.addDevice(boiler)
+        print('Added Boiler: Q_nom = ' + str(round(q_boiler / 1000, 2)) + ' kW')
+
+        qPEF.append(get_factor_enev('pef', 'gas', area_total) * get_factor_enev('eg', 'boiler', area_total) * q_total / boiler.eta)
+        heg.append(get_factor_enev('heg', 'boiler', area_total) * area_total)
+
+        ann_q_base = np.sum(th_curve) / 1000  # Annual produced heat with base supply in kWh
+        ann_q_peak = 0
 
 
     elif 'hp_air' in scenario['base']:
@@ -570,7 +592,7 @@ def dim_centralized(city, scenario, district_type):
 
             # Add Boiler
             q_boiler = max(th_curve) - q_hp
-            boiler = Boiler.Boiler(city.environment, q_boiler, 0.8)
+            boiler = Boiler.BoilerExtended(city.environment, q_boiler, 0.8)
             bes.addDevice(boiler)
             print('Added Boiler: Q_nom = ' + str(round(q_boiler / 1000, 2)) + ' kW')
             if q_boiler >= 4000 and q_boiler < 400000:
@@ -627,6 +649,7 @@ def dim_decentralized(city, scenario):
 
         sh_curve = building.get_space_heating_power_curve()
         dhw_curve = building.get_dhw_power_curve()
+        q_total = sh_curve + dhw_curve
 
         sh_LDC = dim_devices.get_LDC(sh_curve)
         dhw_LDC = dim_devices.get_LDC(dhw_curve)
@@ -654,7 +677,7 @@ def dim_decentralized(city, scenario):
                 else:
                     eta_el, eta_th, p_nom, q_nom, t_x, t_ann_op = chp_sol
 
-                chp = CHP.CHP(city.environment, p_nom, q_nom, eta_el + eta_th)
+                chp = CHP.ChpExtended(city.environment, p_nom, q_nom, eta_el + eta_th)
                 bes.addDevice(chp)
                 print('CHP: Q_nom = ' + str(q_nom / 1000) + ' kW (' + str(round(q_nom * 100 / max(th_LDC), 2)) +
                       '% of Q_max) ->', t_x, 'full-load hours.')
@@ -666,7 +689,7 @@ def dim_decentralized(city, scenario):
                                                                                                    area_total) * w_el_chp_out)  # KWK-Anlage mit Erdgas betrieben?!
 
                 # Pufferspeicher hinzufügen falls Leistung über 20% von Maximalverbrauch
-                if q_nom / max(th_LDC) > 0.2:
+                if True:    #q_nom / max(th_LDC) > 0.2:
                     v_tes = q_nom / 1000 * 60  # Förderung von Speichern für Mini-BHKW durch BAFA bei Speichergrößen über 60 l/kW_th
                     if v_tes > 1600:  # 1600 liter genügen für Förderung
                         v_tes = 1600 + (q_nom / 1000 * 60 - 1600) * 0.2  # Schätzung um auch Anlagen >30kW mit Speicher zu versorgen
@@ -679,8 +702,8 @@ def dim_decentralized(city, scenario):
 
                 # Wärmeerzeuger für Spitzenlast hinzufügen
                 if 'boiler' in scenario['peak']:
-                    q_boiler = max(th_LDC) - q_nom
-                    boiler = Boiler.Boiler(city.environment, q_boiler, 0.8)
+                    q_boiler = (max(th_LDC) - q_nom)*1.5
+                    boiler = Boiler.BoilerExtended(city.environment, q_boiler, 0.8)
                     bes.addDevice(boiler)
                     print('Added Boiler: Q_nom = ' + str(round(q_boiler / 1000, 2)) + ' kW')
                     if q_boiler >= 4000 and q_boiler < 400000:
@@ -704,7 +727,7 @@ def dim_decentralized(city, scenario):
 
                 # nach VDI 4645!
 
-                sh_curve = building.get_space_heating_power_curve()
+                #sh_curve = building.get_space_heating_power_curve()
 
                 q_nom, tMax, lowerActivationLimit, tSink, t_dem_ldc, biv_ind = dim_devices.dim_decentral_hp(city.environment, sh_curve)
 
@@ -718,77 +741,63 @@ def dim_decentralized(city, scenario):
                 print('Added HP: Q_nom = ' + str(q_nom / 1000) + ' kW')
 
                 if 'elHeater' in scenario['peak']:
-                    q_elHeater = max(t_dem_ldc[0:biv_ind]) - q_nom
+                    safety_factor = 1.8    # over dimensioning to guarantee simulation success
+                    q_elHeater = (max(dhw_curve) + max(sh_curve) - q_nom)*safety_factor
                     if q_elHeater > 0:
-                        elHeater = ElectricalHeater.ElectricalHeater(city.environment, q_elHeater, 0.95, 100, 0.2)
+                        elHeater = ElectricalHeater.ElectricalHeaterExtended(city.environment, q_elHeater, 0.95, 100, 0.2)
                         bes.addDevice(elHeater)
                         print('Added elHeater: Q_nom = ' + str(round(q_elHeater / 1000, 2)) + ' kW')
                     else:
                         print('No elHeater installed.')
 
 
+                elif 'boiler' in scenario['peak']:
+                    safety_factor = 1.2  # over dimensioning to guarantee simulation success
+                    q_boiler = (max(dhw_curve) + max(t_dem_ldc[0:biv_ind]) - q_nom) * safety_factor
+                    if q_boiler > 0:
+                        boiler = Boiler.BoilerExtended(city.environment, q_boiler, 0.8)
+                        bes.addDevice(boiler)
+
+                        # elHeater muss installiert werden zur TWW Deckung. Eigentlich sinnlos! Boiler kann das auch!!
+                        # elHeater = ElectricalHeater.ElectricalHeaterExtended(city.environment,max(dhw_curve) , 0.95, 100, 0.2)
+                        # bes.addDevice(elHeater)
+                        print('Added Boiler: Q_nom = ' + str(round(q_boiler / 1000, 2)) + ' kW')
+                    else:
+                        print('No boiler installed.')
+
+                v_tes = 30*q_nom/1000   # in liter (DIN EN 15450: volume between 12 - 35 l/kW)
+
+                # Warmwasserspeicher hinzufügen
+                # t_soll = 65  # Speichersolltemperatur
+                # t_cw = 10  # Kaltwassertemperatur
+                #TODO: Dimensionierung Speicher verbessern - das ist nur TWW Speicher
+                # v_tes = people_total * 25 * (60 - t_cw) / (
+                #     t_soll - t_cw)  # Speichervolumen nach Dimplex PHB (Kap.6.1.3)
+                tes = TES.thermalEnergyStorageExtended(environment=city.environment, t_init=50,
+                                                       capacity=v_tes)
+                bes.addDevice(tes)
+                print('Added Thermal Energy Storage:', round(v_tes,2), 'liter ')
 
                 # TODO: Förderungen für Wärmepumpe einfügen
 
+            #elif 'hp_geo' in scenario['base']:
+
+
+
+            elif 'boiler' in scenario['base']:
+                q_boiler = max(sh_curve+dhw_curve)
+                boiler = Boiler.BoilerExtended(city.environment, q_boiler, 0.8)
+                bes.addDevice(boiler)
+                print('Added Boiler: Q_nom = ' + str(round(q_boiler / 1000, 2)) + ' kW')
+
+                qPEF.append(get_factor_enev('pef', 'gas', area_total) * get_factor_enev('eg', 'boiler',
+                                                                                        area_total) * q_total / boiler.eta)
+                heg.append(get_factor_enev('heg', 'boiler', area_total) * area_total)
 
 
 
                 '''
-                chp_flh = 7000  # best possible full-load-hours
-                q_chp = th_LDC[chp_flh]
-
-                [eta_el, eta_th, p_nom, q_nom] = choose_device('chp', q_chp)
-
-                while q_nom * eta_th / max(th_curve) < 0.1:  # falls leistungsanteil kleiner als 10%
-                    chp_flh -= 50
-                    q_chp = th_LDC[chp_flh]
-                    [eta_el, eta_th, p_nom, q_nom] = choose_device('chp', q_chp)
-
-                if building.build_year >= 2009:
-                    print('Energysystem must comply with EEWärmeG!')
-                    eewg = False
-                    count = 0
-                    while not eewg:
-                        ee_ratio = q_chp / q_total
-                        if ee_ratio > 0.5:
-                            # PEE berechnen
-                            refeta_th = 0.85  # th. Referenzwirkungsgrad für Anlagen vor 2016, Dampf, Erdgas
-                            refeta_el = 0.525  # el. Referenzwirkungsgrad für Anlagen zwischen 2012 und 2015, Erdgas
-                            # Primärenergieeinsparung (PEE) in % nach Richtlinie 2012/27/EU
-                            pee = (1 - 1 / ((eta_th / refeta_th) + (eta_el / refeta_el))) * 100
-                            if p_nom >= 1000000:
-                                if pee >= 10:
-                                    print('EEWärmeG obeyed. (>=1MW)')
-                                    eewg = True
-                                    break
-                            else:
-                                if pee > 0:
-                                    print('EEWärmeG obeyed. (<1MW)')
-                                    eewg = True
-                                    break
-                            if q_chp / q_total > 0.9:
-                                print('EEWärmeG not obeyed: Unrealistic values! (Q_chp > 90% of Q_total)')
-                                break
-                        q_chp = math.ceil(
-                            0.5 * q_total + count * q_total / 100)  # Mindestwert 50% Deckung + 1% der Gesamtleistung je Durchlauf
-                        [eta_el, eta_th, p_nom, q_nom] = choose_device('chp', q_chp)
-                        count += 1
-                else:
-                    print('Due to building age, the EEWärmeG does not need to be considered.')
-                    eewg = True
-
-                enev = False
-
-                chp = CHP.CHP(city.environment, p_nom, q_nom, eta_el + eta_th)
-                bes.addDevice(chp)
-                print('CHP with Q_nom =', q_nom, ' W (', round(q_nom * 100 / max(th_curve),2), '%) ->', chp_flh, 'full-load hours.' )
-
-                if 'boiler' in scenario['peak']:
-                    q_boiler = max(th_LDC) - q_nom
-                    boiler = Boiler.Boiler(city.environment, q_boiler, 0.8)
-                    bes.addDevice(boiler)
-
-        # TODO: Wärmepumpe und andere Anlagen implementieren!
+            # TODO: Wärmepumpe und andere Anlagen implementieren!
 
             if device == 'hp_air':
                 #Monovalenter Betrieb von Luft/Wasser-Wärmepumpen nach Dimplex Anleitung (Planungshandbuch S.16)
@@ -971,7 +980,10 @@ def calc_costs_centralized(city, q_base, q_peak, i=0.08, price_gas=0.0661, el_fe
                                                                                 use_el_input=True, q_th_nom=None)
                 print('Investcost CHP', round(chp_invest,2), 'Euro')
 
-                bafa_subs_chp = dim_devices.get_subs_minichp(bes.chp.pNominal, bes.tes.capacity/1000)
+                if bes.hasTes:
+                    bafa_subs_chp = dim_devices.get_subs_minichp(bes.chp.pNominal, bes.tes.capacity/1000)
+                else:
+                    bafa_subs_chp = 0
 
                 el_feedin_chp = dim_devices.get_el_feedin_tariff_chp(bes.chp.pNominal,el_feedin_epex)
 
@@ -1074,10 +1086,12 @@ if __name__ == '__main__':
 
     scenarios = []
     #scenarios.append({'type': ['centralized', 'decentralized'], 'base': ['boiler'], 'peak': []})
-    #scenarios.append({'type': ['decentralized'], 'base': ['hp_air'], 'peak': ['boiler']})
-    #scenarios.append({'type': ['decentralized'], 'base': ['hp_air'], 'peak': ['elHeater']})
-    scenarios.append({'type': ['decentralized'], 'base': ['chp'], 'peak': ['boiler']})
-    #scenarios.append({'type': ['centralized'], 'base': ['chp'], 'peak': ['boiler']})
+    # scenarios.append({'type': ['decentralized'], 'base': ['hp_air'], 'peak': ['boiler']})
+    scenarios.append({'type': ['decentralized'], 'base': ['hp_air'], 'peak': ['elHeater']})
+    scenarios.append({'type': ['centralized'], 'base': ['chp'], 'peak': ['boiler']})
+
+    #scenarios.append({'type': ['decentralized'], 'base': ['chp'], 'peak': ['boiler']})
+
 
     #scenarios.append({'type': ['centralized', 'decentralized'], 'base': ['hp_geo'], 'peak': ['boiler']})
     # scenarios.append({'type': ['centralized', 'decentralized'], 'base': ['hp_geo'], 'peak': ['elHeater']})
@@ -1092,26 +1106,24 @@ if __name__ == '__main__':
         city_path = os.path.join(this_path, 'input', city_f_name)
         city = pickle.load(open(city_path, mode='rb'))
         #city = pickle.load(open('/Users/jules/PycharmProjects/Masterarbeit/Beispielquartier/aachen_kronenberg_3_mfh_ref_1.pkl', mode='rb'))
-        print('District: Aachen Kronenberg')
 
     elif ex_city == 2:
-        city_f_name = 'wm_res_east_7_richardsonpy.pkl'
+        city_f_name = 'example_2_buildings.pkl'
         city_path = os.path.join(this_path, 'input', city_f_name)
         city = pickle.load(open(city_path, mode='rb'))
-        print("District: 7 MFH, Bottrop")
 
+    print('District ' + city_f_name[:-4] + ' loaded')
     list_city_object = run_approach(city,scenarios)
 
-    '''
+
     # ---- Output in pickle files -----
     
     import pycity_calc.visualization.city_visual as citvis
 
     for i in range(len(list_city_object)):
         cit = list_city_object[i]
-        city_name = 'city_out_' + str(i+1) + '.pkl'
+        city_name = 'output(' + str(i+1) + ')_' + city_f_name
         path_output = os.path.join(this_path, 'output', city_name)
         pickle.dump(cit, open(path_output, mode='wb'))
         citvis.plot_city_district(city=cit, plot_lhn=True, plot_deg=True,
                                   plot_esys=True)
-    '''
