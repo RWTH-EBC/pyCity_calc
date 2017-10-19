@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-
+Example script to run energy balance and economic annuity calculation
+with city object instance (holding buildings with loads and energy systems)
 """
 from __future__ import division
 
 import os
-import pickle
 
 import pycity_calc.economic.city_economic_calc as citecon
 import pycity_calc.environments.germanmarket as gmarket
