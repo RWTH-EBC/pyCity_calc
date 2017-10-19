@@ -36,7 +36,7 @@ def estimate_u_value(d_i):
     Returns
     -------
     u_pipe : float
-        U-value of pipe in W/m
+        U-value of pipe in W/mK
     """
 
     u_pipe = 0.9264 * d_i ** 0.501
@@ -215,6 +215,7 @@ def add_lhn_to_city(city, list_build_node_nb=None, temp_vl=90,
     assert c_p > 0, 'c_p must be larger than zero!'
     assert rho > 0, 'rho must be larger than zero!'
     assert network_type in ['heating', 'heating_and_deg']
+    assert list_build_node_nb != []
 
     if list_build_node_nb is None:
         #  get list of all building entities
@@ -320,8 +321,12 @@ def add_lhn_to_city(city, list_build_node_nb=None, temp_vl=90,
                     # u was not set already as a LHN node
                     #  Get current position
                     pos_curr = min_span_graph.node[u]['position']
+
                     #  Generate new id
                     id1 = city.new_node_number()
+                    while id1 in city.nodes():
+                        id1 += 1
+
                     list_lhn_node[0].append(u) # save the min_span_tree_node
                     list_lhn_node[1].append(id1) # save the new_lhn_node
                     #  Add new network node to city
@@ -345,8 +350,12 @@ def add_lhn_to_city(city, list_build_node_nb=None, temp_vl=90,
                     # v was not set already as a LHN node
                     #  Get current position
                     pos_curr = min_span_graph.node[v]['position']
+
                     #  Generate new id
                     id2 = city.new_node_number()
+                    while id2 in city.nodes():
+                        id2 += 1
+
                     list_lhn_node[0].append(v) # save the min_span_tree_node
                     list_lhn_node[1].append(id2) # save the new_lhn_node
                     #  Add new network node to city
@@ -400,7 +409,7 @@ def add_lhn_to_city(city, list_build_node_nb=None, temp_vl=90,
     return (d_i, length)
 
 
-def add_deg_to_city(city, list_build_node_nb, use_street_network=False):
+def add_deg_to_city(city, list_build_node_nb=None, use_street_network=False):
     """
     Function adds decentralized electrical grig to city district.
     DEG can either be installed along minimum spanning tree
@@ -414,8 +423,9 @@ def add_deg_to_city(city, list_build_node_nb, use_street_network=False):
     ----------
     city : object
         City object of pycity_calc
-    list_build_node_nb : list
-        List of building nodes, which should be connected to DEG network
+    list_build_node_nb : list, optional
+        List of building nodes, which should be connected to DEG network.
+        (default: None). If None is set, connects all buildings within city.
     use_street_network : bool, optional
         Defines if street network should be used to generate deg system
         (default: False)
@@ -424,6 +434,17 @@ def add_deg_to_city(city, list_build_node_nb, use_street_network=False):
         If no street network exists within city object, minimium spanning tree
         is used
     """
+
+    assert list_build_node_nb != []
+
+    if list_build_node_nb is None:
+        #  get list of all building entities
+        list_build_node_nb = city.get_list_build_entity_node_ids()
+    else:
+        #  Check if all node ids within list_build_node_nb belong to buildings
+        for n in list_build_node_nb:
+            assert n in city.get_list_build_entity_node_ids(), \
+                ('Node ' + str(n) + ' does not have a building entity.')
 
     #  Check if all node ids within list_build_node_nb belong to buildings
     for n in list_build_node_nb:
@@ -489,8 +510,12 @@ def add_deg_to_city(city, list_build_node_nb, use_street_network=False):
                     # u was not set already as a deg node
                     #  Get current position
                     pos_curr = min_span_graph.node[u]['position']
+
                     #  Generate new id
                     id1 = city.new_node_number()
+                    while id1 in city.nodes():
+                        id1 += 1
+
                     list_deg_node[0].append(u)  # save the min_span_tree_node
                     list_deg_node[1].append(id1)  # save the new_deg_node
                     #  Add new network node to city
@@ -513,8 +538,12 @@ def add_deg_to_city(city, list_build_node_nb, use_street_network=False):
                     # v was not set already as a deg node
                     #  Get current position
                     pos_curr = min_span_graph.node[v]['position']
+
                     #  Generate new id
                     id2 = city.new_node_number()
+                    while id2 in city.nodes():
+                        id2 += 1
+
                     list_deg_node[0].append(v)  # save the min_span_tree_node
                     list_deg_node[1].append(id2)  # save the new_deg_node
                     #  Add new network node to city
@@ -570,7 +599,7 @@ def add_deg_to_city(city, list_build_node_nb, use_street_network=False):
 if __name__ == '__main__':
 
     #  Path to pickle city file
-    city_filename = 'city_clust_simple.p'
+    city_filename = 'city_clust_simple.pkl'
     this_path = os.path.dirname(os.path.abspath(__file__))
     pycity_calc_path = os.path.dirname(os.path.dirname(this_path))
     load_path = os.path.join(pycity_calc_path, 'toolbox', 'analyze',

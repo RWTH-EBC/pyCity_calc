@@ -553,6 +553,9 @@ class CityAnnuityCalc(object):
         chp_self = sum(dict_el_eb['chp_self']) * timestep / (1000 * 3600)
         chp_feed = sum(dict_el_eb['chp_feed']) * timestep / (1000 * 3600)
 
+        assert chp_self >= 0, 'chp_self: ' + str(chp_self)
+        assert chp_feed >= 0, 'chp_feed: ' + str(chp_feed)
+
         #  Calculate PV fed-in proceedings
         if build.build_type == 0:  # Residential
             is_res = True
@@ -583,6 +586,8 @@ class CityAnnuityCalc(object):
 
                 p_el_nom = build.bes.chp.pNominal
 
+                assert p_el_nom >= 0
+
                 chp_runtime = self.energy_balance.city.environment.\
                     prices.get_max_total_runtime_chp_sub(p_el_nom=p_el_nom)
 
@@ -591,6 +596,8 @@ class CityAnnuityCalc(object):
                 chp_runtime_used_per_year = (chp_self + chp_feed) \
                                             * 1000 / p_el_nom
 
+                assert chp_runtime_used_per_year >= 0
+
                 #  If runtime exceeds maximum subsidies runtime, use maximum
                 #  subsidies runtime
                 if chp_runtime_per_year >=chp_runtime_used_per_year:
@@ -598,9 +605,18 @@ class CityAnnuityCalc(object):
                 else:
                     chp_runtime_sub = chp_runtime_per_year + 0.0
 
+                assert chp_runtime_sub >= 0
+
                 #  Split runtime to shares of chp sold and chp self energy
-                share_self = chp_self / (chp_self + chp_feed)
-                share_feed = 1 - share_self
+                if chp_self != 0 or chp_feed != 0:
+                    share_self = chp_self / (chp_self + chp_feed)
+                    share_feed = 1 - share_self
+                elif chp_self == 0 and chp_feed == 0:
+                    share_self = 0
+                    share_feed = 0
+
+                assert share_self >= 0
+                assert share_feed >= 0
 
                 #  Runtime for sold and self consumed energy
                 r_time_self = chp_runtime_sub * share_self
@@ -609,6 +625,9 @@ class CityAnnuityCalc(object):
                 #  Subsidies amount of electric energy in kWh
                 chp_en_self = r_time_self * p_el_nom / 1000
                 chp_en_feed = r_time_feed * p_el_nom / 1000
+
+                assert chp_en_self >= 0
+                assert chp_en_feed >= 0
 
                 #  Calc. EEX and grid avoidance payment for chp fed-in
                 annuity_chp_eex_sold = self.calc_chp_sold(en_chp_sold=chp_feed)

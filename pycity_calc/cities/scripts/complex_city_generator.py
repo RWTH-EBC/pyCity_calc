@@ -347,7 +347,7 @@ if __name__ == '__main__':
     #  #----------------------------------------------------------------------
 
     #  Generate environment
-    year_timer = 2010
+    year_timer = 2017
     year_co2 = 2017
     timestep = 3600  # Timestep in seconds
     # location = (51.529086, 6.944689)  # (latitude, longitude) of Bottrop
@@ -402,7 +402,7 @@ if __name__ == '__main__':
     do_normalization = True
 
     #  Randomize electrical demand value (residential buildings, only)
-    el_random = True
+    el_random = False
 
     #  Prevent usage of electrical heating and hot water devices in
     #  electrical load generation
@@ -436,7 +436,7 @@ if __name__ == '__main__':
 
     #  Randomize choosen dhw_volume reference value by selecting new value
     #  from gaussian distribution with 20 % standard deviation
-    dhw_random = True
+    dhw_random = False
 
     #  Input file names and pathes
     #  ######################################################
@@ -448,10 +448,10 @@ if __name__ == '__main__':
     eff_factor = 0.85
 
     #  Define city district input data filename
-    filename = 'city_clust_simple.txt'
+    filename = 'city_3_buildings.txt'
 
     #  Define ouput data filename (pickled city object)
-    city_f_out_name = 'city_clust_simple.pkl'
+    city_f_out_name = 'city_3_buildings_w_street.pkl'
 
     #  Pickle and dump city object instance?
     do_save = True

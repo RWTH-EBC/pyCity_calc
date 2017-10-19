@@ -1421,6 +1421,9 @@ def calc_build_therm_eb(build, soc_init=0.75, boiler_full_pl=True,
                 # Use EH
                 if has_eh:
 
+                    if q_tes_in is None:
+                        q_tes_in = 0
+
                     #  if sh_pow_remain > 0 or dhw_pow_remain > 0, use eh
 
                     #  eh pointer
@@ -2127,11 +2130,11 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False,
 
             #  Maximum charging power
             p_bat_charge_max = bat.calc_battery_max_p_el_in()
-            p_bat_charge_remain = p_bat_charge_max + 0.0
+            p_bat_charge_remain = p_bat_charge_max - 0.0
 
             #  Maximum discharging power
             p_bat_disch_max = bat.calc_battery_max_p_el_out()
-            p_bat_disch_remain = p_bat_disch_max + 0.0
+            p_bat_disch_remain = p_bat_disch_max - 0.0
 
             if has_pv:
 
@@ -2151,6 +2154,8 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False,
                         pv_self_bat[i] += p_pv_remain
                         p_bat_charge += p_pv_remain
                         p_pv_remain = 0
+
+            assert p_bat_charge - 0.001 <= p_bat_charge_max
 
             if has_chp:
 
@@ -2172,6 +2177,11 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False,
                         p_el_chp_remain = 0
 
                     assert p_el_chp_remain >= 0
+
+            if p_bat_charge - 0.001 > p_bat_charge_max:
+                msg = 'p_bat_charge %s. p_bat_charge_max %s' % \
+                      (p_bat_charge, p_bat_charge_max)
+                raise AssertionError(msg)
 
             if p_el_remain > 0:
 
@@ -2205,6 +2215,8 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False,
                         bat_out_hp[i] += p_el_hp_remain
                         p_el_hp_remain = 0
 
+            assert p_bat_charge - 0.001 <= p_bat_charge_max
+
             if has_eh:
 
                 if p_el_eh_remain > 0:
@@ -2223,8 +2235,8 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False,
                         p_el_eh_remain = 0
 
             # Logic checks
-            assert p_bat_charge <= p_bat_charge_max
-            assert p_bat_discharge <= p_bat_disch_max
+            assert p_bat_charge - 0.001 <= p_bat_charge_max
+            assert p_bat_discharge - 0.001 <= p_bat_disch_max
 
             #  Use battery
             bat.calc_battery_soc_next_timestep(p_el_in=p_bat_charge,
