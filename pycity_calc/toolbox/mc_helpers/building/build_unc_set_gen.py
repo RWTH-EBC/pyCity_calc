@@ -5,6 +5,7 @@ Script to generate uncertain sets of building/building physics uncertain
 parameters
 """
 
+import math
 import random as rd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -104,6 +105,78 @@ def calc_inf_samples(nb_samples, mean=0, sdev=1, max_val=2):
             list_inf[i] = 0.26
 
     return list_inf
+
+
+def calc_sh_demand_samples(nb_samples, sh_ref, norm_std=0.5791):
+    """
+    Calculate space heating demand samples in kWh/a, based on Aachen
+    space heating demand uncertainty analysis.
+    Sampling values below zero are set to zero demand!
+
+    Parameters
+    ----------
+    nb_samples : int
+        Number of samples
+    sh_ref : float
+        Reference space heating demand in kWh/a. Used as mean value!
+    norm_std : float, optional
+        Normalized standard deviation (default. 0.5791). Results of
+        Aachen space heating demand uncertainty analysis (#239)
+
+    Returns
+    -------
+    array_sh : array (of floats)
+        Array with space heating demand samples in kWh/a for each sample
+    """
+
+    array_sh = np.random.normal(loc=sh_ref, scale=norm_std * sh_ref,
+                                size=nb_samples)
+
+    for i in range(len(array_sh)):
+        if array_sh[i] < 0:
+            array_sh[i] = 0
+
+    return array_sh
+
+
+def calc_sh_summer_on_off_samples(nb_samples, change_on=0.5):
+    """
+    Returns array with summer control on/off samples (is heating system
+    completely switched of during summer/warm month?).
+
+    Currently, we assume 50/50 change for on/off mode
+
+    Parameters
+    ----------
+    nb_samples : int
+        Number of samples
+    change_on : float, optional
+        Probability, that heating is active during summer month (default: 0.5)
+
+    Returns
+    -------
+    array_sh_on_off : array (of ints)
+        Numpy array holding zeros and ones to define, if heating is switched
+        on (1) or off (0) during summmer/warm month
+    """
+
+    assert change_on >= 0, 'Probability cannot be negative!'
+    assert change_on <= 1, 'Probability cannot exceed 100%!'
+
+    #  Initial random values for [0, 1)
+    array_sh_on_off = np.random.randint(low=0, high=1000000, size=nb_samples) \
+                      / 1000000
+
+    for i in range(len(array_sh_on_off)):
+        x = array_sh_on_off[i]
+        if x <= change_on:
+            array_sh_on_off[i] = 1  # On during summer
+        else:
+            array_sh_on_off[i] = 0  # Off during summer
+
+    print(array_sh_on_off)
+
+    return array_sh_on_off
 
 
 def calc_list_net_floor_area_sampling(mean, sigma, nb_of_samples):
@@ -254,7 +327,7 @@ if __name__ == '__main__':
 
     import matplotlib.pyplot as plt
 
-    count, bins, ignored = plt.hist(list_inf, 500, normed=False, align='mid')
+    count, bins, ignored = plt.hist(list_inf, bins='auto')
     # x = np.linspace(min(bins), max(bins), 10000)
     # pdf = (np.exp(-(np.log(x) - mean) ** 2 / (2 * sdev ** 2)) /
     #        (x * sdev * np.sqrt(2 * np.pi)))
@@ -263,34 +336,61 @@ if __name__ == '__main__':
     plt.ylabel('Number of values')
     plt.axis('tight')
     plt.show()
+    plt.close()
 
-    #   Building components
-    #  ################################################################
+    #  SH demand sampling
+    #  ##################################################################
+    sh_ref = 10000  # kWh/a
 
-    list_dormer, list_attic, list_cellar, list_const = calc_list_dormer_samples(
-        nb_samples)
+    list_sh = calc_sh_demand_samples(nb_samples=nb_samples, sh_ref=sh_ref)
 
-    fig2, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
-    ax1.hist(x=list_dormer)
-    ax1.set_title('Dormer')
-    ax2.hist(x=list_attic)
-    ax2.set_title('Attic')
-    ax3.hist(x=list_cellar)
-    ax3.set_title('Cellar')
-    ax4.hist(x=list_const)
-    ax4.set_title('Construction type')
+    # list_sh_ref = np.random.lognormal(mean=1, sigma=1.068623577, size=nb_samples)
+
+    count, bins, ignored = plt.hist(list_sh, bins='auto')
+    plt.hist(list_sh, bins='auto')
+    # plt.hist(list_sh_ref, bins='auto')
+    plt.xlabel('Space heating demand in kWh/a')
+    plt.ylabel('Number of values')
+    plt.axis('tight')
     plt.show()
     plt.close()
 
-    #   Net floor area sampling analysis
-    #  ################################################################
+    list_sh_contr = calc_sh_summer_on_off_samples(nb_samples=nb_samples,
+                                                  change_on=0.25)
 
-    list_net_floor_area = \
-        calc_list_net_floor_area_sampling(mean=500,
-                                          sigma=0.5,
-                                          nb_of_samples=nb_samples)
-
-    plt.hist(list_net_floor_area)
-    plt.xlabel('Net floor area sampling')
+    plt.hist(list_sh_contr, bins=2, range=(-0.5, 1.5))
+    plt.xlabel('Space heating summer mode (0 - off) (1 - on)')
+    plt.ylabel('Number of values')
     plt.show()
     plt.close()
+
+    # #   Building components
+    # #  ################################################################
+    #
+    # list_dormer, list_attic, list_cellar, list_const = calc_list_dormer_samples(
+    #     nb_samples)
+    #
+    # fig2, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+    # ax1.hist(x=list_dormer)
+    # ax1.set_title('Dormer')
+    # ax2.hist(x=list_attic)
+    # ax2.set_title('Attic')
+    # ax3.hist(x=list_cellar)
+    # ax3.set_title('Cellar')
+    # ax4.hist(x=list_const)
+    # ax4.set_title('Construction type')
+    # plt.show()
+    # plt.close()
+    #
+    # #   Net floor area sampling analysis
+    # #  ################################################################
+    #
+    # list_net_floor_area = \
+    #     calc_list_net_floor_area_sampling(mean=500,
+    #                                       sigma=0.5,
+    #                                       nb_of_samples=nb_samples)
+    #
+    # plt.hist(list_net_floor_area)
+    # plt.xlabel('Net floor area sampling')
+    # plt.show()
+    # plt.close()
