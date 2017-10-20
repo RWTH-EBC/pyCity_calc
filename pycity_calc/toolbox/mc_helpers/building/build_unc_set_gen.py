@@ -130,7 +130,7 @@ def calc_sh_demand_samples(nb_samples, sh_ref, norm_std=0.5791):
     """
 
     array_sh = np.random.normal(loc=sh_ref, scale=norm_std * sh_ref,
-                               size=nb_samples)
+                                size=nb_samples)
 
     for i in range(len(array_sh)):
         if array_sh[i] < 0:
@@ -139,7 +139,44 @@ def calc_sh_demand_samples(nb_samples, sh_ref, norm_std=0.5791):
     return array_sh
 
 
+def calc_sh_summer_on_off_samples(nb_samples, change_on=0.5):
+    """
+    Returns array with summer control on/off samples (is heating system
+    completely switched of during summer/warm month?).
 
+    Currently, we assume 50/50 change for on/off mode
+
+    Parameters
+    ----------
+    nb_samples : int
+        Number of samples
+    change_on : float, optional
+        Probability, that heating is active during summer month (default: 0.5)
+
+    Returns
+    -------
+    array_sh_on_off : array (of ints)
+        Numpy array holding zeros and ones to define, if heating is switched
+        on (1) or off (0) during summmer/warm month
+    """
+
+    assert change_on >= 0, 'Probability cannot be negative!'
+    assert change_on <= 1, 'Probability cannot exceed 100%!'
+
+    #  Initial random values for [0, 1)
+    array_sh_on_off = np.random.randint(low=0, high=1000000, size=nb_samples) \
+                      / 1000000
+
+    for i in range(len(array_sh_on_off)):
+        x = array_sh_on_off[i]
+        if x <= change_on:
+            array_sh_on_off[i] = 1  # On during summer
+        else:
+            array_sh_on_off[i] = 0  # Off during summer
+
+    print(array_sh_on_off)
+
+    return array_sh_on_off
 
 
 def calc_list_net_floor_area_sampling(mean, sigma, nb_of_samples):
@@ -318,7 +355,14 @@ if __name__ == '__main__':
     plt.show()
     plt.close()
 
+    list_sh_contr = calc_sh_summer_on_off_samples(nb_samples=nb_samples,
+                                                  change_on=0.25)
 
+    plt.hist(list_sh_contr, bins=2, range=(-0.5, 1.5))
+    plt.xlabel('Space heating summer mode (0 - off) (1 - on)')
+    plt.ylabel('Number of values')
+    plt.show()
+    plt.close()
 
     # #   Building components
     # #  ################################################################
