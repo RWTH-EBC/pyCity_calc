@@ -11,10 +11,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def calc_list_mod_years_single_build(nb_samples, year_of_constr, max_year,
+def calc_array_mod_years_single_build(nb_samples, year_of_constr, max_year,
                                      time_sp_force_retro=40):
     """
-    Calculate list of modification years for single building. Assumes
+    Calculate array of modification years for single building. Assumes
     equal distribution of mod. year probability density function.
     If time_sp_force_retro is set and smaller than time span between max_year
     (e.g. current year) and year_of_constr (year of construction), time span
@@ -38,14 +38,15 @@ def calc_list_mod_years_single_build(nb_samples, year_of_constr, max_year,
 
     Returns
     -------
-    list_mod_years : list (of ints)
+    array_mod_years : list (of ints)
         List of modernization years.
     """
 
-    list_mod_years = []
+    # list_mod_years = []
+    array_mod_years = np.zeros(nb_samples)
 
-    #  Currently unused: List with TEASER years of modernization
-    list_teaser_mod_y = [1982, 1995, 2002, 2009]
+    # #  Currently unused: List with TEASER years of modernization
+    # list_teaser_mod_y = [1982, 1995, 2002, 2009]
 
     #  Calc min_year
     if time_sp_force_retro is not None:
@@ -57,12 +58,10 @@ def calc_list_mod_years_single_build(nb_samples, year_of_constr, max_year,
         min_year = int(year_of_constr + 1)
 
     # Do sampling
-    for i in range(nb_samples):
-        chosen_year = rd.randint(min_year, max_year)
+    for i in range(len(array_mod_years)):
+        array_mod_years[i] = rd.randint(min_year, max_year)
 
-        list_mod_years.append(chosen_year)
-
-    return list_mod_years
+    return array_mod_years
 
 
 def calc_inf_samples(nb_samples, mean=0, sdev=1, max_val=2):
@@ -84,7 +83,7 @@ def calc_inf_samples(nb_samples, mean=0, sdev=1, max_val=2):
 
     Returns
     -------
-    list_inf : list (of floats)
+    array_inf : list (of floats)
         List of infiltration rates in 1/h
 
     References
@@ -95,16 +94,16 @@ def calc_inf_samples(nb_samples, mean=0, sdev=1, max_val=2):
     Gebäude & Gesundheit: Innenraumhygiene, Raumluftqualität und
     Energieeinsparung. Ergebnisse des 7, S. 263–271.
     """
-    list_inf = np.random.lognormal(mean=mean, sigma=sdev, size=nb_samples)
+    array_inf = np.random.lognormal(mean=mean, sigma=sdev, size=nb_samples)
 
-    list_inf /= 6
+    array_inf /= 6
 
     #  Reset values larger than 2 to 0.26
-    for i in range(len(list_inf)):
-        if list_inf[i] > max_val:
-            list_inf[i] = 0.26
+    for i in range(len(array_inf)):
+        if array_inf[i] > max_val:
+            array_inf[i] = 0.26
 
-    return list_inf
+    return array_inf
 
 
 def calc_sh_demand_samples(nb_samples, sh_ref, norm_std=0.5791):
@@ -244,7 +243,7 @@ if __name__ == '__main__':
     time_sp_force_retro = 40
 
     #  Calculate modernization years
-    list_mod = calc_list_mod_years_single_build(nb_samples=nb_samples,
+    list_mod = calc_array_mod_years_single_build(nb_samples=nb_samples,
                                                 year_of_constr=year_of_constr,
                                                 max_year=max_year,
                                                 time_sp_force_retro=
