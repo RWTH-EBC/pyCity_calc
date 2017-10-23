@@ -23,7 +23,7 @@ from pycity_calc.test.pycity_calc_fixtures import fixture_building, \
 
 class Test_MC_Sampling():
 
-    def test_calc_list_mod_years_single_build(self):
+    def test_calc_array_mod_years_single_build(self):
 
         nb_samples = 100
         year_of_constr = 1970
@@ -31,7 +31,7 @@ class Test_MC_Sampling():
         time_sp_force_retro = None
 
         list_mod_years = \
-            mcbuild.calc_list_mod_years_single_build(nb_samples=nb_samples,
+            mcbuild.calc_array_mod_years_single_build(nb_samples=nb_samples,
                                                      year_of_constr=year_of_constr,
                                                      max_year=max_year,
                                                      time_sp_force_retro=time_sp_force_retro)
@@ -45,7 +45,7 @@ class Test_MC_Sampling():
         time_sp_force_retro = None
 
         list_mod_years = \
-            mcbuild.calc_list_mod_years_single_build(nb_samples=nb_samples,
+            mcbuild.calc_array_mod_years_single_build(nb_samples=nb_samples,
                                                      year_of_constr=year_of_constr,
                                                      max_year=max_year,
                                                      time_sp_force_retro=time_sp_force_retro)
@@ -60,7 +60,7 @@ class Test_MC_Sampling():
         time_sp_force_retro = 30
 
         list_mod_years = \
-            mcbuild.calc_list_mod_years_single_build(nb_samples=nb_samples,
+            mcbuild.calc_array_mod_years_single_build(nb_samples=nb_samples,
                                                      year_of_constr=year_of_constr,
                                                      max_year=max_year,
                                                      time_sp_force_retro=time_sp_force_retro)
