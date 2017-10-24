@@ -12,6 +12,7 @@ import pycity_calc.cities.city as city
 import pycity_calc.toolbox.mc_helpers.building.build_unc_set_gen as mcbuild
 import pycity_calc.toolbox.mc_helpers.user.user_unc_sampling as mcuse
 import pycity_calc.toolbox.mc_helpers.weather.gen_weather_set as mcweat
+import pycity_calc.toolbox.mc_helpers.city.city_sampling as citsamp
 import pycity_calc.toolbox.mc_helpers.demand_unc_single_build as mc_build
 import pycity_calc.toolbox.mc_helpers.demand_unc_city as mc_city
 
@@ -20,9 +21,7 @@ from pycity_calc.test.pycity_calc_fixtures import fixture_building, \
     fixture_el_demand, fixture_detailed_building
 
 
-
 class Test_MC_Sampling():
-
     def test_calc_array_mod_years_single_build(self):
 
         nb_samples = 100
@@ -32,9 +31,9 @@ class Test_MC_Sampling():
 
         list_mod_years = \
             mcbuild.calc_array_mod_years_single_build(nb_samples=nb_samples,
-                                                     year_of_constr=year_of_constr,
-                                                     max_year=max_year,
-                                                     time_sp_force_retro=time_sp_force_retro)
+                                                      year_of_constr=year_of_constr,
+                                                      max_year=max_year,
+                                                      time_sp_force_retro=time_sp_force_retro)
 
         assert len(list_mod_years) == 100
         assert min(list_mod_years) >= 1970
@@ -46,9 +45,9 @@ class Test_MC_Sampling():
 
         list_mod_years = \
             mcbuild.calc_array_mod_years_single_build(nb_samples=nb_samples,
-                                                     year_of_constr=year_of_constr,
-                                                     max_year=max_year,
-                                                     time_sp_force_retro=time_sp_force_retro)
+                                                      year_of_constr=year_of_constr,
+                                                      max_year=max_year,
+                                                      time_sp_force_retro=time_sp_force_retro)
 
         assert len(list_mod_years) == 100
         assert min(list_mod_years) >= 1985
@@ -61,9 +60,9 @@ class Test_MC_Sampling():
 
         list_mod_years = \
             mcbuild.calc_array_mod_years_single_build(nb_samples=nb_samples,
-                                                     year_of_constr=year_of_constr,
-                                                     max_year=max_year,
-                                                     time_sp_force_retro=time_sp_force_retro)
+                                                      year_of_constr=year_of_constr,
+                                                      max_year=max_year,
+                                                      time_sp_force_retro=time_sp_force_retro)
 
         assert min(list_mod_years) >= 1970
         assert max(list_mod_years) <= 2000
@@ -387,3 +386,119 @@ class Test_MC_Sampling():
 
             assert abs(sh_sample - sh_dem) <= 0.5001 * sh_dem
             assert abs(el_sample - el_dem) <= 0.5001 * el_dem
+
+    def test_city_sampling(self):
+
+        nb_samples = 2
+
+        minv = 0.95
+        maxv = 1.18
+
+        array_int = \
+            citsamp.sample_interest(nb_samples, minval=minv, maxval=maxv)
+
+        assert len(array_int) == 2
+        for i in range(len(array_int)):
+            assert array_int[i] >= minv
+            assert array_int[i] <= maxv
+
+        array_int = \
+            citsamp.sample_price_ch_cap(nb_samples, minval=minv, maxval=maxv)
+
+        assert len(array_int) == 2
+        for i in range(len(array_int)):
+            assert array_int[i] >= minv
+            assert array_int[i] <= maxv
+
+        array_int = \
+            citsamp.sample_price_ch_dem_gas(nb_samples, minval=minv,
+                                            maxval=maxv)
+
+        assert len(array_int) == 2
+        for i in range(len(array_int)):
+            assert array_int[i] >= minv
+            assert array_int[i] <= maxv
+
+        array_int = \
+            citsamp.sample_price_ch_dem_el(nb_samples, minval=minv,
+                                           maxval=maxv)
+
+        assert len(array_int) == 2
+        for i in range(len(array_int)):
+            assert array_int[i] >= minv
+            assert array_int[i] <= maxv
+
+        array_int = \
+            citsamp.sample_price_ch_op(nb_samples, minval=minv,
+                                       maxval=maxv)
+
+        assert len(array_int) == 2
+        for i in range(len(array_int)):
+            assert array_int[i] >= minv
+            assert array_int[i] <= maxv
+
+        array_int = \
+            citsamp.sample_price_ch_op(nb_samples, minval=minv,
+                                       maxval=maxv)
+
+        assert len(array_int) == 2
+        for i in range(len(array_int)):
+            assert array_int[i] >= minv
+            assert array_int[i] <= maxv
+
+        array_int = \
+            citsamp.sample_price_ch_eeg_chp(nb_samples, minval=minv,
+                                            maxval=maxv)
+
+        assert len(array_int) == 2
+        for i in range(len(array_int)):
+            assert array_int[i] >= minv
+            assert array_int[i] <= maxv
+
+        array_int = \
+            citsamp.sample_price_ch_eeg_pv(nb_samples, minval=minv,
+                                           maxval=maxv)
+
+        assert len(array_int) == 2
+        for i in range(len(array_int)):
+            assert array_int[i] >= minv
+            assert array_int[i] <= maxv
+
+        array_int = \
+            citsamp.sample_price_ch_eex(nb_samples, minval=minv,
+                                        maxval=maxv)
+
+        assert len(array_int) == 2
+        for i in range(len(array_int)):
+            assert array_int[i] >= minv
+            assert array_int[i] <= maxv
+
+        array_int = \
+            citsamp.sample_price_ch_grid_use(nb_samples, minval=minv,
+                                             maxval=maxv)
+
+        assert len(array_int) == 2
+        for i in range(len(array_int)):
+            assert array_int[i] >= minv
+            assert array_int[i] <= maxv
+
+        array_int = \
+            citsamp.sample_grid_av_fee(nb_samples, minval=minv,
+                                       maxval=maxv)
+
+        assert len(array_int) == 2
+        for i in range(len(array_int)):
+            assert array_int[i] >= minv
+            assert array_int[i] <= maxv
+
+        minv = 8
+        maxv = 12
+
+        array_int = \
+            citsamp.sample_temp_ground(nb_samples, minval=minv,
+                                       maxval=maxv)
+
+        assert len(array_int) == 2
+        for i in range(len(array_int)):
+            assert array_int[i] >= minv
+            assert array_int[i] <= maxv
