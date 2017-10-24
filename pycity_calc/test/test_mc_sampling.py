@@ -598,3 +598,27 @@ class Test_MC_Sampling():
         for i in range(len(array_int)):
             assert array_int[i] >= minv
             assert array_int[i] <= maxv
+
+        array_int = \
+            esyssamp.sample_pv_eta(nb_samples)
+
+        assert len(array_int) == 2
+        for i in range(len(array_int)):
+            assert array_int[i] >= 0
+            assert array_int[i] <= 1
+
+        array_int = \
+            esyssamp.sample_pv_beta(nb_samples, minv=0, maxv=70)
+
+        assert len(array_int) == 2
+        for i in range(len(array_int)):
+            assert array_int[i] >= 0
+            assert array_int[i] <= 70
+
+        array_int = \
+            esyssamp.sample_pv_gamma(nb_samples, minv=-180, maxv=180)
+
+        assert len(array_int) == 2
+        for i in range(len(array_int)):
+            assert array_int[i] >= -180
+            assert array_int[i] <= 180

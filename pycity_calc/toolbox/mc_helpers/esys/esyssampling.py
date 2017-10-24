@@ -261,6 +261,96 @@ def sample_quality_grade_hp_aw(nb_samples, minv=0.32, maxv=0.4):
     return array_hp_aw_qual
 
 
+def sample_pv_eta(nb_samples, mean=0.12, std=0.02):
+    """
+    Returns samples for PV efficiency (with inverter efficiency included)
+
+    Parameters
+    ----------
+    nb_samples : int
+        Number of samples
+    mean : float, optional
+        Mean value of efficiency
+        (default: 0.9)
+    std : float, optional
+        Standard deviation of efficiency
+        (default: 0.02)
+
+    Returns
+    -------
+    array_pv_eta : np.array (of floats)
+        Numpy array holding samples of PV efficiency
+    """
+
+    assert nb_samples > 0
+    assert mean > 0
+    assert std >= 0
+
+    array_pv_eta = np.random.normal(loc=mean, scale=std,
+                                     size=nb_samples)
+
+    for i in range(len(array_pv_eta)):
+        assert array_pv_eta[i] <= 1
+
+    return array_pv_eta
+
+
+def sample_pv_beta(nb_samples, minv=0, maxv=60):
+    """
+    Returns samples for beta angle of PV system
+
+    Parameters
+    ----------
+    nb_samples : int
+        Number of samples
+    minv : float
+        Minimum value (default: 0)
+    maxv : float
+        Maximum value (default: 60)
+
+    Returns
+    -------
+    array_pv_beta : np.array (of float)
+        Numpy array with samples for beta angle of PV system
+    """
+
+    assert nb_samples > 0
+    assert minv >= 0
+    assert maxv >= 0
+
+    array_pv_beta = \
+        np.random.uniform(low=minv, high=maxv, size=nb_samples)
+
+    return array_pv_beta
+
+
+def sample_pv_gamma(nb_samples, minv=0, maxv=60):
+    """
+    Returns samples for gamma angle of PV system
+
+    Parameters
+    ----------
+    nb_samples : int
+        Number of samples
+    minv : float
+        Minimum value (default: -180)
+    maxv : float
+        Maximum value (default: 180)
+
+    Returns
+    -------
+    array_pv_gamma : np.array (of float)
+        Numpy array with samples for gamma angle of PV system
+    """
+
+    assert nb_samples > 0
+
+    array_pv_gamma = \
+        np.random.uniform(low=minv, high=maxv, size=nb_samples)
+
+    return array_pv_gamma
+
+
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
