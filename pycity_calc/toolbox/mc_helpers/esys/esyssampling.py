@@ -104,6 +104,40 @@ def sample_bat_eta_discharge(nb_samples, mean=0.9, std=0.005):
     return array_bat_disch_eff
 
 
+def sample_boi_eff(nb_samples, mean=0.92, std=0.01):
+    """
+    Returns samples for boiler efficiency
+
+    Parameters
+    ----------
+    nb_samples : int
+        Number of samples
+    mean : float, optional
+        Mean value of efficiency
+        (default: 0.92)
+    std : float, optional
+        Standard deviation of efficiency
+        (default: 0.01)
+
+    Returns
+    -------
+    array_boi_eff : np.array (of floats)
+        Numpy array holding samples of boiler efficiencies
+    """
+
+    assert nb_samples > 0
+    assert mean > 0
+    assert std >= 0
+
+    array_boi_eff = np.random.normal(loc=mean, scale=std,
+                                     size=nb_samples)
+
+    for i in range(len(array_boi_eff)):
+        assert array_boi_eff[i] <= 1
+
+    return array_boi_eff
+
+
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
