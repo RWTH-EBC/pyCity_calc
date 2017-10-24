@@ -67,6 +67,22 @@ class Test_MC_Sampling():
         assert min(list_mod_years) >= 1970
         assert max(list_mod_years) <= 2000
 
+    def test_calc_list_mod_years_single_build_min_year(self):
+        nb_samples = 2
+        year_of_constr = 1990
+        max_year = 2009
+        time_sp_force_retro = 30
+
+        array_years = \
+            mcbuild.calc_array_mod_years_single_build(nb_samples=nb_samples,
+                                                      year_of_constr=
+                                                      year_of_constr,
+                                                      max_year=max_year,
+                                                      time_sp_force_retro=
+                                                      time_sp_force_retro)
+
+        assert len(array_years) == nb_samples
+
     def test_calc_inf_samples(self):
         nb_samples = 100
 
@@ -104,6 +120,27 @@ class Test_MC_Sampling():
 
         assert min(list_const) >= 0
         assert max(list_const) <= 1
+
+    def test_calc_sh_samples_build(self):
+        nb_samples = 5
+        sh_ref = 10000
+
+        array_sh = mcbuild.calc_sh_demand_samples(nb_samples=nb_samples,
+                                                   sh_ref=sh_ref)
+
+        assert len(array_sh) == nb_samples
+        for i in range(len(array_sh)):
+            array_sh[i] >= 0
+            array_sh[i] <= sh_ref * 1000
+
+    def test_calc_sh_on_off_samples(self):
+        nb_samples = 5
+
+        array_sh = mcbuild.calc_sh_summer_on_off_samples(nb_samples)
+
+        assert len(array_sh) == nb_samples
+        for i in range(len(array_sh)):
+            array_sh[i] == 0 or array_sh[i] == 1
 
     def test_calc_set_temp_samples(self):
         nb_samples = 100
