@@ -13,6 +13,7 @@ import pycity_calc.toolbox.mc_helpers.building.build_unc_set_gen as mcbuild
 import pycity_calc.toolbox.mc_helpers.user.user_unc_sampling as mcuse
 import pycity_calc.toolbox.mc_helpers.weather.gen_weather_set as mcweat
 import pycity_calc.toolbox.mc_helpers.city.city_sampling as citsamp
+import pycity_calc.toolbox.mc_helpers.esys.esyssampling as esyssamp
 import pycity_calc.toolbox.mc_helpers.demand_unc_single_build as mc_build
 import pycity_calc.toolbox.mc_helpers.demand_unc_city as mc_city
 
@@ -539,3 +540,85 @@ class Test_MC_Sampling():
         for i in range(len(array_int)):
             assert array_int[i] >= minv
             assert array_int[i] <= maxv
+
+    def test_esys_sampling(self):
+
+        nb_samples = 2
+
+        minv = 0.1
+        maxv = 0.9
+
+        array_int = \
+            esyssamp.sample_bat_self_disch(nb_samples, minv=minv,
+                                           maxv=maxv)
+
+        assert len(array_int) == 2
+        for i in range(len(array_int)):
+            assert array_int[i] >= minv
+            assert array_int[i] <= maxv
+
+        array_int = \
+            esyssamp.sample_bat_eta_charge(nb_samples)
+
+        assert len(array_int) == 2
+        for i in range(len(array_int)):
+            assert array_int[i] >= 0
+            assert array_int[i] <= 1
+
+        array_int = \
+            esyssamp.sample_bat_eta_discharge(nb_samples)
+
+        assert len(array_int) == 2
+        for i in range(len(array_int)):
+            assert array_int[i] >= 0
+            assert array_int[i] <= 1
+
+        array_int = \
+            esyssamp.sample_boi_eff(nb_samples)
+
+        assert len(array_int) == 2
+        for i in range(len(array_int)):
+            assert array_int[i] >= 0
+            assert array_int[i] <= 1
+
+        array_int = \
+            esyssamp.sample_quality_grade_hp_bw(nb_samples, minv=minv,
+                                           maxv=maxv)
+
+        assert len(array_int) == 2
+        for i in range(len(array_int)):
+            assert array_int[i] >= minv
+            assert array_int[i] <= maxv
+
+        array_int = \
+            esyssamp.sample_quality_grade_hp_aw(nb_samples, minv=minv,
+                                                maxv=maxv)
+
+        assert len(array_int) == 2
+        for i in range(len(array_int)):
+            assert array_int[i] >= minv
+            assert array_int[i] <= maxv
+
+        array_int = \
+            esyssamp.sample_pv_eta(nb_samples)
+
+        assert len(array_int) == 2
+        for i in range(len(array_int)):
+            assert array_int[i] >= 0
+            assert array_int[i] <= 1
+
+        array_int = \
+            esyssamp.sample_pv_beta(nb_samples, minv=0, maxv=70)
+
+        assert len(array_int) == 2
+        for i in range(len(array_int)):
+            assert array_int[i] >= 0
+            assert array_int[i] <= 70
+
+        array_int = \
+            esyssamp.sample_pv_gamma(nb_samples, minv=-180, maxv=180)
+
+        assert len(array_int) == 2
+        for i in range(len(array_int)):
+            assert array_int[i] >= -180
+            assert array_int[i] <= 180
