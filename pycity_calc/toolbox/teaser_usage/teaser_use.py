@@ -20,8 +20,8 @@ import pycity_calc.environments.co2emissions as co2
 import pycity_calc.environments.environment as env
 import pycity_calc.environments.market as mark
 import pycity_calc.environments.timer as time
-
 import pycity_calc.toolbox.user.user_air_exchange as usair
+import pycity_calc.toolbox.dimensioning.heat_days as hday
 
 try:
     from teaser.project import Project
@@ -409,6 +409,109 @@ def extract_build_data_dict(type_build, alphaowo=25, aowo=0.9, epso=0.1,
 
     return dict_data
 
+def calc_set_temps(mode=0, t_set_heat=20, t_night=16, outdoor_temp=None,
+                   days=365, timestep=3600):
+    """
+    Calculate set temperatures (in KELVIN!) for every timestep
+
+    Parameters
+    ----------
+    mode : int, optional
+        Set temperature generation mode (default: 0)
+        Options:
+        - 0 - Day and night set-temperatures are constant over the year
+        (from 23:00 - 6:00 night set back)
+        - 1 - No heating required for days with average outdoor temperature
+        above 15 degree Celsius (lowers set temperature)
+        - 2 - No heating required for days with average outdoor temperature
+        above 12 degree Celsius (lowers set temperature)
+        - 3 - No heating from May to September
+    t_set_heat : float, optional
+        Heating set temperature in degree Celsius. If temperature drops below
+        t_set_heat, model is going to be heated up. (default: 20)
+        (Related to constraints for res. buildings in DIN V 18599)
+    t_night : float, optional
+        Night set back temperature in degree Celsius (default: 16)
+        (Related to constraints for res. buildings in DIN V 18599)
+    outdoor_temp : array-like, optional
+        Array or list holding outdoor temperature values in degree Celsius
+        (default: None)
+    days : int, optional
+        Number of days (default: 365)
+    timestep : int, optional
+        Time discretization (default: 3600)
+
+    Returns
+    -------
+    array_t_set_heat : np.array
+        Numpy array holding set temperature for every timestep in Kelvin
+    """
+
+    assert mode in [0, 1, 2, 3]
+
+    # Day and night set back temperatures are constant over year
+    t_set_heat_day = \
+        np.array([t_night, t_night, t_night, t_night, t_night, t_night,
+                  t_set_heat, t_set_heat, t_set_heat, t_set_heat,
+                  t_set_heat, t_set_heat, t_set_heat, t_set_heat,
+                  t_set_heat, t_set_heat, t_set_heat, t_set_heat,
+                  t_set_heat, t_set_heat, t_set_heat, t_set_heat,
+                  t_set_heat, t_night]) + 273.15
+
+    #  Combine single days to annual file
+    array_t_set_heat = np.tile(t_set_heat_day, days)
+
+    if mode == 1 or mode == 2:  # Use heating limit temperature
+
+        assert outdoor_temp is not None
+
+        if mode == 1:
+            temp_limit = 15
+        elif mode == 2:
+            temp_limit = 12
+
+        # Get heating on/off states (0/1)
+        heat_states = hday.calc_heat_timesteps(outdoor_temp=outdoor_temp,
+                                               days=days, timestep=timestep,
+                                               temp_heat_lim=temp_limit)
+
+        #  Convert to desired set-temperatures
+        for i in range(len(heat_states)):
+
+            curr_state = heat_states[i]
+            assert curr_state in [0, 1]
+
+            if curr_state == 0:
+                array_t_set_heat[i] = 0
+
+    elif mode == 3:
+        #  Set set temperature from April to September to zero
+        ref_indexes = np.arange(start=114*24, stop=297*24, step=1)
+
+        for i in range(len(array_t_set_heat)):
+            if i in ref_indexes:  # Define ste temperature as zero
+                array_t_set_heat[i] = 0
+
+    array_t_mod = np.zeros(len(array_t_set_heat))
+    #  Slowly increase set-temperature for timesteps, where set-temperature
+    #  jumps back to regular set temperature
+    for i in range(len(array_t_set_heat) - 1):
+        t_set_prior = array_t_set_heat[i]
+        t_set_post = array_t_set_heat[i+1]
+        if t_set_post - t_set_prior > (t_set_heat - t_set_night) * 1.01:
+            #  Heat device is switched on --> Slowly increase set temperature
+            #  over 10 timesteps
+            t_ref_set = t_set_heat + 273.15 - 25
+            for j in range(100):
+                array_t_mod[i+j] = t_ref_set + j / 4
+            i += 100
+
+    for i in range(len(array_t_mod)):
+        if array_t_mod[i] != 0:
+            array_t_set_heat[i] = array_t_mod[i]
+
+    return array_t_set_heat
+
 
 def calc_th_load__build_vdi6007(type_build, temp_out, rad,
                                 occ_profile, el_load, array_vent_rate=None,
@@ -581,15 +684,23 @@ def calc_th_load__build_vdi6007(type_build, temp_out, rad,
     source_igRad = np.zeros(int(timesteps))
     krad = 1
 
-    t_set_heat_day = \
-        np.array([t_night, t_night, t_night, t_night, t_night, t_night,
-                  t_set_heat, t_set_heat, t_set_heat,
-                  t_set_heat, t_set_heat, t_set_heat, t_set_heat, t_set_heat,
-                  t_set_heat, t_set_heat, t_set_heat, t_set_heat, t_set_heat,
-                  t_set_heat, t_set_heat, t_set_heat, t_set_heat, t_night]) \
-        + 273.15
+    # t_set_heat_day = \
+    #     np.array([t_night, t_night, t_night, t_night, t_night, t_night,
+    #               t_set_heat, t_set_heat, t_set_heat,
+    #               t_set_heat, t_set_heat, t_set_heat, t_set_heat, t_set_heat,
+    #               t_set_heat, t_set_heat, t_set_heat, t_set_heat, t_set_heat,
+    #               t_set_heat, t_set_heat, t_set_heat, t_set_heat, t_night]) \
+    #     + 273.15
 
-    array_t_set_heat = np.tile(t_set_heat_day, 365)
+    array_t_set_heat = calc_set_temps(mode=2,
+                                      t_set_heat=t_set_heat,
+                                      t_night=t_night,
+                                      outdoor_temp=temp_out)
+
+    import matplotlib.pyplot as plt
+
+    plt.plot(array_t_set_heat)
+    plt.show()
 
     #  Dummy value for initial temperature for VDI 6007 core
     temp_init = t_set_heat + 0.1 + 273.15

@@ -66,6 +66,52 @@ def gen_th_slp(environment, living_area=150, spec_dem=100):
     return slp_object
 
 
+def calc_av_daily_temp(timestep, outdoor_temp):
+    """
+    Calculate average daily temperatures in degree Celsius.
+    Parameters
+    ----------
+    timestep : int
+        Time discretization
+    outdoor_temp : array-like
+        Array with outdoor temperature in degree Celsius
+    Returns
+    -------
+    temp_average_array : np.array
+        Numpy array with average, daily temperature in degree Celsius
+    """
+
+    #  Number of hourly timesteps
+    nb_timesteps = len(outdoor_temp) * timestep / 3600
+
+    assert nb_timesteps % 24 == 0, 'outdoor_temp does not hold' \
+                                   ' 24 hours for each day.'
+
+    #  Calculate average, daily temperatures
+    temp_average_array = np.zeros(int(nb_timesteps / 24))
+    count_hour = 0
+
+    #  Loop over days
+    for i in range(len(temp_average_array)):
+
+        temp_sum = 0
+
+        #  Loop over timesteps in one day
+        for h in range(int(24 * 3600 / timestep)):
+            #  Sum up values
+            temp_sum += outdoor_temp[count_hour + h]
+
+        # and divide by 24 hours
+        temp_average = temp_sum / (24 * 3600 / timestep)
+
+        temp_average_array[i] = temp_average
+
+        #  Count up day counter
+        count_hour += int(24 * 3600 / timestep)
+
+    return temp_average_array
+
+
 def slp_th_manipulator(timestep, th_slp_curve, temp_array, temp_av_cut=12):
     """
 
@@ -93,27 +139,9 @@ def slp_th_manipulator(timestep, th_slp_curve, temp_array, temp_av_cut=12):
 
     slp_org_th_energy = sum(th_slp_curve) * timestep / (3600 * 1000)  # kWh
 
-    #  Calculate average, daily temperatures
-    temp_average_array = np.zeros(365)
-    count_timestep = 0
-
-    #  Loop over days
-    for i in range(len(temp_average_array)):
-
-        temp_average = 0
-
-        #  Loop over hours
-        for h in range(int(timesteps_per_day)):
-            #  Sum up values
-            temp_average += temp_array[count_timestep + h]
-
-        # and divide by 24 hours
-        temp_average /= timesteps_per_day
-
-        temp_average_array[i] = temp_average
-
-        #  Count up day counter
-        count_timestep += int(timesteps_per_day)
+    # #  Calculate average, daily temperatures
+    temp_average_array = calc_av_daily_temp(timestep=timestep,
+                                            outdoor_temp=temp_array)
 
     slp_mod_curve = np.zeros(len(th_slp_curve))
 
