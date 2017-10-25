@@ -16,6 +16,9 @@ import pycity_calc.simulation.energy_balance.city_eb_calc as citeb
 import pycity_calc.economic.annuity_calculation as annu
 import pycity_calc.cities.scripts.city_generator.city_generator as citygen
 import pycity_calc.cities.scripts.overall_gen_and_dimensioning as overall
+import pycity_calc.toolbox.mc_helpers.city.city_sampling as citysample
+import pycity_calc.toolbox.mc_helpers.building.build_unc_set_gen as buildsample
+import pycity_calc.toolbox.mc_helpers.user as usersample
 
 
 class McRunner(object):
@@ -39,6 +42,87 @@ class McRunner(object):
         """
 
         self._city_eco_calc = city_eco_calc
+
+    def perform_sampling_city(self, nb_runs):
+        """
+        Perform sampling for city district parameters:
+        - interest
+        - price_ch_cap
+        - price_ch_dem_gas
+        - price_ch_dem_el
+        - price_ch_op
+        - price_ch_eeg_chp
+        - price_ch_eeg_pv
+        - price_ch_eex
+        - price_ch_grid_use
+
+        Parameters
+        ----------
+        nb_runs : int
+            Number of runs
+
+        Returns
+        -------
+        dict_city_samples : dict
+            Dictionary holding city samples
+        """
+
+        dict_city_samples = {}
+
+        #  Todo: Add options for sampling ranges and values
+
+        array_interest = citysample.sample_interest(nb_samples=nb_runs)
+        array_ch_cap = citysample.sample_price_ch_cap(nb_samples=nb_runs)
+        array_ch_dem_gas = citysample.sample_price_ch_dem_gas(nb_samples=
+                                                              nb_runs)
+        array_ch_dem_el = citysample.sample_price_ch_dem_el(nb_samples=
+                                                            nb_runs)
+        array_ch_op = citysample.sample_price_ch_op(nb_samples=nb_runs)
+        array_ch_eeg_chp = citysample.sample_price_ch_eeg_chp(nb_samples=
+                                                              nb_runs)
+        array_ch_eeg_pv = citysample.sample_price_ch_eeg_pv(nb_samples=
+                                                            nb_runs)
+        array_ch_eex = citysample.sample_price_ch_eex(nb_samples=nb_runs)
+        array_ch_grid_use = citysample.sample_price_ch_grid_use(nb_samples=
+                                                                nb_runs)
+        array_grid_av_fee = citysample.sample_grid_av_fee(nb_samples=nb_runs)
+        array_temp_ground = citysample.sample_temp_ground(nb_samples=nb_runs)
+
+        dict_city_samples['interest'] = array_interest
+        dict_city_samples['ch_cap'] = array_ch_cap
+        dict_city_samples['ch_dem_gas'] = array_ch_dem_gas
+        dict_city_samples['ch_dem_el'] = array_ch_dem_el
+        dict_city_samples['ch_op'] = array_ch_op
+        dict_city_samples['ch_eeg_chp'] = array_ch_eeg_chp
+        dict_city_samples['ch_eeg_pv'] = array_ch_eeg_pv
+        dict_city_samples['ch_eex'] = array_ch_eex
+        dict_city_samples['ch_grid_use'] = array_ch_grid_use
+        dict_city_samples['grid_av_fee'] = array_grid_av_fee
+        dict_city_samples['temp_ground'] = array_temp_ground
+
+        return dict_city_samples
+
+    def perform_sampling(self, nb_runs):
+        """
+        Perform parameter sampling for Monte-Carlo analysis
+
+        Parameters
+        ----------
+        nb_runs : int
+            Number of runs
+
+        Returns
+        -------
+        dict_samples
+        """
+
+        #  Initial sample dict. Holds further sample dicts for
+        #  'city' and each building node id
+        dict_samples = {}
+
+        #  Perform city sampling
+        dict_city_samples = self.perform_sampling_city(nb_runs=nb_runs)
+        dict_samples['city'] = dict_city_samples
 
     def perform_mc_runs(self, nb_runs):
         """
@@ -96,22 +180,30 @@ class McRunner(object):
                 perform_overall_energy_balance_and_economic_calc()
 
             #  Extract further results
-            sh_dem = c_eco_copy.energy_balance.\
+            sh_dem = c_eco_copy.energy_balance. \
                 city.get_annual_space_heating_demand()
-            el_dem = c_eco_copy.energy_balance.\
+            el_dem = c_eco_copy.energy_balance. \
                 city.get_annual_el_demand()
             dhw_dem = c_eco_copy.energy_balance. \
                 city.get_annual_dhw_demand()
 
-            gas_boiler = c_eco_copy.dict_fe_city_balance['fuel_boiler']
-            gas_chp = c_eco_copy.dict_fe_city_balance['fuel_chp']
-            grid_imp_dem = c_eco_copy.dict_fe_city_balance['grid_import_dem']
-            grid_imp_hp = c_eco_copy.dict_fe_city_balance['grid_import_hp']
-            grid_imp_eh = c_eco_copy.dict_fe_city_balance['grid_import_eh']
-            lhn_pump = c_eco_copy.self.dict_fe_city_balance['pump_energy']
+            gas_boiler = c_eco_copy.energy_balance.dict_fe_city_balance[
+                'fuel_boiler']
+            gas_chp = c_eco_copy.energy_balance.dict_fe_city_balance[
+                'fuel_chp']
+            grid_imp_dem = c_eco_copy.energy_balance.dict_fe_city_balance[
+                'grid_import_dem']
+            grid_imp_hp = c_eco_copy.energy_balance.dict_fe_city_balance[
+                'grid_import_hp']
+            grid_imp_eh = c_eco_copy.energy_balance.dict_fe_city_balance[
+                'grid_import_eh']
+            lhn_pump = c_eco_copy.energy_balance.dict_fe_city_balance[
+                'pump_energy']
 
-            grid_exp_chp = c_eco_copy.dict_fe_city_balance['chp_feed']
-            grid_exp_pv = c_eco_copy.dict_fe_city_balance['pv_feed']
+            grid_exp_chp = c_eco_copy.energy_balance.dict_fe_city_balance[
+                'chp_feed']
+            grid_exp_pv = c_eco_copy.energy_balance.dict_fe_city_balance[
+                'pv_feed']
 
             #  Save results
             array_annuity[i] = total_annuity
@@ -145,7 +237,6 @@ class McRunner(object):
 
         return dict_mc_res
 
-
     def run_mc_analysis(self, nb_runs, do_sampling=False):
         """
         Perform monte-carlo run with:
@@ -173,9 +264,10 @@ class McRunner(object):
 
         if do_sampling:
             #  Call sampling
-            pass
+            self.perform_sampling(nb_runs=nb_runs)
 
-        self.perform_mc_runs(nb_runs=nb_runs)
+        # Perform monte-carlo runs
+        dict_mc_res = self.perform_mc_runs(nb_runs=nb_runs)
 
 
 if __name__ == '__main__':
@@ -433,7 +525,7 @@ if __name__ == '__main__':
         file_path = os.path.join(this_path, 'input', filename)
         pickle.dump(city, open(file_path, mode='wb'))
 
-    #  #####################################################################
+    # #####################################################################
     #  Generate object instances
     #  #####################################################################
 
@@ -452,7 +544,10 @@ if __name__ == '__main__':
     city_eco_calc = citecon.CityAnnuityCalc(annuity_obj=annuity_obj,
                                             energy_balance=energy_balance)
 
-    # (total_annuity, co2) = city_eco_calc. \
-    #     perform_overall_energy_balance_and_economic_calc()
-
     #  Hand over initial city object to mc_runner
+    mc_run = McRunner(city_eco_calc=city_eco_calc)
+
+    nb_runs = 2
+    do_sampling = True
+
+    mc_run.run_mc_analysis(nb_runs=nb_runs, do_sampling=do_sampling)
