@@ -75,6 +75,11 @@ def get_list_lhn_build_without_th_esys(city, list_buildings=None):
 
 
 class CityEBCalculator(object):
+    """
+    City Energy Balance Calculator class. Used to perform energy balance
+    calculations for whole city district.
+    """
+
     def __init__(self, city, copy_city=False, check_city=True, loss_buff=1.1,
                  press_loss=100, eta_pump=0.6):
         """
