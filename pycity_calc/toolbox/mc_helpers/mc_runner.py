@@ -62,12 +62,10 @@ class McRunner(object):
         self._list_build_ids = None  # List with building node ids in city
         self._dict_samples = None  # List of samples
 
-        #  Define pointer to city (simpler re-usage)
-        self._city = self._city_eco_calc.energy_balance.city
-
         if get_build_ids:
             #  Extract building node ids
-            self._list_build_ids = self._city.get_list_build_entity_node_ids()
+            self._list_build_ids = self._city_eco_calc.energy_balance.city\
+                .get_list_build_entity_node_ids()
 
     @staticmethod
     def perform_sampling_build(nb_runs, building):
@@ -357,7 +355,7 @@ class McRunner(object):
         #  Loop over node ids and add samples to result dict with building
         #  id as key
         for n in self._list_build_ids:
-            build = self._city.node[n]['entity']
+            build = self._city_eco_calc.energy_balance.city.node[n]['entity']
             dict_build_samples = \
                 self.perform_sampling_build(nb_runs=nb_runs, building=build)
 
@@ -421,6 +419,59 @@ class McRunner(object):
             #  original objects
             c_eco_copy = copy.deepcopy(self._city_eco_calc)
 
+            #  For simplification, add pointers to submodules of c_eco_copy
+            city = c_eco_copy.energy_balance.city
+            energy_balance = c_eco_copy.energy_balance
+            annuity_obj = c_eco_copy.annuity_obj
+
+            #  Add sampling results to environment, city and buildings
+            #  ###############################################################
+
+
+            #  Add building sample input data
+            #  TODO: Add building sample data
+
+
+            #  Extract city sampling data
+            dict_city_samples = self._dict_samples['city']
+
+            # dict_city_samples['interest'] = array_interest
+            # dict_city_samples['ch_cap'] = array_ch_cap
+            # dict_city_samples['ch_dem_gas'] = array_ch_dem_gas
+            # dict_city_samples['ch_dem_el'] = array_ch_dem_el
+            # dict_city_samples['ch_op'] = array_ch_op
+            # dict_city_samples['ch_eeg_chp'] = array_ch_eeg_chp
+            # dict_city_samples['ch_eeg_pv'] = array_ch_eeg_pv
+            # dict_city_samples['ch_eex'] = array_ch_eex
+            # dict_city_samples['ch_grid_use'] = array_ch_grid_use
+            # dict_city_samples['grid_av_fee'] = array_grid_av_fee
+            # dict_city_samples['temp_ground'] = array_temp_ground
+
+            #  Save inputs to city, market and environment
+            city.environment.temp_ground = dict_city_samples['temp_ground'][i]
+            city.environment.prices.grid_av_fee = \
+                dict_city_samples['grid_av_fee'][i]
+
+            #  Save inputs to annuity_obj
+            annuity_obj.interest = dict_city_samples['interest'][i]
+            annuity_obj.price_ch_cap = dict_city_samples['ch_cap'][i]
+            annuity_obj.price_ch_dem_gas = dict_city_samples['ch_dem_gas'][i]
+            annuity_obj.price_ch_dem_el = dict_city_samples['ch_dem_el'][i]
+            annuity_obj.price_ch_op = dict_city_samples['ch_op'][i]
+            annuity_obj.price_ch_eeg_chp = dict_city_samples['ch_eeg_chp'][i]
+            annuity_obj.price_ch_eeg_pv = dict_city_samples['ch_eeg_pv'][i]
+            annuity_obj.price_ch_eex = dict_city_samples['ch_eex'][i]
+            annuity_obj.price_ch_grid_use = dict_city_samples['ch_grid_use'][i]
+
+            #  Save inputs to energy_balance
+
+
+            #  Save inputs to city_economic_calculator
+
+
+
+            #  Run energy balance and annuity calculation
+            #  ###############################################################
             (total_annuity, co2) = c_eco_copy. \
                 perform_overall_energy_balance_and_economic_calc()
 
@@ -512,7 +563,7 @@ class McRunner(object):
             raise AssertionError(msg)
 
         if do_sampling:
-            #  Call sampling
+            #  Call sampling and save sample data to _dict_samples
             self.perform_sampling(nb_runs=nb_runs)
 
         if prevent_printing:
@@ -783,7 +834,7 @@ if __name__ == '__main__':
 
     #  User inputs
     #  ####################################################################
-    nb_runs = 5
+    nb_runs = 2
     do_sampling = True
 
     #  Suppress print and warnings statements during MC-run
