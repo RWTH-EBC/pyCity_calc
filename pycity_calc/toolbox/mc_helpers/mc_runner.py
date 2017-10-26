@@ -19,6 +19,7 @@ import pycity_calc.cities.scripts.overall_gen_and_dimensioning as overall
 import pycity_calc.toolbox.mc_helpers.city.city_sampling as citysample
 import pycity_calc.toolbox.mc_helpers.building.build_unc_set_gen as buildsample
 import pycity_calc.toolbox.mc_helpers.user.user_unc_sampling as usersample
+import pycity_calc.toolbox.mc_helpers.esys.esyssampling as esyssample
 
 
 class McRunner(object):
@@ -46,6 +47,7 @@ class McRunner(object):
 
         self._city_eco_calc = city_eco_calc
         self._list_build_ids = None  # List with building node ids in city
+        self._dict_samples = None  # List of samples
 
         #  Define pointer to city (simpler re-usage)
         self._city = self._city_eco_calc.energy_balance.city
@@ -68,8 +70,18 @@ class McRunner(object):
 
         Returns
         -------
-
+        dict_build_samples : dict (of arrays and dicts)
+            Dictionary storing building samples
+            dict_build_samples['occ'] = array_occupants
+            dict_build_samples['el_dem'] = array_el_dem
+            dict_build_samples['dhw_dem'] = array_dhw_dem
+            dict_build_samples['sh_dem'] = array_sh_dem
+            dict_build_samples['on_off'] = array_sh_on_off
+            dict_build_samples['esys'] = dict_esys
         """
+
+        #  Initial dict
+        dict_build_samples = {}
 
         #  Res. building type (sfh or mfh)
         if len(building.apartments) == 1:
@@ -77,19 +89,19 @@ class McRunner(object):
         elif len(building.apartments) > 1:
             type = 'mfh'
 
+        # Empty result arrays for apartment sampling
         array_occupants = np.zeros(nb_runs)
         array_el_dem = np.zeros(nb_runs)
         array_dhw_dem = np.zeros(nb_runs)
-        array_sh_dem = np.zeros(nb_runs)
 
         #  Sample for apartments
+        #  ################################################################
         for ap in building.apartments:
 
             #  Loop over nb. of samples
             for i in range(nb_runs):
-
                 #  Sample occupants
-                occ_p_app = usersample.\
+                occ_p_app = usersample. \
                     calc_sampling_occ_per_app(nb_samples=1)[0]
 
                 #  Sample el. demand per apartment (depending on nb. persons)
@@ -99,7 +111,7 @@ class McRunner(object):
                                                           type=type)[0]
 
                 #  Sample dhw demand per apartment (depending on nb. persons)
-                dhw_per_app = usersample.\
+                dhw_per_app = usersample. \
                     calc_sampling_dhw_per_apartment(nb_samples=1,
                                                     nb_persons=occ_p_app,
                                                     b_type=type)
@@ -109,11 +121,101 @@ class McRunner(object):
                 array_el_dem[i] += el_per_app
                 array_dhw_dem[i] += dhw_per_app
 
-        #  Sample building attributes
+        # Sample building attributes
+        #  ################################################################
+        #  Calculate space heating demand sample
+        sh_ref = building.get_annual_space_heat_demand()  # in kWh
 
+        array_sh_dem = buildsample.calc_sh_demand_samples(nb_samples=nb_runs,
+                                                          sh_ref=sh_ref)
+
+        array_sh_on_off = buildsample. \
+            calc_sh_summer_on_off_samples(nb_samples=nb_runs)
+
+        #  Save results to dict
+        #  ################################################################
+        dict_build_samples['occ'] = array_occupants
+        dict_build_samples['el_dem'] = array_el_dem
+        dict_build_samples['dhw_dem'] = array_dhw_dem
+        dict_build_samples['sh_dem'] = array_sh_dem
+        dict_build_samples['on_off'] = array_sh_on_off
 
         #  Sample energy system attributes
+        #  ################################################################
 
+        #  Check if building holds bes
+        if building.hasBes:
+
+            dict_esys = {}
+
+            #  Check which devices do exist on bes
+            if building.bes.hasBattery:
+                dict_bat = {}
+
+                dict_bat['self_discharge'] = \
+                    esyssample.sample_bat_self_disch(nb_samples=nb_runs)
+
+                dict_bat['eta_charge'] = \
+                    esyssample.sample_bat_eta_charge(nb_samples=nb_runs)
+
+                dict_bat['eta_discharge'] = \
+                    esyssample.sample_bat_eta_discharge(nb_samples=nb_runs)
+
+                dict_esys['bat'] = dict_bat
+
+            if building.bes.hasBoiler:
+                dict_boi = {}
+
+                dict_boi['eta_boi'] = \
+                    esyssample.sample_boi_eff(nb_samples=nb_runs)
+
+                dict_esys['boi'] = dict_boi
+
+            if building.bes.hasChp:
+                dict_chp = {}
+
+                dict_chp['omega_chp'] = \
+                    esyssample.sample_chp_omega(nb_samples=nb_runs)
+
+                dict_esys['chp'] = dict_chp
+
+            if building.bes.hasHeatpump:
+
+                dict_hp = {}
+
+                if building.bes.heatpump.hp_type == 'aw':
+
+                    dict_hp['quality_grade'] = \
+                        esyssample.sample_quality_grade_hp_aw(nb_samples=
+                                                              nb_runs)
+
+                elif building.bes.heatpump.hp_type == 'ww':
+
+                    dict_hp['quality_grade'] = \
+                        esyssample.sample_quality_grade_hp_bw(nb_samples=
+                                                              nb_runs)
+
+                dict_esys['hp'] = dict_hp
+
+            if building.bes.hasPv:
+                dict_pv = {}
+
+                dict_pv['eta_pv'] = esyssample.sample_pv_eta(nb_samples=
+                                                             nb_runs)
+                dict_pv['beta'] = esyssample.sample_pv_beta(nb_samples=
+                                                            nb_runs)
+                dict_pv['gamma'] = esyssample.sample_pv_gamma(nb_samples=
+                                                              nb_runs)
+
+            if building.bes.hasTes:
+                dict_tes = {}
+
+                dict_tes['k_loss'] = esyssample.sample_tes_k_loss(nb_samples=
+                                                                  nb_runs)
+
+            dict_build_samples['esys'] = dict_esys
+
+        return dict_build_samples
 
     @staticmethod
     def perform_sampling_city(nb_runs):
@@ -200,10 +302,17 @@ class McRunner(object):
         dict_samples['city'] = dict_city_samples
 
         #  Perform building sampling
-        #  Loop over node ids
+        #  Loop over node ids and add samples to result dict with building
+        #  id as key
         for n in self._list_build_ids:
             build = self._city.node[n]['entity']
-            self.perform_sampling_build(nb_runs=nb_runs, building=build)
+            dict_build_samples = \
+                self.perform_sampling_build(nb_runs=nb_runs, building=build)
+
+            dict_samples[str(n)] = dict_build_samples
+
+        #  Save sampling dict to MC runner object
+        self._dict_samples = dict_samples
 
     def perform_mc_runs(self, nb_runs):
         """

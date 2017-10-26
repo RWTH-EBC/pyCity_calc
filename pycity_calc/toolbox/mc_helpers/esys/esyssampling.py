@@ -202,36 +202,6 @@ def sample_quality_grade_hp_bw(nb_samples, minv=0.45, maxv=0.55):
     return array_hp_bw_qual
 
 
-def sample_quality_grade_hp_bw(nb_samples, minv=0.45, maxv=0.55):
-    """
-    Returns samples for brine/water (or water/water) heat pump quality
-    grades.
-
-    Parameters
-    ----------
-    nb_samples : int
-        Number of samples
-    minv : float
-        Minimum value (default: 0.45)
-    maxv : float
-        Maximum value (default: 0.55)
-
-    Returns
-    -------
-    array_hp_bw_qual : np.array (of float)
-        Numpy array with brine/water heat pump quality grade samples
-    """
-
-    assert nb_samples > 0
-    assert minv >= 0
-    assert maxv >= 0
-
-    array_hp_bw_qual = \
-        np.random.uniform(low=minv, high=maxv, size=nb_samples)
-
-    return array_hp_bw_qual
-
-
 def sample_quality_grade_hp_aw(nb_samples, minv=0.32, maxv=0.4):
     """
     Returns samples for air/water heat pump quality grades
@@ -287,7 +257,7 @@ def sample_pv_eta(nb_samples, mean=0.12, std=0.02):
     assert std >= 0
 
     array_pv_eta = np.random.normal(loc=mean, scale=std,
-                                     size=nb_samples)
+                                    size=nb_samples)
 
     for i in range(len(array_pv_eta)):
         assert array_pv_eta[i] <= 1
@@ -349,6 +319,35 @@ def sample_pv_gamma(nb_samples, minv=0, maxv=60):
         np.random.uniform(low=minv, high=maxv, size=nb_samples)
 
     return array_pv_gamma
+
+
+def sample_tes_k_loss(nb_samples, minv=0.1, maxv=0.5):
+    """
+    Return samples of tes k_loss factor in W/m2K
+
+    Parameters
+    ----------
+    nb_samples : int
+        Number of samples
+    minv : float
+        Minimum value (default: 0.1)
+    maxv : float
+        Maximum value (default: 0.5)
+
+    Returns
+    -------
+    array_tes_k_loss : np.array (of float)
+        Numpy array with samples of tes k_loss factor in W/m2K
+    """
+
+    assert nb_samples > 0
+    assert minv >= 0
+    assert maxv >= 0
+
+    array_tes_k_loss = \
+        np.random.uniform(low=minv, high=maxv, size=nb_samples)
+
+    return array_tes_k_loss
 
 
 if __name__ == '__main__':
