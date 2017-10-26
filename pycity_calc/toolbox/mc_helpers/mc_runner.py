@@ -6,8 +6,11 @@
 from __future__ import division
 
 import os
+import sys
 import copy
+import warnings
 import pickle
+import time
 import numpy as np
 
 import pycity_calc.economic.city_economic_calc as citecon
@@ -20,6 +23,16 @@ import pycity_calc.toolbox.mc_helpers.city.city_sampling as citysample
 import pycity_calc.toolbox.mc_helpers.building.build_unc_set_gen as buildsample
 import pycity_calc.toolbox.mc_helpers.user.user_unc_sampling as usersample
 import pycity_calc.toolbox.mc_helpers.esys.esyssampling as esyssample
+
+
+# Disable printing
+def block_print():
+    sys.stdout = open(os.devnull, 'w')
+
+# Restore printing
+def enable_print():
+    sys.stdout = sys.__stdout__
+#  From https://stackoverflow.com/questions/8391411/suppress-calls-to-print-python
 
 
 class McRunner(object):
@@ -313,7 +326,7 @@ class McRunner(object):
 
         return dict_city_samples
 
-    def perform_sampling(self, nb_runs):
+    def perform_sampling(self, nb_runs, save_samples=True):
         """
         Perform parameter sampling for Monte-Carlo analysis
 
@@ -321,6 +334,9 @@ class McRunner(object):
         ----------
         nb_runs : int
             Number of runs
+        save_samples : bool, optional
+            Defines, if sampling results should be saved on MC results object
+            (default: True)
 
         Returns
         -------
@@ -347,8 +363,11 @@ class McRunner(object):
 
             dict_samples[str(n)] = dict_build_samples
 
-        #  Save sampling dict to MC runner object
-        self._dict_samples = dict_samples
+        if save_samples:
+            #  Save sampling dict to MC runner object
+            self._dict_samples = dict_samples
+
+        return dict_samples
 
     def perform_mc_runs(self, nb_runs):
         """
@@ -383,9 +402,9 @@ class McRunner(object):
         #  Initial zero result arrays
         array_annuity = np.zeros(nb_runs)
         array_co2 = np.zeros(nb_runs)
-        array_net_sh = np.zeros(nb_runs)
-        array_net_el = np.zeros(nb_runs)
-        array_net_dhw = np.zeros(nb_runs)
+        # array_net_sh = np.zeros(nb_runs)
+        # array_net_el = np.zeros(nb_runs)
+        # array_net_dhw = np.zeros(nb_runs)
 
         array_gas_boiler = np.zeros(nb_runs)
         array_gas_chp = np.zeros(nb_runs)
@@ -405,13 +424,13 @@ class McRunner(object):
             (total_annuity, co2) = c_eco_copy. \
                 perform_overall_energy_balance_and_economic_calc()
 
-            #  Extract further results
-            sh_dem = c_eco_copy.energy_balance. \
-                city.get_annual_space_heating_demand()
-            el_dem = c_eco_copy.energy_balance. \
-                city.get_annual_el_demand()
-            dhw_dem = c_eco_copy.energy_balance. \
-                city.get_annual_dhw_demand()
+            # #  Extract further results
+            # sh_dem = c_eco_copy.energy_balance. \
+            #     city.get_annual_space_heating_demand()
+            # el_dem = c_eco_copy.energy_balance. \
+            #     city.get_annual_el_demand()
+            # dhw_dem = c_eco_copy.energy_balance. \
+            #     city.get_annual_dhw_demand()
 
             gas_boiler = c_eco_copy.energy_balance.dict_fe_city_balance[
                 'fuel_boiler']
@@ -434,9 +453,9 @@ class McRunner(object):
             #  Save results
             array_annuity[i] = total_annuity
             array_co2[i] = co2
-            array_net_sh[i] = sh_dem
-            array_net_el[i] = el_dem
-            array_net_dhw[i] = dhw_dem
+            # array_net_sh[i] = sh_dem
+            # array_net_el[i] = el_dem
+            # array_net_dhw[i] = dhw_dem
 
             array_gas_boiler[i] = gas_boiler
             array_gas_chp[i] = gas_chp
@@ -449,9 +468,9 @@ class McRunner(object):
 
             dict_mc_res['annuity'] = array_annuity
             dict_mc_res['co2'] = array_co2
-            dict_mc_res['sh_dem'] = array_net_sh
-            dict_mc_res['el_dem'] = array_net_el
-            dict_mc_res['dhw_dem'] = array_net_dhw
+            # dict_mc_res['sh_dem'] = array_net_sh
+            # dict_mc_res['el_dem'] = array_net_el
+            # dict_mc_res['dhw_dem'] = array_net_dhw
             dict_mc_res['gas_boiler'] = array_gas_boiler
             dict_mc_res['gas_chp'] = array_gas_chp
             dict_mc_res['grid_imp_dem'] = array_grid_imp_dem
@@ -463,7 +482,8 @@ class McRunner(object):
 
         return dict_mc_res
 
-    def run_mc_analysis(self, nb_runs, do_sampling=False):
+    def run_mc_analysis(self, nb_runs, do_sampling=False,
+                        prevent_printing=False):
         """
         Perform monte-carlo run with:
         - sampling
@@ -478,10 +498,13 @@ class McRunner(object):
         do_sampling : bool, optional
             Defines, if sampling should be performed or existing samples
             should be used (default: False)
+        prevent_printing : bool, optional
+            Defines, if printing statements should be suppressed
 
         Returns
         -------
-
+        dict_mc_res : dict
+            Dictionary holding Monte-Carlo run results
         """
 
         if nb_runs <= 0:
@@ -492,9 +515,16 @@ class McRunner(object):
             #  Call sampling
             self.perform_sampling(nb_runs=nb_runs)
 
+        if prevent_printing:
+            block_print()
+
         # Perform monte-carlo runs
         dict_mc_res = self.perform_mc_runs(nb_runs=nb_runs)
 
+        if prevent_printing:
+            enable_print()
+
+        return dict_mc_res
 
 if __name__ == '__main__':
 
@@ -751,9 +781,19 @@ if __name__ == '__main__':
         file_path = os.path.join(this_path, 'input', filename)
         pickle.dump(city, open(file_path, mode='wb'))
 
+    #  User inputs
+    #  ####################################################################
+    nb_runs = 5
+    do_sampling = True
+
+    #  Suppress print and warnings statements during MC-run
+    prevent_printing = False
+
     # #####################################################################
     #  Generate object instances
     #  #####################################################################
+
+    start_time = time.time()
 
     #  Generate german market instance (if not already included in environment)
     ger_market = gmarket.GermanMarket()
@@ -773,7 +813,12 @@ if __name__ == '__main__':
     #  Hand over initial city object to mc_runner
     mc_run = McRunner(city_eco_calc=city_eco_calc)
 
-    nb_runs = 2
-    do_sampling = True
+    dict_res = mc_run.run_mc_analysis(nb_runs=nb_runs, do_sampling=do_sampling,
+                                      prevent_printing=prevent_printing)
 
-    mc_run.run_mc_analysis(nb_runs=nb_runs, do_sampling=do_sampling)
+    stop_time = time.time()
+
+    time_delta = round(stop_time - start_time)
+
+    print('Execution time for MC-Analysis (without city generation) in'
+          ' seconds: ', time_delta)

@@ -412,6 +412,38 @@ def sample_maintain(nb_samples, minv=0.5, maxv=1.5):
     return array_maintain
 
 
+def sample_invest_unc(nb_samples, ref_inv, logmean=0, logstd=0.4):
+    """
+    Sample investment cost uncertainty, based on reference investment cost
+    input. Assumes log-normal distribution
+
+    Parameters
+    ----------
+    nb_samples : int
+        Number of samples
+    ref_inv : float
+        Reference investment cost in Euro
+    logmean : float
+        mean of log-normal distribution
+    logstd : float
+        Standard deviation of log-normal distribution
+
+    Returns
+    -------
+    array_invest : np.array (of floats)
+        Array holding samples of investment cost in Euro
+    """
+
+    assert nb_samples > 0
+    assert ref_inv >= 0
+
+    array_invest = ref_inv * np.random.lognormal(mean=logmean,
+                                                 sigma=logstd,
+                                                 size=nb_samples)
+
+    return array_invest
+
+
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
