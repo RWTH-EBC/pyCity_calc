@@ -427,12 +427,140 @@ class McRunner(object):
             #  Add sampling results to environment, city and buildings
             #  ###############################################################
 
+            # dict_build_samples : dict (of arrays and dicts)
+            # Dictionary storing building samples
+            # dict_build_samples['occ'] = array_occupants
+            # dict_build_samples['el_dem'] = array_el_dem
+            # dict_build_samples['dhw_dem'] = array_dhw_dem
+            # dict_build_samples['sh_dem'] = array_sh_dem
+            # dict_build_samples['on_off'] = array_sh_on_off
+            # dict_build_samples['esys'] = dict_esys
 
             #  Add building sample input data
-            #  TODO: Add building sample data
+            #  ###############################################################
+            for n in self._list_build_ids:
+                curr_build = city.node[n]['entity']
+
+                dict_build = self._dict_samples[str(n)]
+
+                #  Add function to rescale sh, el, dhw demands
+                #  TODO: Add rescaling functions #255
+
+                #  Add energy system data
+                #  ##########################################################
+
+                if curr_build.hasBes:
+
+                    dict_esys = dict_build['esys']
+
+                    #  Check which devices do exist on bes
+                    if curr_build.bes.hasBattery:
+
+                        dict_bat = dict_esys['bat']
+
+                        bat = curr_build.bes.battery
+
+
+
+                    #     dict_bat['self_discharge'] = \
+                    #         esyssample.sample_bat_self_disch(nb_samples=nb_runs)
+                    #
+                    #     dict_bat['eta_charge'] = \
+                    #         esyssample.sample_bat_eta_charge(nb_samples=nb_runs)
+                    #
+                    #     dict_bat['eta_discharge'] = \
+                    #         esyssample.sample_bat_eta_discharge(nb_samples=nb_runs)
+                    #
+                    #     dict_bat['bat_lifetime'] = \
+                    #         esyssample.sample_lifetime(nb_samples=nb_runs)
+                    #
+                    #     dict_bat['bat_maintain'] = \
+                    #         esyssample.sample_maintain(nb_samples=nb_runs)
+                    #
+                    # if curr_build.bes.hasBoiler:
+                    #     dict_boi = {}
+                    #
+                    #     dict_boi['eta_boi'] = \
+                    #         esyssample.sample_boi_eff(nb_samples=nb_runs)
+                    #
+                    #     dict_boi['boi_lifetime'] = \
+                    #         esyssample.sample_lifetime(nb_samples=nb_runs)
+                    #
+                    #     dict_boi['boi_maintain'] = \
+                    #         esyssample.sample_maintain(nb_samples=nb_runs)
+                    #
+                    #     dict_esys['boi'] = dict_boi
+                    #
+                    # if curr_build.bes.hasChp:
+                    #     dict_chp = {}
+                    #
+                    #     dict_chp['omega_chp'] = \
+                    #         esyssample.sample_chp_omega(nb_samples=nb_runs)
+                    #
+                    #     dict_chp['chp_lifetime'] = \
+                    #         esyssample.sample_lifetime(nb_samples=nb_runs)
+                    #
+                    #     dict_chp['chp_maintain'] = \
+                    #         esyssample.sample_maintain(nb_samples=nb_runs)
+                    #
+                    #     dict_esys['chp'] = dict_chp
+                    #
+                    # if curr_build.bes.hasHeatpump:
+                    #
+                    #     dict_hp = {}
+                    #
+                    #     if curr_build.bes.heatpump.hp_type == 'aw':
+                    #
+                    #         dict_hp['quality_grade'] = \
+                    #             esyssample.sample_quality_grade_hp_aw(nb_samples=
+                    #                                                   nb_runs)
+                    #
+                    #     elif curr_build.bes.heatpump.hp_type == 'ww':
+                    #
+                    #         dict_hp['quality_grade'] = \
+                    #             esyssample.sample_quality_grade_hp_bw(nb_samples=
+                    #                                                   nb_runs)
+                    #
+                    #     dict_hp['hp_lifetime'] = \
+                    #         esyssample.sample_lifetime(nb_samples=nb_runs)
+                    #
+                    #     dict_hp['hp_maintain'] = \
+                    #         esyssample.sample_maintain(nb_samples=nb_runs)
+                    #
+                    #     dict_esys['hp'] = dict_hp
+                    #
+                    # if curr_build.bes.hasPv:
+                    #     dict_pv = {}
+                    #
+                    #     dict_pv['eta_pv'] = esyssample.sample_pv_eta(nb_samples=
+                    #                                                  nb_runs)
+                    #     dict_pv['beta'] = esyssample.sample_pv_beta(nb_samples=
+                    #                                                 nb_runs)
+                    #     dict_pv['gamma'] = esyssample.sample_pv_gamma(nb_samples=
+                    #                                                   nb_runs)
+                    #
+                    #     dict_pv['hp_lifetime'] = \
+                    #         esyssample.sample_lifetime(nb_samples=nb_runs)
+                    #
+                    #     dict_pv['hp_maintain'] = \
+                    #         esyssample.sample_maintain(nb_samples=nb_runs)
+                    #
+                    # if curr_build.bes.hasTes:
+                    #     dict_tes = {}
+                    #
+                    #     dict_tes['k_loss'] = esyssample.sample_tes_k_loss(
+                    #         nb_samples=
+                    #         nb_runs)
+                    #
+                    #     dict_tes['hp_lifetime'] = \
+                    #         esyssample.sample_lifetime(nb_samples=nb_runs)
+                    #
+                    #     dict_tes['hp_maintain'] = \
+                    #         esyssample.sample_maintain(nb_samples=nb_runs)
 
 
             #  Extract city sampling data
+            #  #############################################################
             dict_city_samples = self._dict_samples['city']
 
             # dict_city_samples['interest'] = array_interest
@@ -462,6 +590,9 @@ class McRunner(object):
             annuity_obj.price_ch_eeg_pv = dict_city_samples['ch_eeg_pv'][i]
             annuity_obj.price_ch_eex = dict_city_samples['ch_eex'][i]
             annuity_obj.price_ch_grid_use = dict_city_samples['ch_grid_use'][i]
+
+            #  Rerun initial parameter calculation of annuity_obj
+            annuity_obj.initial_calc()
 
             #  Save inputs to energy_balance
 
