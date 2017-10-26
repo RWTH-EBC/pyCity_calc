@@ -350,6 +350,68 @@ def sample_tes_k_loss(nb_samples, minv=0.1, maxv=0.5):
     return array_tes_k_loss
 
 
+def sample_lifetime(nb_samples, minv=0.5, maxv=1.5):
+    """
+    Return samples for percentage difference in lifetime of device related
+    to reference lifetime (VDI2067)
+
+    Parameters
+    ----------
+    nb_samples : int
+        Number of samples
+    minv : float
+        Minimum value (default: 0.5)
+    maxv : float
+        Maximum value (default: 1.5)
+
+    Returns
+    -------
+    array_lifetime : np.array (of float)
+        Numpy array with samples for percentage difference in lifetime of
+        device related to reference lifetime (VDI2067)
+    """
+
+    assert nb_samples > 0
+    assert minv >= 0
+    assert maxv >= 0
+
+    array_lifetime = \
+        np.random.uniform(low=minv, high=maxv, size=nb_samples)
+
+    return array_lifetime
+
+
+def sample_maintain(nb_samples, minv=0.5, maxv=1.5):
+    """
+    Return samples for percentage difference in maintenance effort
+    of device related to reference values (VDI2067)
+
+    Parameters
+    ----------
+    nb_samples : int
+        Number of samples
+    minv : float
+        Minimum value (default: 0.5)
+    maxv : float
+        Maximum value (default: 1.5)
+
+    Returns
+    -------
+    array_maintain : np.array (of float)
+        Numpy array with ssamples for percentage difference in maintenance
+        effort of device related to reference values (VDI2067)
+    """
+
+    assert nb_samples > 0
+    assert minv >= 0
+    assert maxv >= 0
+
+    array_maintain = \
+        np.random.uniform(low=minv, high=maxv, size=nb_samples)
+
+    return array_maintain
+
+
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
 

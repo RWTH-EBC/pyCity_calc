@@ -161,6 +161,12 @@ class McRunner(object):
                 dict_bat['eta_discharge'] = \
                     esyssample.sample_bat_eta_discharge(nb_samples=nb_runs)
 
+                dict_bat['bat_lifetime'] = \
+                    esyssample.sample_lifetime(nb_samples=nb_runs)
+
+                dict_bat['bat_maintain'] = \
+                    esyssample.sample_maintain(nb_samples=nb_runs)
+
                 dict_esys['bat'] = dict_bat
 
             if building.bes.hasBoiler:
@@ -169,6 +175,12 @@ class McRunner(object):
                 dict_boi['eta_boi'] = \
                     esyssample.sample_boi_eff(nb_samples=nb_runs)
 
+                dict_boi['boi_lifetime'] = \
+                    esyssample.sample_lifetime(nb_samples=nb_runs)
+
+                dict_boi['boi_maintain'] = \
+                    esyssample.sample_maintain(nb_samples=nb_runs)
+
                 dict_esys['boi'] = dict_boi
 
             if building.bes.hasChp:
@@ -176,6 +188,12 @@ class McRunner(object):
 
                 dict_chp['omega_chp'] = \
                     esyssample.sample_chp_omega(nb_samples=nb_runs)
+
+                dict_chp['chp_lifetime'] = \
+                    esyssample.sample_lifetime(nb_samples=nb_runs)
+
+                dict_chp['chp_maintain'] = \
+                    esyssample.sample_maintain(nb_samples=nb_runs)
 
                 dict_esys['chp'] = dict_chp
 
@@ -195,6 +213,12 @@ class McRunner(object):
                         esyssample.sample_quality_grade_hp_bw(nb_samples=
                                                               nb_runs)
 
+                dict_hp['hp_lifetime'] = \
+                    esyssample.sample_lifetime(nb_samples=nb_runs)
+
+                dict_hp['hp_maintain'] = \
+                    esyssample.sample_maintain(nb_samples=nb_runs)
+
                 dict_esys['hp'] = dict_hp
 
             if building.bes.hasPv:
@@ -207,11 +231,23 @@ class McRunner(object):
                 dict_pv['gamma'] = esyssample.sample_pv_gamma(nb_samples=
                                                               nb_runs)
 
+                dict_pv['hp_lifetime'] = \
+                    esyssample.sample_lifetime(nb_samples=nb_runs)
+
+                dict_pv['hp_maintain'] = \
+                    esyssample.sample_maintain(nb_samples=nb_runs)
+
             if building.bes.hasTes:
                 dict_tes = {}
 
                 dict_tes['k_loss'] = esyssample.sample_tes_k_loss(nb_samples=
                                                                   nb_runs)
+
+                dict_tes['hp_lifetime'] = \
+                    esyssample.sample_lifetime(nb_samples=nb_runs)
+
+                dict_tes['hp_maintain'] = \
+                    esyssample.sample_maintain(nb_samples=nb_runs)
 
             dict_build_samples['esys'] = dict_esys
 
