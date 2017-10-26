@@ -1,9 +1,10 @@
- #!/usr/bin/env python
-# coding=utf-8
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
 Extended electric battery class (based on battery object of pycity)
 """
 from __future__ import division
+
 import warnings
 
 import pycity_base.classes.supply.Battery as Batt
@@ -16,7 +17,7 @@ class BatteryExtended(Batt.Battery):
     """
 
     def __init__(self, environment, soc_init_ratio, capacity_kwh,
-                 self_discharge=0.01, eta_charge=0.95, eta_discharge=0.9):
+                 self_discharge=0.0001, eta_charge=0.95, eta_discharge=0.9):
         """
         Parameters
         ----------
@@ -29,7 +30,7 @@ class BatteryExtended(Batt.Battery):
             Battery's capacity in kWh
         self_discharge : float
             Rate of self discharge per time step (without unit)
-            (default: 0.01)
+            (default: 0.0001)
             (0 <= self_discharge <= 1)
         eta_charge : float
             Charging efficiency (without unit)
