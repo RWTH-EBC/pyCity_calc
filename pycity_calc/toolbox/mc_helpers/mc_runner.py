@@ -18,7 +18,7 @@ import pycity_calc.cities.scripts.city_generator.city_generator as citygen
 import pycity_calc.cities.scripts.overall_gen_and_dimensioning as overall
 import pycity_calc.toolbox.mc_helpers.city.city_sampling as citysample
 import pycity_calc.toolbox.mc_helpers.building.build_unc_set_gen as buildsample
-import pycity_calc.toolbox.mc_helpers.user as usersample
+import pycity_calc.toolbox.mc_helpers.user.user_unc_sampling as usersample
 
 
 class McRunner(object):
@@ -30,7 +30,7 @@ class McRunner(object):
     City ojbect is stored on energy balance object
     """
 
-    def __init__(self, city_eco_calc):
+    def __init__(self, city_eco_calc, get_build_ids=True):
         """
         Constructor of Monte-Carlo runner class
 
@@ -39,11 +39,84 @@ class McRunner(object):
         city_eco_calc : object
             City economic calculation object of pyCity_calc. Has
             to hold city object, annuity object and energy balance object
+        get_build_ids : bool, optional
+            Defines, if all building node ids should be extracted and stored on
+            _list_build_ids (default: True)
         """
 
         self._city_eco_calc = city_eco_calc
+        self._list_build_ids = None  # List with building node ids in city
 
-    def perform_sampling_city(self, nb_runs):
+        #  Define pointer to city (simpler re-usage)
+        self._city = self._city_eco_calc.energy_balance.city
+
+        if get_build_ids:
+            #  Extract building node ids
+            self._list_build_ids = self._city.get_list_build_entity_node_ids()
+
+    @staticmethod
+    def perform_sampling_build(nb_runs, building):
+        """
+        Perform sampling for building object
+
+        Parameters
+        ----------
+        nb_runs : int
+            Number of runs
+        building : object
+            Building object of pyCity_calc
+
+        Returns
+        -------
+
+        """
+
+        #  Res. building type (sfh or mfh)
+        if len(building.apartments) == 1:
+            type = 'sfh'
+        elif len(building.apartments) > 1:
+            type = 'mfh'
+
+        array_occupants = np.zeros(nb_runs)
+        array_el_dem = np.zeros(nb_runs)
+        array_dhw_dem = np.zeros(nb_runs)
+        array_sh_dem = np.zeros(nb_runs)
+
+        #  Sample for apartments
+        for ap in building.apartments:
+
+            #  Loop over nb. of samples
+            for i in range(nb_runs):
+
+                #  Sample occupants
+                occ_p_app = usersample.\
+                    calc_sampling_occ_per_app(nb_samples=1)[0]
+
+                #  Sample el. demand per apartment (depending on nb. persons)
+                el_per_app = usersample. \
+                    calc_sampling_el_demand_per_apartment(nb_samples=1,
+                                                          nb_persons=occ_p_app,
+                                                          type=type)[0]
+
+                #  Sample dhw demand per apartment (depending on nb. persons)
+                dhw_per_app = usersample.\
+                    calc_sampling_dhw_per_apartment(nb_samples=1,
+                                                    nb_persons=occ_p_app,
+                                                    b_type=type)
+
+                #  Sum up values on building level
+                array_occupants[i] += occ_p_app
+                array_el_dem[i] += el_per_app
+                array_dhw_dem[i] += dhw_per_app
+
+        #  Sample building attributes
+
+
+        #  Sample energy system attributes
+
+
+    @staticmethod
+    def perform_sampling_city(nb_runs):
         """
         Perform sampling for city district parameters:
         - interest
@@ -113,7 +186,9 @@ class McRunner(object):
 
         Returns
         -------
-        dict_samples
+        dict_samples : dict (of dicts)
+            Dictionary holding dictionaries with sample data for MC run
+            dict_samples['city'] = dict_city_samples
         """
 
         #  Initial sample dict. Holds further sample dicts for
@@ -123,6 +198,12 @@ class McRunner(object):
         #  Perform city sampling
         dict_city_samples = self.perform_sampling_city(nb_runs=nb_runs)
         dict_samples['city'] = dict_city_samples
+
+        #  Perform building sampling
+        #  Loop over node ids
+        for n in self._list_build_ids:
+            build = self._city.node[n]['entity']
+            self.perform_sampling_build(nb_runs=nb_runs, building=build)
 
     def perform_mc_runs(self, nb_runs):
         """
