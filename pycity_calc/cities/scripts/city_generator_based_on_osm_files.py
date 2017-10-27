@@ -107,7 +107,7 @@ def main():  # pragma: no cover
 
     # 1. osm filename
 
-    filename = 'test.osm'
+    filename = 'wm_bb.osm'
 
     # 2. Minimal required building area in m2
     min_house_area = 50     # --> double garages eliminated ( 34,95 m^2)
@@ -125,7 +125,7 @@ def main():  # pragma: no cover
     #     (influences initial day for profile generation, market prices
     #     and co2 factors)
     #     If year is set to None, user has to define day_init!
-    year = 2010
+    year = 2017
 
     # try_path : str, optional
     #     Path to TRY weather file (default: None)
@@ -139,11 +139,11 @@ def main():  # pragma: no cover
     # location : Tuple, optional
     #     (latitude , longitude) of the simulated system's position,
     #     (default: (50.775346, 6.083887) for Aachen, Germany.
-    location = (50.775346, 6.083887)
+    location = (51.529086, 6.944689)  # Bottrop
 
     # altitude : float, optional
-    #     Altitute of location in m (default: 55 - City of Bottrop)
-    altitude = 55
+    #     Altitute of location in m (default: 60 - City of Bottrop)
+    altitude = 60
 
     # ------------------------------------------------------
 
@@ -163,19 +163,19 @@ def main():  # pragma: no cover
 
     # 5. specified period of BUILD YEAR
     user_defined_build_year = True
-    specified_build_year_beginning = 1970
-    specified_build_year_end = 1975
+    specified_build_year_beginning = 1955
+    specified_build_year_end = 1960
 
     # ------------------------------------------------------
 
     # 6. specified MOD YEAR after a certain time
     user_defined_mod_year = False
-    mod_year_method = 1                     # Methods are seen below
+    mod_year_method = 0                # Methods are seen below
 
     # mod year method = 0; in the given range (beginnning - end) a modification has to be done.
     # Modification takes place every 30 (mod_year_beginning) to 36 (mod_year_end) until the difference of the mod_year to the build_year is smaller than build_year - mod_year_beginning
     specified_range_mod_year_beginning = 30
-    specified_range_mod_year_end = 36
+    specified_range_mod_year_end = 35
 
     # mod year method = 1;
     # states the years of modification after the building was build
@@ -190,8 +190,8 @@ def main():  # pragma: no cover
     # ------------------------------------------------------
 
     # 8. specified NUMBER of OCCUPANTS
-    user_defined_number_of_occupants = False
-    specified_number_occupants = 800
+    user_defined_number_of_occupants = True
+    specified_number_occupants = 170
 
     # 9. specified NUMBER of APARTMENTS
     user_defined_number_of_apartments = False
@@ -222,7 +222,7 @@ def main():  # pragma: no cover
 
     #  13. SAVE generated city object as PICKLE file?
     save_city = True
-    city_filename = 'city_osm_ac.p'
+    city_filename = 'wm_bb_city_gen_jana.pkl'
 
     #  14. SAVE generated city object as CSV file?
     save_city_CSV = True
@@ -253,7 +253,9 @@ def main():  # pragma: no cover
     osm_path = os.path.join(this_path, 'input_osm', filename)
 
     # Generate environment
-    environment = citgen.generate_environment(timestep=timestep, year=year,
+    environment = citgen.generate_environment(timestep=timestep,
+                                              year_timer=year,
+                                              year_co2=year,
                                               try_path=try_path,
                                               location=location,
                                               altitude=altitude,

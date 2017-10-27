@@ -819,7 +819,7 @@ def run_c_file_an(city_object):
 
 if __name__ == '__main__':
     #  City pickle filename
-    city_file = 'city_clust_simple.p'
+    city_file = 'wm_bb_city_gen_jana.pkl'
 
     print('Analyse city file: ', city_file)
 
@@ -842,16 +842,16 @@ if __name__ == '__main__':
     check_bes = False  # Check existence of BES on building
     check_typebuilding = False  # Check existence of TEASER typebuilding
 
-    #  Check consistency of file
-    check_city_consinstency(city=city, check_sh=check_sh, check_el=check_el,
-                            check_dhw=check_dhw, check_occ=check_occ,
-                            check_base_par=check_base_par, check_bes=check_bes,
-                            check_typebuilding=check_typebuilding)
+    # #  Check consistency of file
+    # check_city_consinstency(city=city, check_sh=check_sh, check_el=check_el,
+    #                         check_dhw=check_dhw, check_occ=check_occ,
+    #                         check_base_par=check_base_par, check_bes=check_bes,
+    #                         check_typebuilding=check_typebuilding)
 
-    #  Run analyzation script
-    run_c_file_an(city_object=city)
+    # #  Run analyzation script
+    # run_c_file_an(city_object=city)
 
-    get_min_max_th_sh_powers(city, print_out=True)
+    # get_min_max_th_sh_powers(city, print_out=True)
 
 
 
@@ -892,15 +892,18 @@ if __name__ == '__main__':
     #                                 auto_close=True, plot_str_dist=None)
 
 
-    # #  Extract subcity
-    # #  ####################################################################
+    #  Extract subcity
+    #  ####################################################################
     # list_sub = [1018, 1020, 1021, 1026, 1027, 1028, 1022]
     #
     # subcity = netop.get_build_str_subgraph(city=city, nodelist=list_sub)
-    #
-    # save_path = os.path.join(this_path, 'output', 'extr_alex.p')
-    #
-    # pickle.dump(subcity, open(save_path, mode='wb'))
+
+    city.remove_building(node_number=1046)
+
+    save_path = os.path.join(this_path, 'output',
+                             'wm_bb_city_gen_jana_minus_1046.pkl')
+
+    pickle.dump(city, open(save_path, mode='wb'))
 
 
     # #  Add KFW retrofit to buildings

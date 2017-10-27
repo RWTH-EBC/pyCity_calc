@@ -352,7 +352,7 @@ if __name__ == '__main__':
     src_path = os.path.dirname(os.path.dirname(this_path))
 
     #  City file name (to
-    city_f_name = 'city_3_buildings_mixed.pkl'
+    city_f_name = 'wm_bb_city_gen_jana_minus_1046.pkl'
 
     use_german = False
     with_esys = False
