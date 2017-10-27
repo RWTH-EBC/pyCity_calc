@@ -4,6 +4,7 @@
 Script to rescale all electric load curves within city to match to specific
 given, annual electric energy demand in kWh (for whole city)
 """
+from __future__ import division
 
 import os
 import pickle
@@ -68,11 +69,11 @@ if __name__ == '__main__':
 
     #  User input
     #  ###################################################################
-    el_dem = 525000  # El. energy demand for rescaling in kWh/a
+    el_dem = 12500  # El. energy demand for rescaling in kWh/a
 
-    city_f_name = 'aachen_tuerme_mod_7.pkl'
+    city_f_name = 'city_3_buildings.pkl'
 
-    save_f_name = city_f_name[:-4] + '_el_resc_2.pkl'
+    save_f_name = city_f_name[:-4] + '_el_resc.pkl'
 
     #  ###################################################################
 

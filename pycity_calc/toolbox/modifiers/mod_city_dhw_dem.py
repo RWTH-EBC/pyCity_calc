@@ -4,12 +4,50 @@
 Script to rescale all dhw load curves within city to match to specific
 given, annual dhw energy demand in kWh (for whole city)
 """
+from __future__ import division
 
 import os
 import pickle
 import copy
+import warnings
 
-import pycity_calc.toolbox.teaser_usage.teaser_use as teaseruse
+def rescale_dhw_build(building, dhw_dem):
+    """
+    Rescale domestic hot water (dhw) demand on building object
+
+    Parameters
+    ----------
+    building : object
+        Building object of pyCity_calc
+    dhw_dem : float
+        Domestic hot water thermal net energy demand in kWh/a (used for
+        rescaling)
+    """
+
+    timestep = building.environment.timer.timeDiscretization
+
+    nb_app = len(building.apartments)
+
+    dhw_dem_app = dhw_dem / nb_app
+
+    for app in building.apartments:
+
+        #  Reference demand in kWh/a
+        ref_dhw = sum(app.demandDomesticHotWater.loadcurve) * timestep / \
+                  (3600 * 1000)
+
+        if ref_dhw == 0:
+            msg = 'Reference hot water energy demand is zero! Rescaling' \
+                  ' cannot be performed!'
+            warnings.warn(msg)
+            con_factor = 1
+        else:
+            con_factor = dhw_dem_app / ref_dhw
+
+        app.demandDomesticHotWater.loadcurve *= con_factor
+        if hasattr(app.demandDomesticHotWater, 'water'):
+            app.demandDomesticHotWater.water *= con_factor
+
 
 def mod_dhw_city_dem(city, dhw_dem, list_nodes=None, makecopy=False):
     """
@@ -53,9 +91,10 @@ def mod_dhw_city_dem(city, dhw_dem, list_nodes=None, makecopy=False):
 
     for n in list_nodes:
         curr_b = city.node[n]['entity']
-        for app in curr_b.apartments:
-            app.demandDomesticHotWater.loadcurve *= con_factor
-            app.demandDomesticHotWater.water *= con_factor
+
+        dhw_resc = con_factor * curr_b.get_annual_dhw_demand()
+
+        rescale_dhw_build(building=curr_b, dhw_dem=dhw_resc)
 
     return city
 
@@ -66,9 +105,9 @@ if __name__ == '__main__':
 
     #  User input
     #  ###################################################################
-    dhw_dem = 420000  # El. energy demand for rescaling in kWh/a
+    dhw_dem = 5000  # El. energy demand for rescaling in kWh/a
 
-    city_f_name = 'aachen_frankenberg_mod_8_el_resc.pkl'
+    city_f_name = 'city_3_buildings.pkl'
 
     save_f_name = city_f_name[:-4] + '_dhw_resc.pkl'
 
