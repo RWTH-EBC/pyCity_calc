@@ -29,9 +29,12 @@ import pycity_calc.toolbox.mc_helpers.esys.esyssampling as esyssample
 def block_print():
     sys.stdout = open(os.devnull, 'w')
 
+
 # Restore printing
 def enable_print():
     sys.stdout = sys.__stdout__
+
+
 #  From https://stackoverflow.com/questions/8391411/suppress-calls-to-print-python
 
 
@@ -64,7 +67,7 @@ class McRunner(object):
 
         if get_build_ids:
             #  Extract building node ids
-            self._list_build_ids = self._city_eco_calc.energy_balance.city\
+            self._list_build_ids = self._city_eco_calc.energy_balance.city \
                 .get_list_build_entity_node_ids()
 
     @staticmethod
@@ -458,7 +461,6 @@ class McRunner(object):
 
                     #  Check which devices do exist on bes
                     if curr_build.bes.hasBattery:
-
                         dict_bat = dict_esys['bat']
 
                         bat = curr_build.bes.battery
@@ -468,14 +470,13 @@ class McRunner(object):
                         bat.etaCharge = dict_bat['eta_charge'][i]
                         bat.etaDischarge = dict_bat['eta_discharge'][i]
 
-                    #     dict_bat['bat_lifetime'] = \
+                    # dict_bat['bat_lifetime'] = \
                     #         esyssample.sample_lifetime(nb_samples=nb_runs)
                     #
                     #     dict_bat['bat_maintain'] = \
                     #         esyssample.sample_maintain(nb_samples=nb_runs)
                     #
                     if curr_build.bes.hasBoiler:
-
                         dict_boi = dict_esys['boi']
 
                         boi = curr_build.bes.boiler
@@ -518,7 +519,6 @@ class McRunner(object):
                         #     esyssample.sample_maintain(nb_samples=nb_runs)
 
                     if curr_build.bes.hasHeatpump:
-
                         dict_hp = dict_esys['hp']
 
                         hp = curr_build.bes.heatpump
@@ -532,7 +532,6 @@ class McRunner(object):
                         #     esyssample.sample_maintain(nb_samples=nb_runs)
 
                     if curr_build.bes.hasPv:
-
                         dict_pv = dict_esys['PV']
 
                         pv = curr_build.bes.pv
@@ -562,8 +561,9 @@ class McRunner(object):
                         # dict_tes['hp_maintain'] = \
                         #     esyssample.sample_maintain(nb_samples=nb_runs)
 
+                    #  TODO: Add lifetime, maintenance and invest uncertainty
 
-            #  Extract city sampling data
+            # Extract city sampling data
             #  #############################################################
             dict_city_samples = self._dict_samples['city']
 
@@ -597,6 +597,8 @@ class McRunner(object):
 
             #  Rerun initial parameter calculation of annuity_obj
             annuity_obj.initial_calc()
+
+            #  TODO: Add German market uncertainties
 
             #  Save inputs to energy_balance
 
@@ -711,6 +713,7 @@ class McRunner(object):
             enable_print()
 
         return dict_mc_res
+
 
 if __name__ == '__main__':
 
@@ -967,7 +970,7 @@ if __name__ == '__main__':
         file_path = os.path.join(this_path, 'input', filename)
         pickle.dump(city, open(file_path, mode='wb'))
 
-    #  User inputs
+    # User inputs
     #  ####################################################################
     nb_runs = 2
     do_sampling = True
