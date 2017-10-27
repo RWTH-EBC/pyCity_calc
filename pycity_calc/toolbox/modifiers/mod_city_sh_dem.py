@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Script to rescale all electric load curves within city to match to specific
-given, annual electric energy demand in kWh (for whole city)
+Script to rescale all space heating load curves within city to match to
+specific given, annual space heating energy demand in kWh (for whole city)
 """
 from __future__ import division
 
@@ -11,73 +11,71 @@ import pickle
 import copy
 import warnings
 
-import pycity_calc.toolbox.teaser_usage.teaser_use as teaseruse
 
-
-def rescale_el_app(apartment, el_dem):
+def rescale_sh_app(apartment, sh_dem):
     """
-    Rescale electric energy demand of apartment
+    Rescale space heating net energy demand of apartment
 
     Parameters
     ----------
     apartment : object
         Apartment object of pyCity
-    el_dem : float
-        Electric energy demand of apartment in kWh/a
+    sh_dem : float
+        Space heating net energy demand of apartment in kWh/a
     """
 
-    assert el_dem >= 0
+    assert sh_dem >= 0
 
     timestep = apartment.environment.timer.timeDiscretization
 
     #  Reference demand in kWh/a
-    ref_el = sum(apartment.power_el.loadcurve) * timestep / \
+    ref_sh = sum(apartment.demandSpaceheating.loadcurve) * timestep / \
              (3600 * 1000)
 
-    if ref_el == 0:
-        msg = 'Reference electric energy demand is zero! Rescaling' \
+    if ref_sh == 0:
+        msg = 'Reference space heating energy demand is zero! Rescaling' \
               ' cannot be performed!'
         warnings.warn(msg)
         con_factor = 1
     else:
-        con_factor = el_dem / ref_el
+        con_factor = sh_dem / ref_sh
 
-    apartment.power_el.loadcurve *= con_factor
+    apartment.demandSpaceheating.loadcurve *= con_factor
 
 
-def rescale_el_dem_build(building, el_dem):
+def rescale_sh_dem_build(building, sh_dem):
     """
-    Rescale electric energy demand of building
+    Rescale space heating net energy demand of building
 
     Parameters
     ----------
     building : object
         Building object of pyCity_calc
-    el_dem : float
-        Electric energy demand of building in kWh/a
+    sh_dem : float
+        Space heating net energy demand of building in kWh/a
     """
 
-    assert el_dem >= 0
+    assert sh_dem >= 0
 
     nb_app = len(building.apartments)
 
-    el_dem_app = el_dem / nb_app
+    sh_dem_app = sh_dem / nb_app
 
     for app in building.apartments:
-        rescale_el_app(apartment=app, el_dem=el_dem_app)
+        rescale_sh_app(apartment=app, sh_dem=sh_dem_app)
 
 
-def mod_el_city_dem(city, el_dem, list_nodes=None, makecopy=False):
+def mod_sh_city_dem(city, sh_dem, list_nodes=None, makecopy=False):
     """
-    Modify city by rescaling el. load curves to el_dem value for whole city
+    Modify city by rescaling sh. load curves to sh_dem value for whole city
     district or specific number of building nodes.
 
     Parameters
     ----------
     city : object
         City object of pycity_calc
-    el_dem : float
-        Annual electric demand for rescaling in kWh
+    sh_dem : float
+        Annual space heating net energy demand for rescaling in kWh
     list_nodes : list (of ints), optional
         List of node ids, which should be used for being rescaled (default:
         None). If set to none, uses all buildings for rescaling.
@@ -93,7 +91,7 @@ def mod_el_city_dem(city, el_dem, list_nodes=None, makecopy=False):
         Modified city object of pycity_calc with rescaled, el. energy demand
     """
 
-    if city.get_annual_el_demand(nodelist=list_nodes) == 0:
+    if city.get_annual_space_heating_demand(nodelist=list_nodes) == 0:
         msg = 'City el. energy demand is zero. Rescaling cannot be applied.'
         raise AssertionError(msg)
 
@@ -106,15 +104,16 @@ def mod_el_city_dem(city, el_dem, list_nodes=None, makecopy=False):
         list_nodes = city.get_list_build_entity_node_ids()
 
     # Calculate conversion factor
-    curr_city_el_dem = city.get_annual_el_demand(nodelist=list_nodes)
-    con_factor = el_dem / curr_city_el_dem
+    curr_city_el_dem = city.get_annual_space_heating_demand(nodelist=
+                                                            list_nodes)
+    con_factor = sh_dem / curr_city_el_dem
 
     for n in list_nodes:
         curr_b = city.node[n]['entity']
 
-        el_resc = con_factor * curr_b.get_annual_el_demand()
+        sh_resc = con_factor * curr_b.get_annual_space_heat_demand()
 
-        rescale_el_dem_build(building=curr_b, el_dem=el_resc)
+        rescale_sh_dem_build(building=curr_b, sh_dem=sh_resc)
 
     return city
 
@@ -124,7 +123,7 @@ if __name__ == '__main__':
 
     #  User input
     #  ###################################################################
-    el_dem = 12000  # El. energy demand for rescaling in kWh/a
+    sh_dem = 120000  # El. energy demand for rescaling in kWh/a
 
     city_f_name = 'city_3_buildings.pkl'
 
@@ -137,30 +136,14 @@ if __name__ == '__main__':
 
     city = pickle.load(open(path_city, mode='rb'))
 
-    print('City el. energy demand in kWh/a before conversion:')
-    print(city.get_annual_el_demand())
+    print('City space heating energy demand in kWh/a before conversion:')
+    print(city.get_annual_space_heating_demand())
 
     #  Modify city object
-    mod_el_city_dem(city=city, el_dem=el_dem)
+    mod_sh_city_dem(city=city, sh_dem=sh_dem)
 
-    print('City el. energy demand in kWh/a after conversion:')
-    print(city.get_annual_el_demand())
-
-    #  #########################################################
-    air_vent_mode = 0
-    vent_factor = 0.5
-
-    print('City space heating net energy demand in kWh/a before conversion:')
+    print('City space heating demand in kWh/a after conversion:')
     print(city.get_annual_space_heating_demand())
-
-    #  Recalculate space heating loads with new el. demands
-    teaseruse.calc_and_add_vdi_6007_loads_to_city(city=city,
-                                                  air_vent_mode=air_vent_mode,
-                                                  vent_factor=vent_factor)
-
-    print('City space heating net energy demand in kWh/a after conversion:')
-    print(city.get_annual_space_heating_demand())
-    #  #########################################################
 
     #  Save city object
     pickle.dump(city, open(path_save, mode='wb'))
