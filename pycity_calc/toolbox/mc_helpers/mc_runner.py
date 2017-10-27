@@ -423,7 +423,6 @@ class McRunner(object):
             city = c_eco_copy.energy_balance.city
             energy_balance = c_eco_copy.energy_balance
             annuity_obj = c_eco_copy.annuity_obj
-
             #  Add sampling results to environment, city and buildings
             #  ###############################################################
 
@@ -460,51 +459,63 @@ class McRunner(object):
 
                         bat = curr_build.bes.battery
 
+                        #  Add new parameters to battery
+                        bat.selfDischarge = dict_bat['self_discharge'][i]
+                        bat.etaCharge = dict_bat['eta_charge'][i]
+                        bat.etaDischarge = dict_bat['eta_discharge'][i]
 
-
-                    #     dict_bat['self_discharge'] = \
-                    #         esyssample.sample_bat_self_disch(nb_samples=nb_runs)
-                    #
-                    #     dict_bat['eta_charge'] = \
-                    #         esyssample.sample_bat_eta_charge(nb_samples=nb_runs)
-                    #
-                    #     dict_bat['eta_discharge'] = \
-                    #         esyssample.sample_bat_eta_discharge(nb_samples=nb_runs)
-                    #
                     #     dict_bat['bat_lifetime'] = \
                     #         esyssample.sample_lifetime(nb_samples=nb_runs)
                     #
                     #     dict_bat['bat_maintain'] = \
                     #         esyssample.sample_maintain(nb_samples=nb_runs)
                     #
-                    # if curr_build.bes.hasBoiler:
-                    #     dict_boi = {}
-                    #
-                    #     dict_boi['eta_boi'] = \
-                    #         esyssample.sample_boi_eff(nb_samples=nb_runs)
-                    #
-                    #     dict_boi['boi_lifetime'] = \
-                    #         esyssample.sample_lifetime(nb_samples=nb_runs)
-                    #
-                    #     dict_boi['boi_maintain'] = \
-                    #         esyssample.sample_maintain(nb_samples=nb_runs)
-                    #
-                    #     dict_esys['boi'] = dict_boi
-                    #
-                    # if curr_build.bes.hasChp:
-                    #     dict_chp = {}
-                    #
-                    #     dict_chp['omega_chp'] = \
-                    #         esyssample.sample_chp_omega(nb_samples=nb_runs)
-                    #
-                    #     dict_chp['chp_lifetime'] = \
-                    #         esyssample.sample_lifetime(nb_samples=nb_runs)
-                    #
-                    #     dict_chp['chp_maintain'] = \
-                    #         esyssample.sample_maintain(nb_samples=nb_runs)
-                    #
-                    #     dict_esys['chp'] = dict_chp
-                    #
+                    if curr_build.bes.hasBoiler:
+
+                        dict_boi = dict_esys['boi']
+
+                        boi = curr_build.bes.boiler
+
+                        #  Add new boiler parameters
+                        boi.eta = dict_boi['eta_boi'][i]
+
+                        # dict_boi['boi_lifetime'] = \
+                        #     esyssample.sample_lifetime(nb_samples=nb_runs)
+                        #
+                        # dict_boi['boi_maintain'] = \
+                        #     esyssample.sample_maintain(nb_samples=nb_runs)
+
+                    if curr_build.bes.hasChp:
+                        dict_chp = dict_esys['chp']
+
+                        chp = curr_build.bes.chp
+
+                        #  Get omega sample
+                        omega = dict_chp['omega_chp'][i]
+                        #  Get current nominal thermal power
+                        curr_th_eta = chp.qNominal
+
+                        #  Recalculate corresponding thermal and electrical
+                        #  nominal power values with new omega
+                        (th_power, el_power) = \
+                            chp.run_precalculation(q_nominal=curr_th_eta,
+                                                   p_nominal=None,
+                                                   eta_total=omega,
+                                                   thermal_operation_mode=True)
+
+                        print('Th. chp power in WAtt', th_power)
+                        print('El. chp power in WAtt', el_power)
+
+                        #  Overwrite existing values
+                        chp.qNominal = th_power
+                        chp.pNominal = el_power
+
+                        # dict_chp['chp_lifetime'] = \
+                        #     esyssample.sample_lifetime(nb_samples=nb_runs)
+                        #
+                        # dict_chp['chp_maintain'] = \
+                        #     esyssample.sample_maintain(nb_samples=nb_runs)
+
                     # if curr_build.bes.hasHeatpump:
                     #
                     #     dict_hp = {}
