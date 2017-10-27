@@ -2679,16 +2679,16 @@ if __name__ == '__main__':
     #  osm call (city object should hold nodes, but no entities. City
     #  generator is going to add building, apartment and load entities to
     #  building nodes
-    generation_mode = 0
+    generation_mode = 1
 
     #  Generate environment
     #  ######################################################
     year_timer = 2017
     year_co2 = 2017
     timestep = 3600  # Timestep in seconds
-    # location = (51.529086, 6.944689)  # (latitude, longitude) of Bottrop
-    location = (50.775346, 6.083887)  # (latitude, longitude) of Aachen
-    altitude = 266  # Altitude of location in m (Aachen)
+    location = (51.529086, 6.944689)  # (latitude, longitude) of Bottrop
+    # location = (50.775346, 6.083887)  # (latitude, longitude) of Aachen
+    altitude = 60  # Altitude of location in m (Aachen)
 
     #  Weather path
     try_path = None
@@ -2738,7 +2738,7 @@ if __name__ == '__main__':
     do_normalization = True
 
     #  Randomize electrical demand value (residential buildings, only)
-    el_random = True
+    el_random = False
 
     #  Prevent usage of electrical heating and hot water devices in
     #  electrical load generation (only relevant if el_gen_method == 2)
@@ -2771,13 +2771,13 @@ if __name__ == '__main__':
     dhw_volumen = None  # Only relevant for residential buildings
 
     #  Randomize choosen dhw_volume reference value by selecting new value
-    dhw_random = True
+    dhw_random = False
 
     #  Input file names and pathes
     #  ######################################################
     #  Define input data filename
 
-    filename = 'city_3_buildings.txt'
+    filename = 'wm_bb_city_gen_jana_data_enrich.txt'
     # filename = 'city_clust_simple.txt'
     # filename = 'aachen_forsterlinde_mod_6.txt'
     # filename = 'aachen_frankenberg_mod_6.txt'
@@ -2790,9 +2790,9 @@ if __name__ == '__main__':
     pickle_city_filename = filename[:-4] + '.pkl'
 
     #  For generation_mode == 1:
-    # city_osm_input = None
+    city_osm_input = 'wm_bb_city_gen_jana_minus_1046.pkl'
     # city_osm_input = 'aachen_forsterlinde_mod_7.pkl'
-    city_osm_input = 'aachen_frankenberg_mod_7.pkl'
+    # city_osm_input = 'aachen_frankenberg_mod_7.pkl'
     # city_osm_input = 'aachen_huenefeld_mod_7.pkl'
     # city_osm_input = 'aachen_kronenberg_mod_7.pkl'
     # city_osm_input = 'aachen_preusweg_mod_7.pkl'
