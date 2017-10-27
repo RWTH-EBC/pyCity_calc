@@ -11,6 +11,41 @@ import pickle
 import copy
 import warnings
 
+
+def rescale_dhw_app(apartment, dhw_dem):
+    """
+    Rescale domestic hot water (dhw) demand on apartment object
+
+    Parameters
+    ----------
+    apartment : object
+        Apartment object of pyCity
+    dhw_dem : float
+        Domestic hot water thermal net energy demand of apartment
+        in kWh/a (used for rescaling)
+    """
+
+    assert dhw_dem >= 0
+
+    timestep = apartment.environment.timer.timeDiscretization
+
+    #  Reference demand in kWh/a
+    ref_dhw = sum(apartment.demandDomesticHotWater.loadcurve) * timestep / \
+              (3600 * 1000)
+
+    if ref_dhw == 0:
+        msg = 'Reference hot water energy demand is zero! Rescaling' \
+              ' cannot be performed!'
+        warnings.warn(msg)
+        con_factor = 1
+    else:
+        con_factor = dhw_dem / ref_dhw
+
+    apartment.demandDomesticHotWater.loadcurve *= con_factor
+    if hasattr(apartment.demandDomesticHotWater, 'water'):
+        apartment.demandDomesticHotWater.water *= con_factor
+
+
 def rescale_dhw_build(building, dhw_dem):
     """
     Rescale domestic hot water (dhw) demand on building object
@@ -20,33 +55,18 @@ def rescale_dhw_build(building, dhw_dem):
     building : object
         Building object of pyCity_calc
     dhw_dem : float
-        Domestic hot water thermal net energy demand in kWh/a (used for
-        rescaling)
+        Domestic hot water thermal net energy demand of building
+        in kWh/a (used for rescaling)
     """
 
-    timestep = building.environment.timer.timeDiscretization
+    assert dhw_dem >= 0
 
     nb_app = len(building.apartments)
 
     dhw_dem_app = dhw_dem / nb_app
 
     for app in building.apartments:
-
-        #  Reference demand in kWh/a
-        ref_dhw = sum(app.demandDomesticHotWater.loadcurve) * timestep / \
-                  (3600 * 1000)
-
-        if ref_dhw == 0:
-            msg = 'Reference hot water energy demand is zero! Rescaling' \
-                  ' cannot be performed!'
-            warnings.warn(msg)
-            con_factor = 1
-        else:
-            con_factor = dhw_dem_app / ref_dhw
-
-        app.demandDomesticHotWater.loadcurve *= con_factor
-        if hasattr(app.demandDomesticHotWater, 'water'):
-            app.demandDomesticHotWater.water *= con_factor
+        rescale_dhw_app(apartment=app, dhw_dem=dhw_dem_app)
 
 
 def mod_dhw_city_dem(city, dhw_dem, list_nodes=None, makecopy=False):
@@ -85,7 +105,7 @@ def mod_dhw_city_dem(city, dhw_dem, list_nodes=None, makecopy=False):
         #  Use all building node ids
         list_nodes = city.get_list_build_entity_node_ids()
 
-    #  Calculate conversion factor
+    # Calculate conversion factor
     curr_city_dhw_dem = city.get_annual_dhw_demand(nodelist=list_nodes)
     con_factor = dhw_dem / curr_city_dhw_dem
 
@@ -100,7 +120,6 @@ def mod_dhw_city_dem(city, dhw_dem, list_nodes=None, makecopy=False):
 
 
 if __name__ == '__main__':
-
     this_path = os.path.dirname(os.path.abspath(__file__))
 
     #  User input
