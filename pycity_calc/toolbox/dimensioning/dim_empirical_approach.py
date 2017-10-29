@@ -58,50 +58,25 @@ def run_approach(city,scenarios,geothermal=True):
 
     solutions = [] #Liste aller möglichen dimensionierten Szenarien (inklusive Kosten und Emissionen)
 
+
+    # Check Eligibility for District Heating Network
+    dhn_elig = get_eligibility_dhn(city, method=1)
+
+
     # Change SpaceHeatingDemand of apartments to method 1 (SLP)
     for n in city.nodelist_building:
         b = city.node[n]['entity']
-        spec_th_dem = b.get_annual_space_heat_demand()/b.get_net_floor_area_of_building()
+        spec_th_dem = b.get_annual_space_heat_demand() / b.get_net_floor_area_of_building()
         for ap in b.apartments:
             if ap.demandSpaceheating.method != 1:
                 ap.demandSpaceheating = SpaceHeating.SpaceHeating(city.environment,
-                                           method=1,  # Standard load profile
-                                           livingArea=ap.net_floor_area,
-                                           specificDemand=spec_th_dem)
+                                                                  method=1,  # Standard load profile
+                                                                  livingArea=ap.net_floor_area,
+                                                                  specificDemand=spec_th_dem)
 
-#----------------------- Check Eligibility for District Heating Network ----------------------------------
+    # ------------------------------------ Dimensionierung der Anlagen -------------------------------------------------
 
-    # Energiekennwert des Quartiers (Keine Unterscheidung der Gebäude - nur Betrachtung als Gesamtes zur Abschätzung)
-    th_total = city.get_annual_space_heating_demand() + city.get_annual_dhw_demand()
-
-    area_total = 0
-    edge_count = 0
-    for n in city.nodelist_building:
-        area_total += city.node[n]['entity'].get_net_floor_area_of_building() #sum area of buildings
-        if city.edge[n] != {}:
-            edge_count += 1
-
-    ekw = th_total/area_total #in kWh/(m2*a)
-
-    # Check for existing LHN and building connections
-    if edge_count/len(city.nodelist_building) > 0.5:
-        heating_net = True
-        building_con = True
-    else:
-        heating_net = False
-        building_con = False
-
-    # Overwrite results from existing lhn check
-    heating_net = True
-    building_con = True
-
-    district_type = get_city_type(city)
-
-    dhn_elig = get_eligibility_dhn(district_type, ekw, heating_net, building_con)
-
-#------------------------------------ Dimensionierung der Anlagen -------------------------------------------------
-
-    if dhn_elig > 3:
+    if dhn_elig > 4:
         print('District Heating eligible!')
         for scenario in scenarios:
             if 'centralized' in scenario['type']:
@@ -111,7 +86,7 @@ def run_approach(city,scenarios,geothermal=True):
                     solutions.append(result)
 
 
-    elif dhn_elig < 3:
+    elif dhn_elig < 2:
         print('District Heating not eligible!')
         for scenario in scenarios:
             if 'decentralized' in scenario['type']:
@@ -134,181 +109,153 @@ def run_approach(city,scenarios,geothermal=True):
 
 
 
-def get_building_age(city): #alternativ immer exaktes Alter abfragen. Wie sähe ein Neubau aus? build_year = 2017?
+def get_building_age(city):
     """
-    Evaluates the age of a building in regards to the EEWärmeG
+    Evaluates the age of a building in regards to the EEWärmeG. If one building in district is built in or after 2009,
+    EEWärmeG must be complied by whole district.
+
     :param city: standard city_object
     :return: string 'new' or 'old'
     """
     for building_node in city.nodelist_building:
-        if city.node[building_node]['entity'].build_year >= 2009: # abhängig von Inkrafttreten des EEWärmeG (01.01.2009)
+        if city.node[building_node]['entity'].build_year >= 2009: # EEWärmeG in place since 01.01.2009
             return 'new'
     return 'old'
 
 
-def get_city_type(city):
-    """
-
-    :param city:
-    :return:
-    """
-    #  Todo: building.net_floor_area --> Relate to energy (Wärmeleistungsliniendichte nach Wolff, S.20)
-    #  n1 and n2 --> calc_node_distance(graph, node_1, node_2)
-    #  get_min_span_tree_for_x_y_positions(city, nodelist)
-    #  --> Relate to energy demand
-
-    # dimnet.add_lhn_to_city(city, city.nodelist_building, temp_vl=90,
-    #                        temp_rl=50, c_p=4186, rho=1000,
-    #                        use_street_network=True, network_type='heating',
-    #                        plot_stepwise=False)
-
-
-
-    b_graph = nx.Graph()
-    for bn in city.nodelist_building:
-        b_graph.add_node(bn, position=city.node[bn]['position'])
-    min_st = net_ops.get_min_span_tree(b_graph,city.nodelist_building)
-    print(min_st)
-
-
-    num_buildings = len(city.nodelist_building)
-    num_apartments = 0
-    for building_node in city.nodelist_building:
-        num_apartments += len(city.node[building_node]['entity'].apartments)
-    density_index = num_apartments/num_buildings
-
-    if num_buildings < 5:
-        if density_index < 5:
-            print('Small District')
-            return 'small'
-        else:
-            print('Medium Sized District')
-            return 'medium'
-    elif num_buildings >= 5 and num_buildings < 15:
-        if density_index < 3:
-            print('Small District')
-            return 'small'
-        elif density_index >= 3 and density_index <= 7:
-            print('Medium Sized District')
-            return 'medium'
-        elif density_index > 7:
-            print('Big (city) District')
-            return 'big'
-    else:
-        if density_index < 5:
-            print('Medium Sized District')
-            return 'medium'
-        else:
-            print('Big (city) District')
-            return 'big'
-
-
-# User input for more specifications
-def additional_information():
-
-    print('Please clarify some facts about the district...')
-
-     # Geothermienutzung möglich?
-    user_input = input('Is use of geothermal probes for heat pumps possible? (y/n): ')
-    while user_input not in {'y', 'n', 'yes', 'no'}:
-        user_input = input('Wrong input! Try again... (y/n): ')
-    if user_input in {'y', 'yes'}:
-        geothermal = True
-    else:
-        geothermal = False
-
-    # Check ob Nahwärmenetz vorhanden oder Bau notwendig - gibt es die Info in city_object?
-    user_input = input('Local heating network already available? (y/n): ')
-    while user_input not in {'y','n','yes','no'}:
-        user_input = input('Wrong input! Try again... (y/n): ')
-    if user_input in {'y','yes'}:
-        heating_net = True
-    else:
-        heating_net = False
-
-    # Falls vorhanden Check ob Anschluss an Gebäude vorhanden - gibt es die Info in city_object?
-    user_input = input('Buildings already connected to local heating network? (y/n): ')
-    while user_input not in {'y', 'n', 'yes', 'no'}:
-        user_input = input('Wrong input! Try again... (y/n): ')
-    if user_input in {'y', 'yes'}:
-        building_con = True
-    else:
-        building_con = False
-
-    return building_con, heating_net, geothermal
-
 
 def approve_scenario(city, scenario, geothermal):
+    # TODO: Wird diese Funktion gebraucht? Kann ggf. in Geothermiedimensionierung rein!!
     '''
     Check if scenario is suitable for city
     :param city: standard city_object
     :param scenario:
     :return: True/False
     '''
-
     if 'hp_geo' in scenario['base'] and not geothermal:
         return False
     return True
 
 
-def get_eligibility_dhn(district_type, ekw, heating_net=False, building_con=False):
+def get_eligibility_dhn(city, method=1):
+    '''
+    Calculates the eligibility for using a district heating network (dhn)
+
+    Parameters
+    ----------
+    city    :   city object
+    method  :   int
+        0 : Calculate Wärmeliniendichten (use only if spaceHeating in district was calculated with method 0)
+        1 : Use Matrix from Wolff & Jagnow 2011
+
+    Returns
+    -------
+    elig_val : int
+        integer between 0 (bad) and 5 (good), which indicates the eligibility for lhn in district
     '''
 
-    :param district_type: big/medium/small
-    :param ekw: Energiekennwert in kWh/m²a
-    :param heating_net: District heating network already in place (True/False)
-    :param building_con: Building connection to dhn already installed (True/False)
-    :return: elig_val = value of eligibility for usage of district heating: 1(very bad) - 5(very good)
-    '''
-    # TODO: Für 2 Gebäude testen! -> Nichteignung für CHP?!
-    if district_type == 'big':
-        if heating_net:
-            if building_con:
-                if ekw > 120:
-                    elig_val = 5
-                else:
-                    elig_val = 4
-            else:
-                if ekw > 120:
-                    elig_val = 4
-                else:
-                    elig_val = 3
-        else:
-            elig_val = 3
+    th_total_elig = city.get_annual_space_heating_demand() + city.get_annual_dhw_demand()  # in kWh/a
 
-    elif district_type == 'medium':
-        if heating_net:
-            if building_con:
-                if ekw > 180:
-                    elig_val = 5
-                elif ekw > 120:
-                    elig_val = 4
-                else:
-                    elig_val = 3
-            else:
-                if ekw > 180:
-                    elig_val = 4
-                elif ekw > 120:
-                    elig_val = 3
-                else:
-                    elig_val = 2
+    b_graph = nx.Graph()
+    for bn in city.nodelist_building:
+        b_graph.add_node(bn, position=city.node[bn]['position'])
+    min_st = net_ops.get_min_span_tree(b_graph, city.nodelist_building)
+
+    net_len = net_ops.sum_up_weights_of_edges(min_st, network_type=None)  # in meter
+
+    th_curve = ((city.get_aggr_dhw_power_curve(current_values=False) +
+                 city.get_aggr_space_h_power_curve(current_values=False)) / 0.8) / 1000  # in kW
+
+    # -------- Calculate Wärmeliniendichten ---------
+    if method == 0:
+        elig_val = 0
+
+        # Wärmeleistungsliniendichte
+        wlld = max(th_curve)/net_len    # in kW/m
+        if wlld >= 1.5:
+            elig_val += 2
+
+        # Wärmeabnahmeliniendichte
+        wald = th_total_elig/net_len     # in kWh/(m*a)
+        if wald >= 1500:
+            elig_val += 2
+
+        return elig_val
+
+    # -------- Get EKW ---------
+    elif method == 1:
+
+        area_total = 0
+        edge_count = 0
+        for n in city.nodelist_building:
+            area_total += city.node[n]['entity'].get_net_floor_area_of_building()  # sum area of buildings
+            if city.edge[n] != {}:
+                edge_count += 1
+
+        ekw = th_total_elig / area_total  # in kWh/(m2*a)
+
+        # --------- Check for existing LHN and building connections -------
+
+        if edge_count / len(city.nodelist_building) > 0.5:
+            heating_net = True
+            building_con = True
         else:
-            if ekw > 180:
+            heating_net = False
+            building_con = False
+
+        # Overwrite results from existing lhn check
+        # heating_net = True
+        # building_con = True
+
+        # -------- Get district size -------
+
+        num_buildings = len(city.nodelist_building)
+        num_apartments = 0
+        for building_node in city.nodelist_building:
+            num_apartments += len(city.node[building_node]['entity'].apartments)
+
+        spec_len = net_len/num_apartments
+
+        if spec_len < 6:
+            district_type = 'big'
+        elif spec_len < 14:
+            district_type = 'medium'
+        else:
+            district_type = 'small'
+
+        # --------- Get Energy demand factor ----------
+
+        if district_type == 'big':
+            if heating_net:
+                if building_con:
+                    if ekw > 120:
+                        elig_val = 5
+                    else:
+                        elig_val = 4
+                else:
+                    if ekw > 120:
+                        elig_val = 4
+                    else:
+                        elig_val = 3
+            else:
                 elig_val = 3
-            elif ekw > 120:
-                elig_val = 2
-            else:
-                elig_val = 1
 
-    elif district_type == 'small':
-        if heating_net:
-            if building_con:
-                if ekw > 120:
-                    elig_val = 4
-                elif ekw > 80:
-                    elig_val = 3
+        elif district_type == 'medium':
+            if heating_net:
+                if building_con:
+                    if ekw > 180:
+                        elig_val = 5
+                    elif ekw > 120:
+                        elig_val = 4
+                    else:
+                        elig_val = 3
                 else:
-                    elig_val = 2
+                    if ekw > 180:
+                        elig_val = 4
+                    elif ekw > 120:
+                        elig_val = 3
+                    else:
+                        elig_val = 2
             else:
                 if ekw > 180:
                     elig_val = 3
@@ -316,13 +263,30 @@ def get_eligibility_dhn(district_type, ekw, heating_net=False, building_con=Fals
                     elig_val = 2
                 else:
                     elig_val = 1
-        else:
-            if ekw > 120:
-                elig_val = 2
-            else:
-                elig_val = 1
 
-    return elig_val
+        elif district_type == 'small':
+            if heating_net:
+                if building_con:
+                    if ekw > 120:
+                        elig_val = 4
+                    elif ekw > 80:
+                        elig_val = 3
+                    else:
+                        elig_val = 2
+                else:
+                    if ekw > 180:
+                        elig_val = 3
+                    elif ekw > 120:
+                        elig_val = 2
+                    else:
+                        elig_val = 1
+            else:
+                if ekw > 120:
+                    elig_val = 2
+                else:
+                    elig_val = 1
+
+        return elig_val
 
 
 def get_LDC(curve):
@@ -335,6 +299,7 @@ def get_LDC(curve):
 
 
 def choose_device(dev_type, q_ideal):
+    # TODO: Mehr BHKW Daten eintragen
     # Source: BHKW-Kenndaten 2014, S.26 - [eta_el, eta_th, p_nom, q_nom]
     chp_list = {'vai1':[0.263, 0.658, 1000, 2500], 'vai2':[0.25, 0.667, 3000, 8000], 'vai3':[0.247,0.658,4700,12500],
                 'vie':[0.27, 0.671, 6000, 14900], 'rmb7.2':[0.263, 0.657, 7200, 18000],'oet8':[0.268,0.633,8000,19000],
@@ -354,11 +319,6 @@ def choose_device(dev_type, q_ideal):
         heatpumpData = xlrd.open_workbook(hp_data_path)
 
         lower_activation_limit = 0.5
-
-        # TODO: Auswahl der Wärmepumpen anpassen (Gespräch mit Markus - Wirtschaftlichkeitsbetrachtung)
-        # bis zu 50% des maximalen Wärmebedarfs, ca. 60% der aufzubringenden Jahreswärmemenge (Quelle: Springer - Wärme&Kälteversorgungsanlagen, S.68)
-
-        # TODO: (Gas-)Motorwärmepumpen statt Strom!
 
         if q_ideal >= 50000:
             hp_sheet = heatpumpData.sheet_by_name("Dimplex_LA60TU")
@@ -649,10 +609,7 @@ def dim_decentralized(city, scenario):
 
         sh_curve = building.get_space_heating_power_curve()
         dhw_curve = building.get_dhw_power_curve()
-        q_total = sh_curve + dhw_curve
-
-        sh_LDC = dim_devices.get_LDC(sh_curve)
-        dhw_LDC = dim_devices.get_LDC(dhw_curve)
+        q_total = np.sum(sh_curve + dhw_curve)
 
         area_total = building.net_floor_area
 
@@ -668,8 +625,7 @@ def dim_decentralized(city, scenario):
         for device in scenario['base']:
             if device == 'chp':
 
-                th_LDC = dim_devices.get_LDC(sh_curve+dhw_curve)
-                q_total = sum(th_LDC)
+                th_LDC = dim_devices.get_LDC(sh_curve + dhw_curve)
                 chp_sol = dim_devices.dim_decentral_chp(th_LDC, q_total, method=0)
 
                 if chp_sol is None:
@@ -1085,10 +1041,10 @@ def calc_costs_centralized(city, q_base, q_peak, i=0.08, price_gas=0.0661, el_fe
 if __name__ == '__main__':
 
     scenarios = []
-    #scenarios.append({'type': ['centralized', 'decentralized'], 'base': ['boiler'], 'peak': []})
     # scenarios.append({'type': ['decentralized'], 'base': ['hp_air'], 'peak': ['boiler']})
     scenarios.append({'type': ['decentralized'], 'base': ['hp_air'], 'peak': ['elHeater']})
     scenarios.append({'type': ['centralized'], 'base': ['chp'], 'peak': ['boiler']})
+    # scenarios.append({'type': ['centralized', 'decentralized'], 'base': ['boiler'], 'peak': []})
 
     #scenarios.append({'type': ['decentralized'], 'base': ['chp'], 'peak': ['boiler']})
 
@@ -1101,29 +1057,27 @@ if __name__ == '__main__':
 
     this_path = os.path.dirname(os.path.abspath(__file__))
     #  Run program
-    if ex_city == 1:
-        city_f_name = 'aachen_kronenberg_3_mfh_ref_1.pkl'
-        city_path = os.path.join(this_path, 'input', city_f_name)
-        city = pickle.load(open(city_path, mode='rb'))
-        #city = pickle.load(open('/Users/jules/PycharmProjects/Masterarbeit/Beispielquartier/aachen_kronenberg_3_mfh_ref_1.pkl', mode='rb'))
 
-    elif ex_city == 2:
-        city_f_name = 'example_2_buildings.pkl'
-        city_path = os.path.join(this_path, 'input', city_f_name)
-        city = pickle.load(open(city_path, mode='rb'))
+    #city_f_name = 'aachen_kronenberg_3_mfh_ref_1.pkl'
+    city_f_name = 'ex_city_7_geb_mixed.pkl'
+    #city_f_name = 'ex_city_7_geb_mixed_setDem.pkl'
+    #city_f_name = 'example_2_buildings.pkl'
+    city_path = os.path.join(this_path, 'input', 'city_objects', city_f_name)
+    city = pickle.load(open(city_path, mode='rb'))
 
     print('District ' + city_f_name[:-4] + ' loaded')
     list_city_object = run_approach(city,scenarios)
 
 
     # ---- Output in pickle files -----
-    
+    '''
     import pycity_calc.visualization.city_visual as citvis
 
     for i in range(len(list_city_object)):
         cit = list_city_object[i]
-        city_name = 'output(' + str(i+1) + ')_' + city_f_name
+        city_name = 'output_(' + str(i+1) + ')_' + city_f_name
         path_output = os.path.join(this_path, 'output', city_name)
         pickle.dump(cit, open(path_output, mode='wb'))
         citvis.plot_city_district(city=cit, plot_lhn=True, plot_deg=True,
                                   plot_esys=True)
+    '''
