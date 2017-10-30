@@ -73,6 +73,7 @@ class McRunner(object):
         self._dict_samples = None  # List of samples
         self._has_lhn = None  # Defines, if energy system holds local heating
                               #  network or not
+        self._list_lhn_tuples = None # List holding LHN edge tuples
 
         if get_build_ids:
             #  Extract building node ids
@@ -100,10 +101,18 @@ class McRunner(object):
 
         city = self._city_eco_calc.energy_balance.city
 
-        has_lhn = netop.search_lhn(city=city)
+        # has_lhn = netop.search_lhn(city=city)
+
+        list_lhn_tuples = netop.search_lhn_all_edges(city=city)
+
+        if len(list_lhn_tuples) > 0:
+            has_lhn = True
+        elif (len(list_lhn_tuples)) == 0:
+            has_lhn = False
 
         if save_res:
             self._has_lhn = has_lhn
+            self._list_lhn_tuples = list_lhn_tuples
 
     @staticmethod
     def perform_sampling_build(nb_runs, building):
@@ -418,6 +427,9 @@ class McRunner(object):
             #  If LHN exists, sample for LHN with ref. investment cost of 1
             array_lhn_inv = esyssample.sample_invest_unc(nb_samples=nb_runs,
                                                          ref_inv=1)
+            #  If LHN exists, sample losses for LHN (ref loss 1)
+            array_lhn_loss = esyssample.sample_lhn_loss_unc(nb_samples=nb_runs,
+                                                            ref_loss=1)
 
         dict_city_samples['interest'] = array_interest
         dict_city_samples['ch_cap'] = array_ch_cap
@@ -433,6 +445,7 @@ class McRunner(object):
         # dict_city_samples['summer_on'] = array_summer_heat_on
         dict_city_samples['list_sum_on'] = list_s_heat_on_id_arrays
         dict_city_samples['lhn_inv'] = array_lhn_inv
+        dict_city_samples['lhn_loss'] = array_lhn_loss
 
         return dict_city_samples
 
@@ -716,6 +729,7 @@ class McRunner(object):
             # dict_city_samples['temp_ground'] = array_temp_ground
             # dict_city_samples['list_sum_on'] = list_s_heat_on_id_arrays
             # dict_city_samples['lhn_inv'] = array_lhn_inv
+            # dict_city_samples['lhn_loss'] = array_lhn_loss
 
             if heating_off:
                 #  Use sampling to switch demand of some heating systems off
@@ -733,6 +747,10 @@ class McRunner(object):
 
                     #  Modify space heating (switch off during summer)
                     shmod.sh_curve_summer_off_build(building=curr_build)
+
+            if self._has_lhn:
+                pass
+                #  TODO: Modify heat losses
 
             #  Save inputs to city, market and environment
             city.environment.temp_ground = dict_city_samples['temp_ground'][i]

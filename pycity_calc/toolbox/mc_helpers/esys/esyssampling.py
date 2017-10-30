@@ -444,7 +444,36 @@ def sample_invest_unc(nb_samples, ref_inv, logmean=0, logstd=0.4):
     return array_invest
 
 
-# def sample_lhn_loss_unc(nb_samples, minv)
+def sample_lhn_loss_unc(nb_samples, ref_loss, minv=0.75, maxv=1.25):
+    """
+    Sample LHN losses
+
+    Parameters
+    ----------
+    nb_samples : int
+        Number of samples
+    ref_loss : float
+        Reference losses in W/mK of pipeline
+    minv : float, optional
+        Minimum value of change (default: 0.75)
+    maxv : float, optional
+        Maximum value of change (default. 1.25)
+
+    Returns
+    -------
+    array_lhn_loss : np.array (of floats)
+        Numpy array with LHN losses in W/mK
+    """
+
+    assert ref_loss >= 0
+    assert nb_samples > 0
+    assert minv >= 0
+    assert maxv >= 0
+
+    array_lhn_loss = ref_loss * \
+                     np.random.uniform(low=minv, high=maxv, size=nb_samples)
+
+    return array_lhn_loss
 
 
 if __name__ == '__main__':
