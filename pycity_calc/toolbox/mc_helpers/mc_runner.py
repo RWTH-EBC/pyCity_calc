@@ -497,7 +497,11 @@ class McRunner(object):
 
     def perform_mc_runs(self, nb_runs, heating_off=True):
         """
-        Perform mc runs
+        Perform mc runs.
+        - Extract sample values
+        - Add sample values to city, environment, buildings and energy systems
+        - Calls energy balance and economic calculation
+        - Saves results to result arrays
 
         Parameters
         ----------
@@ -710,7 +714,7 @@ class McRunner(object):
                         # dict_tes['hp_maintain'] = \
                         #     esyssample.sample_maintain(nb_samples=nb_runs)
 
-                    #  TODO: Add lifetime, maintenance and invest uncertainty
+                    #  TODO: Add lifetime and maintenance factors to annuity
 
             # Extract city sampling data
             #  #############################################################
@@ -777,8 +781,6 @@ class McRunner(object):
 
             #  Rerun initial parameter calculation of annuity_obj
             annuity_obj.initial_calc()
-
-            #  TODO: Add German market uncertainties
 
             #  Save inputs to energy_balance
 

@@ -270,38 +270,33 @@ class CityAnnuityCalc(object):
             #  Loop over each connected lhn network
             for sublist in list_lhn_con:
 
-                #  Todo: Probably need to define thermal demand independent
-                #  Todo: way to calculate cost of transmission station, as
-                #  Todo: thermal power might change in monte carlo run
-
                 list_th_pow = []
 
-                #  Get max. power values of all buildings connected to lhn
-                for n in self.energy_balance.city.nodes():
-                    if 'node_type' in self.energy_balance.city.node[n]:
-                        #  If node_type is building
-                        if self.energy_balance.city.node[n][
-                            'node_type'] == 'building':
-                            #  If entity is kind building
+                if run_mc:
+                    #  Simplified estimation, as precise calculation can cause
+                    #  assertion errors (if Monte-Carlo run th. demand is
+                    #  zero for lhn connected buliding #258)
+                    invest_lhn_trans += inv_unc * 5000
+                else:
+                    for n in self.energy_balance.city.nodes():
+                        if 'node_type' in self.energy_balance.city.node[n]:
+                            #  If node_type is building
                             if self.energy_balance.city.node[n][
-                                'entity']._kind == 'building':
-                                build = self.energy_balance.city.node[n][
-                                    'entity']
-                                th_pow = \
-                                    dimfunc.get_max_power_of_building(build,
-                                                                      with_dhw=False)
-                                list_th_pow.append(
-                                    th_pow / 1000)  # Convert W to kW
+                                'node_type'] == 'building':
+                                #  If entity is kind building
+                                if self.energy_balance.city.node[n][
+                                    'entity']._kind == 'building':
+                                    build = self.energy_balance.city.node[n][
+                                        'entity']
+                                    th_pow = \
+                                        dimfunc.get_max_power_of_building(build,
+                                                                          with_dhw=False)
+                                    list_th_pow.append(
+                                        th_pow / 1000)  # Convert W to kW
 
-                #  Fixme: Estimate thermal power based on reference run or
-                #  pipe diameter
-                # Calculate investment cost for lhn transmission stations
-
-                # invest_lhn_trans += \
-                #     lhn_cost.calc_invest_cost_lhn_stations(
-                #         list_powers=list_th_pow)
-
-                invest_lhn_trans += inv_unc * 5000
+                    invest_lhn_trans += \
+                        lhn_cost.calc_invest_cost_lhn_stations(
+                            list_powers=list_th_pow)
 
                 #  Add to lists
                 list_invest.append(invest_lhn_trans)
@@ -1046,7 +1041,9 @@ class CityAnnuityCalc(object):
         #  ##################################################################
 
         #  Calc. city energy balance
-        self.energy_balance.calc_city_energy_balance()
+        self.energy_balance.calc_city_energy_balance(run_mc=run_mc,
+                                                     dict_samples=dict_samples,
+                                                     run_idx=run_idx)
 
         #  Perform final energy anaylsis
         self.energy_balance.calc_final_energy_balance_city()
