@@ -457,7 +457,14 @@ class McRunner(object):
                 #  Add function to rescale sh, el, dhw demands
                 #  ##########################################################
 
-                #  TODO: Add rescaling
+                sh_dem = dict_build['sh_dem'][i]
+                shmod.rescale_sh_dem_build(building=curr_build, sh_dem=sh_dem)
+
+                el_dem = dict_build['el_dem'][i]
+                elmod.rescale_el_dem_build(building=curr_build, el_dem=el_dem)
+
+                dhw_dem = dict_build['dhw_dem'][i]
+                dhwmod.rescale_dhw_build(building=curr_build, dhw_dem=dhw_dem)
 
                 #  Add energy system data
                 #  ##########################################################
@@ -596,6 +603,8 @@ class McRunner(object):
             annuity_obj.price_ch_cap = dict_city_samples['ch_cap'][i]
             annuity_obj.price_ch_dem_gas = dict_city_samples['ch_dem_gas'][i]
             annuity_obj.price_ch_dem_el = dict_city_samples['ch_dem_el'][i]
+            # Reuse ch_dem_el for hp price change
+            annuity_obj.price_ch_dem_el_hp = dict_city_samples['ch_dem_el'][i]
             annuity_obj.price_ch_op = dict_city_samples['ch_op'][i]
             annuity_obj.price_ch_eeg_chp = dict_city_samples['ch_eeg_chp'][i]
             annuity_obj.price_ch_eeg_pv = dict_city_samples['ch_eeg_pv'][i]
