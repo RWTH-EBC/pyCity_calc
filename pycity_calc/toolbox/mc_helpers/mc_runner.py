@@ -23,6 +23,9 @@ import pycity_calc.toolbox.mc_helpers.city.city_sampling as citysample
 import pycity_calc.toolbox.mc_helpers.building.build_unc_set_gen as buildsample
 import pycity_calc.toolbox.mc_helpers.user.user_unc_sampling as usersample
 import pycity_calc.toolbox.mc_helpers.esys.esyssampling as esyssample
+import pycity_calc.toolbox.modifiers.mod_city_sh_dem as shmod
+import pycity_calc.toolbox.modifiers.mod_city_el_dem as elmod
+import pycity_calc.toolbox.modifiers.mod_city_dhw_dem as dhwmod
 
 
 # Disable printing
@@ -407,6 +410,8 @@ class McRunner(object):
         #  Initial zero result arrays
         array_annuity = np.zeros(nb_runs)
         array_co2 = np.zeros(nb_runs)
+
+        #  # Uncommented, as already existent on sampling dicts
         # array_net_sh = np.zeros(nb_runs)
         # array_net_el = np.zeros(nb_runs)
         # array_net_dhw = np.zeros(nb_runs)
@@ -450,7 +455,9 @@ class McRunner(object):
                 dict_build = self._dict_samples[str(n)]
 
                 #  Add function to rescale sh, el, dhw demands
-                #  TODO: Add rescaling functions #255
+                #  ##########################################################
+
+                #  TODO: Add rescaling
 
                 #  Add energy system data
                 #  ##########################################################
