@@ -6,6 +6,7 @@
 from __future__ import division
 
 import copy
+import numpy as np
 import shapely.geometry.point as point
 
 import pycity_calc.cities.city as city
@@ -568,11 +569,11 @@ class Test_MC_Sampling():
         assert len(array_build_ids) == 2
         assert array_build_ids[0] != array_build_ids[1]
 
-        ratio = 1/5
+        array_ratio_on = np.array([1/5, 1/5, 1/5, 1/5, 1/5])
 
         list_array_heat = citsamp.\
             sample_list_sum_heat_on_arrays(nb_samples,
-                                           ratio_on=ratio,
+                                           array_ratio_on=array_ratio_on,
                                            list_b_ids=list_b_ids)
 
         assert len(list_array_heat) == nb_samples

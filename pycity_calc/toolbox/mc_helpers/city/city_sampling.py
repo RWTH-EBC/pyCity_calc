@@ -377,7 +377,7 @@ def sample_ids_houses_summer_on(ratio_on, list_b_ids):
     return array_heat_ids
 
 
-def sample_list_sum_heat_on_arrays(nb_samples, ratio_on, list_b_ids):
+def sample_list_sum_heat_on_arrays(nb_samples, array_ratio_on, list_b_ids):
     """
     Returns list with arrays holding building node ids for each run
 
@@ -385,8 +385,8 @@ def sample_list_sum_heat_on_arrays(nb_samples, ratio_on, list_b_ids):
     ----------
     nb_samples : int
         Number of samples
-    ratio_on : float
-        Ratio of buildings with activated heating during summer
+    array_ratio_on : np.array (of floats)
+        Array with ratio of buildings with activated heating during summer
         (e.g. ratio_on = 0.4 --> 40 % of buildings have heating activated
         during summer)
     list_b_ids : list (of ints)
@@ -401,6 +401,7 @@ def sample_list_sum_heat_on_arrays(nb_samples, ratio_on, list_b_ids):
     list_sum_heat_id_arrays = []
 
     for i in range(nb_samples):
+        ratio_on = array_ratio_on[i]
         array_ids = sample_ids_houses_summer_on(ratio_on=ratio_on,
                                                 list_b_ids=list_b_ids)
         list_sum_heat_id_arrays.append(array_ids)

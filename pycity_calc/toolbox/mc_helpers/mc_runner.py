@@ -328,8 +328,7 @@ class McRunner(object):
 
         return dict_build_samples
 
-    @staticmethod
-    def perform_sampling_city(nb_runs):
+    def perform_sampling_city(self, nb_runs):
         """
         Perform sampling for city district parameters:
         - interest
@@ -378,6 +377,11 @@ class McRunner(object):
         array_summer_heat_on = citysample.\
             sample_quota_summer_heat_on(nb_samples=nb_runs)
 
+        list_s_heat_on_id_arrays = citysample.\
+            sample_list_sum_heat_on_arrays(nb_samples=nb_runs,
+                                           array_ratio_on=array_summer_heat_on,
+                                           list_b_ids=self._list_build_ids)
+
         dict_city_samples['interest'] = array_interest
         dict_city_samples['ch_cap'] = array_ch_cap
         dict_city_samples['ch_dem_gas'] = array_ch_dem_gas
@@ -389,7 +393,8 @@ class McRunner(object):
         dict_city_samples['ch_grid_use'] = array_ch_grid_use
         dict_city_samples['grid_av_fee'] = array_grid_av_fee
         dict_city_samples['temp_ground'] = array_temp_ground
-        dict_city_samples['summer_on'] = array_summer_heat_on
+        # dict_city_samples['summer_on'] = array_summer_heat_on
+        dict_city_samples['list_sum_on'] = list_s_heat_on_id_arrays
 
         return dict_city_samples
 
@@ -668,7 +673,16 @@ class McRunner(object):
             # dict_city_samples['ch_grid_use'] = array_ch_grid_use
             # dict_city_samples['grid_av_fee'] = array_grid_av_fee
             # dict_city_samples['temp_ground'] = array_temp_ground
-            # dict_city_samples['summer_on'] = array_summer_heat_on
+            # dict_city_samples['list_sum_on'] = list_s_heat_on_id_arrays
+
+            #  Get array with building ids with summer heating mode on
+            array_heat_on = dict_city_samples['list_sum_on'][i]
+
+            #  Calculate list of building ids, where heating is off during
+            #  summer
+            list_heat_off = list(set(self._list_build_ids) - set(array_heat_on))
+
+            #  TODO: Add function to set heating during summmer to zero
 
             #  Save inputs to city, market and environment
             city.environment.temp_ground = dict_city_samples['temp_ground'][i]
