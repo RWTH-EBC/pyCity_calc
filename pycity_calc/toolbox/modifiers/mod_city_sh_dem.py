@@ -81,7 +81,6 @@ def sh_curve_summer_off(sh_array, resc=0.2):
     sh_dem_after = sum(sh_array_mod) * timestep / (1000 * 3600)
 
     resc_factor = (resc * cut_off_energy + sh_dem_after) / sh_dem_after
-    print('Resc factor: ', resc_factor)
 
     # Rescale remaining power curve
     sh_array_mod *= resc_factor
