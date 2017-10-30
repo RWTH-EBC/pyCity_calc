@@ -80,7 +80,10 @@ def sh_curve_summer_off(sh_array, resc=0.2):
 
     sh_dem_after = sum(sh_array_mod) * timestep / (1000 * 3600)
 
-    resc_factor = (resc * cut_off_energy + sh_dem_after) / sh_dem_after
+    if sh_dem_after == 0:
+        resc_factor = 1
+    else:
+        resc_factor = (resc * cut_off_energy + sh_dem_after) / sh_dem_after
 
     # Rescale remaining power curve
     sh_array_mod *= resc_factor
@@ -202,7 +205,7 @@ if __name__ == '__main__':
 
     city_f_name = 'city_3_buildings.pkl'
 
-    save_f_name = city_f_name[:-4] + '_el_resc.pkl'
+    save_f_name = city_f_name[:-4] + '_sh_resc.pkl'
 
     #  ###################################################################
 
@@ -211,57 +214,57 @@ if __name__ == '__main__':
 
     city = pickle.load(open(path_city, mode='rb'))
 
-    #  #  Modify space heating of city object
-    #  ###################################################################
-    # print('City space heating energy demand in kWh/a before conversion:')
-    # print(city.get_annual_space_heating_demand())
+     #  Modify space heating of city object
+     ###################################################################
+    print('City space heating energy demand in kWh/a before conversion:')
+    print(city.get_annual_space_heating_demand())
+
+    #  Modify city object
+    mod_sh_city_dem(city=city, sh_dem=sh_dem)
+
+    print('City space heating demand in kWh/a after conversion:')
+    print(city.get_annual_space_heating_demand())
+
+    #  Save city object
+    pickle.dump(city, open(path_save, mode='wb'))
+
+    # #  Uncomment, if you want to test summer heating off modification
+    # #  ###################################################################
+    # ref_build = city.node[1001]['entity']
+    # array_sh_before = copy.deepcopy(ref_build.get_space_heating_power_curve())
+    # sh_dem_before = copy.copy(ref_build.get_annual_space_heat_demand())
     #
-    # #  Modify city object
-    # mod_sh_city_dem(city=city, sh_dem=sh_dem)
+    # rescaling = 0.2
     #
-    # print('City space heating demand in kWh/a after conversion:')
-    # print(city.get_annual_space_heating_demand())
+    # sh_curve_summer_off_build(building=ref_build, resc=rescaling)
     #
-    # #  Save city object
-    # pickle.dump(city, open(path_save, mode='wb'))
-
-    #  Uncomment, if you want to test summer heating off modification
-    #  ###################################################################
-    ref_build = city.node[1001]['entity']
-    array_sh_before = copy.deepcopy(ref_build.get_space_heating_power_curve())
-    sh_dem_before = copy.copy(ref_build.get_annual_space_heat_demand())
-
-    rescaling = 0.2
-
-    sh_curve_summer_off_build(building=ref_build, resc=rescaling)
-
-    sh_dem_after = ref_build.get_annual_space_heat_demand()
-
-    print('Space heating demand before modification in kWh: ')
-    print(round(sh_dem_before, 0))
-    print()
-
-    print('Space heating demand after modification in kWh: ')
-    print(round(sh_dem_after, 0))
-    print()
-
-    perc = (sh_dem_after - sh_dem_before) * 100 / sh_dem_before
-
-    print('Difference in percent: ', round(perc, 2))
-
-    import matplotlib.pyplot as plt
-
-    fig = plt.figure()
-    plt.subplot(2, 1, 1)
-    plt.plot(array_sh_before / 1000, label='Original')
-    plt.ylabel('Space heating power in kW')
-    plt.legend()
-    plt.subplot(2, 1, 2)
-    plt.plot(ref_build.get_space_heating_power_curve() / 1000,
-             label='Summer off')
-    plt.xlabel('Time in hours')
-    plt.ylabel('Space heating power in kW')
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
-    plt.close()
+    # sh_dem_after = ref_build.get_annual_space_heat_demand()
+    #
+    # print('Space heating demand before modification in kWh: ')
+    # print(round(sh_dem_before, 0))
+    # print()
+    #
+    # print('Space heating demand after modification in kWh: ')
+    # print(round(sh_dem_after, 0))
+    # print()
+    #
+    # perc = (sh_dem_after - sh_dem_before) * 100 / sh_dem_before
+    #
+    # print('Difference in percent: ', round(perc, 2))
+    #
+    # import matplotlib.pyplot as plt
+    #
+    # fig = plt.figure()
+    # plt.subplot(2, 1, 1)
+    # plt.plot(array_sh_before / 1000, label='Original')
+    # plt.ylabel('Space heating power in kW')
+    # plt.legend()
+    # plt.subplot(2, 1, 2)
+    # plt.plot(ref_build.get_space_heating_power_curve() / 1000,
+    #          label='Summer off')
+    # plt.xlabel('Time in hours')
+    # plt.ylabel('Space heating power in kW')
+    # plt.legend()
+    # plt.tight_layout()
+    # plt.show()
+    # plt.close()

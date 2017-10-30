@@ -444,7 +444,7 @@ class McRunner(object):
 
         return dict_samples
 
-    def perform_mc_runs(self, nb_runs):
+    def perform_mc_runs(self, nb_runs, heating_off=True):
         """
         Perform mc runs
 
@@ -452,6 +452,9 @@ class McRunner(object):
         ----------
         nb_runs : int
             Number of runs
+        heating_off : bool, optional
+            Defines, if sampling to deactivate heating during summer should
+            be used (default: True)
 
         Returns
         -------
@@ -675,14 +678,22 @@ class McRunner(object):
             # dict_city_samples['temp_ground'] = array_temp_ground
             # dict_city_samples['list_sum_on'] = list_s_heat_on_id_arrays
 
-            #  Get array with building ids with summer heating mode on
-            array_heat_on = dict_city_samples['list_sum_on'][i]
+            if heating_off:
+                #  Use sampling to switch demand of some heating systems off
+                #  during summer period
 
-            #  Calculate list of building ids, where heating is off during
-            #  summer
-            list_heat_off = list(set(self._list_build_ids) - set(array_heat_on))
+                #  Get array with building ids with summer heating mode on
+                array_heat_on = dict_city_samples['list_sum_on'][i]
 
-            #  TODO: Add function to set heating during summmer to zero
+                #  Calculate list of building ids, where heating is off during
+                #  summer
+                list_heat_off = list(set(self._list_build_ids) - set(array_heat_on))
+
+                for n in list_heat_off:
+                    curr_build = city.node[n]['entity']
+
+                    #  Modify space heating (switch off during summer)
+                    shmod.sh_curve_summer_off_build(building=curr_build)
 
             #  Save inputs to city, market and environment
             city.environment.temp_ground = dict_city_samples['temp_ground'][i]
@@ -781,7 +792,7 @@ class McRunner(object):
         return dict_mc_res
 
     def run_mc_analysis(self, nb_runs, do_sampling=False,
-                        prevent_printing=False):
+                        prevent_printing=False, heating_off=True):
         """
         Perform monte-carlo run with:
         - sampling
@@ -798,6 +809,9 @@ class McRunner(object):
             should be used (default: False)
         prevent_printing : bool, optional
             Defines, if printing statements should be suppressed
+        heating_off : bool, optional
+            Defines, if sampling to deactivate heating during summer should
+            be used (default: True)
 
         Returns
         -------
@@ -817,7 +831,8 @@ class McRunner(object):
             block_print()
 
         # Perform monte-carlo runs
-        dict_mc_res = self.perform_mc_runs(nb_runs=nb_runs)
+        dict_mc_res = self.perform_mc_runs(nb_runs=nb_runs,
+                                           heating_off=heating_off)
 
         if prevent_printing:
             enable_print()
