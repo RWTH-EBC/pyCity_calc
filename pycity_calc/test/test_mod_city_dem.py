@@ -19,7 +19,7 @@ class TestModCity(object):
 
         sh_array_after = modsh.sh_curve_summer_off(sh_array=sh_array, resc=1)
         sh_dem_after = sum(sh_array_after) * 3600 / (1000 * 3600)
-        
+
         assert abs(sh_dem_after - sh_dem_before) <= 0.001
 
         sh_array_after = modsh.sh_curve_summer_off(sh_array=sh_array, resc=0.5)

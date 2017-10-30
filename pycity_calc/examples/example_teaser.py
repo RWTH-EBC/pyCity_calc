@@ -45,7 +45,7 @@ def run_example_city():
 
     # create the typeBuilding
     teaser_usage.create_teaser_typecity(project, city_object,
-                                  generate_Output=True)
+                                  generate_Output=False)
 
     return city_object
 
