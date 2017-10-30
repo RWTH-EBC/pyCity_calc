@@ -341,6 +341,7 @@ class McRunner(object):
         - price_ch_eeg_pv
         - price_ch_eex
         - price_ch_grid_use
+        - summer heating on/off
 
         Parameters
         ----------
@@ -374,6 +375,9 @@ class McRunner(object):
         array_grid_av_fee = citysample.sample_grid_av_fee(nb_samples=nb_runs)
         array_temp_ground = citysample.sample_temp_ground(nb_samples=nb_runs)
 
+        array_summer_heat_on = citysample.\
+            sample_quota_summer_heat_on(nb_samples=nb_runs)
+
         dict_city_samples['interest'] = array_interest
         dict_city_samples['ch_cap'] = array_ch_cap
         dict_city_samples['ch_dem_gas'] = array_ch_dem_gas
@@ -385,6 +389,7 @@ class McRunner(object):
         dict_city_samples['ch_grid_use'] = array_ch_grid_use
         dict_city_samples['grid_av_fee'] = array_grid_av_fee
         dict_city_samples['temp_ground'] = array_temp_ground
+        dict_city_samples['summer_on'] = array_summer_heat_on
 
         return dict_city_samples
 
@@ -415,6 +420,7 @@ class McRunner(object):
 
         #  Perform city sampling
         dict_city_samples = self.perform_sampling_city(nb_runs=nb_runs)
+
         dict_samples['city'] = dict_city_samples
 
         #  Perform building sampling
@@ -662,6 +668,7 @@ class McRunner(object):
             # dict_city_samples['ch_grid_use'] = array_ch_grid_use
             # dict_city_samples['grid_av_fee'] = array_grid_av_fee
             # dict_city_samples['temp_ground'] = array_temp_ground
+            # dict_city_samples['summer_on'] = array_summer_heat_on
 
             #  Save inputs to city, market and environment
             city.environment.temp_ground = dict_city_samples['temp_ground'][i]

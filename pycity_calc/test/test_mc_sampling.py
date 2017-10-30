@@ -550,6 +550,26 @@ class Test_MC_Sampling():
             assert array_int[i] >= 0
             assert array_int[i] <= 100
 
+        ratio_on = 1
+        list_b_ids = [1001, 1002, 1003, 1004, 1005]
+
+        array_build_ids = citsamp.\
+            sample_ids_houses_summer_on(ratio_on=ratio_on,
+                                        list_b_ids=list_b_ids)
+
+        assert len(array_build_ids) == 5
+        assert len(array_build_ids) == len(set(array_build_ids))
+
+        ratio = 2/5
+        array_build_ids = citsamp. \
+            sample_ids_houses_summer_on(ratio_on=ratio,
+                                        list_b_ids=list_b_ids)
+
+        assert len(array_build_ids) == 2
+        assert array_build_ids[0] != array_build_ids[1]
+
+
+
     def test_esys_sampling(self):
 
         nb_samples = 2

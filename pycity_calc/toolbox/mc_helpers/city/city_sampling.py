@@ -341,15 +341,58 @@ def sample_quota_summer_heat_on(nb_samples, minval=0, maxval=1):
     return array_interest
 
 
+def sample_ids_houses_summer_on(ratio_on, list_b_ids):
+    """
+    Returns array with samples of list of building ids, which use heating
+    during summer. Length of output array is defined by ratio_on and
+    list_b_ids length (Length represents number of buildings with heating
+    during summer)
+
+    Parameters
+    ----------
+    ratio_on : float
+        Ratio of buildings with activated heating during summer
+        (e.g. ratio_on = 0.4 --> 40 % of buildings have heating activated
+        during summer)
+    list_b_ids : list (of ints)
+        List of building node ids
+
+    Returns
+    -------
+    array_heat_ids : np.array (of lists of ints)
+        Numpy array with list holding all buildings node ids, which have
+        summer heating mode on.
+    """
+
+    assert ratio_on >= 0
+    assert ratio_on <= 1
+
+    nb_buildings = len(list_b_ids)
+
+    nb_build_heat = int(round(nb_buildings * ratio_on, ndigits=0))
+
+    array_heat_ids = np.random.choice(a=list_b_ids, size=nb_build_heat,
+                                      replace=False)
+
+    return array_heat_ids
+
+
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
-    nb_samples = 1000
+    nb_samples = 5
 
-    array_int = sample_interest(nb_samples=nb_samples)
+    # array_int = sample_interest(nb_samples=nb_samples)
+    #
+    # plt.hist(array_int)
+    # plt.xlabel('Interest rate')
+    # plt.ylabel('Number of values')
+    # plt.show()
+    # plt.close()
 
-    plt.hist(array_int)
-    plt.xlabel('Interest rate')
-    plt.ylabel('Number of values')
-    plt.show()
-    plt.close()
+    array_heat_ids = sample_ids_houses_summer_on(ratio_on=1,
+                                list_b_ids=[1001, 1002, 1003, 1004, 1005,
+                                            1006, 1007, 1008, 1009, 1010])
+
+    print('Len: ', len(array_heat_ids))
+    print(array_heat_ids)
