@@ -545,7 +545,10 @@ class McRunner(object):
                     #
                     #     dict_bat['bat_maintain'] = \
                     #         esyssample.sample_maintain(nb_samples=nb_runs)
-                    #
+                    # dict_bat['bat_inv'] = \
+                    #     esyssample.sample_invest_unc(nb_samples=nb_runs,
+                    #                                  ref_inv=1)
+
                     if curr_build.bes.hasBoiler:
                         dict_boi = dict_esys['boi']
 
@@ -599,6 +602,17 @@ class McRunner(object):
                         #     esyssample.sample_lifetime(nb_samples=nb_runs)
                         #
                         # dict_hp['hp_maintain'] = \
+                        #     esyssample.sample_maintain(nb_samples=nb_runs)
+
+                    if curr_build.bes.hasElectricalHeater:
+                        dict_eh = dict_esys['eh']
+
+                        eh = curr_build.bes.electricalHeater
+
+                        # dict_eh['eh_lifetime'] = \
+                        #     esyssample.sample_lifetime(nb_samples=nb_runs)
+                        #
+                        # dict_eh['eh_maintain'] = \
                         #     esyssample.sample_maintain(nb_samples=nb_runs)
 
                     if curr_build.bes.hasPv:
@@ -682,7 +696,10 @@ class McRunner(object):
             #  Run energy balance and annuity calculation
             #  ###############################################################
             (total_annuity, co2) = c_eco_copy. \
-                perform_overall_energy_balance_and_economic_calc()
+                perform_overall_energy_balance_and_economic_calc(run_mc=True,
+                                                                 dict_samples=
+                                                                 self._dict_samples,
+                                                                 run_idx=i)
 
             # #  Extract further results
             # sh_dem = c_eco_copy.energy_balance. \

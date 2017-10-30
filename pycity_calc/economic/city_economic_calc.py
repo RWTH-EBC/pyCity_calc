@@ -57,7 +57,8 @@ class CityAnnuityCalc(object):
         self._list_buildings = \
             self.energy_balance.city.get_list_build_entity_node_ids()
 
-    def calc_cap_rel_annuity_city(self, run_mc=False, dict_samples=None):
+    def calc_cap_rel_annuity_city(self, run_mc=False, dict_samples=None,
+                                  run_idx=None):
         """
         Calculate sum of all capital related annuities of city
 
@@ -73,6 +74,8 @@ class CityAnnuityCalc(object):
             dict_samples['city'] = dict_city_samples
             dict_samples['<building_id>'] = dict_buildings_samples
             (of building with id <building_id>)
+        run_idx : int, optional
+            Index / number of run for Monte-Carlo analysis (default: None)
 
         Returns
         -------
@@ -91,6 +94,10 @@ class CityAnnuityCalc(object):
                 msg = 'Sample dictionary dict_samples cannnot be None, if' \
                       ' you want to perform Monte-Carlo analysis.'
                 raise AssertionError(msg)
+            if run_idx is None:
+                msg = 'Index value run_idx cannnot be None, if' \
+                      ' you want to perform Monte-Carlo analysis.'
+                raise AssertionError(msg)
 
         cap_rel_ann = 0  # Dummy value for capital-related annuity
         list_invest = []  # Dummy list to store investment cost
@@ -101,15 +108,20 @@ class CityAnnuityCalc(object):
         for n in self._list_buildings:
             build = self.energy_balance.city.node[n]['entity']
             if build.hasBes:
+
                 #  BES pointer
                 bes = build.bes
+
+                if run_mc:
+                    #  Get pointer to energy system sample dict
+                    dict_build = dict_samples[str(n)]
+                    dict_esys = dict_build['esys']
 
                 if bes.hasBattery:
                     cap_kWh = bes.battery.capacity / (3600 * 1000)
 
                     if run_mc:
-                        pass
-                        #  TODO Sample investment cost uncertainty
+                        inv_unc = dict_esys['bat']['bat_inv'][run_idx]
                     else:
                         inv_unc = 1
 
@@ -127,9 +139,16 @@ class CityAnnuityCalc(object):
 
                 if bes.hasBoiler:
                     q_nom = bes.boiler.qNominal / 1000  # in kW
-                    boil_invest = \
-                        boiler_cost.calc_abs_boiler_cost(
-                            q_nom=q_nom)
+
+                    if run_mc:
+                        inv_unc = dict_esys['boi']['boi_inv'][run_idx]
+                    else:
+                        inv_unc = 1
+
+                    boil_invest = inv_unc * \
+                                  boiler_cost.calc_abs_boiler_cost(
+                                      q_nom=q_nom)
+
                     cap_rel_ann += \
                         self.annuity_obj.calc_capital_rel_annuity_with_type(
                             invest=boil_invest, type='B')
@@ -139,9 +158,15 @@ class CityAnnuityCalc(object):
 
                 if bes.hasChp:
                     p_el_nom = bes.chp.pNominal / 1000  # in kW
-                    chp_invest = \
-                        chp_cost.calc_invest_cost_chp(p_el_nom=
-                                                      p_el_nom)
+
+                    if run_mc:
+                        inv_unc = dict_esys['chp']['chp_inv'][run_idx]
+                    else:
+                        inv_unc = 1
+
+                    chp_invest = inv_unc * chp_cost.calc_invest_cost_chp(
+                        p_el_nom=p_el_nom)
+
                     cap_rel_ann += \
                         self.annuity_obj.calc_capital_rel_annuity_with_type(
                             invest=chp_invest, type='CHP')
@@ -152,8 +177,14 @@ class CityAnnuityCalc(object):
                 if bes.hasElectricalHeater:
                     q_eh = \
                         bes.electricalHeater.qNominal / 1000  # in kW
-                    eh_invest = \
-                        eh_cost.calc_abs_cost_eh(q_nom=q_eh)
+
+                    if run_mc:
+                        inv_unc = dict_esys['eh']['eh_inv'][run_idx]
+                    else:
+                        inv_unc = 1
+
+                    eh_invest = inv_unc * eh_cost.calc_abs_cost_eh(q_nom=q_eh)
+
                     cap_rel_ann += \
                         self.annuity_obj.calc_capital_rel_annuity_with_type(
                             invest=eh_invest, type='EH')
@@ -163,8 +194,15 @@ class CityAnnuityCalc(object):
 
                 if bes.hasHeatpump:
                     q_hp = bes.heatpump.qNominal / 1000  # in kW
-                    hp_invest = \
-                        hp_cost.calc_invest_cost_hp(q_nom=q_hp)
+
+                    if run_mc:
+                        inv_unc = dict_esys['hp']['hp_inv'][run_idx]
+                    else:
+                        inv_unc = 1
+
+                    hp_invest = inv_unc * \
+                                hp_cost.calc_invest_cost_hp(q_nom=q_hp)
+
                     cap_rel_ann += \
                         self.annuity_obj.calc_capital_rel_annuity_with_type(
                             invest=hp_invest, type='HP')
@@ -174,8 +212,15 @@ class CityAnnuityCalc(object):
 
                 if bes.hasPv:
                     pv_area = bes.pv.area
-                    pv_invest = pv_cost.calc_pv_invest(
+
+                    if run_mc:
+                        inv_unc = dict_esys['PV']['pv_inv'][run_idx]
+                    else:
+                        inv_unc = 1
+
+                    pv_invest = inv_unc * pv_cost.calc_pv_invest(
                         area=pv_area)
+
                     cap_rel_ann += \
                         self.annuity_obj.calc_capital_rel_annuity_with_type(
                             invest=pv_invest, type='PV')
@@ -185,9 +230,15 @@ class CityAnnuityCalc(object):
 
                 if bes.hasTes:
                     tes_vol = bes.tes.capacity / 1000  # in m3
-                    tes_invest = \
-                        tes_cost.calc_invest_cost_tes(
+
+                    if run_mc:
+                        inv_unc = dict_esys['tes']['tes_inv'][run_idx]
+                    else:
+                        inv_unc = 1
+
+                    tes_invest = inv_unc * tes_cost.calc_invest_cost_tes(
                             volume=tes_vol)
+
                     cap_rel_ann += \
                         self.annuity_obj.calc_capital_rel_annuity_with_type(
                             invest=tes_invest, type='TES')
@@ -267,6 +318,9 @@ class CityAnnuityCalc(object):
                                     pipe = self.energy_balance.city.edge[u][v]
                                     d_i = pipe['d_i']
                                     length = pipe['weight']
+
+                                    #  TODO: Add LHN investment uncertainty
+
                                     invest_lhn_pipe += \
                                         lhn_cost.calc_invest_cost_lhn_pipes(
                                             d=d_i,
@@ -363,17 +417,27 @@ class CityAnnuityCalc(object):
 
         return (cap_rel_ann, list_invest, list_type)
 
-    def calc_cap_and_op_rel_annuity_city(self):
+    def calc_cap_and_op_rel_annuity_city(self, run_mc=False,
+                                         dict_samples=None,
+                                         run_idx=None):
         """
         Calculate capital- and operation-related annuities of city
     
         Parameters
         ----------
-        city : object
-            City object
-        eco_calc : object
-            EconomicCalculation object of pycity_calc
-    
+        run_mc : bool, optional
+            Defines, if Monte-Carlo analysis should be run (default: False).
+            If True, puts uncertainty factors of dict_samples on investment
+            cost, lifetime and maintenance factors. If False, only performs
+            single annuity calculation run with default values.
+        dict_samples : dict (of dicts and arrays)
+            Dictionary holding dictionaries with sample data for MC run
+            dict_samples['city'] = dict_city_samples
+            dict_samples['<building_id>'] = dict_buildings_samples
+            (of building with id <building_id>)
+        run_idx : int, optional
+            Index / number of run for Monte-Carlo analysis (default: None)
+
         Returns
         -------
         tup_ann : tuple (of floats)
@@ -381,9 +445,21 @@ class CityAnnuityCalc(object):
             (cap_rel_ann, op_rel_ann)
         """
 
+        if run_mc:
+            if dict_samples is None:
+                msg = 'Sample dictionary dict_samples cannnot be None, if' \
+                      ' you want to perform Monte-Carlo analysis.'
+                raise AssertionError(msg)
+            if run_idx is None:
+                msg = 'Index value run_idx cannnot be None, if' \
+                      ' you want to perform Monte-Carlo analysis.'
+                raise AssertionError(msg)
+
         #  Calculate capital-related annuities
         (cap_rel_ann, list_invest, list_type) = \
-            self.calc_cap_rel_annuity_city()
+            self.calc_cap_rel_annuity_city(run_mc=run_mc,
+                                           dict_samples=dict_samples,
+                                           run_idx=run_idx)
 
         #  Calculate operation-related annuity
         op_rel_ann = \
@@ -920,10 +996,27 @@ class CityAnnuityCalc(object):
 
         return sub_pv_sold * self.annuity_obj.ann_factor
 
-    def perform_overall_energy_balance_and_economic_calc(self):
+    def perform_overall_energy_balance_and_economic_calc(self, run_mc=False,
+                                                         dict_samples=None,
+                                                         run_idx=None):
         """
         Script runs energy balance and annuity calculation for city in
         energy_balance object
+
+        Parameters
+        ----------
+        run_mc : bool, optional
+            Defines, if Monte-Carlo analysis should be run (default: False).
+            If True, puts uncertainty factors of dict_samples on investment
+            cost, lifetime and maintenance factors. If False, only performs
+            single annuity calculation run with default values.
+        dict_samples : dict (of dicts and arrays)
+            Dictionary holding dictionaries with sample data for MC run
+            dict_samples['city'] = dict_city_samples
+            dict_samples['<building_id>'] = dict_buildings_samples
+            (of building with id <building_id>)
+        run_idx : int, optional
+            Index / number of run for Monte-Carlo analysis (default: None)
 
         Returns
         -------
@@ -934,6 +1027,16 @@ class CityAnnuityCalc(object):
             co2 : float
                 Emissions in kg/a
         """
+
+        if run_mc:
+            if dict_samples is None:
+                msg = 'Sample dictionary dict_samples cannnot be None, if' \
+                      ' you want to perform Monte-Carlo analysis.'
+                raise AssertionError(msg)
+            if run_idx is None:
+                msg = 'Index value run_idx cannnot be None, if' \
+                      ' you want to perform Monte-Carlo analysis.'
+                raise AssertionError(msg)
 
         #  ##################################################################
         #  Run energy balance
@@ -955,7 +1058,9 @@ class CityAnnuityCalc(object):
 
         #  Calculate capital and operation related annuity
         (cap_rel_ann, op_rel_ann) = \
-            self.calc_cap_and_op_rel_annuity_city()
+            self.calc_cap_and_op_rel_annuity_city(run_mc=run_mc,
+                                                  dict_samples=dict_samples,
+                                                  run_idx=run_idx)
 
         #  Calculate demand related annuity
         dem_rel_annuity = self.calc_dem_rel_annuity_city()
