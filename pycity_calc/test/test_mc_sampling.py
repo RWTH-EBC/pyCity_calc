@@ -541,6 +541,15 @@ class Test_MC_Sampling():
             assert array_int[i] >= minv
             assert array_int[i] <= maxv
 
+        array_int = \
+            citsamp.sample_quota_summer_heat_on(nb_samples, minval=0,
+                                                maxval=100)
+
+        assert len(array_int) == 2
+        for i in range(len(array_int)):
+            assert array_int[i] >= 0
+            assert array_int[i] <= 100
+
     def test_esys_sampling(self):
 
         nb_samples = 2

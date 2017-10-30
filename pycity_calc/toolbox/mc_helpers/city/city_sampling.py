@@ -310,6 +310,37 @@ def sample_temp_ground(nb_samples, minval=8, maxval=12):
     return array_temp_ground
 
 
+def sample_quota_summer_heat_on(nb_samples, minval=0, maxval=1):
+    """
+    Returns sample array with ratios of buildings where heating is activated
+    during summer.
+
+    Parameters
+    ----------
+    nb_samples : int
+        Number of samples
+    minval : float, optional
+        Minimal possible interest rate (default: 0)
+    maxval : float, optional
+        Maximal possible interest rate (default: 1)
+
+    Returns
+    -------
+    array_interest : np.array
+        Array with interest rate samples
+    """
+
+    assert nb_samples > 0
+
+    lowv = minval * 100
+    highv = maxval * 100
+
+    array_interest = np.random.\
+                         randint(low=lowv, high=highv, size=nb_samples) / 100
+
+    return array_interest
+
+
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
