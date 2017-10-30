@@ -414,6 +414,11 @@ class McRunner(object):
                                            array_ratio_on=array_summer_heat_on,
                                            list_b_ids=self._list_build_ids)
 
+        if self._has_lhn:
+            #  If LHN exists, sample for LHN with ref. investment cost of 1
+            array_lhn_inv = esyssample.sample_invest_unc(nb_samples=nb_runs,
+                                                         ref_inv=1)
+
         dict_city_samples['interest'] = array_interest
         dict_city_samples['ch_cap'] = array_ch_cap
         dict_city_samples['ch_dem_gas'] = array_ch_dem_gas
@@ -427,6 +432,7 @@ class McRunner(object):
         dict_city_samples['temp_ground'] = array_temp_ground
         # dict_city_samples['summer_on'] = array_summer_heat_on
         dict_city_samples['list_sum_on'] = list_s_heat_on_id_arrays
+        dict_city_samples['lhn_inv'] = array_lhn_inv
 
         return dict_city_samples
 
@@ -709,6 +715,7 @@ class McRunner(object):
             # dict_city_samples['grid_av_fee'] = array_grid_av_fee
             # dict_city_samples['temp_ground'] = array_temp_ground
             # dict_city_samples['list_sum_on'] = list_s_heat_on_id_arrays
+            # dict_city_samples['lhn_inv'] = array_lhn_inv
 
             if heating_off:
                 #  Use sampling to switch demand of some heating systems off

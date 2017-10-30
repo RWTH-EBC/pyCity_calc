@@ -262,6 +262,11 @@ class CityAnnuityCalc(object):
             invest_lhn_pipe = 0
             invest_lhn_trans = 0
 
+            if run_mc:
+                inv_unc = dict_samples['city']['lhn_inv'][run_idx]
+            else:
+                inv_unc = 1
+
             #  Loop over each connected lhn network
             for sublist in list_lhn_con:
 
@@ -296,7 +301,7 @@ class CityAnnuityCalc(object):
                 #     lhn_cost.calc_invest_cost_lhn_stations(
                 #         list_powers=list_th_pow)
 
-                invest_lhn_trans += 5000
+                invest_lhn_trans += inv_unc * 5000
 
                 #  Add to lists
                 list_invest.append(invest_lhn_trans)
@@ -319,12 +324,10 @@ class CityAnnuityCalc(object):
                                     d_i = pipe['d_i']
                                     length = pipe['weight']
 
-                                    #  TODO: Add LHN investment uncertainty
-
-                                    invest_lhn_pipe += \
-                                        lhn_cost.calc_invest_cost_lhn_pipes(
-                                            d=d_i,
-                                            length=length)
+                                    invest_lhn_pipe += inv_unc * \
+                                                       lhn_cost.calc_invest_cost_lhn_pipes(
+                                                           d=d_i,
+                                                           length=length)
 
                 # Add to lists
                 list_invest.append(invest_lhn_pipe)

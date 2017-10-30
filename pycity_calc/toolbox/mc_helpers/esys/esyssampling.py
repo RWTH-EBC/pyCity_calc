@@ -444,6 +444,9 @@ def sample_invest_unc(nb_samples, ref_inv, logmean=0, logstd=0.4):
     return array_invest
 
 
+# def sample_lhn_loss_unc(nb_samples, minv)
+
+
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
