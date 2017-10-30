@@ -740,7 +740,8 @@ class McRunner(object):
 
                 #  Calculate list of building ids, where heating is off during
                 #  summer
-                list_heat_off = list(set(self._list_build_ids) - set(array_heat_on))
+                list_heat_off = list(set(self._list_build_ids) -
+                                     set(array_heat_on))
 
                 for n in list_heat_off:
                     curr_build = city.node[n]['entity']
@@ -748,9 +749,13 @@ class McRunner(object):
                     #  Modify space heating (switch off during summer)
                     shmod.sh_curve_summer_off_build(building=curr_build)
 
-            if self._has_lhn:
-                pass
-                #  TODO: Modify heat losses
+            #  TODO: Has to be added to energy balance calculation
+            # if self._has_lhn:
+            #     #  Current loss factor
+            #     loss_fac = dict_city_samples['lhn_loss'][i]
+            #
+            #     for (u, v) in self._list_lhn_tuples:
+            #         city.edge[u][v]['']
 
             #  Save inputs to city, market and environment
             city.environment.temp_ground = dict_city_samples['temp_ground'][i]
