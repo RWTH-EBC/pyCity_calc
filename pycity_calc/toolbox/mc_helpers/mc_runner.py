@@ -29,6 +29,7 @@ import pycity_calc.toolbox.modifiers.mod_city_el_dem as elmod
 import pycity_calc.toolbox.modifiers.mod_city_dhw_dem as dhwmod
 import pycity_calc.toolbox.networks.network_ops as netop
 import pycity_calc.simulation.energy_balance.building_eb_calc as buildeb
+import pycity_calc.toolbox.modifiers.mod_city_esys_size as modesys
 
 
 # Disable printing
@@ -940,7 +941,6 @@ if __name__ == '__main__':
 
     #  Generate city district or load city district
 
-
     #  Dimension energy systems, if not already included
 
     this_path = os.path.dirname(os.path.abspath(__file__))
@@ -1180,11 +1180,8 @@ if __name__ == '__main__':
                                                merge_windows=merge_windows,
                                                new_try=new_try)
 
-        city.node[1005]['entity'].bes.boiler.qNominal *= 10
-        city.node[1005]['entity'].bes.tes.capacity *= 10
-        city.node[1012]['entity'].bes.boiler.qNominal *= 10
-        city.node[1012]['entity'].bes.tes.capacity *= 10
-        city.node[1009]['entity'].bes.electricalHeater.qNominal *= 10
+        #  Increase system size
+        modesys.incr_esys_size_city(city=city)
 
         # Save new pickle file
         filename = 'city_clust_simple_with_esys.pkl'
@@ -1193,17 +1190,21 @@ if __name__ == '__main__':
 
     # User inputs
     #  ####################################################################
-    nb_runs = 100  # Number of MC runs
+    nb_runs = 10  # Number of MC runs
     do_sampling = True  # Perform initial sampling or use existing samples
 
-    failure_tolerance = 0.01
+    failure_tolerance = 0.1
     #  Allowed share of runs, which fail with EnergyBalanceException.
     #  If failure_tolerance is exceeded, mc runner exception is raised.
 
     #  Suppress print and warnings statements during MC-run
     prevent_printing = False
 
-    # #####################################################################
+    #  Path to save results dict
+    res_name = 'mc_run_results_dict.pkl'
+    path_res = os.path.join(this_path, 'output', res_name)
+
+    #  #####################################################################
     #  Generate object instances
     #  #####################################################################
 
@@ -1233,10 +1234,14 @@ if __name__ == '__main__':
                                       do_sampling=do_sampling,
                                       prevent_printing=prevent_printing)
 
+    pickle.dump(open(path_res, mode='wb'))
+    print('Saved results dict to: ', path_res)
+    print()
+
     print('Nb. failed runs: ', str(mc_run._nb_failed_runs))
+    print()
 
     stop_time = time.time()
-
     time_delta = round(stop_time - start_time)
 
     print('Execution time for MC-Analysis (without city generation) in'
