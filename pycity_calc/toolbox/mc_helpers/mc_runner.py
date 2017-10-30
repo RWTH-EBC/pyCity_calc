@@ -26,6 +26,7 @@ import pycity_calc.toolbox.mc_helpers.esys.esyssampling as esyssample
 import pycity_calc.toolbox.modifiers.mod_city_sh_dem as shmod
 import pycity_calc.toolbox.modifiers.mod_city_el_dem as elmod
 import pycity_calc.toolbox.modifiers.mod_city_dhw_dem as dhwmod
+import pycity_calc.toolbox.networks.network_ops as netop
 
 
 # Disable printing
@@ -50,7 +51,7 @@ class McRunner(object):
     City ojbect is stored on energy balance object
     """
 
-    def __init__(self, city_eco_calc, get_build_ids=True):
+    def __init__(self, city_eco_calc, get_build_ids=True, search_lhn=True):
         """
         Constructor of Monte-Carlo runner class
 
@@ -62,16 +63,47 @@ class McRunner(object):
         get_build_ids : bool, optional
             Defines, if all building node ids should be extracted and stored on
             _list_build_ids (default: True)
+        search_lhn : bool, optional
+            Defines, if LHN should be searched (default: True). Result is saved
+            to
         """
 
         self._city_eco_calc = city_eco_calc
         self._list_build_ids = None  # List with building node ids in city
         self._dict_samples = None  # List of samples
+        self._has_lhn = None  # Defines, if energy system holds local heating
+                              #  network or not
 
         if get_build_ids:
             #  Extract building node ids
             self._list_build_ids = self._city_eco_calc.energy_balance.city \
                 .get_list_build_entity_node_ids()
+
+        if search_lhn:
+            self.search_lhn()
+
+    def search_lhn(self, save_res=True):
+        """
+        Search for existing LHN system in city
+
+        Parameters
+        ----------
+        save_res : bool, optional
+            Defines, if search results (has_lhn) should be saved to mc_runner
+            object (default: True)
+
+        Returns
+        -------
+        has_lhn : bool
+            Defines, if LHN system exists in city
+        """
+
+        city = self._city_eco_calc.energy_balance.city
+
+        has_lhn = netop.search_lhn(city=city)
+
+        if save_res:
+            self._has_lhn = has_lhn
 
     @staticmethod
     def perform_sampling_build(nb_runs, building):

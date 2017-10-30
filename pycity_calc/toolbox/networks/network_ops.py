@@ -1338,6 +1338,33 @@ def gen_min_span_tree_along_street(city, nodelist, plot_graphs=False):
     return (min_span_graph, list_new_nodes)
 
 
+def search_lhn(city):
+    """
+    Search for existing LHN within city
+
+    Parameters
+    ----------
+    city : object
+        City object of pyCity_calc
+
+    Returns
+    -------
+    has_lhn : bool
+        Defines, if LHN system exists in city
+    """
+
+    has_lhn = False
+
+    for edge in city.edges(data=True):
+        if 'network_type' in edge[2]:
+            if (edge[2]['network_type'] == 'heating' or
+                        edge[2]['network_type'] == 'heating_and_deg'):
+                has_lhn = True
+                break
+
+    return has_lhn
+
+
 if __name__ == '__main__':
 
     def plot_city(city):
