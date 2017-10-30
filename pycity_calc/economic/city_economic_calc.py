@@ -57,10 +57,23 @@ class CityAnnuityCalc(object):
         self._list_buildings = \
             self.energy_balance.city.get_list_build_entity_node_ids()
 
-    def calc_cap_rel_annuity_city(self):
+    def calc_cap_rel_annuity_city(self, run_mc=False, dict_samples=None):
         """
         Calculate sum of all capital related annuities of city
-    
+
+        Parameters
+        ----------
+        run_mc : bool, optional
+            Defines, if Monte-Carlo analysis should be run (default: False).
+            If True, puts uncertainty factors of dict_samples on investment
+            cost, lifetime and maintenance factors. If False, only performs
+            single annuity calculation run with default values.
+        dict_samples : dict (of dicts and arrays)
+            Dictionary holding dictionaries with sample data for MC run
+            dict_samples['city'] = dict_city_samples
+            dict_samples['<building_id>'] = dict_buildings_samples
+            (of building with id <building_id>)
+
         Returns
         -------
         tup_res : tuple
@@ -72,6 +85,12 @@ class CityAnnuityCalc(object):
             list_type : list (of str)
                 List holding tags of system type (str), such as 'B' for boiler
         """
+
+        if run_mc:
+            if dict_samples is None:
+                msg = 'Sample dictionary dict_samples cannnot be None, if' \
+                      ' you want to perform Monte-Carlo analysis.'
+                raise AssertionError(msg)
 
         cap_rel_ann = 0  # Dummy value for capital-related annuity
         list_invest = []  # Dummy list to store investment cost
@@ -87,12 +106,21 @@ class CityAnnuityCalc(object):
 
                 if bes.hasBattery:
                     cap_kWh = bes.battery.capacity / (3600 * 1000)
+
+                    if run_mc:
+                        pass
+                        #  TODO Sample investment cost uncertainty
+                    else:
+                        inv_unc = 1
+
                     #  In kWh
-                    bat_invest = \
-                        bat_cost.calc_invest_cost_bat(cap=cap_kWh)
+                    bat_invest = inv_unc * \
+                                 bat_cost.calc_invest_cost_bat(cap=cap_kWh)
+
                     cap_rel_ann += \
                         self.annuity_obj.calc_capital_rel_annuity_with_type(
                             invest=bat_invest, type='BAT')
+
                     #  Add to lists
                     list_invest.append(bat_invest)
                     list_type.append('BAT')
@@ -209,10 +237,15 @@ class CityAnnuityCalc(object):
                                 list_th_pow.append(
                                     th_pow / 1000)  # Convert W to kW
 
+                #  Fixme: Estimate thermal power based on reference run or
+                #  pipe diameter
                 # Calculate investment cost for lhn transmission stations
-                invest_lhn_trans += \
-                    lhn_cost.calc_invest_cost_lhn_stations(
-                        list_powers=list_th_pow)
+
+                # invest_lhn_trans += \
+                #     lhn_cost.calc_invest_cost_lhn_stations(
+                #         list_powers=list_th_pow)
+
+                invest_lhn_trans += 5000
 
                 #  Add to lists
                 list_invest.append(invest_lhn_trans)

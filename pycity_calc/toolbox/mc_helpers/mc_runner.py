@@ -146,8 +146,8 @@ class McRunner(object):
         array_sh_dem = buildsample.calc_sh_demand_samples(nb_samples=nb_runs,
                                                           sh_ref=sh_ref)
 
-        array_sh_on_off = buildsample. \
-            calc_sh_summer_on_off_samples(nb_samples=nb_runs)
+        # array_sh_on_off = buildsample. \
+        #     calc_sh_summer_on_off_samples(nb_samples=nb_runs)
 
         #  Save results to dict
         #  ################################################################
@@ -155,7 +155,7 @@ class McRunner(object):
         dict_build_samples['el_dem'] = array_el_dem
         dict_build_samples['dhw_dem'] = array_dhw_dem
         dict_build_samples['sh_dem'] = array_sh_dem
-        dict_build_samples['on_off'] = array_sh_on_off
+        # dict_build_samples['on_off'] = array_sh_on_off
 
         #  Sample energy system attributes
         #  ################################################################
@@ -184,6 +184,12 @@ class McRunner(object):
                 dict_bat['bat_maintain'] = \
                     esyssample.sample_maintain(nb_samples=nb_runs)
 
+                #  Sample investment uncertainty (normalized to investment
+                #  cost of 1)
+                dict_bat['bat_inv'] = \
+                    esyssample.sample_invest_unc(nb_samples=nb_runs,
+                                                 ref_inv=1)
+
                 dict_esys['bat'] = dict_bat
 
             if building.bes.hasBoiler:
@@ -198,6 +204,12 @@ class McRunner(object):
                 dict_boi['boi_maintain'] = \
                     esyssample.sample_maintain(nb_samples=nb_runs)
 
+                #  Sample investment uncertainty (normalized to investment
+                #  cost of 1)
+                dict_boi['boi_inv'] = \
+                    esyssample.sample_invest_unc(nb_samples=nb_runs,
+                                                 ref_inv=1)
+
                 dict_esys['boi'] = dict_boi
 
             if building.bes.hasChp:
@@ -211,6 +223,12 @@ class McRunner(object):
 
                 dict_chp['chp_maintain'] = \
                     esyssample.sample_maintain(nb_samples=nb_runs)
+
+                #  Sample investment uncertainty (normalized to investment
+                #  cost of 1)
+                dict_chp['chp_inv'] = \
+                    esyssample.sample_invest_unc(nb_samples=nb_runs,
+                                                 ref_inv=1)
 
                 dict_esys['chp'] = dict_chp
 
@@ -236,7 +254,31 @@ class McRunner(object):
                 dict_hp['hp_maintain'] = \
                     esyssample.sample_maintain(nb_samples=nb_runs)
 
+                #  Sample investment uncertainty (normalized to investment
+                #  cost of 1)
+                dict_hp['hp_inv'] = \
+                    esyssample.sample_invest_unc(nb_samples=nb_runs,
+                                                 ref_inv=1)
+
                 dict_esys['hp'] = dict_hp
+
+            if building.bes.hasElectricalHeater:
+
+                dict_eh = {}
+
+                dict_eh['eh_lifetime'] = \
+                    esyssample.sample_lifetime(nb_samples=nb_runs)
+
+                dict_eh['eh_maintain'] = \
+                    esyssample.sample_maintain(nb_samples=nb_runs)
+
+                #  Sample investment uncertainty (normalized to investment
+                #  cost of 1)
+                dict_eh['eh_inv'] = \
+                    esyssample.sample_invest_unc(nb_samples=nb_runs,
+                                                 ref_inv=1)
+
+                dict_esys['eh'] = dict_eh
 
             if building.bes.hasPv:
                 dict_pv = {}
@@ -254,6 +296,12 @@ class McRunner(object):
                 dict_pv['hp_maintain'] = \
                     esyssample.sample_maintain(nb_samples=nb_runs)
 
+                #  Sample investment uncertainty (normalized to investment
+                #  cost of 1)
+                dict_pv['pv_inv'] = \
+                    esyssample.sample_invest_unc(nb_samples=nb_runs,
+                                                 ref_inv=1)
+
                 dict_esys['PV'] = dict_pv
 
             if building.bes.hasTes:
@@ -267,6 +315,12 @@ class McRunner(object):
 
                 dict_tes['hp_maintain'] = \
                     esyssample.sample_maintain(nb_samples=nb_runs)
+
+                #  Sample investment uncertainty (normalized to investment
+                #  cost of 1)
+                dict_tes['tes_inv'] = \
+                    esyssample.sample_invest_unc(nb_samples=nb_runs,
+                                                 ref_inv=1)
 
                 dict_esys['tes'] = dict_tes
 
@@ -351,6 +405,8 @@ class McRunner(object):
         dict_samples : dict (of dicts)
             Dictionary holding dictionaries with sample data for MC run
             dict_samples['city'] = dict_city_samples
+            dict_samples['<building_id>'] = dict_buildings_samples
+            (of building with id <building_id>)
         """
 
         #  Initial sample dict. Holds further sample dicts for
