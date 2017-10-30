@@ -27,9 +27,11 @@ import pycity_calc.toolbox.modifiers.mod_city_sh_dem as shmod
 import pycity_calc.toolbox.modifiers.mod_city_el_dem as elmod
 import pycity_calc.toolbox.modifiers.mod_city_dhw_dem as dhwmod
 import pycity_calc.toolbox.networks.network_ops as netop
+import pycity_calc.simulation.energy_balance.building_eb_calc as buildeb
 
 
 # Disable printing
+#  From https://stackoverflow.com/questions/8391411/suppress-calls-to-print-python
 def block_print():
     sys.stdout = open(os.devnull, 'w')
 
@@ -39,7 +41,18 @@ def enable_print():
     sys.stdout = sys.__stdout__
 
 
-#  From https://stackoverflow.com/questions/8391411/suppress-calls-to-print-python
+class McToleranceException(Exception):
+    def __init__(self, message):
+        """
+        Constructor of McToleranceException
+
+        Parameters
+        ----------
+        message : str
+            Error message
+        """
+
+        super(McToleranceException, self).__init__(message)
 
 
 class McRunner(object):
@@ -72,8 +85,10 @@ class McRunner(object):
         self._list_build_ids = None  # List with building node ids in city
         self._dict_samples = None  # List of samples
         self._has_lhn = None  # Defines, if energy system holds local heating
-                              #  network or not
-        self._list_lhn_tuples = None # List holding LHN edge tuples
+        #  network or not
+        self._list_lhn_tuples = None  # List holding LHN edge tuples
+
+        self._nb_failed_runs = None  # Counter for failed runs
 
         if get_build_ids:
             #  Extract building node ids
@@ -304,7 +319,6 @@ class McRunner(object):
                 dict_esys['hp'] = dict_hp
 
             if building.bes.hasElectricalHeater:
-
                 dict_eh = {}
 
                 dict_eh['eh_lifetime'] = \
@@ -415,10 +429,10 @@ class McRunner(object):
         array_grid_av_fee = citysample.sample_grid_av_fee(nb_samples=nb_runs)
         array_temp_ground = citysample.sample_temp_ground(nb_samples=nb_runs)
 
-        array_summer_heat_on = citysample.\
+        array_summer_heat_on = citysample. \
             sample_quota_summer_heat_on(nb_samples=nb_runs)
 
-        list_s_heat_on_id_arrays = citysample.\
+        list_s_heat_on_id_arrays = citysample. \
             sample_list_sum_heat_on_arrays(nb_samples=nb_runs,
                                            array_ratio_on=array_summer_heat_on,
                                            list_b_ids=self._list_build_ids)
@@ -495,7 +509,8 @@ class McRunner(object):
 
         return dict_samples
 
-    def perform_mc_runs(self, nb_runs, heating_off=True):
+    def perform_mc_runs(self, nb_runs, failure_tolerance=0.05,
+                        heating_off=True):
         """
         Perform mc runs.
         - Extract sample values
@@ -507,6 +522,10 @@ class McRunner(object):
         ----------
         nb_runs : int
             Number of runs
+        failure_tolerance : float, optional
+            Allowed EnergyBalanceException failure tolerance (default: 0.05).
+            E.g. 0.05 means, that 5% of runs are allowed to fail with
+            EnergyBalanceException.
         heating_off : bool, optional
             Defines, if sampling to deactivate heating during summer should
             be used (default: True)
@@ -530,6 +549,8 @@ class McRunner(object):
             dict_mc_res['grid_exp_pv'] = array_grid_exp_pv
         """
 
+        #  Initialize result dict an arrays
+        #  #################################################################
         dict_mc_res = {}
 
         #  Initial zero result arrays
@@ -550,7 +571,11 @@ class McRunner(object):
         array_grid_exp_chp = np.zeros(nb_runs)
         array_grid_exp_pv = np.zeros(nb_runs)
 
+        #  Set failure counter to zero
+        self._nb_failed_runs = 0
+
         #  Run energy balance and economic analysis
+        #  #################################################################
         for i in range(nb_runs):
             #  Copy city economic calculator, to prevent modification of
             #  original objects
@@ -714,7 +739,7 @@ class McRunner(object):
                         # dict_tes['hp_maintain'] = \
                         #     esyssample.sample_maintain(nb_samples=nb_runs)
 
-                    #  TODO: Add lifetime and maintenance factors to annuity
+                        #  TODO: Add lifetime and maintenance factors to annuity
 
             # Extract city sampling data
             #  #############################################################
@@ -753,15 +778,7 @@ class McRunner(object):
                     #  Modify space heating (switch off during summer)
                     shmod.sh_curve_summer_off_build(building=curr_build)
 
-            #  TODO: Has to be added to energy balance calculation
-            # if self._has_lhn:
-            #     #  Current loss factor
-            #     loss_fac = dict_city_samples['lhn_loss'][i]
-            #
-            #     for (u, v) in self._list_lhn_tuples:
-            #         city.edge[u][v]['']
-
-            #  Save inputs to city, market and environment
+            # Save inputs to city, market and environment
             city.environment.temp_ground = dict_city_samples['temp_ground'][i]
             city.environment.prices.grid_av_fee = \
                 dict_city_samples['grid_av_fee'][i]
@@ -781,81 +798,88 @@ class McRunner(object):
 
             #  Rerun initial parameter calculation of annuity_obj
             annuity_obj.initial_calc()
-
-            #  Save inputs to energy_balance
-
-
-            #  Save inputs to city_economic_calculator
-
-
+            #  Necessary to recalculate values, that depend on sampling data
 
             #  Run energy balance and annuity calculation
             #  ###############################################################
-            (total_annuity, co2) = c_eco_copy. \
-                perform_overall_energy_balance_and_economic_calc(run_mc=True,
-                                                                 dict_samples=
-                                                                 self._dict_samples,
-                                                                 run_idx=i)
+            try:
+                (total_annuity, co2) = c_eco_copy. \
+                    perform_overall_energy_balance_and_economic_calc(
+                    run_mc=True,
+                    dict_samples=
+                    self._dict_samples,
+                    run_idx=i)
 
-            # #  Extract further results
-            # sh_dem = c_eco_copy.energy_balance. \
-            #     city.get_annual_space_heating_demand()
-            # el_dem = c_eco_copy.energy_balance. \
-            #     city.get_annual_el_demand()
-            # dhw_dem = c_eco_copy.energy_balance. \
-            #     city.get_annual_dhw_demand()
+                # #  Extract further results
+                # sh_dem = c_eco_copy.energy_balance. \
+                #     city.get_annual_space_heating_demand()
+                # el_dem = c_eco_copy.energy_balance. \
+                #     city.get_annual_el_demand()
+                # dhw_dem = c_eco_copy.energy_balance. \
+                #     city.get_annual_dhw_demand()
 
-            gas_boiler = c_eco_copy.energy_balance.dict_fe_city_balance[
-                'fuel_boiler']
-            gas_chp = c_eco_copy.energy_balance.dict_fe_city_balance[
-                'fuel_chp']
-            grid_imp_dem = c_eco_copy.energy_balance.dict_fe_city_balance[
-                'grid_import_dem']
-            grid_imp_hp = c_eco_copy.energy_balance.dict_fe_city_balance[
-                'grid_import_hp']
-            grid_imp_eh = c_eco_copy.energy_balance.dict_fe_city_balance[
-                'grid_import_eh']
-            lhn_pump = c_eco_copy.energy_balance.dict_fe_city_balance[
-                'pump_energy']
+                gas_boiler = c_eco_copy.energy_balance.dict_fe_city_balance[
+                    'fuel_boiler']
+                gas_chp = c_eco_copy.energy_balance.dict_fe_city_balance[
+                    'fuel_chp']
+                grid_imp_dem = c_eco_copy.energy_balance.dict_fe_city_balance[
+                    'grid_import_dem']
+                grid_imp_hp = c_eco_copy.energy_balance.dict_fe_city_balance[
+                    'grid_import_hp']
+                grid_imp_eh = c_eco_copy.energy_balance.dict_fe_city_balance[
+                    'grid_import_eh']
+                lhn_pump = c_eco_copy.energy_balance.dict_fe_city_balance[
+                    'pump_energy']
 
-            grid_exp_chp = c_eco_copy.energy_balance.dict_fe_city_balance[
-                'chp_feed']
-            grid_exp_pv = c_eco_copy.energy_balance.dict_fe_city_balance[
-                'pv_feed']
+                grid_exp_chp = c_eco_copy.energy_balance.dict_fe_city_balance[
+                    'chp_feed']
+                grid_exp_pv = c_eco_copy.energy_balance.dict_fe_city_balance[
+                    'pv_feed']
 
-            #  Save results
-            array_annuity[i] = total_annuity
-            array_co2[i] = co2
-            # array_net_sh[i] = sh_dem
-            # array_net_el[i] = el_dem
-            # array_net_dhw[i] = dhw_dem
+                #  Save results
+                array_annuity[i] = total_annuity
+                array_co2[i] = co2
+                # array_net_sh[i] = sh_dem
+                # array_net_el[i] = el_dem
+                # array_net_dhw[i] = dhw_dem
 
-            array_gas_boiler[i] = gas_boiler
-            array_gas_chp[i] = gas_chp
-            array_grid_imp_dem[i] = grid_imp_dem
-            array_grid_imp_hp[i] = grid_imp_hp
-            array_grid_imp_eh[i] = grid_imp_eh
-            array_lhn_pump[i] = lhn_pump
-            array_grid_exp_chp[i] = grid_exp_chp
-            array_grid_exp_pv[i] = grid_exp_pv
+                array_gas_boiler[i] = gas_boiler
+                array_gas_chp[i] = gas_chp
+                array_grid_imp_dem[i] = grid_imp_dem
+                array_grid_imp_hp[i] = grid_imp_hp
+                array_grid_imp_eh[i] = grid_imp_eh
+                array_lhn_pump[i] = lhn_pump
+                array_grid_exp_chp[i] = grid_exp_chp
+                array_grid_exp_pv[i] = grid_exp_pv
 
-            dict_mc_res['annuity'] = array_annuity
-            dict_mc_res['co2'] = array_co2
-            # dict_mc_res['sh_dem'] = array_net_sh
-            # dict_mc_res['el_dem'] = array_net_el
-            # dict_mc_res['dhw_dem'] = array_net_dhw
-            dict_mc_res['gas_boiler'] = array_gas_boiler
-            dict_mc_res['gas_chp'] = array_gas_chp
-            dict_mc_res['grid_imp_dem'] = array_grid_imp_dem
-            dict_mc_res['grid_imp_hp'] = array_grid_imp_hp
-            dict_mc_res['grid_imp_eh'] = array_grid_imp_eh
-            dict_mc_res['lhn_pump'] = array_lhn_pump
-            dict_mc_res['grid_exp_chp'] = array_grid_exp_chp
-            dict_mc_res['grid_exp_pv'] = array_grid_exp_pv
+                dict_mc_res['annuity'] = array_annuity
+                dict_mc_res['co2'] = array_co2
+                # dict_mc_res['sh_dem'] = array_net_sh
+                # dict_mc_res['el_dem'] = array_net_el
+                # dict_mc_res['dhw_dem'] = array_net_dhw
+                dict_mc_res['gas_boiler'] = array_gas_boiler
+                dict_mc_res['gas_chp'] = array_gas_chp
+                dict_mc_res['grid_imp_dem'] = array_grid_imp_dem
+                dict_mc_res['grid_imp_hp'] = array_grid_imp_hp
+                dict_mc_res['grid_imp_eh'] = array_grid_imp_eh
+                dict_mc_res['lhn_pump'] = array_lhn_pump
+                dict_mc_res['grid_exp_chp'] = array_grid_exp_chp
+                dict_mc_res['grid_exp_pv'] = array_grid_exp_pv
+            except buildeb.EnergyBalanceException:
+                #  Count failure nb. up
+                self._nb_failed_runs += 1
+                msg = 'Run %d failed with EnergyBalanceException' % (i)
+                warnings.warn(msg)
+
+            if self._nb_failed_runs > failure_tolerance * nb_runs:
+                msg = 'Number of failed runs exceeds ' \
+                      'allowed limit of %d runs!' % (failure_tolerance * nb_runs)
+                raise McToleranceException(msg)
 
         return dict_mc_res
 
     def run_mc_analysis(self, nb_runs, do_sampling=False,
+                        failure_tolerance=0.05,
                         prevent_printing=False, heating_off=True):
         """
         Perform monte-carlo run with:
@@ -871,6 +895,10 @@ class McRunner(object):
         do_sampling : bool, optional
             Defines, if sampling should be performed or existing samples
             should be used (default: False)
+        failure_tolerance : float, optional
+            Allowed EnergyBalanceException failure tolerance (default: 0.05).
+            E.g. 0.05 means, that 5% of runs are allowed to fail with
+            EnergyBalanceException.
         prevent_printing : bool, optional
             Defines, if printing statements should be suppressed
         heating_off : bool, optional
@@ -896,6 +924,7 @@ class McRunner(object):
 
         # Perform monte-carlo runs
         dict_mc_res = self.perform_mc_runs(nb_runs=nb_runs,
+                                           failure_tolerance=failure_tolerance,
                                            heating_off=heating_off)
 
         if prevent_printing:
@@ -1161,8 +1190,12 @@ if __name__ == '__main__':
 
     # User inputs
     #  ####################################################################
-    nb_runs = 2
-    do_sampling = True
+    nb_runs = 50  # Number of MC runs
+    do_sampling = True  # Perform initial sampling or use existing samples
+
+    failure_tolerance = 0.05
+    #  Allowed share of runs, which fail with EnergyBalanceException.
+    #  If failure_tolerance is exceeded, mc runner exception is raised.
 
     #  Suppress print and warnings statements during MC-run
     prevent_printing = False
@@ -1191,8 +1224,13 @@ if __name__ == '__main__':
     #  Hand over initial city object to mc_runner
     mc_run = McRunner(city_eco_calc=city_eco_calc)
 
-    dict_res = mc_run.run_mc_analysis(nb_runs=nb_runs, do_sampling=do_sampling,
+    #  Perform Monte-Carlo uncertainty analysis
+    dict_res = mc_run.run_mc_analysis(nb_runs=nb_runs,
+                                      failure_tolerance=failure_tolerance,
+                                      do_sampling=do_sampling,
                                       prevent_printing=prevent_printing)
+
+    print('Nb. failed runs: ', str(mc_run._nb_failed_runs))
 
     stop_time = time.time()
 
