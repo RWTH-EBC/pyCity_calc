@@ -12,6 +12,7 @@ import warnings
 import pickle
 import time
 import numpy as np
+import traceback
 
 import pycity_calc.economic.city_economic_calc as citecon
 import pycity_calc.environments.germanmarket as gmarket
@@ -865,7 +866,9 @@ class McRunner(object):
                 dict_mc_res['lhn_pump'] = array_lhn_pump
                 dict_mc_res['grid_exp_chp'] = array_grid_exp_chp
                 dict_mc_res['grid_exp_pv'] = array_grid_exp_pv
-            except buildeb.EnergyBalanceException:
+            except buildeb.EnergyBalanceException as ermessage:
+                print(ermessage)
+                traceback.print_exc()
                 #  Count failure nb. up
                 self._nb_failed_runs += 1
                 msg = 'Run %d failed with EnergyBalanceException' % (i)
@@ -1190,10 +1193,10 @@ if __name__ == '__main__':
 
     # User inputs
     #  ####################################################################
-    nb_runs = 50  # Number of MC runs
+    nb_runs = 100  # Number of MC runs
     do_sampling = True  # Perform initial sampling or use existing samples
 
-    failure_tolerance = 0.05
+    failure_tolerance = 0.01
     #  Allowed share of runs, which fail with EnergyBalanceException.
     #  If failure_tolerance is exceeded, mc runner exception is raised.
 
