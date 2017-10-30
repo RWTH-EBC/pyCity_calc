@@ -377,22 +377,53 @@ def sample_ids_houses_summer_on(ratio_on, list_b_ids):
     return array_heat_ids
 
 
+def sample_list_sum_heat_on_arrays(nb_samples, ratio_on, list_b_ids):
+    """
+    Returns list with arrays holding building node ids for each run
+
+    Parameters
+    ----------
+    nb_samples : int
+        Number of samples
+    ratio_on : float
+        Ratio of buildings with activated heating during summer
+        (e.g. ratio_on = 0.4 --> 40 % of buildings have heating activated
+        during summer)
+    list_b_ids : list (of ints)
+        List of building node ids
+
+    Returns
+    -------
+    list_sum_heat_id_arrays : list (of np.arrays)
+        List holding arrays with building node ids with heating during summer
+    """
+
+    list_sum_heat_id_arrays = []
+
+    for i in range(nb_samples):
+        array_ids = sample_ids_houses_summer_on(ratio_on=ratio_on,
+                                                list_b_ids=list_b_ids)
+        list_sum_heat_id_arrays.append(array_ids)
+
+    return list_sum_heat_id_arrays
+
+
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
-    nb_samples = 5
+    nb_samples = 1000
 
-    # array_int = sample_interest(nb_samples=nb_samples)
+    array_int = sample_interest(nb_samples=nb_samples)
+
+    plt.hist(array_int)
+    plt.xlabel('Interest rate')
+    plt.ylabel('Number of values')
+    plt.show()
+    plt.close()
+
+    # array_heat_ids = sample_ids_houses_summer_on(ratio_on=1,
+    #                             list_b_ids=[1001, 1002, 1003, 1004, 1005,
+    #                                         1006, 1007, 1008, 1009, 1010])
     #
-    # plt.hist(array_int)
-    # plt.xlabel('Interest rate')
-    # plt.ylabel('Number of values')
-    # plt.show()
-    # plt.close()
-
-    array_heat_ids = sample_ids_houses_summer_on(ratio_on=1,
-                                list_b_ids=[1001, 1002, 1003, 1004, 1005,
-                                            1006, 1007, 1008, 1009, 1010])
-
-    print('Len: ', len(array_heat_ids))
-    print(array_heat_ids)
+    # print('Len: ', len(array_heat_ids))
+    # print(array_heat_ids)
