@@ -43,6 +43,82 @@ def rescale_sh_app(apartment, sh_dem):
     apartment.demandSpaceheating.loadcurve *= con_factor
 
 
+def sh_curve_summer_off(sh_array, resc=0.2):
+    """
+    Modifies space heating load array to be zero during non heating period
+    from April to September
+
+    Parameters
+    ----------
+    sh_array : np.array (of floats)
+        Numpy array with space heating power in Watt (for each timestep)
+    resc : float, optional
+        Defines rescaling factor, related to "cut off" space heating energy
+        (default: 0.2). E.g. 0.2 means, that 20 % of "cut off" space heating
+        energy are used to rescale remaining demand
+
+    Returns
+    -------
+    sh_array_mod : np.array (of floats)
+        Numpy array holding modified space heating power in Watt (per timestep)
+    """
+
+    sh_array_mod = copy.copy(sh_array)
+
+    timestep = int(365 * 24 * 3600 / len(sh_array_mod))
+
+    cut_off_energy = 0
+
+    idx_summer_start = int(114 * 24 * 3600 / timestep)
+    idx_summer_stop = int(297 * 24 * 3600 / timestep)
+
+    #  Set sh powers to zero during non heating periode
+    for i in range(idx_summer_start, idx_summer_stop, 1):
+        if sh_array_mod[i] > 0:
+            cut_off_energy += sh_array_mod[i] * timestep / (1000 * 3600)
+            sh_array_mod[i] = 0
+
+    sh_dem_after = sum(sh_array_mod) * timestep / (1000 * 3600)
+
+    resc_factor = (resc * cut_off_energy + sh_dem_after) / sh_dem_after
+    print('Resc factor: ', resc_factor)
+
+    # Rescale remaining power curve
+    sh_array_mod *= resc_factor
+
+    return sh_array_mod
+
+
+def sh_curve_summer_off_build(building, resc=0.2):
+    """
+    Modifies space heating curve to be zero during non heating period from
+    April to September.
+
+    Parameters
+    ----------
+    building : object
+        Building object of pyCity_calc
+    resc : float, optional
+        Defines rescaling factor, related to "cut off" space heating energy
+        (default: 0.2). E.g. 0.2 means, that 20 % of "cut off" space heating
+        energy are used to rescale remaining demand
+    """
+    assert resc >= 0
+    assert resc <= 1
+
+    array_sh_building = copy.deepcopy(building.get_space_heating_power_curve())
+
+    sh_array_mod = sh_curve_summer_off(sh_array=array_sh_building, resc=resc)
+
+    #  Distribute to apartments
+    nb_app = len(building.apartments)
+
+    array_sh_app = sh_array_mod / nb_app
+
+    for app in building.apartments:
+        app.demandSpaceheating.loadcurve = array_sh_app
+
+
 def rescale_sh_dem_build(building, sh_dem):
     """
     Rescale space heating net energy demand of building
@@ -136,14 +212,57 @@ if __name__ == '__main__':
 
     city = pickle.load(open(path_city, mode='rb'))
 
-    print('City space heating energy demand in kWh/a before conversion:')
-    print(city.get_annual_space_heating_demand())
+    #  #  Modify space heating of city object
+    #  ###################################################################
+    # print('City space heating energy demand in kWh/a before conversion:')
+    # print(city.get_annual_space_heating_demand())
+    #
+    # #  Modify city object
+    # mod_sh_city_dem(city=city, sh_dem=sh_dem)
+    #
+    # print('City space heating demand in kWh/a after conversion:')
+    # print(city.get_annual_space_heating_demand())
+    #
+    # #  Save city object
+    # pickle.dump(city, open(path_save, mode='wb'))
 
-    #  Modify city object
-    mod_sh_city_dem(city=city, sh_dem=sh_dem)
+    #  Uncomment, if you want to test summer heating off modification
+    #  ###################################################################
+    ref_build = city.node[1001]['entity']
+    array_sh_before = copy.deepcopy(ref_build.get_space_heating_power_curve())
+    sh_dem_before = copy.copy(ref_build.get_annual_space_heat_demand())
 
-    print('City space heating demand in kWh/a after conversion:')
-    print(city.get_annual_space_heating_demand())
+    rescaling = 0.2
 
-    #  Save city object
-    pickle.dump(city, open(path_save, mode='wb'))
+    sh_curve_summer_off_build(building=ref_build, resc=rescaling)
+
+    sh_dem_after = ref_build.get_annual_space_heat_demand()
+
+    print('Space heating demand before modification in kWh: ')
+    print(round(sh_dem_before, 0))
+    print()
+
+    print('Space heating demand after modification in kWh: ')
+    print(round(sh_dem_after, 0))
+    print()
+
+    perc = (sh_dem_after - sh_dem_before) * 100 / sh_dem_before
+
+    print('Difference in percent: ', round(perc, 2))
+
+    import matplotlib.pyplot as plt
+
+    fig = plt.figure()
+    plt.subplot(2, 1, 1)
+    plt.plot(array_sh_before / 1000, label='Original')
+    plt.ylabel('Space heating power in kW')
+    plt.legend()
+    plt.subplot(2, 1, 2)
+    plt.plot(ref_build.get_space_heating_power_curve() / 1000,
+             label='Summer off')
+    plt.xlabel('Time in hours')
+    plt.ylabel('Space heating power in kW')
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+    plt.close()
