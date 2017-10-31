@@ -290,13 +290,13 @@ def run_overall_gen_and_dim(timestep, year_timer, year_co2,
                                   dhw_scale=dhw_dim_esys)
 
     # Plot city
-    if plot_pycity_calc:
+    if plot_pycity_calc: # pragma: no cover
         citvis.plot_city_district(city=city_object, plot_lhn=True,
                                   plot_deg=True,
                                   plot_street=True, plot_esys=True)
 
     # Pickle and dump city object
-    if save_path is not None:
+    if save_path is not None: # pragma: no cover
         #  Save city pickle file
         pickle.dump(city_object, open(save_path, mode='wb'))
 
