@@ -30,6 +30,7 @@ import pycity_calc.toolbox.modifiers.mod_city_dhw_dem as dhwmod
 import pycity_calc.toolbox.networks.network_ops as netop
 import pycity_calc.simulation.energy_balance.building_eb_calc as buildeb
 import pycity_calc.toolbox.modifiers.mod_city_esys_size as modesys
+import pycity_calc.visualization.city_visual as citvis
 
 
 # Disable printing
@@ -1189,8 +1190,14 @@ if __name__ == '__main__':
         file_path = os.path.join(this_path, 'input', filename)
         pickle.dump(city, open(file_path, mode='wb'))
 
+    # #  Uncomment, if you require further increase of energy system size
     # #  Increase system size
     # modesys.incr_esys_size_city(city=city, base_factor=2)
+
+    # #  Uncomment, if you want to plot city district
+    # #  Plot city district
+    # citvis.plot_city_district(city=city, plot_lhn=True, plot_deg=True,
+    #                           plot_esys=True)
 
     # User inputs
     #  ####################################################################
