@@ -561,9 +561,9 @@ class McRunner(object):
         array_co2 = np.zeros(nb_runs)
 
         #  # Uncommented, as already existent on sampling dicts
-        # array_net_sh = np.zeros(nb_runs)
-        # array_net_el = np.zeros(nb_runs)
-        # array_net_dhw = np.zeros(nb_runs)
+        array_net_sh = np.zeros(nb_runs)
+        array_net_el = np.zeros(nb_runs)
+        array_net_dhw = np.zeros(nb_runs)
 
         array_gas_boiler = np.zeros(nb_runs)
         array_gas_chp = np.zeros(nb_runs)
@@ -813,13 +813,13 @@ class McRunner(object):
                     self._dict_samples,
                     run_idx=i)
 
-                # #  Extract further results
-                # sh_dem = c_eco_copy.energy_balance. \
-                #     city.get_annual_space_heating_demand()
-                # el_dem = c_eco_copy.energy_balance. \
-                #     city.get_annual_el_demand()
-                # dhw_dem = c_eco_copy.energy_balance. \
-                #     city.get_annual_dhw_demand()
+                #  Extract further results
+                sh_dem = c_eco_copy.energy_balance. \
+                    city.get_annual_space_heating_demand()
+                el_dem = c_eco_copy.energy_balance. \
+                    city.get_annual_el_demand()
+                dhw_dem = c_eco_copy.energy_balance. \
+                    city.get_annual_dhw_demand()
 
                 gas_boiler = c_eco_copy.energy_balance.dict_fe_city_balance[
                     'fuel_boiler']
@@ -842,9 +842,9 @@ class McRunner(object):
                 #  Save results
                 array_annuity[i] = total_annuity
                 array_co2[i] = co2
-                # array_net_sh[i] = sh_dem
-                # array_net_el[i] = el_dem
-                # array_net_dhw[i] = dhw_dem
+                array_net_sh[i] = sh_dem
+                array_net_el[i] = el_dem
+                array_net_dhw[i] = dhw_dem
 
                 array_gas_boiler[i] = gas_boiler
                 array_gas_chp[i] = gas_chp
@@ -857,9 +857,9 @@ class McRunner(object):
 
                 dict_mc_res['annuity'] = array_annuity
                 dict_mc_res['co2'] = array_co2
-                # dict_mc_res['sh_dem'] = array_net_sh
-                # dict_mc_res['el_dem'] = array_net_el
-                # dict_mc_res['dhw_dem'] = array_net_dhw
+                dict_mc_res['sh_dem'] = array_net_sh
+                dict_mc_res['el_dem'] = array_net_el
+                dict_mc_res['dhw_dem'] = array_net_dhw
                 dict_mc_res['gas_boiler'] = array_gas_boiler
                 dict_mc_res['gas_chp'] = array_gas_chp
                 dict_mc_res['grid_imp_dem'] = array_grid_imp_dem
