@@ -78,7 +78,7 @@ def get_nb_build_nodes_and_entities(city, print_out=False):
                                 city.node[n]['entity']._kind == 'pv'):
                         nb_b_nodes += 1
 
-    if print_out:
+    if print_out:  # pragma: no cover
         print('Number of building nodes (Buildings, Wind- and PV-Farms):')
         print(nb_b_nodes)
         print()
@@ -113,7 +113,7 @@ def get_ann_energy_demands(city, print_out=False):
     ann_el_dem = round(city.get_annual_el_demand(), 2)
     ann_dhw_dem = round(city.get_annual_dhw_demand(), 2)
 
-    if print_out:
+    if print_out:  # pragma: no cover
         print('Annual net thermal space heating demand in kWh: ')
         print(ann_space_heat)
         print()
@@ -156,7 +156,7 @@ def get_power_curves(city, print_out=False):
     el_power_curve = city.get_aggr_el_power_curve()
     dhw_power_curve = city.get_aggr_dhw_power_curve()
 
-    if print_out:
+    if print_out:  # pragma: no cover
         timestep = city.environment.timer.timeDiscretization
 
         time_array = np.arange(0, 365 * 24 * 3600 / timestep, timestep / 3600)
@@ -204,7 +204,7 @@ def get_min_max_th_sh_powers(city, print_out=False):
                                                                  find_max=False,
                                                                  return_value=True)
 
-    if print_out:
+    if print_out:  # pragma: no cover
         print('Maximal thermal power of complete district (without dhw) '
               'in kW: ')
         print(round(max_th_power_city, 2))
@@ -268,7 +268,7 @@ def get_mod_year_hist(city, plot_hist=True, facecolor='#EC635C',
     print(list_mod_years.sort())
     print(len(list_mod_years))
 
-    if plot_hist:
+    if plot_hist:  # pragma: no cover
 
         # nb_bins = int((max(list_mod_years) - min(list_mod_years))/2)
         nb_bins = np.arange(min(list_mod_years), max(list_mod_years) +1)

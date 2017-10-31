@@ -128,7 +128,7 @@ def calc_build_therm_eb(build, soc_init=0.75, boiler_full_pl=True,
         curr_lal = build.bes.boiler.lowerActivationLimit
 
         if boiler_full_pl:
-            if curr_lal != 0:
+            if curr_lal != 0:  # pragma: no cover
                 msg = 'Boiler lower activation limit is currently higher ' \
                       'than 0.' \
                       ' Thus, new lower activation limit is set to zero 0.'
@@ -142,7 +142,7 @@ def calc_build_therm_eb(build, soc_init=0.75, boiler_full_pl=True,
         has_hp = True
 
         if build.bes.hasElectricalHeater is False and \
-                        build.get_annual_dhw_demand() > 0:
+                        build.get_annual_dhw_demand() > 0:  # pragma: no cover
             msg = 'Building ' + str() + ' does only have HP without EH.' \
                                         ' Thus, it cannot cover hot water' \
                                         ' energy demand, which is larger ' \
@@ -155,7 +155,7 @@ def calc_build_therm_eb(build, soc_init=0.75, boiler_full_pl=True,
         curr_lal = build.bes.electricalHeater.lowerActivationLimit
 
         if eh_full_pl:
-            if curr_lal != 0:
+            if curr_lal != 0:  # pragma: no cover
                 msg = 'EH lower activation limit is currently higher than 0.' \
                       ' Thus, new lower activation limit is set to zero 0.'
                 warnings.warn(msg)

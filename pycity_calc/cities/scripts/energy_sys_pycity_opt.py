@@ -5,23 +5,23 @@ Script to postprocess pycity_opt results object. Resized chosen energy
 system sized to be more realistic.
 """
 
-import os
-import pickle
-
-import pycity_base.classes.supply.BES as BES
-import pycity_base.classes.supply.PV as PV
-
-import pycity_calc.toolbox.networks.network_ops as netop
-import pycity_calc.toolbox.dimensioning.dim_networks as dimnet
-import pycity_calc.toolbox.dimensioning.dim_functions as dimfunc
-import pycity_calc.visualization.city_visual as citvis
-
-import pycity_calc.energysystems.chp as chpsys
-import pycity_calc.energysystems.boiler as boil
-import pycity_calc.energysystems.heatPumpSimple as hpsys
-import pycity_calc.energysystems.electricalHeater as ehsys
-import pycity_calc.energysystems.thermalEnergyStorage as storage
-import pycity_calc.energysystems.battery as batt
+# import os
+# import pickle
+#
+# import pycity_base.classes.supply.BES as BES
+# import pycity_base.classes.supply.PV as PV
+#
+# import pycity_calc.toolbox.networks.network_ops as netop
+# import pycity_calc.toolbox.dimensioning.dim_networks as dimnet
+# import pycity_calc.toolbox.dimensioning.dim_functions as dimfunc
+# import pycity_calc.visualization.city_visual as citvis
+#
+# import pycity_calc.energysystems.chp as chpsys
+# import pycity_calc.energysystems.boiler as boil
+# import pycity_calc.energysystems.heatPumpSimple as hpsys
+# import pycity_calc.energysystems.electricalHeater as ehsys
+# import pycity_calc.energysystems.thermalEnergyStorage as storage
+# import pycity_calc.energysystems.battery as batt
 
 
 # def gen_esys_city_with_pycity_opt_res(city, esopt_res, single_lhn_source=False,

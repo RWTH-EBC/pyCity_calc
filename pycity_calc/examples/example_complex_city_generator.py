@@ -142,7 +142,7 @@ def run_example(printcitydata=False):
                            plot_stepwise=False)
 
     # Plot the City
-    if printcitydata:
+    if printcitydata:  # pragma: no cover
         citvis.plot_city_district(city=city_object, plot_street=True,
                                   plot_lhn=True, offset=None,
                                   plot_build_labels=True,

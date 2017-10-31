@@ -41,8 +41,8 @@ def calc_spec_cost_hp(q_nom, method='wolf', hp_type='aw'):
     assert hp_type in ['aw', 'ww', 'bw'], 'Unknown heat pump type. Check input'
     assert q_nom > 0, 'Heat pump nominal power has to be larger than zero!'
 
-    if method == 'stinner':
-        if hp_type != 'aw':
+    if method == 'stinner': # pragma: no cover
+        if hp_type != 'aw': # pragma: no cover
             msg = 'Method stinner can only handle air water heat pump costs.'
             raise AssertionError(msg)
 
