@@ -33,6 +33,30 @@ def count_zeros(res_array):
     return nb_zeros
 
 
+def get_zero_idx(res_array):
+    """
+    Returns list with indexes of zeros in res_array
+
+    Parameters
+    ----------
+    res_array : np.array
+        Numpy results array
+
+    Returns
+    -------
+    list_idx : list (of ints)
+        List holding zero indexes
+    """
+
+    list_idx = []
+
+    for i in range(len(res_array)):
+        if res_array[i] == 0:
+            list_idx.append(i)
+
+    return list_idx
+
+
 def remove_zeros(res_array):
     """
     Erase all zeros in res_array and return (reduced) array without zeros.
@@ -70,6 +94,7 @@ class EcoMCRunAnalyze(object):
 
         self.__dict_results = None
         self.__dict_samples = None
+        self._list_idx = None
 
     def __repr__(self):
         return 'EcoMCRunAnalyze object of pyCity_resilience. Can be used ' \
@@ -143,6 +168,36 @@ class EcoMCRunAnalyze(object):
 
         self.dict_samples = dict_sam
 
+    def get_idx_of_failed_runs(self, save_idx=True):
+        """
+        Try to identify failed runs by searching for indexes with zero entries
+        in annuity results
+
+        Parameters
+        ----------
+        save_idx : bool, optional
+            Defines if list_idx should be saved to EcoMCRunAnalyze object
+
+        Returns
+        -------
+        list_idx : list (of ints)
+            List holding zero indexes
+        """
+
+        array_annuity = self.get_annuity_results(erase_zeros=False)
+
+        list_idx = get_zero_idx(res_array=array_annuity)
+
+        if len(list_idx) > 0:
+            print('Found zeros in annuity results array at indexes:')
+            print(list_idx)
+            print()
+            print('Nb. of failed runs: ', str(len(list_idx)))
+            print()
+
+        if save_idx:
+            self._list_idx = list_idx
+
     def get_annuity_results(self, erase_zeros=True):
         """
         Returns array of annuity results
@@ -213,6 +268,9 @@ if __name__ == '__main__':
     #  Add results and sample dict
     mc_analyze.load_dict_res_from_path(dir=res_path)
     mc_analyze.load_dict_sample_from_path(dir=sample_path)
+
+    #  Get failed runs
+    mc_analyze.get_idx_of_failed_runs()
 
     array_annuity = mc_analyze.get_annuity_results()
 
