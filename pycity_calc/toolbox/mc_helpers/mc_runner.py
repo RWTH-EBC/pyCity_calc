@@ -877,7 +877,8 @@ class McRunner(object):
 
             if self._nb_failed_runs > failure_tolerance * nb_runs:
                 msg = 'Number of failed runs exceeds ' \
-                      'allowed limit of %d runs!' % (failure_tolerance * nb_runs)
+                      'allowed limit of %d runs!' % (
+                      failure_tolerance * nb_runs)
                 raise McToleranceException(msg)
 
         return dict_mc_res
@@ -1188,12 +1189,15 @@ if __name__ == '__main__':
         file_path = os.path.join(this_path, 'input', filename)
         pickle.dump(city, open(file_path, mode='wb'))
 
+    # #  Increase system size
+    # modesys.incr_esys_size_city(city=city, base_factor=2)
+
     # User inputs
     #  ####################################################################
-    nb_runs = 10  # Number of MC runs
+    nb_runs = 100  # Number of MC runs
     do_sampling = True  # Perform initial sampling or use existing samples
 
-    failure_tolerance = 0.1
+    failure_tolerance = 0.05
     #  Allowed share of runs, which fail with EnergyBalanceException.
     #  If failure_tolerance is exceeded, mc runner exception is raised.
 
@@ -1203,6 +1207,10 @@ if __name__ == '__main__':
     #  Path to save results dict
     res_name = 'mc_run_results_dict.pkl'
     path_res = os.path.join(this_path, 'output', res_name)
+
+    #  Path to sampling dict
+    sample_name = 'mc_run_sample_dict.pkl'
+    path_sample = os.path.join(this_path, 'output', sample_name)
 
     #  #####################################################################
     #  Generate object instances
@@ -1234,8 +1242,12 @@ if __name__ == '__main__':
                                       do_sampling=do_sampling,
                                       prevent_printing=prevent_printing)
 
-    pickle.dump(open(path_res, mode='wb'))
+    pickle.dump(dict_res, open(path_res, mode='wb'))
     print('Saved results dict to: ', path_res)
+    print()
+
+    pickle.dump(mc_run._dict_samples, open(path_sample, mode='wb'))
+    print('Saved sample dict to: ', path_sample)
     print()
 
     print('Nb. failed runs: ', str(mc_run._nb_failed_runs))
