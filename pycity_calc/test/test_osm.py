@@ -4,6 +4,7 @@
 Pytest script for city generators
 """
 from __future__ import division
+
 import os
 
 import pycity_calc.cities.scripts.osm_call as osm_call
@@ -58,6 +59,10 @@ class Test_OSM():
                                               environment=environment,
                                               min_area=min_allowed_ground_area,
                                               show_graph_stats=show_stats)
+
+        #  Get information about buildings without area
+        list_b_id_without_area = \
+            osm_call.get_list_b_nodes_without_area(city=city)
 
         #  If building entities should be added
         if add_entities:
