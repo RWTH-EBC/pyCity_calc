@@ -3,6 +3,7 @@
 """
 Script to forecast pricing with geometric brownian motion
 """
+from __future__ import division
 
 import random
 import numpy as np
@@ -32,7 +33,7 @@ def calc_price_geo_brown_motion(price_init, timespan, timestep, mu, sigma):
         Array with new pricing data values
     """
 
-    steps = round(timespan / timestep)
+    steps = int(round(timespan / timestep))
     time_arranged = np.linspace(0, timespan, steps)
     w = np.random.standard_normal(size=steps)
     w = np.cumsum(w) * np.sqrt(timestep)

@@ -145,7 +145,7 @@ def calc_invest_cost_chp(p_el_nom, method='asue2015', with_inst=True,
         False - Use q_th_nom for calculation
         These factors are based on ASUE 2015, too.
     q_th_nom : float, optional
-        Nominal thermal power of CHP system (default: None)
+        Nominal thermal power of CHP system in kW (default: None)
 
     Returns
     -------
