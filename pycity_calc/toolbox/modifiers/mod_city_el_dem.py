@@ -4,12 +4,67 @@
 Script to rescale all electric load curves within city to match to specific
 given, annual electric energy demand in kWh (for whole city)
 """
+from __future__ import division
 
 import os
 import pickle
 import copy
+import warnings
 
 import pycity_calc.toolbox.teaser_usage.teaser_use as teaseruse
+
+
+def rescale_el_app(apartment, el_dem):
+    """
+    Rescale electric energy demand of apartment
+
+    Parameters
+    ----------
+    apartment : object
+        Apartment object of pyCity
+    el_dem : float
+        Electric energy demand of apartment in kWh/a
+    """
+
+    assert el_dem >= 0
+
+    timestep = apartment.environment.timer.timeDiscretization
+
+    #  Reference demand in kWh/a
+    ref_el = sum(apartment.power_el.loadcurve) * timestep / \
+             (3600 * 1000)
+
+    if ref_el == 0:
+        msg = 'Reference electric energy demand is zero! Rescaling' \
+              ' cannot be performed!'
+        warnings.warn(msg)
+        con_factor = 1
+    else:
+        con_factor = el_dem / ref_el
+
+    apartment.power_el.loadcurve *= con_factor
+
+
+def rescale_el_dem_build(building, el_dem):
+    """
+    Rescale electric energy demand of building
+
+    Parameters
+    ----------
+    building : object
+        Building object of pyCity_calc
+    el_dem : float
+        Electric energy demand of building in kWh/a
+    """
+
+    assert el_dem >= 0
+
+    nb_app = len(building.apartments)
+
+    el_dem_app = el_dem / nb_app
+
+    for app in building.apartments:
+        rescale_el_app(apartment=app, el_dem=el_dem_app)
 
 
 def mod_el_city_dem(city, el_dem, list_nodes=None, makecopy=False):
@@ -50,29 +105,30 @@ def mod_el_city_dem(city, el_dem, list_nodes=None, makecopy=False):
         #  Use all building node ids
         list_nodes = city.get_list_build_entity_node_ids()
 
-    #  Calculate conversion factor
+    # Calculate conversion factor
     curr_city_el_dem = city.get_annual_el_demand(nodelist=list_nodes)
     con_factor = el_dem / curr_city_el_dem
 
     for n in list_nodes:
         curr_b = city.node[n]['entity']
-        for app in curr_b.apartments:
-            app.power_el.loadcurve *= con_factor
+
+        el_resc = con_factor * curr_b.get_annual_el_demand()
+
+        rescale_el_dem_build(building=curr_b, el_dem=el_resc)
 
     return city
 
 
 if __name__ == '__main__':
-
     this_path = os.path.dirname(os.path.abspath(__file__))
 
     #  User input
     #  ###################################################################
-    el_dem = 525000  # El. energy demand for rescaling in kWh/a
+    el_dem = 12000  # El. energy demand for rescaling in kWh/a
 
-    city_f_name = 'aachen_tuerme_mod_7.pkl'
+    city_f_name = 'city_3_buildings.pkl'
 
-    save_f_name = city_f_name[:-4] + '_el_resc_2.pkl'
+    save_f_name = city_f_name[:-4] + '_el_resc.pkl'
 
     #  ###################################################################
 
