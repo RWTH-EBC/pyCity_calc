@@ -283,6 +283,46 @@ class Test_City_Generators():
                                           do_save=False,
                                           call_teaser=True)
 
+    def test_city_gen_4(self, fixture_environment):
+
+        this_path = os.path.dirname(os.path.abspath(__file__))
+
+        th_gen_method = 2
+        el_gen_method = 1
+        do_normalization = True
+        use_dhw = True
+        dhw_method = 1
+        dhw_volumen = 64
+        eff_factor = 1
+        filename = 'city_clust_mixed.txt'
+        filepath = os.path.join(this_path, 'input_generator', filename)
+
+        timestep = fixture_environment.timer.timeDiscretization
+        year = fixture_environment.timer.year
+        location = fixture_environment.location
+        altitude = fixture_environment.weather.altitude
+
+        #  Load district_data file
+        district_data = citygen.get_district_data_from_txt(filepath)
+
+        city = citygen.run_city_generator(generation_mode=0,
+                                          timestep=timestep,
+                                          year_timer=year,
+                                          year_co2=year,
+                                          location=location,
+                                          th_gen_method=th_gen_method,
+                                          el_gen_method=el_gen_method,
+                                          use_dhw=use_dhw,
+                                          dhw_method=dhw_method,
+                                          district_data=district_data,
+                                          pickle_city_filename=None,
+                                          eff_factor=eff_factor,
+                                          show_city=False,
+                                          try_path=None, altitude=altitude,
+                                          dhw_volumen=dhw_volumen,
+                                          do_normalization=do_normalization,
+                                          do_save=False)
+
     def test_convert_th_slp_int_and_str(self):
 
         assert citygen.convert_th_slp_int_and_str(0) == 'HEF'
