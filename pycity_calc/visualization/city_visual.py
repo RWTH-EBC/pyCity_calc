@@ -15,7 +15,7 @@ import itertools
 
 try:
     from matplotlib2tikz import save as tikz_save
-except:
+except:  # pragma: no cover
     msg = 'Could not import matplotlib2tikz. Install first (e.g. via pip)'
     warnings.warn(msg)
 
@@ -30,7 +30,7 @@ def gen_path(path):
         Path
     """
 
-    if not os.path.exists(path):
+    if not os.path.exists(path):  # pragma: no cover
         os.makedirs(path)
 
 
