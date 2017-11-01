@@ -93,8 +93,11 @@ class EcoMCRunAnalyze(object):
         """
 
         self.__dict_results = None
-        self.__dict_samples = None
+        self.__dict_samples_const = None
+        self.__dict_sample_esys = None
+        self.__dict_setup = None
         self._list_idx = None
+        self._city = None
 
     def __repr__(self):
         return 'EcoMCRunAnalyze object of pyCity_resilience. Can be used ' \
@@ -113,8 +116,16 @@ class EcoMCRunAnalyze(object):
         return self.__dict_results
 
     @property
-    def dict_samples(self):
-        return self.__dict_samples
+    def dict_samples_const(self):
+        return self.__dict_samples_const
+
+    @property
+    def dict_samples_esys(self):
+        return self.__dict_samples_esys
+
+    @property
+    def dict_setup(self):
+        return self.__dict_setup
 
     @dict_results.setter
     def dict_results(self, dict_res):
@@ -128,17 +139,41 @@ class EcoMCRunAnalyze(object):
         """
         self.__dict_results = dict_res
 
-    @dict_samples.setter
-    def dict_samples(self, dict_sam):
+    @dict_samples_const.setter
+    def dict_samples_const(self, dict_sam):
         """
-        Setter for dict_results property
+        Setter for dict_samples_const property
 
         Parameters
         ----------
         dict_sam : dict
             Dict with sampling values of MC run
         """
-        self.__dict_samples = dict_sam
+        self.__dict_samples_const = dict_sam
+
+    @dict_samples_esys.setter
+    def dict_samples_esys(self, dict_sam):
+        """
+        Setter for dict_samples_esys property
+
+        Parameters
+        ----------
+        dict_sam : dict
+            Dict with sampling values of MC run
+        """
+        self.__dict_samples_esys = dict_sam
+
+    @dict_setup.setter
+    def dict_setup(self, dict_setup):
+        """
+        Setter for dict_setup property
+
+        Parameters
+        ----------
+        dict_setup : dict
+            Dict with setup values of MC run
+        """
+        self.__dict_setup = dict_setup
 
     def load_dict_res_from_path(self, dir):
         """
@@ -154,49 +189,105 @@ class EcoMCRunAnalyze(object):
 
         self.dict_results = dict_res
 
-    def load_dict_sample_from_path(self, dir):
+    def load_dict_sample_const_from_path(self, dir):
         """
-        Load dict_samples from path and saves it to self.__dict_samples
+        Load dict_samples_const from path and saves it to
+        self.__dict_samples_const
 
         Parameters
         ----------
         dir : str
-            Path to dict_samples pickle file
+            Path to dict_samples_const pickle file
         """
 
         dict_sam = pickle.load(open(dir, mode='rb'))
 
-        self.dict_samples = dict_sam
+        self.dict_sample_const = dict_sam
 
-    def get_idx_of_failed_runs(self, save_idx=True):
+    def load_dict_sample_esys_from_path(self, dir):
         """
-        Try to identify failed runs by searching for indexes with zero entries
-        in annuity results
+        Load dict_sample_esys from path and saves it to
+        self.__dict_sample_esys
 
         Parameters
         ----------
-        save_idx : bool, optional
-            Defines if list_idx should be saved to EcoMCRunAnalyze object
-
-        Returns
-        -------
-        list_idx : list (of ints)
-            List holding zero indexes
+        dir : str
+            Path to dict_sample_esys pickle file
         """
 
-        array_annuity = self.get_annuity_results(erase_zeros=False)
+        dict_sam = pickle.load(open(dir, mode='rb'))
 
-        list_idx = get_zero_idx(res_array=array_annuity)
+        self.dict_sample_esys = dict_sam
 
-        if len(list_idx) > 0:
-            print('Found zeros in annuity results array at indexes:')
-            print(list_idx)
-            print()
-            print('Nb. of failed runs: ', str(len(list_idx)))
-            print()
+    def load_dict_setup_from_path(self, dir):
+        """
+        Load dict_setup from path and saves it to
+        self.__ddict_setup
 
-        if save_idx:
-            self._list_idx = list_idx
+        Parameters
+        ----------
+        dir : str
+            Path to dict_setup pickle file
+        """
+
+        dict_sam = pickle.load(open(dir, mode='rb'))
+
+        self.dict_setup = dict_sam
+
+    def load_city_obj_from_path(self, dir):
+        """
+        Load pickled city object and save it to self._city
+
+        Parameters
+        ----------
+        dir : str
+            Path to dict_setup pickle file
+        """
+
+        city = pickle.load(open(dir, mode='rb'))
+
+        self._city = city
+
+    # def get_idx_of_failed_runs(self, save_idx=True):
+    #     """
+    #     Try to identify failed runs by searching for indexes with zero entries
+    #     in annuity results
+    #
+    #     Parameters
+    #     ----------
+    #     save_idx : bool, optional
+    #         Defines if list_idx should be saved to EcoMCRunAnalyze object
+    #
+    #     Returns
+    #     -------
+    #     list_idx : list (of ints)
+    #         List holding zero indexes
+    #     """
+    #
+    #     array_annuity = self.get_annuity_results(erase_zeros=False)
+    #
+    #     list_idx = get_zero_idx(res_array=array_annuity)
+    #
+    #     if len(list_idx) > 0:
+    #         print('Found zeros in annuity results array at indexes:')
+    #         print(list_idx)
+    #         print()
+    #         print('Nb. of failed runs: ', str(len(list_idx)))
+    #         print()
+    #
+    #     if save_idx:
+    #         self._list_idx = list_idx
+
+    def extract_basic_results(self):
+        """
+        Extract basic results and sample data
+        """
+
+        array_ann = self.dict_results['annuity']
+        array_co2 = self.dict_results['co2']
+        array_sh_dem = self.dict_results['sh_dem']
+        array_el_dem = self.dict_results['el_dem']
+        array_dhw_dem = self.dict_results['dhw_dem']
 
     def get_annuity_results(self, erase_zeros=True):
         """
@@ -256,24 +347,35 @@ class EcoMCRunAnalyze(object):
 if __name__ == '__main__':
     this_path = os.path.dirname(os.path.abspath(__file__))
 
-    res_file = 'mc_run_results_dict.pkl'
-    sample_file = 'mc_run_sample_dict.pkl'
+    #  Filenames and path definitions
+    #  ####################################################################
+    file_res = 'mc_run_results_dict.pkl'
+    file_sam_const = 'mc_run_sample_dict_const.pkl'
+    file_sam_esys = 'mc_run_sample_dict_esys.pkl'
+    file_setup = 'mc_run_setup_dict.pkl'
+    file_city = 'city_clust_simple_with_esys.pkl'
 
-    res_path = os.path.join(this_path, 'input', res_file)
-    sample_path = os.path.join(this_path, 'input', sample_file)
+    path_res = os.path.join(this_path, 'input', file_res)
+    path_sam_const = os.path.join(this_path, 'input', file_sam_const)
+    path_sam_esys = os.path.join(this_path, 'input', file_sam_esys)
+    path_setup = os.path.join(this_path, 'input', file_setup)
+    path_city = os.path.join(this_path, 'input', file_city)
 
     #  Generate EcoMRRunAnalyze object
+    #  ####################################################################
     mc_analyze = EcoMCRunAnalyze()
 
     #  Add results and sample dict
-    mc_analyze.load_dict_res_from_path(dir=res_path)
-    mc_analyze.load_dict_sample_from_path(dir=sample_path)
+    #  ####################################################################
+    mc_analyze.load_dict_res_from_path(dir=path_res)
+    mc_analyze.load_dict_sample_const_from_path(dir=path_sam_const)
+    mc_analyze.load_dict_sample_esys_from_path(dir=path_sam_esys)
+    mc_analyze.load_dict_setup_from_path(dir=path_setup)
+    mc_analyze.load_city_obj_from_path(dir=path_city)
 
-    #  Get failed runs
-    mc_analyze.get_idx_of_failed_runs()
-
+    #  Evaluation
+    #  ####################################################################
     array_annuity = mc_analyze.get_annuity_results()
-
     array_co2 = mc_analyze.get_co2_results()
 
     import matplotlib.pyplot as plt
