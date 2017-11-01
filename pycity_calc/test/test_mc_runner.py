@@ -265,7 +265,8 @@ class TestMcRunner():
 
         #  Perform Monte-Carlo uncertainty analysis
         #  Allow max. failure tolerance to prevent errors during mc run
-        dict_res = mc_run.run_mc_analysis(nb_runs=2,
-                                          failure_tolerance=1,
-                                          do_sampling=True,
-                                          prevent_printing=False)
+        (dict_res, dict_mc_setup) = \
+            mc_run.run_mc_analysis(nb_runs=2,
+                                   failure_tolerance=1,
+                                   do_sampling=True,
+                                   prevent_printing=False)

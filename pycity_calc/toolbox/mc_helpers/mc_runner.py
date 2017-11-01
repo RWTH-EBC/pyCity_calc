@@ -92,6 +92,7 @@ class McRunner(object):
         self._list_lhn_tuples = None  # List holding LHN edge tuples
 
         self._nb_failed_runs = None  # Counter for failed runs
+        self._list_failed_runs = []
 
         if get_build_ids:
             #  Extract building node ids
@@ -535,26 +536,41 @@ class McRunner(object):
 
         Returns
         -------
-        dict_mc_res : dict
-            Dictionary with result arrays for each run
-            dict_mc_res['annuity'] = array_annuity
-            dict_mc_res['co2'] = array_co2
-            dict_mc_res['sh_dem'] = array_net_sh
-            dict_mc_res['el_dem'] = array_net_el
-            dict_mc_res['dhw_dem'] = array_net_dhw
-            dict_mc_res['gas_boiler'] = array_gas_boiler
-            dict_mc_res['gas_chp'] = array_gas_chp
-            dict_mc_res['grid_imp_dem'] = array_grid_imp_dem
-            dict_mc_res['grid_imp_hp'] = array_grid_imp_hp
-            dict_mc_res['grid_imp_eh'] = array_grid_imp_eh
-            dict_mc_res['lhn_pump'] = array_lhn_pump
-            dict_mc_res['grid_exp_chp'] = array_grid_exp_chp
-            dict_mc_res['grid_exp_pv'] = array_grid_exp_pv
+        tuple_res : tuple (of dicts)
+            Tuple holding two dictionaries (dict_mc_res, dict_mc_setup)
+            dict_mc_res : dict
+                Dictionary with result arrays for each run
+                dict_mc_res['annuity'] = array_annuity
+                dict_mc_res['co2'] = array_co2
+                dict_mc_res['sh_dem'] = array_net_sh
+                dict_mc_res['el_dem'] = array_net_el
+                dict_mc_res['dhw_dem'] = array_net_dhw
+                dict_mc_res['gas_boiler'] = array_gas_boiler
+                dict_mc_res['gas_chp'] = array_gas_chp
+                dict_mc_res['grid_imp_dem'] = array_grid_imp_dem
+                dict_mc_res['grid_imp_hp'] = array_grid_imp_hp
+                dict_mc_res['grid_imp_eh'] = array_grid_imp_eh
+                dict_mc_res['lhn_pump'] = array_lhn_pump
+                dict_mc_res['grid_exp_chp'] = array_grid_exp_chp
+                dict_mc_res['grid_exp_pv'] = array_grid_exp_pv
+            dict_mc_setup : dict
+                Dictionary holding mc run settings
+                dict_mc_setup['nb_runs'] = nb_runs
+                dict_mc_setup['failure_tolerance'] = failure_tolerance
+                dict_mc_setup['heating_off'] = heating_off
+                dict_mc_setup['idx_failed_runs'] = self._list_failed_runs
         """
 
         #  Initialize result dict an arrays
         #  #################################################################
         dict_mc_res = {}
+
+        dict_mc_setup = {}
+
+        #  Add chosen settings to dict_mc_setup
+        dict_mc_setup['nb_runs'] = nb_runs
+        dict_mc_setup['failure_tolerance'] = failure_tolerance
+        dict_mc_setup['heating_off'] = heating_off
 
         #  Initial zero result arrays
         array_annuity = np.zeros(nb_runs)
@@ -576,6 +592,7 @@ class McRunner(object):
 
         #  Set failure counter to zero
         self._nb_failed_runs = 0
+        self._list_failed_runs = []
 
         #  Run energy balance and economic analysis
         #  #################################################################
@@ -873,6 +890,7 @@ class McRunner(object):
                 traceback.print_exc()
                 #  Count failure nb. up
                 self._nb_failed_runs += 1
+                self._list_failed_runs.append(i)
                 msg = 'Run %d failed with EnergyBalanceException' % (i)
                 warnings.warn(msg)
 
@@ -882,7 +900,10 @@ class McRunner(object):
                       failure_tolerance * nb_runs)
                 raise McToleranceException(msg)
 
-        return dict_mc_res
+            #  Save failed run information to dict_mc_setup
+            dict_mc_setup['idx_failed_runs'] = self._list_failed_runs
+
+        return (dict_mc_res, dict_mc_setup)
 
     def run_mc_analysis(self, nb_runs, do_sampling=False,
                         failure_tolerance=0.05,
@@ -913,8 +934,29 @@ class McRunner(object):
 
         Returns
         -------
-        dict_mc_res : dict
-            Dictionary holding Monte-Carlo run results
+        tuple_res : tuple (of dicts)
+            Tuple holding two dictionaries (dict_mc_res, dict_mc_setup)
+            dict_mc_res : dict
+                Dictionary with result arrays for each run
+                dict_mc_res['annuity'] = array_annuity
+                dict_mc_res['co2'] = array_co2
+                dict_mc_res['sh_dem'] = array_net_sh
+                dict_mc_res['el_dem'] = array_net_el
+                dict_mc_res['dhw_dem'] = array_net_dhw
+                dict_mc_res['gas_boiler'] = array_gas_boiler
+                dict_mc_res['gas_chp'] = array_gas_chp
+                dict_mc_res['grid_imp_dem'] = array_grid_imp_dem
+                dict_mc_res['grid_imp_hp'] = array_grid_imp_hp
+                dict_mc_res['grid_imp_eh'] = array_grid_imp_eh
+                dict_mc_res['lhn_pump'] = array_lhn_pump
+                dict_mc_res['grid_exp_chp'] = array_grid_exp_chp
+                dict_mc_res['grid_exp_pv'] = array_grid_exp_pv
+            dict_mc_setup : dict
+                Dictionary holding mc run settings
+                dict_mc_setup['nb_runs'] = nb_runs
+                dict_mc_setup['failure_tolerance'] = failure_tolerance
+                dict_mc_setup['heating_off'] = heating_off
+                dict_mc_setup['idx_failed_runs'] = self._list_failed_runs
         """
 
         if nb_runs <= 0:
@@ -929,14 +971,15 @@ class McRunner(object):
             block_print()
 
         # Perform monte-carlo runs
-        dict_mc_res = self.perform_mc_runs(nb_runs=nb_runs,
-                                           failure_tolerance=failure_tolerance,
-                                           heating_off=heating_off)
+        (dict_mc_res, dict_mc_setup) = \
+            self.perform_mc_runs(nb_runs=nb_runs,
+                                 failure_tolerance=failure_tolerance,
+                                 heating_off=heating_off)
 
         if prevent_printing:
             enable_print()
 
-        return dict_mc_res
+        return (dict_mc_res, dict_mc_setup)
 
 
 if __name__ == '__main__':
@@ -1190,9 +1233,9 @@ if __name__ == '__main__':
         file_path = os.path.join(this_path, 'input', filename)
         pickle.dump(city, open(file_path, mode='wb'))
 
-    # #  Uncomment, if you require further increase of energy system size
-    # #  Increase system size
-    # modesys.incr_esys_size_city(city=city, base_factor=2)
+    #  Uncomment, if you require further increase of energy system size
+    #  Increase system size
+    modesys.incr_esys_size_city(city=city, base_factor=2)
 
     # #  Uncomment, if you want to plot city district
     # #  Plot city district
@@ -1201,7 +1244,7 @@ if __name__ == '__main__':
 
     # User inputs
     #  ####################################################################
-    nb_runs = 100  # Number of MC runs
+    nb_runs = 2  # Number of MC runs
     do_sampling = True  # Perform initial sampling or use existing samples
 
     failure_tolerance = 0.05
@@ -1218,6 +1261,10 @@ if __name__ == '__main__':
     #  Path to sampling dict
     sample_name = 'mc_run_sample_dict.pkl'
     path_sample = os.path.join(this_path, 'output', sample_name)
+
+    #  Path to save mc settings to
+    setup_name = 'mc_run_setup_dict.pkl'
+    path_setup = os.path.join(this_path, 'output', setup_name)
 
     #  #####################################################################
     #  Generate object instances
@@ -1244,11 +1291,15 @@ if __name__ == '__main__':
     mc_run = McRunner(city_eco_calc=city_eco_calc)
 
     #  Perform Monte-Carlo uncertainty analysis
-    dict_res = mc_run.run_mc_analysis(nb_runs=nb_runs,
-                                      failure_tolerance=failure_tolerance,
-                                      do_sampling=do_sampling,
-                                      prevent_printing=prevent_printing)
+    #  #####################################################################
+    (dict_res, dict_mc_setup) =\
+        mc_run.run_mc_analysis(nb_runs=nb_runs,
+                               failure_tolerance=failure_tolerance,
+                               do_sampling=do_sampling,
+                               prevent_printing=prevent_printing)
 
+    #  Evaluation
+    #  #####################################################################
     pickle.dump(dict_res, open(path_res, mode='wb'))
     print('Saved results dict to: ', path_res)
     print()
@@ -1257,7 +1308,14 @@ if __name__ == '__main__':
     print('Saved sample dict to: ', path_sample)
     print()
 
-    print('Nb. failed runs: ', str(mc_run._nb_failed_runs))
+    pickle.dump(dict_mc_setup, open(path_setup, mode='wb'))
+    print('Saved mc settings dict to: ', path_setup)
+    print()
+
+    print('Nb. failed runs: ', str(len(dict_mc_setup['idx_failed_runs'])))
+    print()
+
+    print('Indexes of failed runs: ', str(dict_mc_setup['idx_failed_runs']))
     print()
 
     stop_time = time.time()
