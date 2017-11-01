@@ -70,7 +70,7 @@ def get_tes_status(tes, buffer_low, buffer_high):
         return 1
 
 
-def calc_build_therm_eb(build, soc_init=0.75, boiler_full_pl=True,
+def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                         eh_full_pl=True, buffer_low=0.1, buffer_high=0.98,
                         id=None, th_lhn_pow_rem=None):
     """
@@ -1199,6 +1199,43 @@ def calc_build_therm_eb(build, soc_init=0.75, boiler_full_pl=True,
                                                             time_index=i)
                     sh_pow_remain = 0
 
+                if has_boiler:
+
+                    #  if sh_pow_remain > 0 or dhw_pow_remain > 0, use eh
+
+                    #  eh pointer
+                    boiler = build.bes.boiler
+
+                    #  Get nominal power
+                    q_nom_boi = boiler.qNominal
+
+                    #  if sh_pow_remain > 0 or dhw_pow_remain > 0, use eh
+                    if (sh_pow_remain + dhw_pow_remain) >= q_nom_boi:
+                        #  Cover part of power with full eh load
+                        boiler.calc_boiler_all_results(
+                            control_signal=q_nom_boi,
+                            time_index=i)
+
+                        #  Calculate remaining thermal power
+                        if sh_pow_remain - q_nom_boi > 0:
+                            sh_pow_remain -= q_nom_boi
+                        elif sh_pow_remain == q_nom_boi:
+                            sh_pow_remain = 0
+                        elif sh_pow_remain - q_nom_boi < 0:
+                            dhw_pow_remain -= (q_nom_boi - sh_pow_remain)
+                            sh_pow_remain = 0
+
+                    elif (sh_pow_remain + dhw_pow_remain) < q_nom_boi:
+                        #  Use boiler in part load
+
+                        boiler.calc_boiler_all_results(
+                            control_signal=(
+                                sh_pow_remain + dhw_pow_remain),
+                            time_index=i)
+
+                        sh_pow_remain = 0
+                        dhw_pow_remain = 0
+
                 if has_eh:
 
                     #  if sh_pow_remain > 0 or dhw_pow_remain > 0, use eh
@@ -1239,8 +1276,8 @@ def calc_build_therm_eb(build, soc_init=0.75, boiler_full_pl=True,
             # TES mode 2
             elif tes_status == 2:
                 #  Use HP for SH and TES
-                #  Use EH for DHW
-                #  Use EH for SH, if necessary
+                #  Use Boiler and EH for DHW
+                #  Use Boiler and EH for SH, if necessary
                 #  Use TES for SH, if necessary
 
                 #  Dummy value
@@ -1328,6 +1365,42 @@ def calc_build_therm_eb(build, soc_init=0.75, boiler_full_pl=True,
                                                         save_res=True,
                                                         time_index=i)
 
+                if has_boiler:
+
+                    #  if sh_pow_remain > 0 or dhw_pow_remain > 0, use eh
+
+                    #  boiler pointer
+                    boiler = build.bes.boiler
+
+                    #  Get nominal power
+                    q_nom_boi = boiler.qNominal
+
+                    #  if sh_pow_remain > 0 or dhw_pow_remain > 0, use eh
+                    if (sh_pow_remain + dhw_pow_remain) >= q_nom_boi:
+                        #  Cover part of power with full eh load
+                        boiler.calc_boiler_all_results(
+                            control_signal=q_nom_boi,
+                            time_index=i)
+
+                        #  Calculate remaining thermal power
+                        if sh_pow_remain - q_nom_boi > 0:
+                            sh_pow_remain -= q_nom_boi
+                        elif sh_pow_remain == q_nom_boi:
+                            sh_pow_remain = 0
+                        elif sh_pow_remain - q_nom_boi < 0:
+                            dhw_pow_remain -= (q_nom_boi - sh_pow_remain)
+                            sh_pow_remain = 0
+
+                    elif (sh_pow_remain + dhw_pow_remain) < q_nom_boi:
+                        #  Use eh in part load
+
+                        boiler.calc_el_h_all_results(
+                            control_signal=(sh_pow_remain + dhw_pow_remain),
+                            time_index=i)
+
+                        sh_pow_remain = 0
+                        dhw_pow_remain = 0
+
                 if has_eh:
 
                     #  if sh_pow_remain > 0 or dhw_pow_remain > 0, use eh
@@ -1369,8 +1442,8 @@ def calc_build_therm_eb(build, soc_init=0.75, boiler_full_pl=True,
             elif tes_status == 3:
                 #  Load TES with every possible device
                 #  Use HP for SH and TES
-                #  Use EH for DHW
-                #  Use EH for SH and TES
+                #  Use Boiler and EH for DHW
+                #  Use Boiler and EH for SH and TES
 
                 #  Dummy value
                 q_tes_in = None
@@ -1417,6 +1490,61 @@ def calc_build_therm_eb(build, soc_init=0.75, boiler_full_pl=True,
                         sh_pow_remain = 0
                         q_tes_in = q_tes_in_max + 0.0
                         q_tes_in_remain -= q_tes_in
+
+                if has_boiler:
+
+                    if q_tes_in is None:
+                        q_tes_in = 0
+
+                    # if sh_pow_remain > 0 or dhw_pow_remain > 0, use eh
+
+                    #  boiler pointer
+                    boiler = build.bes.boiler
+
+                    #  Get nominal power
+                    q_nom_boi = boiler.qNominal
+
+                    #  if sh_pow_remain > 0 or dhw_pow_remain > 0, use eh
+                    if (sh_pow_remain + dhw_pow_remain + q_tes_in_remain) \
+                            >= q_nom_boi:
+                        #  Cover part of power with full eh load
+                        boiler.calc_boiler_all_results(
+                            control_signal=q_nom_boi,
+                            time_index=i)
+
+                        #  Calculate remaining thermal power
+                        if sh_pow_remain - q_nom_boi > 0:
+                            sh_pow_remain -= q_nom_boi
+                        elif sh_pow_remain == q_nom_boi:
+                            sh_pow_remain = 0
+                        elif sh_pow_remain - q_nom_boi < 0:
+                            if dhw_pow_remain > q_nom_boi - sh_pow_remain:
+                                dhw_pow_remain -= (
+                                    q_nom_boi - sh_pow_remain)
+                                sh_pow_remain = 0
+                            elif dhw_pow_remain == q_nom_boi - sh_pow_remain:
+                                sh_pow_remain = 0
+                                dhw_pow_remain = 0
+                            elif dhw_pow_remain < q_nom_boi - sh_pow_remain:
+                                q_tes_in_remain -= q_nom_boi - sh_pow_remain \
+                                                   - dhw_pow_remain
+                                q_tes_in += q_nom_boi - sh_pow_remain \
+                                            - dhw_pow_remain
+
+                    elif (sh_pow_remain + dhw_pow_remain + q_tes_in_remain) \
+                            < q_nom_boi:
+                        #  Use eh in part load
+
+                        boiler.calc_boiler_all_results(
+                            control_signal=(sh_pow_remain
+                                            + dhw_pow_remain
+                                            + q_tes_in_remain),
+                            time_index=i)
+
+                        sh_pow_remain = 0
+                        dhw_pow_remain = 0
+                        q_tes_in_remain = 0
+                        q_tes_in += q_tes_in_remain
 
                 # Use EH
                 if has_eh:

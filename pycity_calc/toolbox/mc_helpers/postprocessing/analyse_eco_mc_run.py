@@ -471,7 +471,7 @@ class EcoMCRunAnalyze(object):
             raise NotImplementedError(msg)
 
         for i in range(len(array_en_to_co2)):
-            array_en_to_co2[i] = array_total_net_en[i] / self._array_ann_mod[i]
+            array_en_to_co2[i] = array_total_net_en[i] / self._array_co2_mod[i]
 
         if save_res:
             self._array_en_to_co2 = array_en_to_co2
@@ -652,6 +652,12 @@ if __name__ == '__main__':
 
     plt.hist(mc_analyze._array_en_to_an, bins='auto')
     plt.xlabel('Net energy to annuity ratio in kWh/Euro')
+    plt.ylabel('Nb. of occurence')
+    plt.show()
+    plt.close()
+
+    plt.hist(mc_analyze._array_en_to_co2, bins='auto')
+    plt.xlabel('Net energy to CO2 ratio in kWh/kg(CO2)')
     plt.ylabel('Nb. of occurence')
     plt.show()
     plt.close()
