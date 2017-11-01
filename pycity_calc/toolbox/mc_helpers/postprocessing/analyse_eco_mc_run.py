@@ -9,6 +9,7 @@ import os
 import copy
 import pickle
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def count_zeros(res_array):
@@ -111,6 +112,7 @@ class EcoMCRunAnalyze(object):
         self._array_dhw_dem_mod = None
 
         self._array_en_to_an = None
+        self._array_en_to_co2 = None
 
     def __repr__(self):
         return 'EcoMCRunAnalyze object of pyCity_resilience. Can be used ' \
@@ -358,6 +360,54 @@ class EcoMCRunAnalyze(object):
         self._array_el_dem_mod = array_el_dem_mod
         self._array_dhw_dem_mod = array_dhw_dem_mod
 
+    def calc_net_energy_to_co2_ratio(self, energy_equal=True,
+                                     save_res=True):
+        """
+        Calculates net energy to co2 ratio as estimator for
+        ecologic efficiency
+
+        Parameters
+        ----------
+        energy_equal : bool, optional
+            Values thermal and electric net energy equally
+        save_res : bool, optional
+            Defines, if results should be saved to _array_en_to_an
+
+        Returns
+        -------
+        array_en_to_co2 : np.array (of floats)
+            Numpy array holding net energy to co2 ratios in kWh / kg (CO2)
+        """
+
+        if (self._array_co2_mod is None
+            or self._array_sh_dem_mod is None
+            or self._array_el_dem_mod is None
+            or self._array_dhw_dem_mod is None):
+            msg = 'Cannot calculate net energy to annuity ratio, as inputs ' \
+                  'are missing. Have you loaded all results files and called' \
+                  ' extract_basic_results?'
+            raise AssertionError(msg)
+
+        #  Dummy arrays
+        array_en_to_co2 = np.zeros(len(self._array_co2_mod))
+
+        if energy_equal:
+            #  Sum up energy values
+            array_total_net_en = self._array_sh_dem_mod \
+                                 + self._array_el_dem_mod \
+                                 + self._array_dhw_dem_mod
+        else:
+            msg = 'energy_equal == False has not been implemented, yet!'
+            raise NotImplementedError(msg)
+
+        for i in range(len(array_en_to_co2)):
+            array_en_to_co2[i] = array_total_net_en[i] / self._array_ann_mod[i]
+
+        if save_res:
+            self._array_en_to_co2 = array_en_to_co2
+
+        return array_en_to_co2
+
     def calc_net_energy_to_annuity_ratio(self, energy_equal=True,
                                          save_res=True):
         """
@@ -388,7 +438,6 @@ class EcoMCRunAnalyze(object):
 
         #  Dummy arrays
         array_en_to_an = np.zeros(len(self._array_ann_mod))
-        array_total_net_en = np.zeros(len(self._array_ann_mod))
 
         if energy_equal:
             #  Sum up energy values
@@ -510,18 +559,22 @@ if __name__ == '__main__':
     #  Extract basic results
     #  ####################################################################
     mc_analyze.extract_basic_results()
+    mc_analyze.calc_net_energy_to_annuity_ratio()
+    mc_analyze.calc_net_energy_to_co2_ratio()
 
-    # #  Evaluation
-    # #  ####################################################################
+    # # #  Evaluation
+    # # #  ####################################################################
     # array_annuity = mc_analyze.get_annuity_results()
     # array_co2 = mc_analyze.get_co2_results()
-    #
-    # import matplotlib.pyplot as plt
     #
     # plt.hist(array_annuity, bins='auto')
     # plt.show()
     # plt.close()
     #
     # plt.hist(array_co2, bins='auto')
+    # plt.show()
+    # plt.close()
+    #
+    # plt.hist(mc_analyze._array_en_to_an, bins='auto')
     # plt.show()
     # plt.close()
