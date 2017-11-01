@@ -977,7 +977,19 @@ class McRunner(object):
         Returns
         -------
         tuple_res : tuple (of dicts)
-            Tuple holding two dictionaries (dict_mc_res, dict_mc_setup)
+            Tuple holding four dictionaries
+            (dict_samples_const, dict_samples_esys, dict_mc_res, dict_mc_setup)
+            dict_samples_const : dict (of dicts)
+                Dictionary holding dictionaries with constant
+                sample data for MC run
+                dict_samples_const['city'] = dict_city_samples
+                dict_samples_const['<building_id>'] = dict_build_dem
+                (of building with id <building_id>)
+            dict_samples_esys : dict (of dicts)
+                Dictionary holding dictionaries with energy system sampling
+                data for MC run
+                dict_samples_esys['<building_id>'] = dict_esys
+                (of building with id <building_id>)
             dict_mc_res : dict
                 Dictionary with result arrays for each run
                 dict_mc_res['annuity'] = array_annuity
@@ -1008,7 +1020,8 @@ class McRunner(object):
         if do_sampling:
             #  Call sampling and save sample data to _dict_samples_const and
             #  _dict_samples_esys
-            self.perform_sampling(nb_runs=nb_runs)
+            (dict_samples_const, dict_samples_esys) = \
+                self.perform_sampling(nb_runs=nb_runs)
 
         if prevent_printing:
             block_print()
@@ -1022,7 +1035,8 @@ class McRunner(object):
         if prevent_printing:
             enable_print()
 
-        return (dict_mc_res, dict_mc_setup)
+        return (dict_samples_const, dict_samples_esys, dict_mc_res,
+                dict_mc_setup)
 
 
 if __name__ == '__main__':
@@ -1301,9 +1315,13 @@ if __name__ == '__main__':
     res_name = 'mc_run_results_dict.pkl'
     path_res = os.path.join(this_path, 'output', res_name)
 
-    #  Path to sampling dict
-    sample_name = 'mc_run_sample_dict.pkl'
-    path_sample = os.path.join(this_path, 'output', sample_name)
+    #  Path to sampling dict const
+    sample_name_const = 'mc_run_sample_dict_const.pkl'
+    path_sample_const = os.path.join(this_path, 'output', sample_name_const)
+
+    #  Path to sampling dict esys
+    sample_name_esys = 'mc_run_sample_dict_esys.pkl'
+    path_sample_esys = os.path.join(this_path, 'output', sample_name_esys)
 
     #  Path to save mc settings to
     setup_name = 'mc_run_setup_dict.pkl'
@@ -1335,7 +1353,7 @@ if __name__ == '__main__':
 
     #  Perform Monte-Carlo uncertainty analysis
     #  #####################################################################
-    (dict_res, dict_mc_setup) = \
+    (dict_samples_const, dict_samples_esys, dict_res, dict_mc_setup) = \
         mc_run.run_mc_analysis(nb_runs=nb_runs,
                                failure_tolerance=failure_tolerance,
                                do_sampling=do_sampling,
@@ -1347,9 +1365,13 @@ if __name__ == '__main__':
     print('Saved results dict to: ', path_res)
     print()
 
-    # pickle.dump(mc_run._dict_samples, open(path_sample, mode='wb'))
-    # print('Saved sample dict to: ', path_sample)
-    # print()
+    pickle.dump(dict_samples_const, open(path_sample_const, mode='wb'))
+    print('Saved sample dict to: ', path_sample_const)
+    print()
+
+    pickle.dump(dict_samples_esys, open(path_sample_esys, mode='wb'))
+    print('Saved sample dict to: ', path_sample_esys)
+    print()
 
     pickle.dump(dict_mc_setup, open(path_setup, mode='wb'))
     print('Saved mc settings dict to: ', path_setup)
