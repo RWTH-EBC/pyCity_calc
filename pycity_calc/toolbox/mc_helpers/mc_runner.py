@@ -86,7 +86,13 @@ class McRunner(object):
 
         self._city_eco_calc = city_eco_calc
         self._list_build_ids = None  # List with building node ids in city
-        self._dict_samples = None  # List of samples
+
+        self._dict_samples_const = None  # List of samples, which are constant
+        #  for different energy system MC runs (e.g. city params, building
+        #  energy demand samples)
+        self._dict_samples_esys = None  # List of samples, which change for
+        #  every energy system change (energy system paramters)
+
         self._has_lhn = None  # Defines, if energy system holds local heating
         #  network or not
         self._list_lhn_tuples = None  # List holding LHN edge tuples
@@ -147,18 +153,20 @@ class McRunner(object):
 
         Returns
         -------
-        dict_build_samples : dict (of arrays and dicts)
-            Dictionary storing building samples
-            dict_build_samples['occ'] = array_occupants
-            dict_build_samples['el_dem'] = array_el_dem
-            dict_build_samples['dhw_dem'] = array_dhw_dem
-            dict_build_samples['sh_dem'] = array_sh_dem
-            dict_build_samples['on_off'] = array_sh_on_off
-            dict_build_samples['esys'] = dict_esys
+        tuple_dicts : tuple (of dicts)
+            2d tuple (dict_build_dem, dict_esys)
+            dict_build_dem : dict (of arrays and dicts)
+                Dictionary storing building demand samples
+                dict_build_samples['occ'] = array_occupants
+                dict_build_samples['el_dem'] = array_el_dem
+                dict_build_samples['dhw_dem'] = array_dhw_dem
+                dict_build_samples['on_off'] = array_sh_on_off
+            dict_esys : dict (of arrays)
+                Dictionary holding energy system parameters
         """
 
         #  Initial dict
-        dict_build_samples = {}
+        dict_build_dem = {}
 
         #  Res. building type (sfh or mfh)
         if len(building.apartments) == 1:
@@ -211,19 +219,19 @@ class McRunner(object):
 
         #  Save results to dict
         #  ################################################################
-        dict_build_samples['occ'] = array_occupants
-        dict_build_samples['el_dem'] = array_el_dem
-        dict_build_samples['dhw_dem'] = array_dhw_dem
-        dict_build_samples['sh_dem'] = array_sh_dem
+        dict_build_dem['occ'] = array_occupants
+        dict_build_dem['el_dem'] = array_el_dem
+        dict_build_dem['dhw_dem'] = array_dhw_dem
+        dict_build_dem['sh_dem'] = array_sh_dem
         # dict_build_samples['on_off'] = array_sh_on_off
 
         #  Sample energy system attributes
         #  ################################################################
 
+        dict_esys = {}
+
         #  Check if building holds bes
         if building.hasBes:
-
-            dict_esys = {}
 
             #  Check which devices do exist on bes
             if building.bes.hasBattery:
@@ -383,9 +391,7 @@ class McRunner(object):
 
                 dict_esys['tes'] = dict_tes
 
-            dict_build_samples['esys'] = dict_esys
-
-        return dict_build_samples
+        return (dict_build_dem, dict_esys)
 
     def perform_sampling_city(self, nb_runs):
         """
@@ -481,37 +487,48 @@ class McRunner(object):
 
         Returns
         -------
-        dict_samples : dict (of dicts)
-            Dictionary holding dictionaries with sample data for MC run
-            dict_samples['city'] = dict_city_samples
-            dict_samples['<building_id>'] = dict_buildings_samples
-            (of building with id <building_id>)
+        tuple_res : tuple (of dicts)
+            2d tuple (dict_samples_const, dict_samples_esys)
+            dict_samples_const : dict (of dicts)
+                Dictionary holding dictionaries with constant
+                sample data for MC run
+                dict_samples_const['city'] = dict_city_samples
+                dict_samples_const['<building_id>'] = dict_build_dem
+                (of building with id <building_id>)
+            dict_samples_esys : dict (of dicts)
+                Dictionary holding dictionaries with energy system sampling
+                data for MC run
+                dict_samples_esys['<building_id>'] = dict_esys
+                (of building with id <building_id>)
         """
 
         #  Initial sample dict. Holds further sample dicts for
         #  'city' and each building node id
-        dict_samples = {}
+        dict_samples_const = {}
+        dict_samples_esys = {}
 
         #  Perform city sampling
         dict_city_samples = self.perform_sampling_city(nb_runs=nb_runs)
 
-        dict_samples['city'] = dict_city_samples
+        dict_samples_const['city'] = dict_city_samples
 
         #  Perform building sampling
         #  Loop over node ids and add samples to result dict with building
         #  id as key
         for n in self._list_build_ids:
             build = self._city_eco_calc.energy_balance.city.node[n]['entity']
-            dict_build_samples = \
+            (dict_build_dem, dict_esys) = \
                 self.perform_sampling_build(nb_runs=nb_runs, building=build)
 
-            dict_samples[str(n)] = dict_build_samples
+            dict_samples_const[str(n)] = dict_build_dem
+            dict_samples_esys[str(n)] = dict_esys
 
         if save_samples:
             #  Save sampling dict to MC runner object
-            self._dict_samples = dict_samples
+            self._dict_samples_const = dict_samples_const
+            self._dict_samples_esys = dict_samples_esys
 
-        return dict_samples
+        return (dict_samples_const, dict_samples_esys)
 
     def perform_mc_runs(self, nb_runs, failure_tolerance=0.05,
                         heating_off=True):
@@ -615,33 +632,31 @@ class McRunner(object):
             # dict_build_samples['dhw_dem'] = array_dhw_dem
             # dict_build_samples['sh_dem'] = array_sh_dem
             # dict_build_samples['on_off'] = array_sh_on_off
-            # dict_build_samples['esys'] = dict_esys
 
             #  Add building sample input data
             #  ###############################################################
             for n in self._list_build_ids:
                 curr_build = city.node[n]['entity']
 
-                dict_build = self._dict_samples[str(n)]
+                dict_build_dem = self._dict_samples_const[str(n)]
+                dict_esys = self._dict_samples_esys[str(n)]
 
                 #  Add function to rescale sh, el, dhw demands
                 #  ##########################################################
 
-                sh_dem = dict_build['sh_dem'][i]
+                sh_dem = dict_build_dem['sh_dem'][i]
                 shmod.rescale_sh_dem_build(building=curr_build, sh_dem=sh_dem)
 
-                el_dem = dict_build['el_dem'][i]
+                el_dem = dict_build_dem['el_dem'][i]
                 elmod.rescale_el_dem_build(building=curr_build, el_dem=el_dem)
 
-                dhw_dem = dict_build['dhw_dem'][i]
+                dhw_dem = dict_build_dem['dhw_dem'][i]
                 dhwmod.rescale_dhw_build(building=curr_build, dhw_dem=dhw_dem)
 
                 #  Add energy system data
                 #  ##########################################################
 
                 if curr_build.hasBes:
-
-                    dict_esys = dict_build['esys']
 
                     #  Check which devices do exist on bes
                     if curr_build.bes.hasBattery:
@@ -763,7 +778,7 @@ class McRunner(object):
 
             # Extract city sampling data
             #  #############################################################
-            dict_city_samples = self._dict_samples['city']
+            dict_city_samples = self._dict_samples_const['city']
 
             # dict_city_samples['interest'] = array_interest
             # dict_city_samples['ch_cap'] = array_ch_cap
@@ -826,8 +841,8 @@ class McRunner(object):
                 (total_annuity, co2) = c_eco_copy. \
                     perform_overall_energy_balance_and_economic_calc(
                     run_mc=True,
-                    dict_samples=
-                    self._dict_samples,
+                    dict_samples_const=self._dict_samples_const,
+                    dict_samples_esys=self._dict_samples_esys,
                     run_idx=i)
 
                 #  Extract further results
@@ -905,7 +920,7 @@ class McRunner(object):
 
         return (dict_mc_res, dict_mc_setup)
 
-    def run_mc_analysis(self, nb_runs, do_sampling=False,
+    def run_mc_analysis(self, nb_runs, do_sampling=True,
                         failure_tolerance=0.05,
                         prevent_printing=False, heating_off=True):
         """
@@ -921,7 +936,7 @@ class McRunner(object):
             Number of Monte-Carlo loops
         do_sampling : bool, optional
             Defines, if sampling should be performed or existing samples
-            should be used (default: False)
+            should be used (default: True)
         failure_tolerance : float, optional
             Allowed EnergyBalanceException failure tolerance (default: 0.05).
             E.g. 0.05 means, that 5% of runs are allowed to fail with
@@ -964,7 +979,8 @@ class McRunner(object):
             raise AssertionError(msg)
 
         if do_sampling:
-            #  Call sampling and save sample data to _dict_samples
+            #  Call sampling and save sample data to _dict_samples_const and
+            #  _dict_samples_esys
             self.perform_sampling(nb_runs=nb_runs)
 
         if prevent_printing:
@@ -1304,9 +1320,9 @@ if __name__ == '__main__':
     print('Saved results dict to: ', path_res)
     print()
 
-    pickle.dump(mc_run._dict_samples, open(path_sample, mode='wb'))
-    print('Saved sample dict to: ', path_sample)
-    print()
+    # pickle.dump(mc_run._dict_samples, open(path_sample, mode='wb'))
+    # print('Saved sample dict to: ', path_sample)
+    # print()
 
     pickle.dump(dict_mc_setup, open(path_setup, mode='wb'))
     print('Saved mc settings dict to: ', path_setup)

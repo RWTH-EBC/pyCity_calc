@@ -190,7 +190,7 @@ class CityEBCalculator(object):
         self._list_no_th_esys = \
             get_list_lhn_build_without_th_esys(city=self.city)
 
-    def calc_lhn_energy_balance(self, run_mc=False, dict_samples=None,
+    def calc_lhn_energy_balance(self, run_mc=False, dict_samples_const=None,
                                 run_idx=None):
         """
         Calculate thermal energy balance for LHN connected buildings
@@ -202,10 +202,11 @@ class CityEBCalculator(object):
             If True, puts uncertainty factors of dict_samples on investment
             cost, lifetime and maintenance factors. If False, only performs
             single annuity calculation run with default values.
-        dict_samples : dict (of dicts and arrays)
-            Dictionary holding dictionaries with sample data for MC run
-            dict_samples['city'] = dict_city_samples
-            dict_samples['<building_id>'] = dict_buildings_samples
+        dict_samples_const : dict (of dicts)
+            Dictionary holding dictionaries with constant
+            sample data for MC run (default: None)
+            dict_samples_const['city'] = dict_city_samples
+            dict_samples_const['<building_id>'] = dict_build_dem
             (of building with id <building_id>)
         run_idx : int, optional
             Index / number of run for Monte-Carlo analysis (default: None)
@@ -217,7 +218,7 @@ class CityEBCalculator(object):
         """
 
         if run_mc:
-            if dict_samples is None:
+            if dict_samples_const is None:
                 msg = 'Sample dictionary dict_samples cannnot be None, if' \
                       ' you want to perform Monte-Carlo analysis.'
                 raise AssertionError(msg)
@@ -238,7 +239,7 @@ class CityEBCalculator(object):
 
         if run_mc:
             #  Get sampling uncertainty value for u-value (Monte-Carlo run)
-            u_val_unc = dict_samples['city']['lhn_loss'][run_idx]
+            u_val_unc = dict_samples_const['city']['lhn_loss'][run_idx]
         else:
             u_val_unc = 1
 
@@ -442,7 +443,7 @@ class CityEBCalculator(object):
 
         return list_pump_energy
 
-    def calc_city_energy_balance(self, run_mc=False, dict_samples=None,
+    def calc_city_energy_balance(self, run_mc=False, dict_samples_const=None,
                                  run_idx=None):
         """
         Calculate energy balance of whole city. Save results on city object
@@ -454,17 +455,18 @@ class CityEBCalculator(object):
             If True, puts uncertainty factors of dict_samples on investment
             cost, lifetime and maintenance factors. If False, only performs
             single annuity calculation run with default values.
-        dict_samples : dict (of dicts and arrays)
-            Dictionary holding dictionaries with sample data for MC run
-            dict_samples['city'] = dict_city_samples
-            dict_samples['<building_id>'] = dict_buildings_samples
-            (of building with id <building_id>)
+        dict_samples_const : dict (of dicts)
+            Dictionary holding dictionaries with constant
+            sample data for MC run (default: None)
+            dict_samples_const['city'] = dict_city_samples
+            dict_samples_const['<building_id>'] = dict_build_dem
+            (of building with id <building_id>
         run_idx : int, optional
             Index / number of run for Monte-Carlo analysis (default: None)
         """
 
         if run_mc:
-            if dict_samples is None:
+            if dict_samples_const is None:
                 msg = 'Sample dictionary dict_samples cannnot be None, if' \
                       ' you want to perform Monte-Carlo analysis.'
                 raise AssertionError(msg)
@@ -499,7 +501,7 @@ class CityEBCalculator(object):
         #  ################################################################
 
         self.calc_lhn_energy_balance(run_mc=run_mc,
-                                     dict_samples=dict_samples,
+                                     dict_samples_const=dict_samples_const,
                                      run_idx=run_idx)
 
         #  Make flat lists with all buildings in LHN and DEG networks
