@@ -103,11 +103,14 @@ class EcoMCRunAnalyze(object):
         self._nb_runs = None
         self._failure_tolerance = None
         self._heating_off = None
+
         self._array_ann_mod = None
         self._array_co2_mod = None
         self._array_sh_dem_mod = None
         self._array_el_dem_mod = None
         self._array_dhw_dem_mod = None
+
+        self._array_en_to_an = None
 
     def __repr__(self):
         return 'EcoMCRunAnalyze object of pyCity_resilience. Can be used ' \
@@ -354,6 +357,55 @@ class EcoMCRunAnalyze(object):
         self._array_sh_dem_mod = array_sh_dem_mod
         self._array_el_dem_mod = array_el_dem_mod
         self._array_dhw_dem_mod = array_dhw_dem_mod
+
+    def calc_net_energy_to_annuity_ratio(self, energy_equal=True,
+                                         save_res=True):
+        """
+        Calculates net energy to annuity ratio as estimator for
+        economic efficiency
+
+        Parameters
+        ----------
+        energy_equal : bool, optional
+            Values thermal and electric net energy equally
+        save_res : bool, optional
+            Defines, if results should be saved to _array_en_to_an
+
+        Returns
+        -------
+        array_en_to_an : np.array (of floats)
+            Numpy array holding net energy to annuity ratios in kWh / Euro
+        """
+
+        if (self._array_ann_mod is None
+            or self._array_sh_dem_mod is None
+            or self._array_el_dem_mod is None
+            or self._array_dhw_dem_mod is None):
+            msg = 'Cannot calculate net energy to annuity ratio, as inputs ' \
+                  'are missing. Have you loaded all results files and called' \
+                  ' extract_basic_results?'
+            raise AssertionError(msg)
+
+        #  Dummy arrays
+        array_en_to_an = np.zeros(len(self._array_ann_mod))
+        array_total_net_en = np.zeros(len(self._array_ann_mod))
+
+        if energy_equal:
+            #  Sum up energy values
+            array_total_net_en = self._array_sh_dem_mod \
+                                 + self._array_el_dem_mod \
+                                 + self._array_dhw_dem_mod
+        else:
+            msg = 'energy_equal == False has not been implemented, yet!'
+            raise NotImplementedError(msg)
+
+        for i in range(len(array_en_to_an)):
+            array_en_to_an[i] = array_total_net_en[i] / self._array_ann_mod[i]
+
+        if save_res:
+            self._array_en_to_an = array_en_to_an
+
+        return array_en_to_an
 
     def get_nb_failed_runs(self):
         """
