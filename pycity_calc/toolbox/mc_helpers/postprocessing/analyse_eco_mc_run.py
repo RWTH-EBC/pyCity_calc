@@ -309,7 +309,7 @@ class EcoMCRunAnalyze(object):
             msg = 'Cannot extract results, as dict_results is empty!'
             raise AssertionError(msg)
 
-        #  Extract settings
+        # Extract settings
         self._nb_runs = self.dict_setup['nb_runs']
         self._failure_tolerance = self.dict_setup['failure_tolerance']
         self._heating_off = self.dict_setup['heating_off']
@@ -359,102 +359,6 @@ class EcoMCRunAnalyze(object):
         self._array_sh_dem_mod = array_sh_dem_mod
         self._array_el_dem_mod = array_el_dem_mod
         self._array_dhw_dem_mod = array_dhw_dem_mod
-
-    def calc_net_energy_to_co2_ratio(self, energy_equal=True,
-                                     save_res=True):
-        """
-        Calculates net energy to co2 ratio as estimator for
-        ecologic efficiency
-
-        Parameters
-        ----------
-        energy_equal : bool, optional
-            Values thermal and electric net energy equally
-        save_res : bool, optional
-            Defines, if results should be saved to _array_en_to_an
-
-        Returns
-        -------
-        array_en_to_co2 : np.array (of floats)
-            Numpy array holding net energy to co2 ratios in kWh / kg (CO2)
-        """
-
-        if (self._array_co2_mod is None
-            or self._array_sh_dem_mod is None
-            or self._array_el_dem_mod is None
-            or self._array_dhw_dem_mod is None):
-            msg = 'Cannot calculate net energy to annuity ratio, as inputs ' \
-                  'are missing. Have you loaded all results files and called' \
-                  ' extract_basic_results?'
-            raise AssertionError(msg)
-
-        #  Dummy arrays
-        array_en_to_co2 = np.zeros(len(self._array_co2_mod))
-
-        if energy_equal:
-            #  Sum up energy values
-            array_total_net_en = self._array_sh_dem_mod \
-                                 + self._array_el_dem_mod \
-                                 + self._array_dhw_dem_mod
-        else:
-            msg = 'energy_equal == False has not been implemented, yet!'
-            raise NotImplementedError(msg)
-
-        for i in range(len(array_en_to_co2)):
-            array_en_to_co2[i] = array_total_net_en[i] / self._array_ann_mod[i]
-
-        if save_res:
-            self._array_en_to_co2 = array_en_to_co2
-
-        return array_en_to_co2
-
-    def calc_net_energy_to_annuity_ratio(self, energy_equal=True,
-                                         save_res=True):
-        """
-        Calculates net energy to annuity ratio as estimator for
-        economic efficiency
-
-        Parameters
-        ----------
-        energy_equal : bool, optional
-            Values thermal and electric net energy equally
-        save_res : bool, optional
-            Defines, if results should be saved to _array_en_to_an
-
-        Returns
-        -------
-        array_en_to_an : np.array (of floats)
-            Numpy array holding net energy to annuity ratios in kWh / Euro
-        """
-
-        if (self._array_ann_mod is None
-            or self._array_sh_dem_mod is None
-            or self._array_el_dem_mod is None
-            or self._array_dhw_dem_mod is None):
-            msg = 'Cannot calculate net energy to annuity ratio, as inputs ' \
-                  'are missing. Have you loaded all results files and called' \
-                  ' extract_basic_results?'
-            raise AssertionError(msg)
-
-        #  Dummy arrays
-        array_en_to_an = np.zeros(len(self._array_ann_mod))
-
-        if energy_equal:
-            #  Sum up energy values
-            array_total_net_en = self._array_sh_dem_mod \
-                                 + self._array_el_dem_mod \
-                                 + self._array_dhw_dem_mod
-        else:
-            msg = 'energy_equal == False has not been implemented, yet!'
-            raise NotImplementedError(msg)
-
-        for i in range(len(array_en_to_an)):
-            array_en_to_an[i] = array_total_net_en[i] / self._array_ann_mod[i]
-
-        if save_res:
-            self._array_en_to_an = array_en_to_an
-
-        return array_en_to_an
 
     def get_nb_failed_runs(self):
         """
@@ -526,6 +430,165 @@ class EcoMCRunAnalyze(object):
 
         return array_co2
 
+    def calc_net_energy_to_co2_ratio(self, energy_equal=True,
+                                     save_res=True):
+        """
+        Calculates net energy to co2 ratio as estimator for
+        ecologic efficiency
+
+        Parameters
+        ----------
+        energy_equal : bool, optional
+            Values thermal and electric net energy equally
+        save_res : bool, optional
+            Defines, if results should be saved to _array_en_to_an
+
+        Returns
+        -------
+        array_en_to_co2 : np.array (of floats)
+            Numpy array holding net energy to co2 ratios in kWh / kg (CO2)
+        """
+
+        if (self._array_co2_mod is None
+            or self._array_sh_dem_mod is None
+            or self._array_el_dem_mod is None
+            or self._array_dhw_dem_mod is None):
+            msg = 'Cannot calculate net energy to annuity ratio, as inputs ' \
+                  'are missing. Have you loaded all results files and called' \
+                  ' extract_basic_results?'
+            raise AssertionError(msg)
+
+        # Dummy arrays
+        array_en_to_co2 = np.zeros(len(self._array_co2_mod))
+
+        if energy_equal:
+            #  Sum up energy values
+            array_total_net_en = self._array_sh_dem_mod \
+                                 + self._array_el_dem_mod \
+                                 + self._array_dhw_dem_mod
+        else:
+            msg = 'energy_equal == False has not been implemented, yet!'
+            raise NotImplementedError(msg)
+
+        for i in range(len(array_en_to_co2)):
+            array_en_to_co2[i] = array_total_net_en[i] / self._array_ann_mod[i]
+
+        if save_res:
+            self._array_en_to_co2 = array_en_to_co2
+
+        return array_en_to_co2
+
+    def calc_net_energy_to_annuity_ratio(self, energy_equal=True,
+                                         save_res=True):
+        """
+        Calculates net energy to annuity ratio as estimator for
+        economic efficiency
+
+        Parameters
+        ----------
+        energy_equal : bool, optional
+            Values thermal and electric net energy equally
+        save_res : bool, optional
+            Defines, if results should be saved to _array_en_to_an
+
+        Returns
+        -------
+        array_en_to_an : np.array (of floats)
+            Numpy array holding net energy to annuity ratios in kWh / Euro
+        """
+
+        if (self._array_ann_mod is None
+            or self._array_sh_dem_mod is None
+            or self._array_el_dem_mod is None
+            or self._array_dhw_dem_mod is None):
+            msg = 'Cannot calculate net energy to annuity ratio, as inputs ' \
+                  'are missing. Have you loaded all results files and called' \
+                  ' extract_basic_results?'
+            raise AssertionError(msg)
+
+        # Dummy arrays
+        array_en_to_an = np.zeros(len(self._array_ann_mod))
+
+        if energy_equal:
+            #  Sum up energy values
+            array_total_net_en = self._array_sh_dem_mod \
+                                 + self._array_el_dem_mod \
+                                 + self._array_dhw_dem_mod
+        else:
+            msg = 'energy_equal == False has not been implemented, yet!'
+            raise NotImplementedError(msg)
+
+        for i in range(len(array_en_to_an)):
+            array_en_to_an[i] = array_total_net_en[i] / self._array_ann_mod[i]
+
+        if save_res:
+            self._array_en_to_an = array_en_to_an
+
+        return array_en_to_an
+
+    @staticmethod
+    def calc_res_factor(array_in):
+        """
+        Calculate resilience factor
+
+        Parameters
+        ----------
+        array_in : np.array  (of floats)
+            Array holding result values
+
+        Returns
+        -------
+        risk_av_factor : float
+            Risk aversion factor to evaluate solution
+        """
+
+        #  Calculate mean
+        mean = np.mean(a=array_in)
+
+        #  Calculate standard deviation
+        std = np.std(a=array_in)
+
+        risk_av_factor = mean / (std ** (10 / 25))
+
+        return risk_av_factor
+
+    def calc_risk_averse_parameters(self, type):
+        """
+        Calculate and returns risk averse parameter, depending on input type.
+        Uses mean and standard deviation of result parameters for evaluation.
+
+        Parameters
+        ----------
+        type : str
+            Type of evaluated result parameter. Options:
+            - 'annuity' : Annualized cost
+            - 'co2' : Emissions
+            - 'en_to_an' : Net energy to annuity ratio
+            - 'en_to_co2' : Net energy to co2 ratio
+
+        Returns
+        -------
+        risk_av_factor : float
+            Risk aversion factor to evaluate solution
+        """
+
+        if type not in ['annuity', 'co2', 'en_to_an', 'en_to_co2']:
+            msg = 'Unknown input type for calc_risk_averse_parameters()'
+            raise AssertionError(msg)
+
+        if type == 'annuity':
+            array_in = self._array_ann_mod
+        elif type == 'co2':
+            array_in = self._array_co2_mod
+        elif type == 'en_to_an':
+            array_in = self._array_en_to_an
+        elif type == 'en_to_co2':
+            array_in = self._array_en_to_co2
+
+        risk_av_factor = self.calc_res_factor(array_in=array_in)
+
+        return risk_av_factor
+
 
 if __name__ == '__main__':
     this_path = os.path.dirname(os.path.abspath(__file__))
@@ -562,19 +625,33 @@ if __name__ == '__main__':
     mc_analyze.calc_net_energy_to_annuity_ratio()
     mc_analyze.calc_net_energy_to_co2_ratio()
 
-    # # #  Evaluation
-    # # #  ####################################################################
-    # array_annuity = mc_analyze.get_annuity_results()
-    # array_co2 = mc_analyze.get_co2_results()
-    #
-    # plt.hist(array_annuity, bins='auto')
-    # plt.show()
-    # plt.close()
-    #
-    # plt.hist(array_co2, bins='auto')
-    # plt.show()
-    # plt.close()
-    #
-    # plt.hist(mc_analyze._array_en_to_an, bins='auto')
-    # plt.show()
-    # plt.close()
+    #  Evaluate risk aversion
+    win_en_to_an = mc_analyze.calc_risk_averse_parameters(type='en_to_an')
+    win_en_to_co2 = mc_analyze.calc_risk_averse_parameters(type='en_to_co2')
+
+    print('Risk aversion evaluation factor of net energy to annuity ratio:')
+    print(round(win_en_to_an, 2))
+    print()
+
+    print('Risk aversion evaluation factor of net energy to co2 ratio:')
+    print(round(win_en_to_co2, 2))
+    print()
+
+    # #  Evaluation
+    # #  ####################################################################
+    array_annuity = mc_analyze.get_annuity_results()
+    array_co2 = mc_analyze.get_co2_results()
+
+    plt.hist(array_annuity, bins='auto', label='annuity', alpha=0.7)
+    plt.hist(array_co2, bins='auto', label='CO2', alpha=0.7)
+    plt.ylabel('Nb. of occurence')
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+    plt.close()
+
+    plt.hist(mc_analyze._array_en_to_an, bins='auto')
+    plt.xlabel('Net energy to annuity ratio in kWh/Euro')
+    plt.ylabel('Nb. of occurence')
+    plt.show()
+    plt.close()
