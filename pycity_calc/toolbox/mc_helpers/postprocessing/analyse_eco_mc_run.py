@@ -6,6 +6,7 @@
 from __future__ import division
 
 import os
+import copy
 import pickle
 import numpy as np
 
@@ -96,8 +97,17 @@ class EcoMCRunAnalyze(object):
         self.__dict_samples_const = None
         self.__dict_sample_esys = None
         self.__dict_setup = None
-        self._list_idx = None
+
         self._city = None
+        self._list_idx_failed_runs = None
+        self._nb_runs = None
+        self._failure_tolerance = None
+        self._heating_off = None
+        self._array_ann_mod = None
+        self._array_co2_mod = None
+        self._array_sh_dem_mod = None
+        self._array_el_dem_mod = None
+        self._array_dhw_dem_mod = None
 
     def __repr__(self):
         return 'EcoMCRunAnalyze object of pyCity_resilience. Can be used ' \
@@ -278,16 +288,88 @@ class EcoMCRunAnalyze(object):
     #     if save_idx:
     #         self._list_idx = list_idx
 
-    def extract_basic_results(self):
+    def extract_basic_results(self, remove_failed=True):
         """
-        Extract basic results and sample data
+        Extract basic results and sample data and save it to EcoMCRunAnalyze
+        object
+
+        Parameters
+        ----------
+        remove_failed : bool, optional
+            Remove failed runs (default: True). Failed runs are identified by
+            _list_idx_failed_runs
         """
 
+        if self.dict_results is None:
+            msg = 'Cannot extract results, as dict_results is empty!'
+            raise AssertionError(msg)
+
+        #  Extract settings
+        self._nb_runs = self.dict_setup['nb_runs']
+        self._failure_tolerance = self.dict_setup['failure_tolerance']
+        self._heating_off = self.dict_setup['heating_off']
+        self._list_idx_failed_runs = self.dict_setup['idx_failed_runs']
+
+        #  Extract annuity and CO2 values
         array_ann = self.dict_results['annuity']
         array_co2 = self.dict_results['co2']
+
+        #  Extract city net energy demand values
         array_sh_dem = self.dict_results['sh_dem']
         array_el_dem = self.dict_results['el_dem']
         array_dhw_dem = self.dict_results['dhw_dem']
+
+        array_ann_mod = copy.copy(array_ann)
+        array_co2_mod = copy.copy(array_co2)
+        array_sh_dem_mod = copy.copy(array_sh_dem)
+        array_el_dem_mod = copy.copy(array_el_dem)
+        array_dhw_dem_mod = copy.copy(array_dhw_dem)
+
+        if remove_failed:
+            if len(self._list_idx_failed_runs) > 0:
+
+                nb_fails = len(self._list_idx_failed_runs)
+
+                #  Create new result arrays with zeros
+                array_ann_mod = np.zeros(len(array_ann) - nb_fails)
+                array_co2_mod = np.zeros(len(array_ann) - nb_fails)
+                array_sh_dem_mod = np.zeros(len(array_ann) - nb_fails)
+                array_el_dem_mod = np.zeros(len(array_ann) - nb_fails)
+                array_dhw_dem_mod = np.zeros(len(array_ann) - nb_fails)
+
+                idx = 0
+                for i in range(len(array_ann)):
+                    if i not in self._list_idx_failed_runs:
+                        array_ann_mod[idx] = array_ann[i]
+                        array_co2_mod[idx] = array_co2[i]
+                        array_sh_dem_mod[idx] = array_sh_dem[i]
+                        array_el_dem_mod[idx] = array_el_dem[i]
+                        array_dhw_dem_mod[idx] = array_dhw_dem[i]
+                        #  Count mod array idx up
+                        idx += 1
+
+        # Save new modified result arrays
+        self._array_ann_mod = array_ann_mod
+        self._array_co2_mod = array_co2_mod
+        self._array_sh_dem_mod = array_sh_dem_mod
+        self._array_el_dem_mod = array_el_dem_mod
+        self._array_dhw_dem_mod = array_dhw_dem_mod
+
+    def get_nb_failed_runs(self):
+        """
+        Returns nb. of failed runs
+
+        Returns
+        -------
+        nb_failed : int
+            Number of failed runs (EnergyBalanceException)
+        """
+        if self._list_idx_failed_runs is None:
+            msg = '_list_idx_failed_runs is None. Thus, cannot return nb. ' \
+                  'of failed runs!'
+            raise AssertionError(msg)
+
+        return len(self._list_idx_failed_runs)
 
     def get_annuity_results(self, erase_zeros=True):
         """
@@ -373,17 +455,21 @@ if __name__ == '__main__':
     mc_analyze.load_dict_setup_from_path(dir=path_setup)
     mc_analyze.load_city_obj_from_path(dir=path_city)
 
-    #  Evaluation
+    #  Extract basic results
     #  ####################################################################
-    array_annuity = mc_analyze.get_annuity_results()
-    array_co2 = mc_analyze.get_co2_results()
+    mc_analyze.extract_basic_results()
 
-    import matplotlib.pyplot as plt
-
-    plt.hist(array_annuity, bins='auto')
-    plt.show()
-    plt.close()
-
-    plt.hist(array_co2, bins='auto')
-    plt.show()
-    plt.close()
+    # #  Evaluation
+    # #  ####################################################################
+    # array_annuity = mc_analyze.get_annuity_results()
+    # array_co2 = mc_analyze.get_co2_results()
+    #
+    # import matplotlib.pyplot as plt
+    #
+    # plt.hist(array_annuity, bins='auto')
+    # plt.show()
+    # plt.close()
+    #
+    # plt.hist(array_co2, bins='auto')
+    # plt.show()
+    # plt.close()
