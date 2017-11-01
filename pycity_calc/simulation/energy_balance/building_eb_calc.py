@@ -70,7 +70,7 @@ def get_tes_status(tes, buffer_low, buffer_high):
         return 1
 
 
-def calc_build_therm_eb(build, soc_init=0.75, boiler_full_pl=True,
+def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                         eh_full_pl=True, buffer_low=0.1, buffer_high=0.98,
                         id=None, th_lhn_pow_rem=None):
     """
