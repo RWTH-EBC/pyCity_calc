@@ -140,9 +140,9 @@ class McRunner(object):
             self._list_lhn_tuples = list_lhn_tuples
 
     @staticmethod
-    def perform_sampling_build(nb_runs, building):
+    def perform_sampling_build_dem(nb_runs, building):
         """
-        Perform sampling for building object
+        Perform sampling for building demand side
 
         Parameters
         ----------
@@ -153,16 +153,14 @@ class McRunner(object):
 
         Returns
         -------
-        tuple_dicts : tuple (of dicts)
-            2d tuple (dict_build_dem, dict_esys)
-            dict_build_dem : dict (of arrays and dicts)
-                Dictionary storing building demand samples
-                dict_build_samples['occ'] = array_occupants
-                dict_build_samples['el_dem'] = array_el_dem
-                dict_build_samples['dhw_dem'] = array_dhw_dem
-                dict_build_samples['on_off'] = array_sh_on_off
-            dict_esys : dict (of arrays)
-                Dictionary holding energy system parameters
+        dict_build_dem : dict (of arrays and dicts)
+            Dictionary storing building demand samples
+            dict_build_samples['occ'] = array_occupants
+            dict_build_samples['el_dem'] = array_el_dem
+            dict_build_samples['dhw_dem'] = array_dhw_dem
+            dict_build_samples['on_off'] = array_sh_on_off
+        dict_esys : dict (of arrays)
+            Dictionary holding energy system parameters
         """
 
         #  Initial dict
@@ -225,7 +223,33 @@ class McRunner(object):
         dict_build_dem['sh_dem'] = array_sh_dem
         # dict_build_samples['on_off'] = array_sh_on_off
 
-        #  Sample energy system attributes
+        return dict_build_dem
+
+    @staticmethod
+    def perform_sampling_build_esys(nb_runs, building):
+        """
+        Perform sampling for building energy systems
+
+        Parameters
+        ----------
+        nb_runs : int
+            Number of runs
+        building : object
+            Building object of pyCity_calc
+
+        Returns
+        -------
+        dict_esys : dict (of arrays)
+            Dictionary holding energy system parameters
+        """
+
+        #  Res. building type (sfh or mfh)
+        if len(building.apartments) == 1:
+            type = 'sfh'
+        elif len(building.apartments) > 1:
+            type = 'mfh'
+
+        # Sample energy system attributes
         #  ################################################################
 
         dict_esys = {}
@@ -391,7 +415,7 @@ class McRunner(object):
 
                 dict_esys['tes'] = dict_tes
 
-        return (dict_build_dem, dict_esys)
+        return dict_esys
 
     def perform_sampling_city(self, nb_runs):
         """
@@ -517,8 +541,11 @@ class McRunner(object):
         #  id as key
         for n in self._list_build_ids:
             build = self._city_eco_calc.energy_balance.city.node[n]['entity']
-            (dict_build_dem, dict_esys) = \
-                self.perform_sampling_build(nb_runs=nb_runs, building=build)
+
+            dict_build_dem = self.perform_sampling_build_dem(nb_runs=nb_runs,
+                                                             building=build)
+            dict_esys = self.perform_sampling_build_esys(nb_runs=nb_runs,
+                                                         building=build)
 
             dict_samples_const[str(n)] = dict_build_dem
             dict_samples_esys[str(n)] = dict_esys
@@ -912,10 +939,10 @@ class McRunner(object):
             if self._nb_failed_runs > failure_tolerance * nb_runs:
                 msg = 'Number of failed runs exceeds ' \
                       'allowed limit of %d runs!' % (
-                      failure_tolerance * nb_runs)
+                          failure_tolerance * nb_runs)
                 raise McToleranceException(msg)
 
-            #  Save failed run information to dict_mc_setup
+            # Save failed run information to dict_mc_setup
             dict_mc_setup['idx_failed_runs'] = self._list_failed_runs
 
         return (dict_mc_res, dict_mc_setup)
@@ -1249,7 +1276,7 @@ if __name__ == '__main__':
         file_path = os.path.join(this_path, 'input', filename)
         pickle.dump(city, open(file_path, mode='wb'))
 
-    #  Uncomment, if you require further increase of energy system size
+    # Uncomment, if you require further increase of energy system size
     #  Increase system size
     modesys.incr_esys_size_city(city=city, base_factor=2)
 
@@ -1308,7 +1335,7 @@ if __name__ == '__main__':
 
     #  Perform Monte-Carlo uncertainty analysis
     #  #####################################################################
-    (dict_res, dict_mc_setup) =\
+    (dict_res, dict_mc_setup) = \
         mc_run.run_mc_analysis(nb_runs=nb_runs,
                                failure_tolerance=failure_tolerance,
                                do_sampling=do_sampling,
