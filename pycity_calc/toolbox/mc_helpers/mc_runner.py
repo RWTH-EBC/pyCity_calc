@@ -86,12 +86,19 @@ class McRunner(object):
 
         self._city_eco_calc = city_eco_calc
         self._list_build_ids = None  # List with building node ids in city
-        self._dict_samples = None  # List of samples
+
+        self._dict_samples_const = None  # List of samples, which are constant
+        #  for different energy system MC runs (e.g. city params, building
+        #  energy demand samples)
+        self._dict_samples_esys = None  # List of samples, which change for
+        #  every energy system change (energy system paramters)
+
         self._has_lhn = None  # Defines, if energy system holds local heating
         #  network or not
         self._list_lhn_tuples = None  # List holding LHN edge tuples
 
         self._nb_failed_runs = None  # Counter for failed runs
+        self._list_failed_runs = []
 
         if get_build_ids:
             #  Extract building node ids
@@ -133,9 +140,9 @@ class McRunner(object):
             self._list_lhn_tuples = list_lhn_tuples
 
     @staticmethod
-    def perform_sampling_build(nb_runs, building):
+    def perform_sampling_build_dem(nb_runs, building):
         """
-        Perform sampling for building object
+        Perform sampling for building demand side
 
         Parameters
         ----------
@@ -146,18 +153,18 @@ class McRunner(object):
 
         Returns
         -------
-        dict_build_samples : dict (of arrays and dicts)
-            Dictionary storing building samples
+        dict_build_dem : dict (of arrays and dicts)
+            Dictionary storing building demand samples
             dict_build_samples['occ'] = array_occupants
             dict_build_samples['el_dem'] = array_el_dem
             dict_build_samples['dhw_dem'] = array_dhw_dem
-            dict_build_samples['sh_dem'] = array_sh_dem
             dict_build_samples['on_off'] = array_sh_on_off
-            dict_build_samples['esys'] = dict_esys
+        dict_esys : dict (of arrays)
+            Dictionary holding energy system parameters
         """
 
         #  Initial dict
-        dict_build_samples = {}
+        dict_build_dem = {}
 
         #  Res. building type (sfh or mfh)
         if len(building.apartments) == 1:
@@ -210,19 +217,45 @@ class McRunner(object):
 
         #  Save results to dict
         #  ################################################################
-        dict_build_samples['occ'] = array_occupants
-        dict_build_samples['el_dem'] = array_el_dem
-        dict_build_samples['dhw_dem'] = array_dhw_dem
-        dict_build_samples['sh_dem'] = array_sh_dem
+        dict_build_dem['occ'] = array_occupants
+        dict_build_dem['el_dem'] = array_el_dem
+        dict_build_dem['dhw_dem'] = array_dhw_dem
+        dict_build_dem['sh_dem'] = array_sh_dem
         # dict_build_samples['on_off'] = array_sh_on_off
 
-        #  Sample energy system attributes
+        return dict_build_dem
+
+    @staticmethod
+    def perform_sampling_build_esys(nb_runs, building):
+        """
+        Perform sampling for building energy systems
+
+        Parameters
+        ----------
+        nb_runs : int
+            Number of runs
+        building : object
+            Building object of pyCity_calc
+
+        Returns
+        -------
+        dict_esys : dict (of arrays)
+            Dictionary holding energy system parameters
+        """
+
+        #  Res. building type (sfh or mfh)
+        if len(building.apartments) == 1:
+            type = 'sfh'
+        elif len(building.apartments) > 1:
+            type = 'mfh'
+
+        # Sample energy system attributes
         #  ################################################################
+
+        dict_esys = {}
 
         #  Check if building holds bes
         if building.hasBes:
-
-            dict_esys = {}
 
             #  Check which devices do exist on bes
             if building.bes.hasBattery:
@@ -382,9 +415,7 @@ class McRunner(object):
 
                 dict_esys['tes'] = dict_tes
 
-            dict_build_samples['esys'] = dict_esys
-
-        return dict_build_samples
+        return dict_esys
 
     def perform_sampling_city(self, nb_runs):
         """
@@ -480,37 +511,51 @@ class McRunner(object):
 
         Returns
         -------
-        dict_samples : dict (of dicts)
-            Dictionary holding dictionaries with sample data for MC run
-            dict_samples['city'] = dict_city_samples
-            dict_samples['<building_id>'] = dict_buildings_samples
-            (of building with id <building_id>)
+        tuple_res : tuple (of dicts)
+            2d tuple (dict_samples_const, dict_samples_esys)
+            dict_samples_const : dict (of dicts)
+                Dictionary holding dictionaries with constant
+                sample data for MC run
+                dict_samples_const['city'] = dict_city_samples
+                dict_samples_const['<building_id>'] = dict_build_dem
+                (of building with id <building_id>)
+            dict_samples_esys : dict (of dicts)
+                Dictionary holding dictionaries with energy system sampling
+                data for MC run
+                dict_samples_esys['<building_id>'] = dict_esys
+                (of building with id <building_id>)
         """
 
         #  Initial sample dict. Holds further sample dicts for
         #  'city' and each building node id
-        dict_samples = {}
+        dict_samples_const = {}
+        dict_samples_esys = {}
 
         #  Perform city sampling
         dict_city_samples = self.perform_sampling_city(nb_runs=nb_runs)
 
-        dict_samples['city'] = dict_city_samples
+        dict_samples_const['city'] = dict_city_samples
 
         #  Perform building sampling
         #  Loop over node ids and add samples to result dict with building
         #  id as key
         for n in self._list_build_ids:
             build = self._city_eco_calc.energy_balance.city.node[n]['entity']
-            dict_build_samples = \
-                self.perform_sampling_build(nb_runs=nb_runs, building=build)
 
-            dict_samples[str(n)] = dict_build_samples
+            dict_build_dem = self.perform_sampling_build_dem(nb_runs=nb_runs,
+                                                             building=build)
+            dict_esys = self.perform_sampling_build_esys(nb_runs=nb_runs,
+                                                         building=build)
+
+            dict_samples_const[str(n)] = dict_build_dem
+            dict_samples_esys[str(n)] = dict_esys
 
         if save_samples:
             #  Save sampling dict to MC runner object
-            self._dict_samples = dict_samples
+            self._dict_samples_const = dict_samples_const
+            self._dict_samples_esys = dict_samples_esys
 
-        return dict_samples
+        return (dict_samples_const, dict_samples_esys)
 
     def perform_mc_runs(self, nb_runs, failure_tolerance=0.05,
                         heating_off=True):
@@ -535,35 +580,50 @@ class McRunner(object):
 
         Returns
         -------
-        dict_mc_res : dict
-            Dictionary with result arrays for each run
-            dict_mc_res['annuity'] = array_annuity
-            dict_mc_res['co2'] = array_co2
-            dict_mc_res['sh_dem'] = array_net_sh
-            dict_mc_res['el_dem'] = array_net_el
-            dict_mc_res['dhw_dem'] = array_net_dhw
-            dict_mc_res['gas_boiler'] = array_gas_boiler
-            dict_mc_res['gas_chp'] = array_gas_chp
-            dict_mc_res['grid_imp_dem'] = array_grid_imp_dem
-            dict_mc_res['grid_imp_hp'] = array_grid_imp_hp
-            dict_mc_res['grid_imp_eh'] = array_grid_imp_eh
-            dict_mc_res['lhn_pump'] = array_lhn_pump
-            dict_mc_res['grid_exp_chp'] = array_grid_exp_chp
-            dict_mc_res['grid_exp_pv'] = array_grid_exp_pv
+        tuple_res : tuple (of dicts)
+            Tuple holding two dictionaries (dict_mc_res, dict_mc_setup)
+            dict_mc_res : dict
+                Dictionary with result arrays for each run
+                dict_mc_res['annuity'] = array_annuity
+                dict_mc_res['co2'] = array_co2
+                dict_mc_res['sh_dem'] = array_net_sh
+                dict_mc_res['el_dem'] = array_net_el
+                dict_mc_res['dhw_dem'] = array_net_dhw
+                dict_mc_res['gas_boiler'] = array_gas_boiler
+                dict_mc_res['gas_chp'] = array_gas_chp
+                dict_mc_res['grid_imp_dem'] = array_grid_imp_dem
+                dict_mc_res['grid_imp_hp'] = array_grid_imp_hp
+                dict_mc_res['grid_imp_eh'] = array_grid_imp_eh
+                dict_mc_res['lhn_pump'] = array_lhn_pump
+                dict_mc_res['grid_exp_chp'] = array_grid_exp_chp
+                dict_mc_res['grid_exp_pv'] = array_grid_exp_pv
+            dict_mc_setup : dict
+                Dictionary holding mc run settings
+                dict_mc_setup['nb_runs'] = nb_runs
+                dict_mc_setup['failure_tolerance'] = failure_tolerance
+                dict_mc_setup['heating_off'] = heating_off
+                dict_mc_setup['idx_failed_runs'] = self._list_failed_runs
         """
 
         #  Initialize result dict an arrays
         #  #################################################################
         dict_mc_res = {}
 
+        dict_mc_setup = {}
+
+        #  Add chosen settings to dict_mc_setup
+        dict_mc_setup['nb_runs'] = nb_runs
+        dict_mc_setup['failure_tolerance'] = failure_tolerance
+        dict_mc_setup['heating_off'] = heating_off
+
         #  Initial zero result arrays
         array_annuity = np.zeros(nb_runs)
         array_co2 = np.zeros(nb_runs)
 
         #  # Uncommented, as already existent on sampling dicts
-        # array_net_sh = np.zeros(nb_runs)
-        # array_net_el = np.zeros(nb_runs)
-        # array_net_dhw = np.zeros(nb_runs)
+        array_net_sh = np.zeros(nb_runs)
+        array_net_el = np.zeros(nb_runs)
+        array_net_dhw = np.zeros(nb_runs)
 
         array_gas_boiler = np.zeros(nb_runs)
         array_gas_chp = np.zeros(nb_runs)
@@ -576,6 +636,7 @@ class McRunner(object):
 
         #  Set failure counter to zero
         self._nb_failed_runs = 0
+        self._list_failed_runs = []
 
         #  Run energy balance and economic analysis
         #  #################################################################
@@ -598,33 +659,31 @@ class McRunner(object):
             # dict_build_samples['dhw_dem'] = array_dhw_dem
             # dict_build_samples['sh_dem'] = array_sh_dem
             # dict_build_samples['on_off'] = array_sh_on_off
-            # dict_build_samples['esys'] = dict_esys
 
             #  Add building sample input data
             #  ###############################################################
             for n in self._list_build_ids:
                 curr_build = city.node[n]['entity']
 
-                dict_build = self._dict_samples[str(n)]
+                dict_build_dem = self._dict_samples_const[str(n)]
+                dict_esys = self._dict_samples_esys[str(n)]
 
                 #  Add function to rescale sh, el, dhw demands
                 #  ##########################################################
 
-                sh_dem = dict_build['sh_dem'][i]
+                sh_dem = dict_build_dem['sh_dem'][i]
                 shmod.rescale_sh_dem_build(building=curr_build, sh_dem=sh_dem)
 
-                el_dem = dict_build['el_dem'][i]
+                el_dem = dict_build_dem['el_dem'][i]
                 elmod.rescale_el_dem_build(building=curr_build, el_dem=el_dem)
 
-                dhw_dem = dict_build['dhw_dem'][i]
+                dhw_dem = dict_build_dem['dhw_dem'][i]
                 dhwmod.rescale_dhw_build(building=curr_build, dhw_dem=dhw_dem)
 
                 #  Add energy system data
                 #  ##########################################################
 
                 if curr_build.hasBes:
-
-                    dict_esys = dict_build['esys']
 
                     #  Check which devices do exist on bes
                     if curr_build.bes.hasBattery:
@@ -746,7 +805,7 @@ class McRunner(object):
 
             # Extract city sampling data
             #  #############################################################
-            dict_city_samples = self._dict_samples['city']
+            dict_city_samples = self._dict_samples_const['city']
 
             # dict_city_samples['interest'] = array_interest
             # dict_city_samples['ch_cap'] = array_ch_cap
@@ -809,17 +868,17 @@ class McRunner(object):
                 (total_annuity, co2) = c_eco_copy. \
                     perform_overall_energy_balance_and_economic_calc(
                     run_mc=True,
-                    dict_samples=
-                    self._dict_samples,
+                    dict_samples_const=self._dict_samples_const,
+                    dict_samples_esys=self._dict_samples_esys,
                     run_idx=i)
 
-                # #  Extract further results
-                # sh_dem = c_eco_copy.energy_balance. \
-                #     city.get_annual_space_heating_demand()
-                # el_dem = c_eco_copy.energy_balance. \
-                #     city.get_annual_el_demand()
-                # dhw_dem = c_eco_copy.energy_balance. \
-                #     city.get_annual_dhw_demand()
+                #  Extract further results
+                sh_dem = c_eco_copy.energy_balance. \
+                    city.get_annual_space_heating_demand()
+                el_dem = c_eco_copy.energy_balance. \
+                    city.get_annual_el_demand()
+                dhw_dem = c_eco_copy.energy_balance. \
+                    city.get_annual_dhw_demand()
 
                 gas_boiler = c_eco_copy.energy_balance.dict_fe_city_balance[
                     'fuel_boiler']
@@ -842,9 +901,9 @@ class McRunner(object):
                 #  Save results
                 array_annuity[i] = total_annuity
                 array_co2[i] = co2
-                # array_net_sh[i] = sh_dem
-                # array_net_el[i] = el_dem
-                # array_net_dhw[i] = dhw_dem
+                array_net_sh[i] = sh_dem
+                array_net_el[i] = el_dem
+                array_net_dhw[i] = dhw_dem
 
                 array_gas_boiler[i] = gas_boiler
                 array_gas_chp[i] = gas_chp
@@ -857,9 +916,9 @@ class McRunner(object):
 
                 dict_mc_res['annuity'] = array_annuity
                 dict_mc_res['co2'] = array_co2
-                # dict_mc_res['sh_dem'] = array_net_sh
-                # dict_mc_res['el_dem'] = array_net_el
-                # dict_mc_res['dhw_dem'] = array_net_dhw
+                dict_mc_res['sh_dem'] = array_net_sh
+                dict_mc_res['el_dem'] = array_net_el
+                dict_mc_res['dhw_dem'] = array_net_dhw
                 dict_mc_res['gas_boiler'] = array_gas_boiler
                 dict_mc_res['gas_chp'] = array_gas_chp
                 dict_mc_res['grid_imp_dem'] = array_grid_imp_dem
@@ -873,18 +932,22 @@ class McRunner(object):
                 traceback.print_exc()
                 #  Count failure nb. up
                 self._nb_failed_runs += 1
+                self._list_failed_runs.append(i)
                 msg = 'Run %d failed with EnergyBalanceException' % (i)
                 warnings.warn(msg)
 
             if self._nb_failed_runs > failure_tolerance * nb_runs:
                 msg = 'Number of failed runs exceeds ' \
                       'allowed limit of %d runs!' % (
-                      failure_tolerance * nb_runs)
+                          failure_tolerance * nb_runs)
                 raise McToleranceException(msg)
 
-        return dict_mc_res
+            # Save failed run information to dict_mc_setup
+            dict_mc_setup['idx_failed_runs'] = self._list_failed_runs
 
-    def run_mc_analysis(self, nb_runs, do_sampling=False,
+        return (dict_mc_res, dict_mc_setup)
+
+    def run_mc_analysis(self, nb_runs, do_sampling=True,
                         failure_tolerance=0.05,
                         prevent_printing=False, heating_off=True):
         """
@@ -900,7 +963,7 @@ class McRunner(object):
             Number of Monte-Carlo loops
         do_sampling : bool, optional
             Defines, if sampling should be performed or existing samples
-            should be used (default: False)
+            should be used (default: True)
         failure_tolerance : float, optional
             Allowed EnergyBalanceException failure tolerance (default: 0.05).
             E.g. 0.05 means, that 5% of runs are allowed to fail with
@@ -913,8 +976,41 @@ class McRunner(object):
 
         Returns
         -------
-        dict_mc_res : dict
-            Dictionary holding Monte-Carlo run results
+        tuple_res : tuple (of dicts)
+            Tuple holding four dictionaries
+            (dict_samples_const, dict_samples_esys, dict_mc_res, dict_mc_setup)
+            dict_samples_const : dict (of dicts)
+                Dictionary holding dictionaries with constant
+                sample data for MC run
+                dict_samples_const['city'] = dict_city_samples
+                dict_samples_const['<building_id>'] = dict_build_dem
+                (of building with id <building_id>)
+            dict_samples_esys : dict (of dicts)
+                Dictionary holding dictionaries with energy system sampling
+                data for MC run
+                dict_samples_esys['<building_id>'] = dict_esys
+                (of building with id <building_id>)
+            dict_mc_res : dict
+                Dictionary with result arrays for each run
+                dict_mc_res['annuity'] = array_annuity
+                dict_mc_res['co2'] = array_co2
+                dict_mc_res['sh_dem'] = array_net_sh
+                dict_mc_res['el_dem'] = array_net_el
+                dict_mc_res['dhw_dem'] = array_net_dhw
+                dict_mc_res['gas_boiler'] = array_gas_boiler
+                dict_mc_res['gas_chp'] = array_gas_chp
+                dict_mc_res['grid_imp_dem'] = array_grid_imp_dem
+                dict_mc_res['grid_imp_hp'] = array_grid_imp_hp
+                dict_mc_res['grid_imp_eh'] = array_grid_imp_eh
+                dict_mc_res['lhn_pump'] = array_lhn_pump
+                dict_mc_res['grid_exp_chp'] = array_grid_exp_chp
+                dict_mc_res['grid_exp_pv'] = array_grid_exp_pv
+            dict_mc_setup : dict
+                Dictionary holding mc run settings
+                dict_mc_setup['nb_runs'] = nb_runs
+                dict_mc_setup['failure_tolerance'] = failure_tolerance
+                dict_mc_setup['heating_off'] = heating_off
+                dict_mc_setup['idx_failed_runs'] = self._list_failed_runs
         """
 
         if nb_runs <= 0:
@@ -922,21 +1018,25 @@ class McRunner(object):
             raise AssertionError(msg)
 
         if do_sampling:
-            #  Call sampling and save sample data to _dict_samples
-            self.perform_sampling(nb_runs=nb_runs)
+            #  Call sampling and save sample data to _dict_samples_const and
+            #  _dict_samples_esys
+            (dict_samples_const, dict_samples_esys) = \
+                self.perform_sampling(nb_runs=nb_runs)
 
         if prevent_printing:
             block_print()
 
         # Perform monte-carlo runs
-        dict_mc_res = self.perform_mc_runs(nb_runs=nb_runs,
-                                           failure_tolerance=failure_tolerance,
-                                           heating_off=heating_off)
+        (dict_mc_res, dict_mc_setup) = \
+            self.perform_mc_runs(nb_runs=nb_runs,
+                                 failure_tolerance=failure_tolerance,
+                                 heating_off=heating_off)
 
         if prevent_printing:
             enable_print()
 
-        return dict_mc_res
+        return (dict_samples_const, dict_samples_esys, dict_mc_res,
+                dict_mc_setup)
 
 
 if __name__ == '__main__':
@@ -1190,9 +1290,9 @@ if __name__ == '__main__':
         file_path = os.path.join(this_path, 'input', filename)
         pickle.dump(city, open(file_path, mode='wb'))
 
-    # #  Uncomment, if you require further increase of energy system size
-    # #  Increase system size
-    # modesys.incr_esys_size_city(city=city, base_factor=2)
+    # Uncomment, if you require further increase of energy system size
+    #  Increase system size
+    modesys.incr_esys_size_city(city=city, base_factor=2)
 
     # #  Uncomment, if you want to plot city district
     # #  Plot city district
@@ -1201,7 +1301,7 @@ if __name__ == '__main__':
 
     # User inputs
     #  ####################################################################
-    nb_runs = 100  # Number of MC runs
+    nb_runs = 2  # Number of MC runs
     do_sampling = True  # Perform initial sampling or use existing samples
 
     failure_tolerance = 0.05
@@ -1215,9 +1315,17 @@ if __name__ == '__main__':
     res_name = 'mc_run_results_dict.pkl'
     path_res = os.path.join(this_path, 'output', res_name)
 
-    #  Path to sampling dict
-    sample_name = 'mc_run_sample_dict.pkl'
-    path_sample = os.path.join(this_path, 'output', sample_name)
+    #  Path to sampling dict const
+    sample_name_const = 'mc_run_sample_dict_const.pkl'
+    path_sample_const = os.path.join(this_path, 'output', sample_name_const)
+
+    #  Path to sampling dict esys
+    sample_name_esys = 'mc_run_sample_dict_esys.pkl'
+    path_sample_esys = os.path.join(this_path, 'output', sample_name_esys)
+
+    #  Path to save mc settings to
+    setup_name = 'mc_run_setup_dict.pkl'
+    path_setup = os.path.join(this_path, 'output', setup_name)
 
     #  #####################################################################
     #  Generate object instances
@@ -1244,20 +1352,35 @@ if __name__ == '__main__':
     mc_run = McRunner(city_eco_calc=city_eco_calc)
 
     #  Perform Monte-Carlo uncertainty analysis
-    dict_res = mc_run.run_mc_analysis(nb_runs=nb_runs,
-                                      failure_tolerance=failure_tolerance,
-                                      do_sampling=do_sampling,
-                                      prevent_printing=prevent_printing)
+    #  #####################################################################
+    (dict_samples_const, dict_samples_esys, dict_res, dict_mc_setup) = \
+        mc_run.run_mc_analysis(nb_runs=nb_runs,
+                               failure_tolerance=failure_tolerance,
+                               do_sampling=do_sampling,
+                               prevent_printing=prevent_printing)
 
+    #  Evaluation
+    #  #####################################################################
     pickle.dump(dict_res, open(path_res, mode='wb'))
     print('Saved results dict to: ', path_res)
     print()
 
-    pickle.dump(mc_run._dict_samples, open(path_sample, mode='wb'))
-    print('Saved sample dict to: ', path_sample)
+    pickle.dump(dict_samples_const, open(path_sample_const, mode='wb'))
+    print('Saved sample dict to: ', path_sample_const)
     print()
 
-    print('Nb. failed runs: ', str(mc_run._nb_failed_runs))
+    pickle.dump(dict_samples_esys, open(path_sample_esys, mode='wb'))
+    print('Saved sample dict to: ', path_sample_esys)
+    print()
+
+    pickle.dump(dict_mc_setup, open(path_setup, mode='wb'))
+    print('Saved mc settings dict to: ', path_setup)
+    print()
+
+    print('Nb. failed runs: ', str(len(dict_mc_setup['idx_failed_runs'])))
+    print()
+
+    print('Indexes of failed runs: ', str(dict_mc_setup['idx_failed_runs']))
     print()
 
     stop_time = time.time()

@@ -57,7 +57,8 @@ class CityAnnuityCalc(object):
         self._list_buildings = \
             self.energy_balance.city.get_list_build_entity_node_ids()
 
-    def calc_cap_rel_annuity_city(self, run_mc=False, dict_samples=None,
+    def calc_cap_rel_annuity_city(self, run_mc=False, dict_samples_const=None,
+                                  dict_samples_esys=None,
                                   run_idx=None):
         """
         Calculate sum of all capital related annuities of city
@@ -69,10 +70,16 @@ class CityAnnuityCalc(object):
             If True, puts uncertainty factors of dict_samples on investment
             cost, lifetime and maintenance factors. If False, only performs
             single annuity calculation run with default values.
-        dict_samples : dict (of dicts and arrays)
-            Dictionary holding dictionaries with sample data for MC run
-            dict_samples['city'] = dict_city_samples
-            dict_samples['<building_id>'] = dict_buildings_samples
+        dict_samples_const : dict (of dicts)
+            Dictionary holding dictionaries with constant
+            sample data for MC run (default: None)
+            dict_samples_const['city'] = dict_city_samples
+            dict_samples_const['<building_id>'] = dict_build_dem
+            (of building with id <building_id>)
+        dict_samples_esys : dict (of dicts)
+            Dictionary holding dictionaries with energy system sampling
+            data for MC run (default: None)
+            dict_samples_esys['<building_id>'] = dict_esys
             (of building with id <building_id>)
         run_idx : int, optional
             Index / number of run for Monte-Carlo analysis (default: None)
@@ -90,7 +97,7 @@ class CityAnnuityCalc(object):
         """
 
         if run_mc:
-            if dict_samples is None:
+            if dict_samples_const is None or dict_samples_esys is None:
                 msg = 'Sample dictionary dict_samples cannnot be None, if' \
                       ' you want to perform Monte-Carlo analysis.'
                 raise AssertionError(msg)
@@ -114,8 +121,7 @@ class CityAnnuityCalc(object):
 
                 if run_mc:
                     #  Get pointer to energy system sample dict
-                    dict_build = dict_samples[str(n)]
-                    dict_esys = dict_build['esys']
+                    dict_esys = dict_samples_esys[str(n)]
 
                 if bes.hasBattery:
                     cap_kWh = bes.battery.capacity / (3600 * 1000)
@@ -263,7 +269,7 @@ class CityAnnuityCalc(object):
             invest_lhn_trans = 0
 
             if run_mc:
-                inv_unc = dict_samples['city']['lhn_inv'][run_idx]
+                inv_unc = dict_samples_const['city']['lhn_inv'][run_idx]
             else:
                 inv_unc = 1
 
@@ -416,7 +422,8 @@ class CityAnnuityCalc(object):
         return (cap_rel_ann, list_invest, list_type)
 
     def calc_cap_and_op_rel_annuity_city(self, run_mc=False,
-                                         dict_samples=None,
+                                         dict_samples_const=None,
+                                         dict_samples_esys=None,
                                          run_idx=None):
         """
         Calculate capital- and operation-related annuities of city
@@ -428,10 +435,16 @@ class CityAnnuityCalc(object):
             If True, puts uncertainty factors of dict_samples on investment
             cost, lifetime and maintenance factors. If False, only performs
             single annuity calculation run with default values.
-        dict_samples : dict (of dicts and arrays)
-            Dictionary holding dictionaries with sample data for MC run
-            dict_samples['city'] = dict_city_samples
-            dict_samples['<building_id>'] = dict_buildings_samples
+        dict_samples_const : dict (of dicts)
+            Dictionary holding dictionaries with constant
+            sample data for MC run (default: None)
+            dict_samples_const['city'] = dict_city_samples
+            dict_samples_const['<building_id>'] = dict_build_dem
+            (of building with id <building_id>)
+        dict_samples_esys : dict (of dicts)
+            Dictionary holding dictionaries with energy system sampling
+            data for MC run (default: None)
+            dict_samples_esys['<building_id>'] = dict_esys
             (of building with id <building_id>)
         run_idx : int, optional
             Index / number of run for Monte-Carlo analysis (default: None)
@@ -444,7 +457,7 @@ class CityAnnuityCalc(object):
         """
 
         if run_mc:
-            if dict_samples is None:
+            if dict_samples_const is None or dict_samples_esys is None:
                 msg = 'Sample dictionary dict_samples cannnot be None, if' \
                       ' you want to perform Monte-Carlo analysis.'
                 raise AssertionError(msg)
@@ -456,7 +469,9 @@ class CityAnnuityCalc(object):
         #  Calculate capital-related annuities
         (cap_rel_ann, list_invest, list_type) = \
             self.calc_cap_rel_annuity_city(run_mc=run_mc,
-                                           dict_samples=dict_samples,
+                                           dict_samples_const=
+                                           dict_samples_const,
+                                           dict_samples_esys=dict_samples_esys,
                                            run_idx=run_idx)
 
         #  Calculate operation-related annuity
@@ -995,7 +1010,8 @@ class CityAnnuityCalc(object):
         return sub_pv_sold * self.annuity_obj.ann_factor
 
     def perform_overall_energy_balance_and_economic_calc(self, run_mc=False,
-                                                         dict_samples=None,
+                                                         dict_samples_const=None,
+                                                         dict_samples_esys=None,
                                                          run_idx=None):
         """
         Script runs energy balance and annuity calculation for city in
@@ -1008,10 +1024,16 @@ class CityAnnuityCalc(object):
             If True, puts uncertainty factors of dict_samples on investment
             cost, lifetime and maintenance factors. If False, only performs
             single annuity calculation run with default values.
-        dict_samples : dict (of dicts and arrays)
-            Dictionary holding dictionaries with sample data for MC run
-            dict_samples['city'] = dict_city_samples
-            dict_samples['<building_id>'] = dict_buildings_samples
+        dict_samples_const : dict (of dicts)
+            Dictionary holding dictionaries with constant
+            sample data for MC run (default: None)
+            dict_samples_const['city'] = dict_city_samples
+            dict_samples_const['<building_id>'] = dict_build_dem
+            (of building with id <building_id>)
+        dict_samples_esys : dict (of dicts)
+            Dictionary holding dictionaries with energy system sampling
+            data for MC run (default: None)
+            dict_samples_esys['<building_id>'] = dict_esys
             (of building with id <building_id>)
         run_idx : int, optional
             Index / number of run for Monte-Carlo analysis (default: None)
@@ -1027,7 +1049,7 @@ class CityAnnuityCalc(object):
         """
 
         if run_mc:
-            if dict_samples is None:
+            if dict_samples_const is None or dict_samples_esys is None:
                 msg = 'Sample dictionary dict_samples cannnot be None, if' \
                       ' you want to perform Monte-Carlo analysis.'
                 raise AssertionError(msg)
@@ -1042,7 +1064,8 @@ class CityAnnuityCalc(object):
 
         #  Calc. city energy balance
         self.energy_balance.calc_city_energy_balance(run_mc=run_mc,
-                                                     dict_samples=dict_samples,
+                                                     dict_samples_const=
+                                                     dict_samples_const,
                                                      run_idx=run_idx)
 
         #  Perform final energy anaylsis
@@ -1059,7 +1082,10 @@ class CityAnnuityCalc(object):
         #  Calculate capital and operation related annuity
         (cap_rel_ann, op_rel_ann) = \
             self.calc_cap_and_op_rel_annuity_city(run_mc=run_mc,
-                                                  dict_samples=dict_samples,
+                                                  dict_samples_const=
+                                                  dict_samples_const,
+                                                  dict_samples_esys=
+                                                  dict_samples_esys,
                                                   run_idx=run_idx)
 
         #  Calculate demand related annuity
