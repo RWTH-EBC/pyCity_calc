@@ -4,12 +4,70 @@
 Script to rescale all dhw load curves within city to match to specific
 given, annual dhw energy demand in kWh (for whole city)
 """
+from __future__ import division
 
 import os
 import pickle
 import copy
+import warnings
 
-import pycity_calc.toolbox.teaser_usage.teaser_use as teaseruse
+
+def rescale_dhw_app(apartment, dhw_dem):
+    """
+    Rescale domestic hot water (dhw) demand on apartment object
+
+    Parameters
+    ----------
+    apartment : object
+        Apartment object of pyCity
+    dhw_dem : float
+        Domestic hot water thermal net energy demand of apartment
+        in kWh/a (used for rescaling)
+    """
+
+    assert dhw_dem >= 0
+
+    timestep = apartment.environment.timer.timeDiscretization
+
+    #  Reference demand in kWh/a
+    ref_dhw = sum(apartment.demandDomesticHotWater.loadcurve) * timestep / \
+              (3600 * 1000)
+
+    if ref_dhw == 0:
+        msg = 'Reference hot water energy demand is zero! Rescaling' \
+              ' cannot be performed!'
+        warnings.warn(msg)
+        con_factor = 1
+    else:
+        con_factor = dhw_dem / ref_dhw
+
+    apartment.demandDomesticHotWater.loadcurve *= con_factor
+    if hasattr(apartment.demandDomesticHotWater, 'water'):
+        apartment.demandDomesticHotWater.water *= con_factor
+
+
+def rescale_dhw_build(building, dhw_dem):
+    """
+    Rescale domestic hot water (dhw) demand on building object
+
+    Parameters
+    ----------
+    building : object
+        Building object of pyCity_calc
+    dhw_dem : float
+        Domestic hot water thermal net energy demand of building
+        in kWh/a (used for rescaling)
+    """
+
+    assert dhw_dem >= 0
+
+    nb_app = len(building.apartments)
+
+    dhw_dem_app = dhw_dem / nb_app
+
+    for app in building.apartments:
+        rescale_dhw_app(apartment=app, dhw_dem=dhw_dem_app)
+
 
 def mod_dhw_city_dem(city, dhw_dem, list_nodes=None, makecopy=False):
     """
@@ -47,28 +105,28 @@ def mod_dhw_city_dem(city, dhw_dem, list_nodes=None, makecopy=False):
         #  Use all building node ids
         list_nodes = city.get_list_build_entity_node_ids()
 
-    #  Calculate conversion factor
+    # Calculate conversion factor
     curr_city_dhw_dem = city.get_annual_dhw_demand(nodelist=list_nodes)
     con_factor = dhw_dem / curr_city_dhw_dem
 
     for n in list_nodes:
         curr_b = city.node[n]['entity']
-        for app in curr_b.apartments:
-            app.demandDomesticHotWater.loadcurve *= con_factor
-            app.demandDomesticHotWater.water *= con_factor
+
+        dhw_resc = con_factor * curr_b.get_annual_dhw_demand()
+
+        rescale_dhw_build(building=curr_b, dhw_dem=dhw_resc)
 
     return city
 
 
 if __name__ == '__main__':
-
     this_path = os.path.dirname(os.path.abspath(__file__))
 
     #  User input
     #  ###################################################################
-    dhw_dem = 420000  # El. energy demand for rescaling in kWh/a
+    dhw_dem = 5000  # El. energy demand for rescaling in kWh/a
 
-    city_f_name = 'aachen_frankenberg_mod_8_el_resc.pkl'
+    city_f_name = 'city_3_buildings.pkl'
 
     save_f_name = city_f_name[:-4] + '_dhw_resc.pkl'
 

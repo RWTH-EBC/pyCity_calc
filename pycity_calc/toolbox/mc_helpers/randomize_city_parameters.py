@@ -83,7 +83,7 @@ def randomize_city_params(city, mod_year=False, inf=False, temp_set=False,
             if mod_year:
                 #  Resample mod. years
                 sample_mod_year = \
-                    bunc.calc_list_mod_years_single_build(nb_samples=1,
+                    bunc.calc_array_mod_years_single_build(nb_samples=1,
                                                           year_of_constr=build_year,
                                                           max_year=max_retro_year,
                                                           time_sp_force_retro=
