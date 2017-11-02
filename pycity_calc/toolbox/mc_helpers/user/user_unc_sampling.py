@@ -11,7 +11,8 @@ from scipy.stats import nakagami
 
 def calc_set_temp_samples(nb_samples, mean=20, sdev=2.5):
     """
-    Calculate list of indoor set temperature values from gaussian distribution.
+    Calculate array of indoor set temperature values from gaussian
+    distribution.
 
     Parameters
     ----------
@@ -26,19 +27,19 @@ def calc_set_temp_samples(nb_samples, mean=20, sdev=2.5):
 
     Returns
     -------
-    list_set_temp : list (of floats)
-        List of indoor set temperatures in degree Celsius
+    array_set_temp : np.array (of floats)
+        Numpy array of indoor set temperatures in degree Celsius
     """
 
-    list_set_temp = np.random.normal(loc=mean, scale=sdev, size=nb_samples)
+    array_set_temp = np.random.normal(loc=mean, scale=sdev, size=nb_samples)
 
-    return list_set_temp
+    return array_set_temp
 
 
 def calc_user_air_ex_rates(nb_samples, min_value=0, max_value=1.2,
                            pdf='nakagami'):
     """
-    Calculate list of
+    Calculate array of user air exchange rate samples
 
     Parameters
     ----------
@@ -57,24 +58,26 @@ def calc_user_air_ex_rates(nb_samples, min_value=0, max_value=1.2,
 
     Returns
     -------
-    list_usr_inf : list (of floats)
-        List holding user infiltration rates in 1/h
+    array_usr_inf : np.array (of floats)
+        Numpy array holding user infiltration rates in 1/h
     """
 
     assert pdf in ['equal', 'triangle', 'nakagami'], \
         'Unknown value for pdf input.'
 
-    list_usr_inf = []
+    # list_usr_inf = []
+
+    array_usr_inf = np.zeros(nb_samples)
 
     if pdf == 'equal':
         min_value *= 1000
         max_value *= 1000
 
         for i in range(nb_samples):
-            list_usr_inf.append(rd.randint(min_value, max_value))
+            array_usr_inf[i] = rd.randint(min_value, max_value)
 
-        for i in range(len(list_usr_inf)):
-            list_usr_inf[i] /= 1000
+        for i in range(len(array_usr_inf)):
+            array_usr_inf[i] /= 1000
 
     elif pdf == 'triangle':
         mode = min_value + (max_value - min_value) * 0.2
@@ -83,13 +86,12 @@ def calc_user_air_ex_rates(nb_samples, min_value=0, max_value=1.2,
             val = np.random.triangular(left=min_value,
                                        right=max_value,
                                        mode=mode)
-            list_usr_inf.append(val)
+            array_usr_inf[i] = val
 
     elif pdf == 'nakagami':
-        vent_array = nakagami.rvs(0.6, scale=0.4, size=nb_samples)
-        list_usr_inf = vent_array.tolist()
+        array_usr_inf = nakagami.rvs(0.6, scale=0.4, size=nb_samples)
 
-    return list_usr_inf
+    return array_usr_inf
 
 
 #  Led to problems within monte-carlo simulation, as extrem air exchange
@@ -144,7 +146,7 @@ def calc_user_air_ex_rates(nb_samples, min_value=0, max_value=1.2,
 def calc_sampling_occ_per_app(nb_samples, method='destatis',
                               min_occ=1, max_occ=5):
     """
-    Calculate list of nb. of occupants samples
+    Calculate array of nb. of occupants samples
 
     Parameters
     ----------
@@ -167,8 +169,8 @@ def calc_sampling_occ_per_app(nb_samples, method='destatis',
 
     Returns
     -------
-    list_nb_occ : list (of ints)
-        List holding number of occupants per apartment
+    array_nb_occ : np.array (of ints)
+        Numpy array holding number of occupants per apartment
 
     Reference
     ---------
@@ -180,12 +182,14 @@ def calc_sampling_occ_per_app(nb_samples, method='destatis',
     """
     assert method in ['equal', 'destatis']
 
-    list_nb_occ = []
+    # list_nb_occ = []
+
+    array_nb_occ = np.zeros(nb_samples)
 
     if method == 'equal':
         for i in range(nb_samples):
             curr_val = rd.randint(int(min_occ), int(max_occ))
-            list_nb_occ.append(curr_val)
+            array_nb_occ[i] = curr_val
 
     elif method == 'destatis':
         for i in range(nb_samples):
@@ -193,18 +197,18 @@ def calc_sampling_occ_per_app(nb_samples, method='destatis',
 
             #  Destatis values from 2015 about nb. of occupants per apartment
             if rand_nb <= 41.4:
-                list_nb_occ.append(1)
+                array_nb_occ[i] = 1
             elif rand_nb <= 41.4 + 34.2:
-                list_nb_occ.append(2)
+                array_nb_occ[i] = 2
             elif rand_nb <= 41.4 + 34.2 + 12.1:
-                list_nb_occ.append(3)
+                array_nb_occ[i] = 3
             elif rand_nb <= 41.4 + 34.2 + 12.1 + 9:
-                list_nb_occ.append(4)
+                array_nb_occ[i] = 4
             # elif rand_nb <= 41.4 + 34.2 + 12.1 + 9 + 3.2:
             else:
-                list_nb_occ.append(5)
+                array_nb_occ[i] = 5
 
-    return list_nb_occ
+    return array_nb_occ
 
 
 def calc_sampling_el_demand_per_apartment(nb_samples, nb_persons, type,
@@ -230,8 +234,8 @@ def calc_sampling_el_demand_per_apartment(nb_samples, nb_persons, type,
 
     Returns
     -------
-    list_el_demands : list (of floats)
-        List holding annual electric demand values in kWh per apartment
+    array_el_demands : np.array (of floats)
+        Numpy array holding annual electric demand values in kWh per apartment
     """
 
     assert type in ['sfh', 'mfh']
@@ -239,7 +243,8 @@ def calc_sampling_el_demand_per_apartment(nb_samples, nb_persons, type,
     assert nb_persons > 0
     assert nb_persons <= 5
 
-    list_el_demands = []
+    # list_el_demands = []
+    array_el_demands = np.zeros(nb_samples)
 
     if method == 'stromspiegel2017':
         #  Stromspiegel data for electric demand without hot water coverage
@@ -265,10 +270,9 @@ def calc_sampling_el_demand_per_apartment(nb_samples, nb_persons, type,
         maxv = use_dict[nb_persons][1]
 
         for i in range(nb_samples):
-            chosen_val = rd.randint(minv, maxv)
-            list_el_demands.append(chosen_val)
+            array_el_demands[i] = rd.randint(minv, maxv)
 
-    return list_el_demands
+    return array_el_demands
 
 
 def calc_sampling_dhw_per_person(nb_samples, pdf='equal', equal_diff=34,
@@ -298,23 +302,23 @@ def calc_sampling_dhw_per_person(nb_samples, pdf='equal', equal_diff=34,
 
     Returns
     -------
-    list_dhw_vol : list (of floats)
-        List of hot water volumes per person and day in liters
+    array_dhw_vol : np.array (of floats)
+        Numpy array of hot water volumes per person and day in liters
     """
 
     assert pdf in ['gaussian', 'equal']
 
-    list_dhw_vol = []
+    # list_dhw_vol = []
+    array_dhw_vol = np.zeros(nb_samples)
 
     if pdf == 'gaussian':
         list_dhw_vol = np.random.normal(loc=mean, scale=std, size=nb_samples)
     elif pdf == 'equal':
         for i in range(nb_samples):
-            sample_dhw = rd.randint(int((mean - equal_diff) * 1000),
+            array_dhw_vol[i] = rd.randint(int((mean - equal_diff) * 1000),
                                     int((mean + equal_diff) * 1000)) / 1000
-            list_dhw_vol.append(sample_dhw)
 
-    return list_dhw_vol
+    return array_dhw_vol
 
 
 def calc_dhw_ref_volume_for_multiple_occ(nb_occ, ref_one_occ=64):
@@ -401,15 +405,16 @@ def calc_sampling_dhw_per_apartment(nb_samples, nb_persons,
 
     Returns
     -------
-    list_dhw_vol : list (of floats)
-        List of hot water volumes per apartment and day in liters
+    array_dhw_vol : np.array (of floats)
+        Numpy array of hot water volumes per apartment and day in liters
     """
 
     assert method in ['nb_occ_dep', 'indep', 'stromspiegel_2017']
     assert pdf in ['equal', 'gaussian']
     assert b_type in ['sfh', 'mfh']
 
-    list_dhw_vol = []
+    # list_dhw_vol = []
+    array_dhw_vol = np.zeros(nb_samples)
 
     if method == 'nb_occ_dep':
         #  Dhw consumption per occupants depends on total number of occupants
@@ -428,7 +433,7 @@ def calc_sampling_dhw_per_apartment(nb_samples, nb_persons,
                                                  pdf=pdf,
                                                  equal_diff=equal_diff,
                                                  std=std)[0]
-            list_dhw_vol.append(dhw_value)
+            array_dhw_vol[i] = dhw_value
 
     elif method == 'indep':
         #  Dhw consumpton per occupants is independend from total number of
@@ -443,7 +448,7 @@ def calc_sampling_dhw_per_apartment(nb_samples, nb_persons,
                                                  pdf=pdf,
                                                  equal_diff=equal_diff,
                                                  std=std)[0]
-            list_dhw_vol.append(dhw_value)
+            array_dhw_vol[i] = dhw_value
 
     elif method == 'stromspiegel_2017':
 
@@ -478,9 +483,9 @@ def calc_sampling_dhw_per_apartment(nb_samples, nb_persons,
             dhw_value = dhw_energy * 3600 * 1000 * 1000 \
                         / (rho_water * c_p_water * delta_t * 365)
 
-            list_dhw_vol.append(dhw_value)
+            array_dhw_vol[i] = dhw_value
 
-    return list_dhw_vol
+    return array_dhw_vol
 
 
 if __name__ == '__main__':

@@ -25,7 +25,7 @@ def run_example_exbuild():
 
     #  Create the typeBuilding
     teaser_usage.create_teaser_typebld(project, BuildingExtended,
-                                 generate_Output=True, name='building_1')
+                                 generate_Output=False, name='building_1')
 
 
 def run_example_city():
@@ -45,7 +45,7 @@ def run_example_city():
 
     # create the typeBuilding
     teaser_usage.create_teaser_typecity(project, city_object,
-                                  generate_Output=True)
+                                  generate_Output=False)
 
     return city_object
 

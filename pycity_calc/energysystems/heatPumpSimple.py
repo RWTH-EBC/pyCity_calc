@@ -21,7 +21,7 @@ class heatPumpSimple(heat.HeatingDevice):
                  lower_activation_limit=0.5, hp_type='aw',
                  t_sink=45.0):
         """
-       Parameters
+        Parameters
         ----------
         environment : Extended environment object
             Common to all other objects. Includes time and weather instances

@@ -91,25 +91,27 @@ class TimerExtended(Timer.Timer):
         self.timestep = timestep
         self.year = year
 
-    def time_vector(self):
-        """
-        Generates time array (with hourly values!)
-
-        Returns
-        -------
-        time_vector : np.array
-            Numpy array with
-        """
-
-        initial_annual_steps = 8760
-        time_vector_list = []
-        for i in range(int(initial_annual_steps * 3600 / self.timestep)):
-            time_vector_list.append(i)
-
-        #  Convert to numpy array
-        time_vector = np.array(time_vector_list)
-
-        return time_vector
+    #  Uncommented, as time_vector is currently not in use. Has only been
+    #  Used by old energy balance script
+    # def time_vector(self):
+    #     """
+    #     Generates time array (with hourly values!)
+    #
+    #     Returns
+    #     -------
+    #     time_vector : np.array
+    #         Numpy array with
+    #     """
+    #
+    #     initial_annual_steps = 8760
+    #     time_vector_list = []
+    #     for i in range(int(initial_annual_steps * 3600 / self.timestep)):
+    #         time_vector_list.append(i)
+    #
+    #     #  Convert to numpy array
+    #     time_vector = np.array(time_vector_list)
+    #
+    #     return time_vector
 
 
 if __name__ == '__main__':

@@ -105,12 +105,12 @@ class thermalEnergyStorageExtended(TES.ThermalEnergyStorage):
             capacity=capacity,
             tMax=t_max,
             tSurroundings=t_surroundings,
-            kLosses=k_loss)
+            kLosses=None)  # in W/K
 
         self.c_p = c_p
         self.rho = rho
         self.t_min = t_min
-        self.k_loss = k_loss
+        self.k_loss = k_loss  # in W/m2K
         self.h_d_ratio = h_d_ratio
         self.use_outside_temp = use_outside_temp
 

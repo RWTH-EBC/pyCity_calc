@@ -233,80 +233,40 @@ class EconomicCalculation(object):
         #  Dictionary with number of replacements per component
         self.dict_nb_replacements = {}
 
+        #  If default VDI 2067 is used
+        #  #############################################################
+        if method == 'vdi2067':
+            #  Calculate VDI 2067 factors (r)
+            self.price_ch_cap = price_ch_cap
+            # Price change factor of capital (e.g. 1.05)
+            self.price_ch_dem_gas = price_ch_dem_gas
+            # Price change factor demand (gas)
+            self.price_ch_dem_el = price_ch_dem_el
+            # Price change factor demand (el.)
+            self.price_ch_dem_cool = price_ch_dem_cool
+            #  Price change factor cooling
+            self.price_ch_op = price_ch_op
+            # Price change factor operations
+            self.price_ch_proc_chp = price_ch_proc_chp
+            # Price change factor proceedings (CHP)
+            self.price_ch_proc_pv = price_ch_proc_pv
+            # Price change factor proceedings (PV)
+            self.price_ch_dem_el_hp = price_ch_dem_el_hp
+            # price change factor electrcity special tariff for hp
+
+            self.price_ch_eeg_chp = price_ch_eeg_chp
+            self.price_ch_eeg_pv = price_ch_eeg_pv
+            self.price_ch_eex = price_ch_eex
+            self.price_ch_grid_use = price_ch_grid_use
+            self.price_ch_chp_sub = price_ch_chp_sub
+            self.price_ch_chp_self = price_ch_chp_self
+            self.price_ch_chp_tax_return = price_ch_chp_tax_return
+            self.price_ch_pv_sub = price_ch_pv_sub
+
         if run_init_calc:
             #  Run initial calculations and save results back to object
             #  #############################################################
-
-            #  Calculate annuity factor (saved to self.ann_factor)
-            self.calc_annuity_factor()
-
-            #  Calculate number of replacements per type of energy system
-            self.calc_nb_of_replacements()
-
-            #  If default VDI 2067 is used
-            #  #############################################################
-            if method == 'vdi2067':
-                #  Calculate VDI 2067 factors (r)
-                self.price_ch_cap = price_ch_cap
-                # Price change factor of capital (e.g. 1.05)
-                self.price_ch_dem_gas = price_ch_dem_gas
-                # Price change factor demand (gas)
-                self.price_ch_dem_el = price_ch_dem_el
-                # Price change factor demand (el.)
-                self.price_ch_dem_cool = price_ch_dem_cool
-                #  Price change factor cooling
-                self.price_ch_op = price_ch_op
-                # Price change factor operations
-                self.price_ch_proc_chp = price_ch_proc_chp
-                # Price change factor proceedings (CHP)
-                self.price_ch_proc_pv = price_ch_proc_pv
-                # Price change factor proceedings (PV)
-                self.price_ch_dem_el_hp = price_ch_dem_el_hp
-                # price change factor electrcity special tariff for hp
-
-                self.price_ch_eeg_chp = price_ch_eeg_chp
-                self.price_ch_eeg_pv = price_ch_eeg_pv
-                self.price_ch_eex = price_ch_eex
-                self.price_ch_grid_use = price_ch_grid_use
-                self.price_ch_chp_sub = price_ch_chp_sub
-                self.price_ch_chp_self = price_ch_chp_self
-                self.price_ch_chp_tax_return = price_ch_chp_tax_return
-                self.price_ch_pv_sub = price_ch_pv_sub
-
-                #  Calculate dynamic value factors (b)
-                self.price_dyn_cap = self.calc_price_dyn_factor(
-                    self.price_ch_cap)
-                self.price_dyn_dem_gas = \
-                    self.calc_price_dyn_factor(self.price_ch_dem_gas)
-                self.price_dyn_dem_el = \
-                    self.calc_price_dyn_factor(self.price_ch_dem_el)
-                self.price_dyn_dem_cool = \
-                    self.calc_price_dyn_factor(self.price_ch_dem_cool)
-                self.price_dyn_op = self.calc_price_dyn_factor(
-                    self.price_ch_op)
-                self.price_dyn_proc_chp = \
-                    self.calc_price_dyn_factor(self.price_ch_proc_chp)
-                self.price_dyn_proc_pv = \
-                    self.calc_price_dyn_factor(self.price_ch_proc_pv)
-
-                self.price_dyn_eeg_chp = \
-                    self.calc_price_dyn_factor(
-                        self.price_ch_eeg_chp)
-                self.price_dyn_eeg_pv = \
-                    self.calc_price_dyn_factor(self.price_ch_eeg_pv)
-                self.price_dyn_eex = \
-                    self.calc_price_dyn_factor(self.price_ch_eex)
-                self.price_dyn_grid_use = \
-                    self.calc_price_dyn_factor(self.price_ch_grid_use)
-                self.price_dyn_chp_sub = \
-                    self.calc_price_dyn_factor(self.price_ch_chp_sub)
-                self.price_dyn_chp_self = \
-                    self.calc_price_dyn_factor(self.price_ch_chp_self)
-                self.price_dyn_chp_tax_return = \
-                    self.calc_price_dyn_factor(self.price_ch_chp_tax_return)
-                self.price_dyn_pv_sub = \
-                    self.calc_price_dyn_factor(self.price_ch_pv_sub)
-                self.price_dyn_dem_el_hp = self.calc_price_dyn_factor(self.price_ch_dem_el_hp)
+            self.initial_calc(method=method)
 
     def __str__(self):  # pragma: no cover
         return str('<EconomicCalculator object of PyCity_Calc with ' +
@@ -314,6 +274,62 @@ class EconomicCalculation(object):
                    + str(self.interest) + ' internal interest '
                                           ' and method ' + str(
             self.method) + '>')
+
+    def initial_calc(self, method='vdi2067'):
+        """
+        Runs initial calculation
+
+        Parameters
+        ----------
+        method : str, optional
+            Method of calculation (default: 'vdi2067')
+            Options:
+            'vdi2067' : Annuity calculation based on VDI 2067 standard
+            'year_specific' : Uses year dependend price change factors,
+            e.g. generated by Brownian motion (to be implemented)
+        """
+        #  Calculate annuity factor (saved to self.ann_factor)
+        self.calc_annuity_factor()
+
+        #  Calculate number of replacements per type of energy system
+        self.calc_nb_of_replacements()
+
+        if method == 'vdi2067':
+            #  Calculate dynamic value factors (b)
+            self.price_dyn_cap = self.calc_price_dyn_factor(
+                self.price_ch_cap)
+            self.price_dyn_dem_gas = \
+                self.calc_price_dyn_factor(self.price_ch_dem_gas)
+            self.price_dyn_dem_el = \
+                self.calc_price_dyn_factor(self.price_ch_dem_el)
+            self.price_dyn_dem_cool = \
+                self.calc_price_dyn_factor(self.price_ch_dem_cool)
+            self.price_dyn_op = self.calc_price_dyn_factor(
+                self.price_ch_op)
+            self.price_dyn_proc_chp = \
+                self.calc_price_dyn_factor(self.price_ch_proc_chp)
+            self.price_dyn_proc_pv = \
+                self.calc_price_dyn_factor(self.price_ch_proc_pv)
+
+            self.price_dyn_eeg_chp = \
+                self.calc_price_dyn_factor(
+                    self.price_ch_eeg_chp)
+            self.price_dyn_eeg_pv = \
+                self.calc_price_dyn_factor(self.price_ch_eeg_pv)
+            self.price_dyn_eex = \
+                self.calc_price_dyn_factor(self.price_ch_eex)
+            self.price_dyn_grid_use = \
+                self.calc_price_dyn_factor(self.price_ch_grid_use)
+            self.price_dyn_chp_sub = \
+                self.calc_price_dyn_factor(self.price_ch_chp_sub)
+            self.price_dyn_chp_self = \
+                self.calc_price_dyn_factor(self.price_ch_chp_self)
+            self.price_dyn_chp_tax_return = \
+                self.calc_price_dyn_factor(self.price_ch_chp_tax_return)
+            self.price_dyn_pv_sub = \
+                self.calc_price_dyn_factor(self.price_ch_pv_sub)
+            self.price_dyn_dem_el_hp = self.calc_price_dyn_factor(
+                self.price_ch_dem_el_hp)
 
     def get_dict_of_valid_components(self):
         """
@@ -796,13 +812,13 @@ class EconomicCalculation(object):
         if sum_cool_e > 0:
             assert price_cool > 0, 'Specific price has to be larger than zero!'
         if sum_el_hp_e > 0:
-            assert price_el_hp> 0, 'Specific price has to be larger than zero!'
+            assert price_el_hp > 0, 'Specific price has to be larger than zero!'
 
         # Define simple named pointers
         b_el = self.price_dyn_dem_el  # Price dynamic factor el.
         b_gas = self.price_dyn_dem_gas  # Price dynamic factor gas
         b_cool = self.price_dyn_dem_cool
-        b_el_hp = self.price_dyn_dem_el_hp # Price dynamic factor el. hp
+        b_el_hp = self.price_dyn_dem_el_hp  # Price dynamic factor el. hp
 
         #  Calculate demand-related cost per year
         dem_rel_cost = b_el * sum_el_e * price_el + \
@@ -1047,8 +1063,8 @@ if __name__ == '__main__':
 
     #  Calculate total capital related annuity
     cap_rel_annuity = eco_calc.calc_capital_rel_annuity(invest=total_invest,
-                                          sum_repl=total_repl_cash,
-                                          residual=total_residuals)
+                                                        sum_repl=total_repl_cash,
+                                                        residual=total_residuals)
     print('Total capital-related annuity in Euros:')
     print(round(cap_rel_annuity, 2))
     print()
@@ -1135,9 +1151,9 @@ if __name__ == '__main__':
     #  Calculate total annuity
     #  ##################################################################
     total_annuity = eco_calc.calc_total_annuity(ann_capital=cap_rel_annuity,
-                                    ann_demand=dem_rel_annuity,
-                                    ann_op=op_rel_annuity,
-                                    ann_proc=ann_proc)
+                                                ann_demand=dem_rel_annuity,
+                                                ann_op=op_rel_annuity,
+                                                ann_proc=ann_proc)
     print('Total annuity in Euro/a (+ means total annualized cost /'
           ' - is annualized profit):')
     print(round(total_annuity, 2))
