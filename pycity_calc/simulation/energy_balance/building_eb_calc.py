@@ -1201,7 +1201,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
 
                 if has_boiler:
 
-                    #  if sh_pow_remain > 0 or dhw_pow_remain > 0, use eh
+                    #  if sh_pow_remain > 0 or dhw_pow_remain > 0, use boiler
 
                     #  eh pointer
                     boiler = build.bes.boiler
