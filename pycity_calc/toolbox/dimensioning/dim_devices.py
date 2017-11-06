@@ -12,9 +12,39 @@ import pycity_calc.economic.energy_sys_cost.boiler_cost as boiler_cost
 
 import pycity_calc.energysystems.heatPumpSimple as HP
 
-def dim_decentral_hp(environment, sh_curve, t_biv=-5, tMax=55, lowerActivationLimit=0.3, tSink=45):
+def dim_decentral_hp(environment, sh_curve, t_biv=-2, lowerActivationLimit=0.05, tSink=28):
+    '''
+    Dimensioning of air/water heat pump.
+
+    Parameters
+    ----------
+    environment : Environment class of city-object
+    sh_curve : Space heating curve of building
+    t_biv : bivalence temperature
+    tMax : max. flow temperature of heat pump
+    lowerActivationLimit : lower activation limit of heat pump
+    tSink : return flow temperature
+
+    Returns
+    -------
+    q_hp_biv : float
+        Power of heat pump in bivalence point (-> Q_nom)
+    tMax : int
+        max. flow temperature
+    lowerActivationLimit : float
+        lower activation limit of heat pump
+    tSink : int
+        return flow temperature
+    t_dem_ldc : list
+        space heating demand sorted by outside temperature
+    biv_ind : int
+        index of bivalence point in t_dem_ldc
+
+    '''
+    # Values according to Masterthesis
 
     # monoenergetic operation
+
     t_dem_ldc = get_t_demand_list(environment.weather.tAmbient, sh_curve)  # ldc with sh-demand and tAmbient
     # plt.plot(sorted(city.environment.weather.tAmbient), t_dem_ldc)
 
@@ -30,24 +60,82 @@ def dim_decentral_hp(environment, sh_curve, t_biv=-5, tMax=55, lowerActivationLi
             for q in sh_curve:
                 if q > q_hp_biv:
                     q2 += q - q_hp_biv
-            print('peak supply produces ' + str(np.round(q2*100/np.sum(sh_curve),2)) + '% of annual heat demand.')
 
+            # If curves are generated with method 1 (SLP by Hellwig), ratio is always 0.91% - maybe bc curves are only scaled up?
+            print('peak supply produces ' + str(np.round(q2*100/np.sum(sh_curve),2)) + '% of annual heat demand.')
+            ee_ratio = 1 - q2 / np.sum(sh_curve)
             break
     else:
-        raise Exception('Error in calculation of demand in bivalence point')
+        raise Exception('Error in demand calculation at bivalence point')
+
+    q_nom, cop_list, tMax, tSink = choose_hp(q_hp_biv)
+
+    return q_nom, cop_list, tMax, lowerActivationLimit, tSink, t_dem_ldc, biv_ind, ee_ratio
 
 
+def choose_hp(q_ideal, t_biv, method=1):
+    '''
+    Choose heat pump depending on desired thermal power and bivalence point
+    Method 0: Return best possible Heat Pump with average COPs
+    Method 1: Choose heat pump from catalogue of existing devices (source: Dimplex)
+
+    Parameters
+    ----------
+    q_ideal
+    t_biv
+    method
+
+    Returns
+    -------
+
+    '''
+
+    if method == 0:
+
+        best_q_biv = q_ideal
+        best_cop_list = [2.9, 3.7, 4.4]
+        tMax = 35
+        tSink = 28
+
+        return best_q_biv, best_cop_list, tMax, tSink
 
 
-    # choose_device('hp',q_hp_biv)
-    #plt.plot([min(environment.weather.tAmbient), max(environment.weather.tAmbient)], [q_hp_biv, q_hp_biv],'r')
-    #plt.show()
+    else:
+        # [heating power],[COP] (at A-7/W35, A2/W35, A7/W35), [tMax, tMin] (source: Dimplex)
+        hp_list = {'LA6TU':([4.0,5.1,6.4],[2.9,3.8,4.6],[60,18]),'LA9TU':([5.2,7.5,9.2],[2.8,3.6,4.2],[58,18]),
+                   'LA12TU':([7.6,9.4,11.6],[2.9,3.7,4.3],[58,18]),'LA17TU':([10.3,14.6,19.6],[2.9,3.7,4.4],[58,18]),
+                   'LA25TU':([16.7,19.6,26.1],[3.0,3.7,4.4],[58,18]),'LA40TU':([23.8,30.0,35.7], [3.0,3.8,4.4],[58,18])}
 
-    return q_hp_biv, tMax, lowerActivationLimit, tSink, t_dem_ldc, biv_ind
+        q_ideal = q_ideal/1000
+
+        best_hp = 'LA6TU'
+        best_q_biv = (hp_list['LA6TU'][0][2] - hp_list['LA6TU'][0][0]) / (7 + 7) * (t_biv + 7) + hp_list['LA6TU'][0][0]
+        best_cop_list = hp_list['LA6TU'][1]
+
+        for hp in hp_list:
+            q_nom = hp_list[hp][0]
+            q_biv = (q_nom[2] - q_nom[0])/(7 + 7) * (t_biv + 7) + q_nom[0]  # Interpolation for q at t_biv
+
+            if abs(q_biv - q_ideal) <= abs(best_q_biv - q_ideal):
+                best_hp = hp
+                best_q_biv = q_biv
+                best_cop_list = hp_list[hp][1]
+
+        print('Best HP: ' + best_hp)
+
+        # temperature constraints
+        tMax = hp_list[best_hp][2][0]
+        tMin = hp_list[best_hp][2][1]
+
+        # TODO: How are the temperatures used? Use constraints or t in heating system?
+        # Temperature of heating system
+        tMax = 35
+        tSink = 28
+
+        return best_q_biv, best_cop_list, tMax, tSink
+
 
 def dim_decentral_chp(th_LDC, q_total, method=0):
-
-    # TODO: Methode verändern für decentralized - Einfacher, keine Dreiecke um Grenzen zu setzen
 
     # ---------------- Method 0: Krimmling and interviews ----------------
     if method == 0:
@@ -58,14 +146,14 @@ def dim_decentral_chp(th_LDC, q_total, method=0):
         (t_ann_op_max, t_x_max) = get_chp_ann_op_time(q_nom, th_LDC)  # (annual operation time, full load hours)
 
         # Set minimum for flh
-        chp_flh = 3000
+        chp_flh = 5000
         q_chp = th_LDC[chp_flh]
         [eta_el, eta_th, p_nom, q_nom] = choose_chp(q_chp)
         (t_ann_op_min, t_x_min) = get_chp_ann_op_time(q_nom, th_LDC)
 
-        if t_x_min < t_x_max:
+        if t_x_min <= t_x_max:
             best_costs = 1000000000
-            best_sol_costs = 0, 0, 0, 0, 0
+            best_sol_costs = 0, 0, 0, 0, 0, 0
 
             array_q_nom = []
             array_t_x = []
@@ -73,7 +161,7 @@ def dim_decentral_chp(th_LDC, q_total, method=0):
             array_deckung = []
             array_costs = []
 
-            for t in range(t_x_min, t_x_max, 20):
+            for t in range(t_x_min, t_x_max+1, 20):  # t_x_max+1 to have at least 1 value in range if t_max = t_min
                 cost_cap = []
                 cost_op = []
                 rev = []
@@ -99,7 +187,7 @@ def dim_decentral_chp(th_LDC, q_total, method=0):
                 rev.append(get_subs_minichp(p_nom, v_tes))
 
                 # Calculate costs for Boiler
-                q_boiler = max(th_LDC) - q_nom
+                q_boiler = max(max(th_LDC) - q_nom, 0)
                 a_boiler = 0.08 * (1 + 0.08) ** 18 / ((1 + 0.08) ** 18 - 1)  # annuity factor
                 cost_cap.append(boiler_cost.calc_abs_boiler_cost(q_boiler / 1000, method='viess2013') * a_boiler)
                 cost_op.append(((q_total - q_nom * t_ann_op) / 1000) / 0.8 * 0.0661)
@@ -112,12 +200,12 @@ def dim_decentral_chp(th_LDC, q_total, method=0):
                 array_deckung.append((t_ann_op * q_nom) / q_total)
                 array_costs.append(costs_total)
 
-                if costs_total < best_costs:
+                if costs_total <= best_costs:
                     best_sol_costs = (eta_el, eta_th, p_nom, q_nom, t_x, t_ann_op)
                     best_costs = costs_total
 
-            plt.figure(1)
-            plt.plot(array_costs)
+            #plt.figure(1)
+            #plt.plot(array_costs)
 
             #plt.figure(2)
 
@@ -170,13 +258,12 @@ def dim_decentral_chp(th_LDC, q_total, method=0):
     return eta_el, eta_th, p_nom, q_nom, t_x, t_ann_op
 
 
-def dim_central_chp(th_LDC, q_total, district_type, method=0):
+def dim_central_chp(th_LDC, q_total, method=0):
+    # TODO: docstring aktualisieren
     """
 
     Parameters
     ----------
-    city            : city_object
-    district_type   : string
     method          : integer
         = 0:  Standard approach (Krimmling 2011):
                 - Q_th > 10% (< 20%) of max. thermal demand
@@ -206,7 +293,7 @@ def dim_central_chp(th_LDC, q_total, district_type, method=0):
 
         if t_x_min < t_x_max:
             best_costs = 1000000000
-            best_sol_costs = 0,0,0,0,0
+            best_sol_costs = 0,0,0,0,0,0
 
             array_q_nom = []
             array_t_x = []
@@ -214,7 +301,7 @@ def dim_central_chp(th_LDC, q_total, district_type, method=0):
             array_deckung = []
             array_costs = []
 
-            for t in range(t_x_min, t_x_max, 20):
+            for t in range(t_x_min, t_x_max+1, 20):  # t_x_max+1 to have at least 1 value in range if t_max = t_min
                 cost_cap = []
                 cost_op = []
                 rev = []
@@ -222,6 +309,7 @@ def dim_central_chp(th_LDC, q_total, district_type, method=0):
                 q_chp = th_LDC[t]
                 [eta_el, eta_th, p_nom, q_nom] = choose_chp(q_chp)
                 (t_ann_op, t_x) = get_chp_ann_op_time(q_nom, th_LDC)
+                chp_ratio = q_nom * t_ann_op / q_total
 
                 # Calculate costs for chp
                 a_chp = 0.08 * (1 + 0.08) ** 15 / ((1 + 0.08) ** 15 - 1)    # annuity factor
@@ -231,20 +319,20 @@ def dim_central_chp(th_LDC, q_total, district_type, method=0):
                 cost_op.append((q_nom/1000)/eta_th * t_ann_op * 0.0661)
                 rev.append(p_nom/1000 * t_ann_op * get_el_feedin_tariff_chp(q_nom))
 
-                # TODO: weitere Förderungen eintragen
-
                 # Calculate costs for thermal energy storage
                 v_tes = (q_nom / 1000) * 60/1000  # (in m3) Förderung von Speichern für Mini-BHKW durch BAFA bei Speichergrößen über 60 l/kW_th
                 # TODO: Wie sieht die Dimensionierung für KWK-Anlagen über 30 kW aus? Sind die 20% realistisch?
                 a_tes = 0.08 * (1 + 0.08) ** 20 / ((1 + 0.08) ** 20 - 1)    # annuity factor
-                cost_cap.append(tes_cost.calc_invest_cost_tes(v_tes, method='spieker')*a_tes)
+                tes_invest = tes_cost.calc_invest_cost_tes(v_tes, method='spieker')
+                cost_cap.append(tes_invest*a_tes)
+                rev.append(get_subs_tes_chp(chp_ratio, v_tes, tes_invest, p_nom))
                 rev.append(get_subs_minichp(p_nom, v_tes))
 
                 # Calculate costs for Boiler
-                q_boiler = max(th_LDC) - q_nom
+                q_boiler = max(max(th_LDC) - q_nom, 0)
                 a_boiler = 0.08 * (1 + 0.08) ** 18 / ((1 + 0.08) ** 18 - 1)    # annuity factor
                 cost_cap.append(boiler_cost.calc_abs_boiler_cost(q_boiler / 1000, method='viess2013')*a_boiler)
-                cost_op.append(((q_total - q_nom * t_ann_op)/1000)/0.8*0.0661)
+                cost_op.append(((q_total - q_nom * t_ann_op)/1000)/0.8*0.0661) #  operational costs for boiler
 
                 costs_total = sum(cost_cap) + sum(cost_op) - sum(rev)
 
@@ -413,7 +501,8 @@ def get_chp_ann_op_time(q_nom, th_LDC):
             t_x = th_LDC.index(q_m)  # find crossing point on LDC (indicates full load hours)
             break
     else:
-        raise Exception('No crossing point between CHP th.power and LDC found. Check parameters!')
+        print('Warning! No crossing point between CHP th.power and LDC found. Check parameters or add devices!')
+        return 0,0
 
     # Find point in time, when area between t:t_x and t_x:8760 are the same size (see Krimmling p.131, Abb.4-15)
     delta_a = 8760 * th_LDC[0]
@@ -428,11 +517,12 @@ def get_chp_ann_op_time(q_nom, th_LDC):
         else:
             delta_a = a2 - a1
 
-def choose_chp(q_ideal):
-    """
-    Choose CHP device out of catalogue of available devices
 
-    improvement -> add costs and more devices
+def choose_chp(q_ideal, method=1):
+    """
+    Choose CHP device
+    Method 0: Return device with desired thermal power and average effiency
+    Method 1: Out of catalogue of available devices
 
     Parameters
     ----------
@@ -442,21 +532,36 @@ def choose_chp(q_ideal):
     -------
 
     """
-    # TODO: beim letzten gefundenen Ergebnis starten um Prozess zu beschleunigen
+    if method == 0:
+        q_nom = q_ideal
+        eta_el = 0.27
+        eta_th = 0.65
+        p_nom = round(q_nom/eta_th * eta_el/10)*10
 
-    # Source: BHKW-Kenndaten 2014, S.26 - [eta_el, eta_th, p_nom, q_nom]
-    chp_list = {'vai1':[0.263, 0.658, 1000, 2500], 'vai2':[0.25, 0.667, 3000, 8000], 'vai3':[0.247,0.658,4700,12500],
-                'vie':[0.27, 0.671, 6000, 14900], 'rmb7.2':[0.263, 0.657, 7200, 18000],'oet8':[0.268,0.633,8000,19000],
-                'xrgi9':[0.289,0.641,9000,20000],'rmb11.0':[0.289,0.632,11000,24000],'xrgi15':[0.307,0.613,15000,30000],
-                'asv1534':[0.306,0.694,15000,34000],'sb16':[0.314,0.72,16000,36700],'xrgi20':[0.32,0.64,20000,40000]}
+        return eta_el, eta_th, p_nom, q_nom
 
-    specs = [0, 0, 0, 0]
-    for dev in chp_list.values():
-        eta_th = dev[1]
-        q_nom = dev[3]
-        if abs(q_nom-q_ideal) < abs(specs[3]-q_ideal):
-            specs = dev[:]
-    return specs
+    else:
+        # TODO: Import data from excel
+        # Source: BHKW-Kenndaten 2014, S.26 - [eta_el, eta_th, p_nom, q_nom]
+        chp_list = {'vai1':[0.263, 0.658, 1000, 2500], 'intelli':[0.245, 0.613, 2600, 6500], 'vai2':[0.25, 0.667, 3000, 8000],
+                    'kirsch':[0.19, 0.76, 1900, 9000], 'vai3':[0.247,0.658,4700,12500], 'ecp':[0.286, 0.644, 13500,6000],
+                    'vie':[0.27, 0.671, 6000, 14900], 'hoef':[0.27,0.664,7000,17200], 'rmb7.2':[0.263, 0.657, 7200, 18000],
+                    'oet8':[0.268,0.633,8000,19000], 'xrgi9':[0.289,0.641,9000,20000], 'kwe':[0.268, 0.818, 7500, 22900],
+                    'rmb11.0':[0.289,0.632,11000,24000], 'oet12':[0.279, 0.605, 12000, 26000], 'motat':[0.279, 0.651, 12000, 28000],
+                    'xrgi15':[0.307,0.613,15000,30000], 'ews':[0.711, 0.311, 14000, 32000], 'asv1534':[0.306,0.694,15000,34000],
+                    'sb16':[0.314,0.72,16000,36700], 'enrtc':[0.323,0.629,20000,39000], 'xrgi20':[0.32,0.64,20000,40000]}
+
+        if q_ideal < 2500:
+            specs = chp_list['vai1']
+        else:
+            specs = [0, 0, 0, 0]
+
+        for dev in chp_list.values():
+            q_nom = dev[3]
+            if abs(q_nom-q_ideal) < abs(specs[3]-q_ideal):
+                specs = dev[:]
+        return specs
+
 
 def get_el_feedin_tariff_chp(q_nom, el_feedin_epex=0.02978):
     # KWKG 2016 revenues for el. feed-in + feedin price from epex
@@ -470,6 +575,7 @@ def get_el_feedin_tariff_chp(q_nom, el_feedin_epex=0.02978):
         return 0.044+el_feedin_epex  # Euro/kWh, only paid for 30.000 flh
     else:  # q_nom > 2000000:
         return 0.031+el_feedin_epex  # Euro/kWh, only paid for 30.000 flh
+
 
 def get_subs_minichp(p_nom, v_tes):
     # BAFA subsidy for Mini-CHP (CHP device must be listed on BAFA-list)
@@ -486,3 +592,19 @@ def get_subs_minichp(p_nom, v_tes):
                 bafa_subs_chp = 1900 + 3 * 300 + 6 * 100 + (p_nom / 1000 - 10) * 10
     return bafa_subs_chp
 
+
+def get_subs_tes_chp(chp_ratio, v_tes, tes_invest, p_nom):
+
+    v_m3 = v_tes/1000
+    kwkg_subs_tes = 0
+
+    if chp_ratio >= 0.5:
+        if 1 <= v_m3 <= 50:
+            kwkg_subs_tes = 250*v_m3
+        elif v_m3 > 50:
+            kwkg_subs_tes = 0.3*tes_invest
+        else:
+            if v_m3 >= 0.3*p_nom/1000:
+                kwkg_subs_tes = 250 * v_m3
+
+    return kwkg_subs_tes
