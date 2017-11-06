@@ -101,52 +101,12 @@ class ChpExtended(chp.CHP):
             'The total efficiency of the CHP Unit cannot be larger'
             'than one.')
 
-        if thermal_operation_mode:  # thermal operation mode
-
-            th_power = q_nominal
-            el_power = asue.calc_el_power_with_th_power(q_nominal, eta_total)
-
-            try:
-                assert el_power < p_nominal * 1.2
-            except AssertionError:
-                warnings.warn(
-                    "Electrical nominal power is too large for thermal"
-                    "operation mode. Electrical power should be between " +
-                    str(round(el_power / 1.2, 2)) + " and " +
-                    str(round(el_power * 1.2, 2)) + " W."
-                    " Check your System!")
-            try:
-                assert el_power > p_nominal / 1.2
-            except AssertionError:
-                warnings.warn(
-                    "Electrical nominal power is too large for thermal"
-                    "operation mode. Electrical power should be between " +
-                    str(round(el_power / 1.2, 2)) + " and " +
-                    str(round(el_power * 1.2, 2)) + " W."
-                    " Check your System!")
-
-        else:  # electrical operation mode
-            el_power = p_nominal
-            th_power = asue.calc_th_output_with_p_el(el_power, eta_total)
-
-            try:
-                assert th_power < q_nominal * 1.2
-            except AssertionError:
-                warnings.warn(
-                    "Thermal nominal power is too little for electrical"
-                    "operation mode. Thermal power should be between " +
-                    str(round(th_power / 1.2, 2)) + " and " +
-                    str(round(th_power * 1.2, 2)) + " W."
-                    " Check your system!")
-            try:
-                assert th_power > q_nominal / 1.2
-            except AssertionError:
-                warnings.warn(
-                    "Thermal nominal power is too little for electrical"
-                    "operation mode. Thermal power should be between " +
-                    str(round(th_power / 1.2, 2)) + " and " +
-                    str(round(th_power * 1.2, 2)) + " W."
-                    " Check your system!")
+        #  Run precalculation
+        (th_power, el_power) = self.run_precalculation(q_nominal=q_nominal,
+                                                       p_nominal=p_nominal,
+                                                       eta_total=eta_total,
+                                                       thermal_operation_mode=
+                                                       thermal_operation_mode)
 
         super(ChpExtended, self).__init__(environment,
                                           qNominal=th_power,
@@ -164,6 +124,95 @@ class ChpExtended(chp.CHP):
         self.thermal_operation_mode = thermal_operation_mode
         self.qNominal_thOpM = q_nominal
         self.pNominal_elOpM = p_nominal
+
+    def run_precalculation(self, q_nominal=None, p_nominal=None,
+                           eta_total=0.9, thermal_operation_mode=True):
+        """
+        Performs precalculation. Has to be called when attributes are changed
+        on existing chp object instance.
+
+        Parameters
+        ----------
+        p_nominal : float
+            nominal electricity output in Watt
+        q_nominal : float
+            nominal heat output in Watt
+        eta_total : float
+            total efficiency of the CHP unit (without unit)
+            (default : 0.9)
+        thermal_operation_mode : boolean, optional
+            Defines if the chp modul is in thermal or electrical operation mode
+            this determines the corresponding nominal thermal or electrical
+            power of the chp module
+            (default : True) -->
+            True = thermal operation mode
+            False = electrical operation mode
+
+        Returns
+        -------
+        tuple_res : tuple (of floats)
+            2d tuple (th_power, el_power) holding thermal and eletrical
+            nominal powers in Watt
+        """
+        if thermal_operation_mode:  # thermal operation mode
+
+            if q_nominal is None:
+                msg = 'If thermal_operation_mode is True, q_nominal cannot' \
+                      'be None. You have to define a valid input value!'
+                raise AssertionError(msg)
+
+            th_power = q_nominal
+            el_power = asue.calc_el_power_with_th_power(q_nominal, eta_total)
+
+            # try:
+            #     assert el_power < p_nominal * 1.2
+            # except AssertionError:
+            #     warnings.warn(
+            #         "Electrical nominal power is too large for thermal"
+            #         "operation mode. Electrical power should be between " +
+            #         str(round(el_power / 1.2, 2)) + " and " +
+            #         str(round(el_power * 1.2, 2)) + " W."
+            #         " Check your System!")
+            # try:
+            #     assert el_power > p_nominal / 1.2
+            # except AssertionError:
+            #     warnings.warn(
+            #         "Electrical nominal power is too large for thermal"
+            #         "operation mode. Electrical power should be between " +
+            #         str(round(el_power / 1.2, 2)) + " and " +
+            #         str(round(el_power * 1.2, 2)) + " W."
+            #         " Check your System!")
+
+        else:  # electrical operation mode
+
+            if p_nominal is None:
+                msg = 'If thermal_operation_mode is False, p_nominal cannot' \
+                      'be None. You have to define a valid input value!'
+                raise AssertionError(msg)
+
+            el_power = p_nominal
+            th_power = asue.calc_th_output_with_p_el(el_power, eta_total)
+
+            # try:
+            #     assert th_power < q_nominal * 1.2
+            # except AssertionError:
+            #     warnings.warn(
+            #         "Thermal nominal power is too little for electrical"
+            #         "operation mode. Thermal power should be between " +
+            #         str(round(th_power / 1.2, 2)) + " and " +
+            #         str(round(th_power * 1.2, 2)) + " W."
+            #         " Check your system!")
+            # try:
+            #     assert th_power > q_nominal / 1.2
+            # except AssertionError:
+            #     warnings.warn(
+            #         "Thermal nominal power is too little for electrical"
+            #         "operation mode. Thermal power should be between " +
+            #         str(round(th_power / 1.2, 2)) + " and " +
+            #         str(round(th_power * 1.2, 2)) + " W."
+            #         " Check your system!")
+
+        return (th_power, el_power)
 
     def change_operation_mode(self):
         """

@@ -75,6 +75,11 @@ def get_list_lhn_build_without_th_esys(city, list_buildings=None):
 
 
 class CityEBCalculator(object):
+    """
+    City Energy Balance Calculator class. Used to perform energy balance
+    calculations for whole city district.
+    """
+
     def __init__(self, city, copy_city=False, check_city=True, loss_buff=1.1,
                  press_loss=100, eta_pump=0.6):
         """
@@ -185,15 +190,42 @@ class CityEBCalculator(object):
         self._list_no_th_esys = \
             get_list_lhn_build_without_th_esys(city=self.city)
 
-    def calc_lhn_energy_balance(self):
+    def calc_lhn_energy_balance(self, run_mc=False, dict_samples_const=None,
+                                run_idx=None):
         """
         Calculate thermal energy balance for LHN connected buildings
+
+        Parameters
+        ----------
+        run_mc : bool, optional
+            Defines, if Monte-Carlo analysis should be run (default: False).
+            If True, puts uncertainty factors of dict_samples on investment
+            cost, lifetime and maintenance factors. If False, only performs
+            single annuity calculation run with default values.
+        dict_samples_const : dict (of dicts)
+            Dictionary holding dictionaries with constant
+            sample data for MC run (default: None)
+            dict_samples_const['city'] = dict_city_samples
+            dict_samples_const['<building_id>'] = dict_build_dem
+            (of building with id <building_id>)
+        run_idx : int, optional
+            Index / number of run for Monte-Carlo analysis (default: None)
 
         Returns
         -------
         list_pump_energy : list (of floats)
             List with pump energy in kWh/a for each LHN
         """
+
+        if run_mc:
+            if dict_samples_const is None:
+                msg = 'Sample dictionary dict_samples cannnot be None, if' \
+                      ' you want to perform Monte-Carlo analysis.'
+                raise AssertionError(msg)
+            if run_idx is None:
+                msg = 'Index value run_idx cannnot be None, if' \
+                      ' you want to perform Monte-Carlo analysis.'
+                raise AssertionError(msg)
 
         if self.loss_buff < 1:
             msg = 'loss_buff factor should always be larger or equal to 1!'
@@ -204,6 +236,12 @@ class CityEBCalculator(object):
         if self.press_loss < 0:
             msg = 'Pressure loss cannot be negative!'
             raise AssertionError(msg)
+
+        if run_mc:
+            #  Get sampling uncertainty value for u-value (Monte-Carlo run)
+            u_val_unc = dict_samples_const['city']['lhn_loss'][run_idx]
+        else:
+            u_val_unc = 1
 
         # Add weights to edges
         netop.add_weights_to_edges(graph=self.city)
@@ -317,8 +355,10 @@ class CityEBCalculator(object):
             #  Get ground temperature as LHN losses reference temperature
             temp_env = self.city.environment.temp_ground
 
-            q_lhn_loss_if = u_value * lhn_len * (temp_vl - temp_env)
-            q_lhn_loss_rf = u_value * lhn_len * (temp_rl - temp_env)
+            q_lhn_loss_if = u_val_unc * u_value * lhn_len * \
+                            (temp_vl - temp_env)
+            q_lhn_loss_rf = u_val_unc * u_value * lhn_len * \
+                            (temp_rl - temp_env)
 
             #  Sum up loss powers and use rescaling factor
             q_lhn_loss = self.loss_buff * (q_lhn_loss_if + q_lhn_loss_rf)
@@ -403,10 +443,37 @@ class CityEBCalculator(object):
 
         return list_pump_energy
 
-    def calc_city_energy_balance(self):
+    def calc_city_energy_balance(self, run_mc=False, dict_samples_const=None,
+                                 run_idx=None):
         """
         Calculate energy balance of whole city. Save results on city object
+
+        Parameters
+        ----------
+        run_mc : bool, optional
+            Defines, if Monte-Carlo analysis should be run (default: False).
+            If True, puts uncertainty factors of dict_samples on investment
+            cost, lifetime and maintenance factors. If False, only performs
+            single annuity calculation run with default values.
+        dict_samples_const : dict (of dicts)
+            Dictionary holding dictionaries with constant
+            sample data for MC run (default: None)
+            dict_samples_const['city'] = dict_city_samples
+            dict_samples_const['<building_id>'] = dict_build_dem
+            (of building with id <building_id>
+        run_idx : int, optional
+            Index / number of run for Monte-Carlo analysis (default: None)
         """
+
+        if run_mc:
+            if dict_samples_const is None:
+                msg = 'Sample dictionary dict_samples cannnot be None, if' \
+                      ' you want to perform Monte-Carlo analysis.'
+                raise AssertionError(msg)
+            if run_idx is None:
+                msg = 'Index value run_idx cannnot be None, if' \
+                      ' you want to perform Monte-Carlo analysis.'
+                raise AssertionError(msg)
 
         #  Dummy list for processed buildings
         self.list_th_done = []
@@ -433,7 +500,9 @@ class CityEBCalculator(object):
         # LHN energy balance
         #  ################################################################
 
-        self.calc_lhn_energy_balance()
+        self.calc_lhn_energy_balance(run_mc=run_mc,
+                                     dict_samples_const=dict_samples_const,
+                                     run_idx=run_idx)
 
         #  Make flat lists with all buildings in LHN and DEG networks
         list_lhn_all_b = []

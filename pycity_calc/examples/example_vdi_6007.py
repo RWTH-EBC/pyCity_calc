@@ -33,7 +33,7 @@ try:
     from teaser.project import Project
     import teaser.logic.simulation.VDI_6007.low_order_VDI as low_order_vdi
     import teaser.logic.simulation.VDI_6007.weather as vdiweather
-except:
+except:  # pragma: no cover
     raise ImportError('Could not import TEASER package. Please check your '
                       'installation. TEASER can be found at: '
                       'https://github.com/RWTH-EBC/TEASER. '
@@ -222,7 +222,7 @@ def run_example_vdi_6007(plot_res=False):
         print('Sum of cooling energy in kWh:')
         print(-sum(q_cool) * (timestep / 3600)  / 1000)
 
-    if plot_res:
+    if plot_res: # pragma: no cover
         import matplotlib.pyplot as plt
 
         fig = plt.figure()

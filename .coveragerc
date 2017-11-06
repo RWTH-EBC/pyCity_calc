@@ -29,8 +29,8 @@ omit =
 	pycity_calc/test/checks/*
 	pycity_calc/toolbox/shp_geo_processing/*
 	pycity_calc/toolbox/mc_helpers/Morris_analysis/*
-	pycity_calc/toolbox/clustering/experiments/*
-	pycity_calc/toolbox/clustering/ba_clustering.py
+	pycity_calc/toolbox/clustering/*
+	pycity_calc/toolbox/data_enrichment/occupants/old/*
 
 ignore_errors = True
 

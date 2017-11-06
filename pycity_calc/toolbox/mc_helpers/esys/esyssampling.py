@@ -202,36 +202,6 @@ def sample_quality_grade_hp_bw(nb_samples, minv=0.45, maxv=0.55):
     return array_hp_bw_qual
 
 
-def sample_quality_grade_hp_bw(nb_samples, minv=0.45, maxv=0.55):
-    """
-    Returns samples for brine/water (or water/water) heat pump quality
-    grades.
-
-    Parameters
-    ----------
-    nb_samples : int
-        Number of samples
-    minv : float
-        Minimum value (default: 0.45)
-    maxv : float
-        Maximum value (default: 0.55)
-
-    Returns
-    -------
-    array_hp_bw_qual : np.array (of float)
-        Numpy array with brine/water heat pump quality grade samples
-    """
-
-    assert nb_samples > 0
-    assert minv >= 0
-    assert maxv >= 0
-
-    array_hp_bw_qual = \
-        np.random.uniform(low=minv, high=maxv, size=nb_samples)
-
-    return array_hp_bw_qual
-
-
 def sample_quality_grade_hp_aw(nb_samples, minv=0.32, maxv=0.4):
     """
     Returns samples for air/water heat pump quality grades
@@ -287,7 +257,7 @@ def sample_pv_eta(nb_samples, mean=0.12, std=0.02):
     assert std >= 0
 
     array_pv_eta = np.random.normal(loc=mean, scale=std,
-                                     size=nb_samples)
+                                    size=nb_samples)
 
     for i in range(len(array_pv_eta)):
         assert array_pv_eta[i] <= 1
@@ -349,6 +319,161 @@ def sample_pv_gamma(nb_samples, minv=0, maxv=60):
         np.random.uniform(low=minv, high=maxv, size=nb_samples)
 
     return array_pv_gamma
+
+
+def sample_tes_k_loss(nb_samples, minv=0.1, maxv=0.5):
+    """
+    Return samples of tes k_loss factor in W/m2K
+
+    Parameters
+    ----------
+    nb_samples : int
+        Number of samples
+    minv : float
+        Minimum value (default: 0.1)
+    maxv : float
+        Maximum value (default: 0.5)
+
+    Returns
+    -------
+    array_tes_k_loss : np.array (of float)
+        Numpy array with samples of tes k_loss factor in W/m2K
+    """
+
+    assert nb_samples > 0
+    assert minv >= 0
+    assert maxv >= 0
+
+    array_tes_k_loss = \
+        np.random.uniform(low=minv, high=maxv, size=nb_samples)
+
+    return array_tes_k_loss
+
+
+def sample_lifetime(nb_samples, minv=0.5, maxv=1.5):
+    """
+    Return samples for percentage difference in lifetime of device related
+    to reference lifetime (VDI2067)
+
+    Parameters
+    ----------
+    nb_samples : int
+        Number of samples
+    minv : float
+        Minimum value (default: 0.5)
+    maxv : float
+        Maximum value (default: 1.5)
+
+    Returns
+    -------
+    array_lifetime : np.array (of float)
+        Numpy array with samples for percentage difference in lifetime of
+        device related to reference lifetime (VDI2067)
+    """
+
+    assert nb_samples > 0
+    assert minv >= 0
+    assert maxv >= 0
+
+    array_lifetime = \
+        np.random.uniform(low=minv, high=maxv, size=nb_samples)
+
+    return array_lifetime
+
+
+def sample_maintain(nb_samples, minv=0.5, maxv=1.5):
+    """
+    Return samples for percentage difference in maintenance effort
+    of device related to reference values (VDI2067)
+
+    Parameters
+    ----------
+    nb_samples : int
+        Number of samples
+    minv : float
+        Minimum value (default: 0.5)
+    maxv : float
+        Maximum value (default: 1.5)
+
+    Returns
+    -------
+    array_maintain : np.array (of float)
+        Numpy array with ssamples for percentage difference in maintenance
+        effort of device related to reference values (VDI2067)
+    """
+
+    assert nb_samples > 0
+    assert minv >= 0
+    assert maxv >= 0
+
+    array_maintain = \
+        np.random.uniform(low=minv, high=maxv, size=nb_samples)
+
+    return array_maintain
+
+
+def sample_invest_unc(nb_samples, ref_inv, logmean=0, logstd=0.4):
+    """
+    Sample investment cost uncertainty, based on reference investment cost
+    input. Assumes log-normal distribution
+
+    Parameters
+    ----------
+    nb_samples : int
+        Number of samples
+    ref_inv : float
+        Reference investment cost in Euro
+    logmean : float
+        mean of log-normal distribution
+    logstd : float
+        Standard deviation of log-normal distribution
+
+    Returns
+    -------
+    array_invest : np.array (of floats)
+        Array holding samples of investment cost in Euro
+    """
+
+    assert nb_samples > 0
+    assert ref_inv >= 0
+
+    array_invest = ref_inv * np.random.lognormal(mean=logmean,
+                                                 sigma=logstd,
+                                                 size=nb_samples)
+
+    return array_invest
+
+
+def sample_lhn_loss_unc(nb_samples, ref_loss, minv=0.75, maxv=1.25):
+    """
+    Sample LHN losses
+
+    Parameters
+    ----------
+    nb_samples : int
+        Number of samples
+    ref_loss : float
+        Reference losses in W/mK of pipeline
+    minv : float, optional
+        Minimum value of change (default: 0.75)
+    maxv : float, optional
+        Maximum value of change (default. 1.25)
+
+    Returns
+    -------
+    array_lhn_loss : np.array (of floats)
+        Numpy array with LHN losses in W/mK
+    """
+
+    assert ref_loss >= 0
+    assert nb_samples > 0
+    assert minv >= 0
+    assert maxv >= 0
+
+    array_lhn_loss = ref_loss * \
+                     np.random.uniform(low=minv, high=maxv, size=nb_samples)
+
+    return array_lhn_loss
 
 
 if __name__ == '__main__':

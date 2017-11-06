@@ -7,6 +7,7 @@ from __future__ import division
 from decimal import *
 
 import pycity_calc.energysystems.chp as Chp
+import pycity_calc.economic.energy_sys_cost.chp_cost as chp_cost
 
 from pycity_calc.test.pycity_calc_fixtures import fixture_environment, \
     fixture_chp_el, fixture_chp_th
@@ -195,3 +196,75 @@ class Test_Chp():
         el_eff = fixture_chp_el.elOperation_calc_chp_el_efficiency(
             control_signal)
         assert round(el_eff, 4) == 0.2564
+
+    def test_chp_cost(self):
+
+        p_el_nom = 900 # in kW
+
+        chp_cost.calc_invest_cost_chp(p_el_nom,
+                                      method='asue2015',
+                                      with_inst=True,
+                                      use_el_input=True,
+                                      q_th_nom=None)
+
+        p_el_nom = 1100  # in kW
+
+        chp_cost.calc_invest_cost_chp(p_el_nom,
+                                      method='asue2015',
+                                      with_inst=True,
+                                      use_el_input=True,
+                                      q_th_nom=None)
+
+        chp_cost.calc_invest_cost_chp(p_el_nom,
+                                      method='asue2015',
+                                      with_inst=True,
+                                      use_el_input=False,
+                                      q_th_nom=12)
+
+        p_el_nom = 5  # in kW
+
+        chp_cost.calc_invest_cost_chp(p_el_nom,
+                                      method='spieker',
+                                      with_inst=True,
+                                      use_el_input=True,
+                                      q_th_nom=None)
+
+        p_el_nom = 50  # in kW
+
+        chp_cost.calc_invest_cost_chp(p_el_nom,
+                                      method='spieker',
+                                      with_inst=True,
+                                      use_el_input=True,
+                                      q_th_nom=None)
+
+        p_el_nom = 250  # in kW
+
+        chp_cost.calc_invest_cost_chp(p_el_nom,
+                                      method='spieker',
+                                      with_inst=True,
+                                      use_el_input=True,
+                                      q_th_nom=None)
+
+        p_el_nom = 450  # in kW
+
+        chp_cost.calc_invest_cost_chp(p_el_nom,
+                                      method='spieker',
+                                      with_inst=True,
+                                      use_el_input=True,
+                                      q_th_nom=None)
+
+        p_el_nom = 550  # in kW
+
+        chp_cost.calc_invest_cost_chp(p_el_nom,
+                                      method='spieker',
+                                      with_inst=True,
+                                      use_el_input=True,
+                                      q_th_nom=None)
+
+        p_el_nom = 800  # in kW
+
+        chp_cost.calc_invest_cost_chp(p_el_nom,
+                                      method='spieker',
+                                      with_inst=True,
+                                      use_el_input=True,
+                                      q_th_nom=None)

@@ -23,7 +23,7 @@ try:
     from teaser.project import Project
     import teaser.logic.simulation.VDI_6007.low_order_VDI as low_order_vdi
     import teaser.logic.simulation.VDI_6007.weather as vdiweather
-except:
+except:  # pragma: no cover
     raise ImportError('Could not import TEASER package. Please check your '
                       'installation. TEASER can be found at: '
                       'https://github.com/RWTH-EBC/TEASER. '
@@ -80,7 +80,7 @@ def run_example_vdi_city(plot_res=False):
     print('Total net thermal space heating energy demand in kWh/a:')
     print(city.get_annual_space_heating_demand())
 
-    if plot_res:
+    if plot_res:  # pragma: no cover
         plt.plot(city_th_load)
         plt.xlabel('Time in hours')
         plt.ylabel('City district space heating load in W')
