@@ -77,7 +77,11 @@ def run_approach(city,scenarios):
         print('District Heating eligible!')
         for scenario in scenarios:
             if 'centralized' in scenario['type']:
-                print('\n---------- Scenario Centralized ' + str(scenarios.index(scenario)), '-----------')
+                print('')
+                print(
+                    '-' * 10 + ' Centralized ' + str(scenarios.index(scenario)) + ': ' + scenario['base'][0] + ' // ' +
+                    scenario['peak'][0] + ' ' + '-' * 10)
+                #print('\n---------- Scenario Centralized ' + str(scenarios.index(scenario)), '-----------')
                 result = dim_centralized(deepcopy(city),scenario, district_type)
                 solutions.append(result)
 
@@ -86,17 +90,27 @@ def run_approach(city,scenarios):
         print('District Heating not eligible!')
         for scenario in scenarios:
             if 'decentralized' in scenario['type']:
-                print('\n---------- Scenario Decentralized ' + str(scenarios.index(scenario)), '-----------')
+                print('')
+                print('-' * 10 + ' Decentralized ' + str(scenarios.index(scenario)) + ': ' + scenario['base'][
+                    0] + ' // ' + scenario['peak'][0] + ' ' + '-' * 10)
+                #print('\n---------- Scenario Decentralized ' + str(scenarios.index(scenario)), '-----------')
                 solutions.append(dim_decentralized(deepcopy(city),scenario))
 
     else:
         print('District Heating solutions might be eligible...')
         for scenario in scenarios:
             if 'centralized' in scenario['type']:
-                print('\n---------- Scenario Centralized ' + str(scenarios.index(scenario)), '-----------')
+                print('')
+                print(
+                    '-' * 10 + ' Centralized ' + str(scenarios.index(scenario)) + ': ' + scenario['base'][0] + ' // ' +
+                    scenario['peak'][0] + ' ' + '-' * 10)
+                #print('\n---------- Scenario Centralized ' + str(scenarios.index(scenario)), '-----------')
                 solutions.append(dim_centralized(deepcopy(city),scenario,district_type))
             if 'decentralized' in scenario['type']:
-                print('\n---------- Scenario Decentralized ' + str(scenarios.index(scenario)), '-----------')
+                print('')
+                print('-' * 10 + ' Decentralized ' + str(scenarios.index(scenario)) + ': ' + scenario['base'][
+                    0] + ' // ' + scenario['peak'][0] + ' ' + '-' * 10)
+                #print('\n---------- Scenario Decentralized ' + str(scenarios.index(scenario)), '-----------')
                 solutions.append(dim_decentralized(deepcopy(city),scenario))
 
     return solutions
@@ -286,8 +300,10 @@ def dim_centralized(city, scenario, district_type):
 
     th_curve = (city.get_aggr_dhw_power_curve(current_values=False) +
                 city.get_aggr_space_h_power_curve(current_values=False)) / eta_transmission
+
     th_LDC = dim_devices.get_LDC(th_curve)
     q_total = np.sum(th_curve)
+
     people_total = 0
     area_total = 0
     for b_node in city.nodelist_building:
@@ -320,7 +336,9 @@ def dim_centralized(city, scenario, district_type):
     # ------------- dimensioning of devices --------------
 
     bafa_chp_tes = False
+    bafa_lhn = False
 
+    # ---- CHP -----
     if 'chp' in scenario['base']:
 
         # select method (method=0 is standard)
@@ -345,48 +363,48 @@ def dim_centralized(city, scenario, district_type):
             # Check if BAFA/KWKG subsidy for lhn is available
             if t_ann_op*q_nom/q_total > 0.75:
                 bafa_lhn = True
-            else:
-                bafa_lhn = False
 
-            # Pufferspeicher hinzufügen falls Leistung über 20% von Maximalverbrauch
-            if True:    #q_nom/max(th_LDC) > 0.2:
-                v_tes = q_nom/1000*60 # Förderung von Speichern für Mini-BHKW durch BAFA bei Speichergrößen über 60 l/kW_th
-                if v_tes > 1600: # 1600 liter genügen für Förderung
-                    v_tes = 1600 + (q_nom/1000*60-1600)*0.2 # Schätzung um auch Anlagen >30kW mit Speicher zu versorgen
-                # v_tes = 104 + 10 * q_nom/1000    # Dimensionierung nach Wolff & Jagnow 2011, S. 60, evtl. nur für konkretes beispiel
-                tes = TES.thermalEnergyStorageExtended(environment=city.environment,t_init=50,capacity=v_tes)
-                bes.addDevice(tes)
-                print('Added Thermal Energy Storage:', v_tes,'liter ')
-                if q_nom * t_ann_op * 100 / q_total >= 50:
-                    bafa_chp_tes = True
+            # Add TES
+            v_tes = q_nom/1000*60   # BAFA-subsidy for mini-chp if tes_volume >= 60 l/kW_th
+            if v_tes > 1600:        # 1600 liter are sufficient for BAFA-subsidy
+                v_tes = 1600 + (q_nom/1000*60-1600)*0.2     # slow vol-increase over 1600 liter
 
-            # Wärmeerzeuger für Spitzenlast hinzufügen
+            tes = TES.thermalEnergyStorageExtended(environment=city.environment,t_init=50,capacity=v_tes)
+            bes.addDevice(tes)
+            print('Added Thermal Energy Storage:', v_tes,'liter ')
+            if q_nom * t_ann_op * 100 / q_total >= 50:
+                bafa_chp_tes = True
+
+            # Add peak supply
             if 'boiler' in scenario['peak']:
                 q_boiler = (max(th_LDC) - q_nom) * 1.1  # 10% safety
-                boiler = Boiler.BoilerExtended(city.environment, q_boiler, 0.8)
+                boiler = Boiler.BoilerExtended(city.environment, q_boiler, eta=0.85, t_max=0.90,
+                                               lower_activation_limit=0.1)
                 bes.addDevice(boiler)
                 print('Added Boiler: Q_nom = '+str(round(q_boiler/1000,2))+' kW')
+                check_enev(area_total)
                 if q_boiler >= 4000 and q_boiler < 400000:
                     print('Boiler requires CE Label. (according to 92/42/EWG)')
 
             ann_q_base = t_ann_op*q_nom/1000 # Annual produced heat with base supply in kWh
             ann_q_peak = (q_total - q_nom * t_ann_op)/1000 # Annual produced heat with peak supply in kWh
 
+    # ----- Boiler -----
     elif 'boiler' in scenario['base']:
         q_boiler = max(th_curve)
-        boiler = Boiler.BoilerExtended(city.environment, q_boiler, 0.8)
+        boiler = Boiler.BoilerExtended(city.environment, q_boiler, eta=0.90,t_max=90, lower_activation_limit=0.2)
         bes.addDevice(boiler)
         print('Added Boiler: Q_nom = ' + str(round(q_boiler / 1000, 2)) + ' kW')
+        check_enev(area_total)
 
-        ann_q_base = np.sum(th_curve) / 1000  # Annual produced heat with base supply in kWh
+        ann_q_base = q_total / 1000  # Annual produced heat with base supply in kWh
         ann_q_peak = 0
 
-    # Im ersten Gebäude wird das BES installiert (-> besser in kürzester Distanz aller Gebäude)
-    # TODO: Optimales Gebäude/Standort auswählen
+    # ---- Add BES ----
     assert not city.node[city.nodelist_building[0]]['entity'].hasBes, ('Building 0 has already BES. Mistakes may occur!')
     city.node[city.nodelist_building[0]]['entity'].addEntity(bes)
 
-    calc_costs_centralized(city,ann_q_base, ann_q_peak, bafa_lhn=bafa_lhn, bafa_chp_tes=bafa_chp_tes)
+    calc_costs(city,ann_q_base, ann_q_peak, bafa_lhn=bafa_lhn, bafa_chp_tes=bafa_chp_tes)
 
     return city
 
@@ -402,6 +420,9 @@ def dim_decentralized(city, scenario):
     # TODO: EEWärmeG für dezentrale Fälle kontrollieren
 
     for b_node in city.nodelist_building:
+        print('')
+        print('-'*5 + ' Building ' + str(b_node) + ' ' + 5*'-')
+
         building = city.node[b_node]['entity']
 
         sh_curve = building.get_space_heating_power_curve()
@@ -413,6 +434,8 @@ def dim_decentralized(city, scenario):
             people_total += ap.occupancy.number_occupants
 
         bes = BES.BES(city.environment)
+
+        bafa_chp_tes = False
 
         for device in scenario['base']:
             if device == 'chp':
@@ -431,28 +454,29 @@ def dim_decentralized(city, scenario):
                 print('CHP: Q_nom = ' + str(q_nom / 1000) + ' kW (' + str(round(q_nom * 100 / max(th_LDC), 2)) +
                       '% of Q_max) ->', t_x, 'full-load hours.')
 
-                # Pufferspeicher hinzufügen falls Leistung über 20% von Maximalverbrauch
-                if True:    #q_nom / max(th_LDC) > 0.2:
-                    v_tes = q_nom / 1000 * 60  # Förderung von Speichern für Mini-BHKW durch BAFA bei Speichergrößen über 60 l/kW_th
-                    if v_tes > 1600:  # 1600 liter genügen für Förderung
-                        v_tes = 1600 + (q_nom / 1000 * 60 - 1600) * 0.2  # Schätzung um auch Anlagen >30kW mit Speicher zu versorgen
-                    tes = TES.thermalEnergyStorageExtended(environment=city.environment, t_init=50, capacity=v_tes)
-                    bes.addDevice(tes)
-                    print('Added Thermal Energy Storage:', v_tes, 'liter ')
-                    if q_nom * t_ann_op * 100 / q_total >= 50:
-                        bafa_chp_tes = True
+                # Add TES
+                v_tes = q_nom / 1000 * 60  # BAFA-subsidy for Mini-CHP if volume >= 60 l/kW_th
+                if v_tes > 1600:  # 1600 liter sufficient for subsidy
+                    v_tes = 1600 + (q_nom / 1000 * 60 - 1600) * 0.2  # increasing volume over 1600 liter
+                tes = TES.thermalEnergyStorageExtended(environment=city.environment, t_init=50, capacity=v_tes)
+                bes.addDevice(tes)
+                print('Added Thermal Energy Storage:', v_tes, 'liter ')
+                if q_nom * t_ann_op * 100 / q_total >= 50:
+                    bafa_chp_tes = True
 
-                # Wärmeerzeuger für Spitzenlast hinzufügen
+                # Add peak supply
                 if 'boiler' in scenario['peak']:
                     q_boiler = (max(th_LDC) - q_nom)*1.5
-                    boiler = Boiler.BoilerExtended(city.environment, q_boiler, 0.8)
+                    boiler = Boiler.BoilerExtended(city.environment, q_boiler, eta=0.85, t_max=0.90,
+                                                   lower_activation_limit=0.1)
                     bes.addDevice(boiler)
                     print('Added Boiler: Q_nom = ' + str(round(q_boiler / 1000, 2)) + ' kW')
                     if q_boiler >= 4000 and q_boiler < 400000:
                         print('Boiler requires CE Label. (according to 92/42/EWG)')
                     check_enev(building.net_floor_area)
 
-                # TODO: Welche Förderungen im dezentralen Fall?
+                ann_q_base = t_ann_op * q_nom / 1000  # Annual produced heat with base supply in kWh
+                ann_q_peak = (q_total - q_nom * t_ann_op) / 1000  # Annual produced heat with peak supply in kWh
 
             elif device == 'hp_air':
 
@@ -486,7 +510,7 @@ def dim_decentralized(city, scenario):
                     safety_factor = 1.8    # over dimensioning to guarantee simulation success
                     q_elHeater = (max(dhw_curve) + max(sh_curve) - q_nom)*safety_factor
                     if q_elHeater > 0:
-                        elHeater = ElectricalHeater.ElectricalHeaterExtended(city.environment, q_elHeater, 0.95, 100, 0.2)
+                        elHeater = ElectricalHeater.ElectricalHeaterExtended(city.environment, q_elHeater, eta=0.95, t_max=95, lower_activation_limit=0.1)
                         bes.addDevice(elHeater)
                         print('Added elHeater: Q_nom = ' + str(round(q_elHeater / 1000, 2)) + ' kW')
                     else:
@@ -500,20 +524,18 @@ def dim_decentralized(city, scenario):
                     #q_boiler = (max(dhw_curve) + max(sh_curve) - q_nom) * safety_factor
                     q_boiler = (max(sh_curve) - q_nom) * safety_factor
                     if q_boiler > 0:
-                        boiler = Boiler.BoilerExtended(city.environment, q_boiler, 0.8)
+                        boiler = Boiler.BoilerExtended(city.environment, q_boiler, eta=0.85, t_max=0.90,lower_activation_limit=0.1)
                         bes.addDevice(boiler)
                         print('Added Boiler: Q_nom = ' + str(round(q_boiler / 1000, 2)) + ' kW')
                         check_enev(building.net_floor_area)
 
                         # elHeater muss installiert werden zur TWW Deckung. Eigentlich sinnlos! Boiler kann das auch!!
                         q_elHeater = max(dhw_curve)
-                        elHeater = ElectricalHeater.ElectricalHeaterExtended(city.environment,q_elHeater , 0.95, 100, 0.2)
+                        elHeater = ElectricalHeater.ElectricalHeaterExtended(city.environment,q_elHeater , eta=0.95, t_max=95, lower_activation_limit=0)
                         bes.addDevice(elHeater)
                         print('Added elHeater: Q_nom = ' + str(round(q_elHeater / 1000, 2)) + ' kW')
                     else:
                         print('No boiler installed.')
-
-                v_tes = 20*q_nom/1000   # in liter (DIN EN 15450: volume between 12 - 35 l/kW // VDI4645: 20 l/kW (for q_hp < 50 kW, monovalent))
 
                 # Warmwasserspeicher hinzufügen
                 # t_soll = 65  # Speichersolltemperatur
@@ -521,37 +543,37 @@ def dim_decentralized(city, scenario):
 
                 # v_tes = people_total * 25 * (60 - t_cw) / (
                 #     t_soll - t_cw)  # Speichervolumen nach Dimplex PHB (Kap.6.1.3)
+
+                v_tes = 20*q_nom/1000   # in liter (DIN EN 15450: volume between 12 - 35 l/kW // VDI4645: 20 l/kW (for q_hp < 50 kW, monovalent))
                 tes = TES.thermalEnergyStorageExtended(environment=city.environment, t_init=50,
                                                        capacity=v_tes)
                 bes.addDevice(tes)
                 print('Added Thermal Energy Storage:', round(v_tes,2), 'liter ')
 
-                # TODO: Förderungen für Wärmepumpe einfügen
+                ann_q_base = hp_ee_ratio * q_total / 1000  # in kWh
+                ann_q_peak = q_total / 1000 - ann_q_base  # in kWh
 
-            elif 'boiler' in scenario['base']:
+
+            elif device == 'boiler':
                 q_boiler = max(sh_curve+dhw_curve)
-                boiler = Boiler.BoilerExtended(city.environment, q_boiler, 0.8)
+                boiler = Boiler.BoilerExtended(city.environment, q_boiler, eta=0.95, t_max=0.75, lower_activation_limit=0.2)
                 bes.addDevice(boiler)
                 print('Added Boiler: Q_nom = ' + str(round(q_boiler / 1000, 2)) + ' kW')
                 check_enev(building.net_floor_area)
 
-                '''
-            # TODO: Wärmepumpe und andere Anlagen implementieren!
+                ann_q_base = q_total/1000
+                ann_q_peak = 0
 
-            if device == 'hp_air':
-                #Monovalenter Betrieb von Luft/Wasser-Wärmepumpen nach Dimplex Anleitung (Planungshandbuch S.16)
-                # Deckung durch WP bis -5°C Außentemperatur. Danach elHeater.
-                # -> Deckung von 2% durch 2.Wärmeerzeuger (elHeater) nach DIN 4701:10 (siehe Dimplex PHB)
-                print('dezentral wp')
-                '''
 
         assert not city.node[b_node]['entity'].hasBes, ('Building ', b_node ,' has already BES. Mistakes may occur!')
         city.node[b_node]['entity'].addEntity(bes)
 
+        calc_costs(city, ann_q_base, ann_q_peak,bafa_chp_tes=bafa_chp_tes)
+
     return city
 
 
-def calc_hp_spf(heatPump, environment, sh_curve, cop, method=0):
+def calc_hp_spf(heatPump, environment, sh_curve, cop=(2.9, 3.7, 4.4), method=0):
     '''
     Calculates seasonal performance factor (SPF = "Jahresarbeitszahl") for heat pump.
     Method 0 uses VDI 4650 to calculate SPF
@@ -607,6 +629,9 @@ def calc_hp_spf(heatPump, environment, sh_curve, cop, method=0):
             el_in_array[i] = heatPump.calc_hp_el_power_input(control_signal=q_out_array[i], t_source=curr_temp)
 
         hp_spf = np.round(np.sum(q_out_array) / np.sum(el_in_array),2)
+
+    else:
+        raise Warning('Unknown method!')
 
     return hp_spf
 
@@ -682,12 +707,12 @@ def check_eewaermeg(city, device, ee_ratio, spf=None):
 
 # -------------------------------- Economic Calculations ----------------------------------------------------
 # TODO: CO2 Überschlägige Berechnung reinbringen
-# TODO: Economic calculation kontrollieren, für decentral hinzufügen
 
-def calc_costs_centralized(city, q_base, q_peak, i=0.08, price_gas=0.0661, el_feedin_epex=0.02978, bafa_lhn=False, bafa_chp_tes=False):
+
+def calc_costs(city, q_base, q_peak, i=0.08, price_gas=0.0661, price_el_hp=0.25, el_feedin_epex=0.02978, bafa_lhn=False, bafa_chp_tes=False):
     """
     - Kosten
-        - Kapitalkosten (Investitionskosten über Annuitätenfaktor in jährliche Zahlung umrechnen)
+        - Kapitalgebundene Kosten (Investitionskosten über Annuitätenfaktor in jährliche Zahlung umrechnen)
         - Bedarfsgebundene Kosten (Brennstoffkosten, Stromkosten)
         - Betriebsgebundene Kosten
         - sonstige Kosten und Erlöse (Förderungen, )
@@ -704,7 +729,8 @@ def calc_costs_centralized(city, q_base, q_peak, i=0.08, price_gas=0.0661, el_fe
     q_base:         amount of thermal energy provided by base supply in kWh
     q_peak:         amount of thermal energy provided by peak supply in kWh
     i:              interest rate
-    price_gas:      price of gas
+    price_gas:      price of gas EUR/kWh
+    price_el_hp:    price of electricity for heatpump in EUR/kWh
     el_feedin_epex: average price for baseload power at EPEX Spot for Q2 2017 in Euro/kWh
     bafa_lhn:       indicates if BAFA funding for lhn is applicable
     bafa_chp_tes:   indicates if BAFA funding for TES with CHP is applicable
@@ -717,58 +743,78 @@ def calc_costs_centralized(city, q_base, q_peak, i=0.08, price_gas=0.0661, el_fe
     # Kostenfunktion in Wolff 2011, Kapitel 6.3.6
     # Betriebs- und Energiekosten in Kapitel 6.3.7
     # Bewertungskriterien, Masterarbeit Hendrik Kapitel 2.3!
-    print('')
 
-    insp_vdi2067 = {'boiler':[0.01,0.02,20],'chp':[0.06,0.02,100],'hp':[0.01,0.015,5]} # [maintenance, service, service hours]
-    service_fee = 40 # service fee in Euro/h
+    # [maintenance in %, service in %, service hours in h]
+    insp_vdi2067 = {'boiler':[0.01,0.02,20],'chp':[0.06,0.02,100],'hp':[0.01,0.015,5]}
+    service_fee = 40    # service fee in Euro/h
 
     for bn in city.nodelist_building:
         if city.node[bn]['entity'].hasBes:
             bes = city.node[bn]['entity'].bes
 
-            cost_invest = []
-            cost_cap = [] # capital costs
-            cost_op = [] # operational costs
-            cost_insp = [] # inspection, maintenance and service costs (VDI 2067)
-            rev = [] # revenue for electricity feed-in and kwkg
+            cost_invest = []    # invest costs
+            cost_cap = []       # capital costs
+            cost_op = []        # operational costs
+            cost_insp = []      # inspection, maintenance and service costs (VDI 2067)
+            rev = []            # revenue for electricity feed-in and kwkg
 
-
-            # TODO: Heatpump integrieren (vorher auf Heatpump simple umstellen)
-            '''
             if bes.hasHeatpump:
                 t = 20  # nach VDI 2067
-                i_0 = hp_cost.calc_spec_cost_hp(bes.heatpump.qNominal, method='wolf', hp_type='aw') * bes.heatpump.qNominal
+                q_hp_nom = bes.heatpump.qNominal/1000   # in kW
+                spf = calc_hp_spf(bes.heatpump, city.environment, city.node[bn]['entity'].get_space_heating_power_curve())
+
+                hp_invest = hp_cost.calc_spec_cost_hp(q_hp_nom, method='wolf', hp_type='aw') * q_hp_nom
                 a = i * (1 + i) ** t / ((1 + i) ** t - 1)
-                c_cap.append(i_0 * a)
-                
+
+                cost_invest.append(hp_invest)
+                cost_cap.append(hp_invest * a)
+                cost_op.append(q_base / spf * price_el_hp)
+                cost_insp.append(hp_invest * (sum(insp_vdi2067['hp'][0:2])) + insp_vdi2067['hp'][2] * service_fee)
+
+
                 if bes.hasBoiler:
-                    t = 18  # nach VDI 2067
-                    i_0 = boiler_cost.calc_spec_cost_boiler(bes.boiler.qNominal,
-                                                            method='viess2013') * bes.boiler.qNominal
+                    t = 20  # nach VDI 2067
+                    q_boi_nom = bes.boiler.qNominal/1000    # in kW
+
+                    boiler_invest = boiler_cost.calc_spec_cost_boiler(q_boi_nom, method='viess2013') * q_boi_nom
                     a = i * (1 + i) ** t / ((1 + i) ** t - 1)
-                    c_cap.append(i_0 * a)
+
+                    cost_invest.append(boiler_invest)
+                    cost_cap.append(boiler_invest * a)
+                    cost_op.append(q_peak / bes.boiler.eta * price_gas)
+                    cost_insp.append(
+                        boiler_invest * (sum(insp_vdi2067['boiler'][0:2])) + insp_vdi2067['boiler'][2] * service_fee)
     
                 elif bes.hasElectricalHeater:
                     t = 20 # nach VDI 2067
-                    i_0 = eh_cost.calc_spec_cost_eh(bes.electricalHeater.qNominal, method='spieker') * bes.electricalHeater.qNominal
-                    a = i * (1 + i)** t / ((1 + i)**t - 1)
-                    c_cap.append(i_0*a)
-    
-            '''
-            if bes.hasChp:
-                eta_th = bes.chp.omega/(1+bes.chp.sigma)
+                    q_elHeater_nom = bes.electricalHeater.qNominal/1000 # in kW
+
+                    elHeater_invest = eh_cost.calc_spec_cost_eh(q_elHeater_nom, method='spieker') * q_elHeater_nom
+                    a = i * (1 + i) ** t / ((1 + i) ** t - 1)
+
+                    cost_invest.append(elHeater_invest)
+                    cost_cap.append(elHeater_invest * a)
+                    cost_op.append(q_peak / bes.electricalHeater.eta * price_el_hp)
+
+            elif bes.hasChp:
                 t = 15  # nach VDI 2067
+                p_chp_nom = bes.chp.pNominal/1000   # in kW
+                q_chp_nom = bes.chp.qNominal/1000   # in kW
+                eta_th = bes.chp.omega / (1 + bes.chp.sigma)
+
                 a = i * (1 + i) ** t / ((1 + i) ** t - 1)
-                chp_invest = chp_cost.calc_invest_cost_chp(bes.chp.pNominal/1000, method='asue2015', with_inst=True,
-                                                                                use_el_input=True, q_th_nom=None)
+                chp_invest = chp_cost.calc_spec_cost_chp(p_chp_nom, method='asue2015', with_inst=True,
+                       use_el_input=True, q_th_nom=None) * p_chp_nom    # in Euro
+
                 print('Investcost CHP', round(chp_invest,2), 'Euro')
 
                 if bes.hasTes:
-                    bafa_subs_chp = dim_devices.get_subs_minichp(bes.chp.pNominal, bes.tes.capacity/1000)
+                    v_tes = bes.tes.capacity*1000/bes.tes.rho   # in liter
+                    bafa_subs_chp = dim_devices.get_subs_minichp(p_chp_nom, q_chp_nom, v_tes) # in Euro
                 else:
                     bafa_subs_chp = 0
 
-                el_feedin_chp = dim_devices.get_el_feedin_tariff_chp(bes.chp.pNominal,el_feedin_epex)
+                el_feedin_chp = dim_devices.get_el_feedin_tariff_chp(p_chp_nom,el_feedin_epex)
 
                 cost_invest.append(chp_invest - bafa_subs_chp)
                 cost_cap.append((chp_invest - bafa_subs_chp)*a)
@@ -777,13 +823,29 @@ def calc_costs_centralized(city, q_base, q_peak, i=0.08, price_gas=0.0661, el_fe
                 rev.append(q_base*bes.chp.sigma*el_feedin_chp)
 
                 if bes.hasBoiler:
-                    t = 18  # nach VDI 2067
-                    boiler_invest = boiler_cost.calc_abs_boiler_cost(bes.boiler.qNominal/1000, method='viess2013')
+                    t = 20  # nach VDI 2067
+                    q_boi_nom = bes.boiler.qNominal/1000
+
+                    boiler_invest = boiler_cost.calc_spec_cost_boiler(q_boi_nom, method='viess2013') * q_boi_nom
                     a = i * (1 + i) ** t / ((1 + i) ** t - 1)
+
                     cost_invest.append(boiler_invest)
                     cost_cap.append(boiler_invest * a)
                     cost_op.append(q_peak/bes.boiler.eta*price_gas)
                     cost_insp.append(boiler_invest * (sum(insp_vdi2067['boiler'][0:2])) + insp_vdi2067['boiler'][2] * service_fee)
+
+            elif bes.hasBoiler:
+                t = 20  # nach VDI 2067
+                q_boi_nom = bes.boiler.qNominal / 1000
+
+                boiler_invest = boiler_cost.calc_spec_cost_boiler(q_boi_nom, method='viess2013') * q_boi_nom
+                a = i * (1 + i) ** t / ((1 + i) ** t - 1)
+
+                cost_invest.append(boiler_invest)
+                cost_cap.append(boiler_invest * a)
+                cost_op.append(q_base / bes.boiler.eta * price_gas)
+                cost_insp.append(
+                    boiler_invest * (sum(insp_vdi2067['boiler'][0:2])) + insp_vdi2067['boiler'][2] * service_fee)
 
             if bes.hasTes:
                 t = 20 # nach VDI 2067
@@ -803,79 +865,79 @@ def calc_costs_centralized(city, q_base, q_peak, i=0.08, price_gas=0.0661, el_fe
     else:
         raise Exception('No BES installed!')
 
+    for v in city.edge.values():
+        if bool(v):
+            # Only if edge exists
+            # TODO: Kosten für Hausanschluss?! Bisher Kosten aus pyCity_calc Tabelle (Economic,LHN)
+            cost_pipes_dm = {0.0161:284,0.0217:284.25,0.0273:284.50,0.0372:284.75,0.0431:285,0.0545:301,0.0703:324.5,0.0825:348.5,0.1071:397,0.1325:443,0.1603:485}
+            lhn_length = round(net_ops.sum_up_weights_of_edges(city),2)
 
-    # TODO: Kosten für Hausanschluss?! Bisher Kosten aus pyCity_calc Tabelle (Economic,LHN)
-    cost_pipes_dm = {0.0161:284,0.0217:284.25,0.0273:284.50,0.0372:284.75,0.0431:285,0.0545:301,0.0703:324.5,0.0825:348.5,0.1071:397,0.1325:443,0.1603:485}
-    lhn_length = round(net_ops.sum_up_weights_of_edges(city),2)
-
-    for d in city.edge[city.nodelist_building[0]].values(): # gibts eine bessere Möglichkeit um an 'd_i' zu kommen?
-        pipe_dm = d['d_i']
-        break
-    else:
-        raise Exception('No pipe diameter found!')
-
-    for dm in cost_pipes_dm.keys():
-        if pipe_dm < dm:
-            t = 40 # Daumenwert (Quelle: nahwaerme.at)
-            a_pipes = i * (1 + i) ** t / ((1 + i) ** t - 1)
-            pipes_invest = cost_pipes_dm[dm]*lhn_length
-            print('Pipe costs:', pipes_invest)
-            cost_invest.append(pipes_invest)
-            cost_cap.append(pipes_invest*a_pipes)
-            break
-    else:
-        raise Exception('Pipe diameter too big!')
-
-    if bafa_lhn:
-        if dm <= 0.1:
-            lhn_subs_pre = 100 * lhn_length  # 100 Euro/m if dn <= 100
-            if lhn_subs_pre > 0.4 * sum(cost_invest):  # subsidy must not be higher than 40% of total invest
-                lhn_subs = 0.4 * sum(cost_invest)
+            for d in city.edge[city.nodelist_building[0]].values(): # gibts eine bessere Möglichkeit um an 'd_i' zu kommen?
+                pipe_dm = d['d_i']
+                break
             else:
-                lhn_subs = lhn_subs_pre
-        else:
-            lhn_subs = 0.3 * sum(cost_invest)   # 30% of invest if dn > 100
-        if lhn_subs > 20000000: # max. subsidy is 20.000.000
-            lhn_subs = 20000000
-        lhn_subs_fee = 0.002 * lhn_subs # fee is 0.2% of subsidy
-        if lhn_subs_fee < 100:  # min. fee is 100 Euro
-            lhn_subs_fee = 100
-        lhn_subs = lhn_subs - lhn_subs_fee
-        cost_invest.append(-lhn_subs)
-        cost_cap.append(-lhn_subs*a_pipes)
-        print('BAFA LHN subsidy applies: ' + str(lhn_subs) + 'Euro off of total invest')
+                raise Exception('No pipe diameter found!')
+
+            for dm in cost_pipes_dm.keys():
+                if pipe_dm < dm:
+                    t = 40  # approx. (source: nahwaerme.at)
+                    a_pipes = i * (1 + i) ** t / ((1 + i) ** t - 1)
+                    pipes_invest = cost_pipes_dm[dm]*lhn_length
+                    print('Pipe costs:', pipes_invest)
+                    cost_invest.append(pipes_invest)
+                    cost_cap.append(pipes_invest*a_pipes)
+                    break
+            else:
+                raise Exception('Pipe diameter too big!')
+
+            if bafa_lhn:
+                if dm <= 0.1:
+                    lhn_subs_pre = 100 * lhn_length  # 100 Euro/m if dn <= 100
+                    if lhn_subs_pre > 0.4 * sum(cost_invest):  # subsidy must not be higher than 40% of total invest
+                        lhn_subs = 0.4 * sum(cost_invest)
+                    else:
+                        lhn_subs = lhn_subs_pre
+                else:
+                    lhn_subs = 0.3 * sum(cost_invest)   # 30% of invest if dn > 100
+                if lhn_subs > 20000000: # max. subsidy is 20.000.000
+                    lhn_subs = 20000000
+                lhn_subs_fee = 0.002 * lhn_subs # fee is 0.2% of subsidy
+                if lhn_subs_fee < 100:  # min. fee is 100 Euro
+                    lhn_subs_fee = 100
+                lhn_subs = lhn_subs - lhn_subs_fee
+                cost_invest.append(-lhn_subs)
+                cost_cap.append(-lhn_subs*a_pipes)
+                print('BAFA LHN subsidy applies: ' + str(lhn_subs) + 'Euro off of total invest')
+            break
 
     cost_cap_total = round(sum(cost_cap),2)
     cost_op_total = round(sum(cost_op),2)
     cost_insp_total = round(sum(cost_insp),2)
     rev_total = round(sum(rev),2)
 
+    q_total = q_base + q_peak   # in kWh
+
     print('Capital Cost:', cost_cap_total)
     print('Operational Cost:', cost_op_total)
     print('Costs for inspection, maintenance and service:', cost_insp_total)
     print('Revenue for el feed-in:', rev_total)
     print('\n** Costs per year:', cost_cap_total+cost_op_total+cost_insp_total-rev_total, 'Euro/a **')
-    return (cost_cap_total, cost_op_total)
+    print('** Heat production costs: '+ str((cost_cap_total+cost_op_total+cost_insp_total-rev_total)/q_total) +' EUR/kWh **')
 
-# def calc_cost_decentralized():
-#     """
-#     Calculation for decentralized energy supply
-#     :return:
-#     """
+    return (cost_cap_total, cost_op_total)
 
 
 
 if __name__ == '__main__':
 
     scenarios = []
-    # scenarios.append({'type': ['decentralized'], 'base': ['hp_air'], 'peak': ['boiler']})
-    # scenarios.append({'type': ['decentralized'], 'base': ['hp_air'], 'peak': ['elHeater']})
-    # scenarios.append({'type': ['centralized'], 'base': ['chp'], 'peak': ['boiler']})
-    # TODO: Boiler als Grundlasterzeuger hinzufügen. Im zentralen Fall TWW Versorgung durch dez. elHeater. Im dez. Fall mit TWW-Speicher
-    #scenarios.append({'type': ['centralized', 'decentralized'], 'base': ['boiler'], 'peak': []})
+    scenarios.append({'type': ['centralized'], 'base': ['chp'], 'peak': ['boiler']})
+    scenarios.append({'type': ['centralized'], 'base': ['boiler'], 'peak': ['']})
 
-    #scenarios.append({'type': ['decentralized'], 'base': ['chp'], 'peak': ['boiler']})
-
+    scenarios.append({'type': ['decentralized'], 'base': ['boiler'], 'peak': ['']})
+    scenarios.append({'type': ['decentralized'], 'base': ['hp_air'], 'peak': ['boiler']})
+    scenarios.append({'type': ['decentralized'], 'base': ['hp_air'], 'peak': ['elHeater']})
+    scenarios.append({'type': ['decentralized'], 'base': ['chp'], 'peak': ['boiler']})
 
     #scenarios.append({'type': ['centralized', 'decentralized'], 'base': ['hp_geo'], 'peak': ['boiler']})
     # scenarios.append({'type': ['centralized', 'decentralized'], 'base': ['hp_geo'], 'peak': ['elHeater']})
@@ -904,7 +966,7 @@ if __name__ == '__main__':
     for i in range(len(list_city_object)):
         cit = list_city_object[i]
         #city_name = 'output_(' + str(i+1) + ')_' + city_f_name
-        city_name = 'output_method_2_' + city_f_name
+        city_name = 'output_test_boiler_2_' + city_f_name
         path_output = os.path.join(this_path, 'output', city_name)
         pickle.dump(cit, open(path_output, mode='wb'))
         citvis.plot_city_district(city=cit, plot_lhn=True, plot_deg=True,

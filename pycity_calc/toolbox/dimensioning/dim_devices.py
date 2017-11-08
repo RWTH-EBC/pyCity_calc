@@ -68,7 +68,7 @@ def dim_decentral_hp(environment, sh_curve, t_biv=-2, lowerActivationLimit=0.05,
     else:
         raise Exception('Error in demand calculation at bivalence point')
 
-    q_nom, cop_list, tMax, tSink = choose_hp(q_hp_biv)
+    q_nom, cop_list, tMax, tSink = choose_hp(q_hp_biv,t_biv)
 
     return q_nom, cop_list, tMax, lowerActivationLimit, tSink, t_dem_ldc, biv_ind, ee_ratio
 
@@ -102,11 +102,9 @@ def choose_hp(q_ideal, t_biv, method=1):
 
     else:
         # [heating power],[COP] (at A-7/W35, A2/W35, A7/W35), [tMax, tMin] (source: Dimplex)
-        hp_list = {'LA6TU':([4.0,5.1,6.4],[2.9,3.8,4.6],[60,18]),'LA9TU':([5.2,7.5,9.2],[2.8,3.6,4.2],[58,18]),
-                   'LA12TU':([7.6,9.4,11.6],[2.9,3.7,4.3],[58,18]),'LA17TU':([10.3,14.6,19.6],[2.9,3.7,4.4],[58,18]),
-                   'LA25TU':([16.7,19.6,26.1],[3.0,3.7,4.4],[58,18]),'LA40TU':([23.8,30.0,35.7], [3.0,3.8,4.4],[58,18])}
-
-        q_ideal = q_ideal/1000
+        hp_list = {'LA6TU':([4000,5100,6400],[2.9,3.8,4.6],[60,18]),'LA9TU':([5200,7500,9200],[2.8,3.6,4.2],[58,18]),
+                   'LA12TU':([7600,9400,11600],[2.9,3.7,4.3],[58,18]),'LA17TU':([10300,14600,19600],[2.9,3.7,4.4],[58,18]),
+                   'LA25TU':([16700,19600,26100],[3.0,3.7,4.4],[58,18]),'LA40TU':([23800,30000,35700], [3.0,3.8,4.4],[58,18])}
 
         best_hp = 'LA6TU'
         best_q_biv = (hp_list['LA6TU'][0][2] - hp_list['LA6TU'][0][0]) / (7 + 7) * (t_biv + 7) + hp_list['LA6TU'][0][0]
@@ -169,28 +167,37 @@ def dim_decentral_chp(th_LDC, q_total, method=0):
                 q_chp = th_LDC[t]
                 [eta_el, eta_th, p_nom, q_nom] = choose_chp(q_chp)
                 (t_ann_op, t_x) = get_chp_ann_op_time(q_nom, th_LDC)
+                chp_ratio = q_nom * t_ann_op / q_total
 
                 # Calculate costs for chp
+                q_chp_nom = q_nom / 1000  # in kW
+                p_chp_nom = p_nom / 1000  # in kW
+
                 a_chp = 0.08 * (1 + 0.08) ** 15 / ((1 + 0.08) ** 15 - 1)  # annuity factor
-                chp_invest = chp_cost.calc_invest_cost_chp(p_nom / 1000, method='asue2015', with_inst=True,
+                chp_invest = chp_cost.calc_invest_cost_chp(p_chp_nom, method='asue2015', with_inst=True,
                                                            use_el_input=True, q_th_nom=None)
                 cost_cap.append(chp_invest * a_chp)
-                cost_op.append((q_nom / 1000) / eta_th * t_ann_op * 0.0661)
-                rev.append(p_nom / 1000 * t_ann_op * get_el_feedin_tariff_chp(q_nom))
-
-                # TODO: weitere Förderungen eintragen
+                cost_op.append((q_chp_nom) / eta_th * t_ann_op * 0.0661)
+                rev.append(p_chp_nom * t_ann_op * get_el_feedin_tariff_chp(q_chp_nom))
 
                 # Calculate costs for thermal energy storage
-                v_tes = (q_nom / 1000) * 60 / 1000  # (in m3) Förderung von Speichern für Mini-BHKW durch BAFA bei Speichergrößen über 60 l/kW_th
+                v_tes = q_chp_nom * 60  # in liter
+
                 a_tes = 0.08 * (1 + 0.08) ** 20 / ((1 + 0.08) ** 20 - 1)  # annuity factor
-                cost_cap.append(tes_cost.calc_invest_cost_tes(v_tes, method='spieker') * a_tes)
-                rev.append(get_subs_minichp(p_nom, v_tes))
+                tes_invest = tes_cost.calc_invest_cost_tes(v_tes / 1000, method='spieker')
+
+                cost_cap.append(tes_invest * a_tes)
+                rev.append(get_subs_tes_chp(chp_ratio, v_tes, tes_invest, p_chp_nom))
+                rev.append(get_subs_minichp(p_chp_nom, q_chp_nom, v_tes))
 
                 # Calculate costs for Boiler
-                q_boiler = max(max(th_LDC) - q_nom, 0)
+                q_boiler_nom = max(max(th_LDC) - q_nom, 0) / 1000
+
                 a_boiler = 0.08 * (1 + 0.08) ** 18 / ((1 + 0.08) ** 18 - 1)  # annuity factor
-                cost_cap.append(boiler_cost.calc_abs_boiler_cost(q_boiler / 1000, method='viess2013') * a_boiler)
-                cost_op.append(((q_total - q_nom * t_ann_op) / 1000) / 0.8 * 0.0661)
+                boiler_invest = boiler_cost.calc_abs_boiler_cost(q_boiler_nom, method='viess2013')
+
+                cost_cap.append(boiler_invest * a_boiler)
+                cost_op.append((q_total / 1000 - q_chp_nom * t_ann_op) / 0.8 * 0.0661)  # operational costs for boiler
 
                 costs_total = sum(cost_cap) + sum(cost_op) - sum(rev)
 
@@ -200,14 +207,9 @@ def dim_decentral_chp(th_LDC, q_total, method=0):
                 array_deckung.append((t_ann_op * q_nom) / q_total)
                 array_costs.append(costs_total)
 
-                if costs_total <= best_costs:
+                if costs_total < best_costs:
                     best_sol_costs = (eta_el, eta_th, p_nom, q_nom, t_x, t_ann_op)
                     best_costs = costs_total
-
-            #plt.figure(1)
-            #plt.plot(array_costs)
-
-            #plt.figure(2)
 
             (eta_el, eta_th, p_nom, q_nom, t_x, t_ann_op) = best_sol_costs
 
@@ -215,17 +217,16 @@ def dim_decentral_chp(th_LDC, q_total, method=0):
             return None
 
     # ---------------- Method 1: EEWaermeG ----------------
-    # TODO: Nochmal checken ob Bedingungen für zentral/dezentral gleich sind
     elif method == 1:
         print('Method 1')
         eewg = False
         count = 0
 
-        # Mindestwert 50% Deckung
+        # At least 50% heat per year from chp
         q_chp = 0.5 * q_total / 8760
         [eta_el, eta_th, p_nom, q_nom] = choose_chp(q_chp)
         (t_ann_op, t_x) = get_chp_ann_op_time(q_nom, th_LDC)
-        # TODO: Evtl. weitere Einschränkungen miteinbauen (Möglichkeit mit der längsten Laufzeit aussuchen)
+
         while not eewg:
             ee_ratio = q_nom * t_ann_op / q_total
             if ee_ratio > 0.5:
@@ -312,27 +313,34 @@ def dim_central_chp(th_LDC, q_total, method=0):
                 chp_ratio = q_nom * t_ann_op / q_total
 
                 # Calculate costs for chp
+                q_chp_nom = q_nom/1000  # in kW
+                p_chp_nom = p_nom/1000  # in kW
+
                 a_chp = 0.08 * (1 + 0.08) ** 15 / ((1 + 0.08) ** 15 - 1)    # annuity factor
-                chp_invest = chp_cost.calc_invest_cost_chp(p_nom / 1000, method='asue2015', with_inst=True,
+                chp_invest = chp_cost.calc_invest_cost_chp(p_chp_nom, method='asue2015', with_inst=True,
                                                            use_el_input=True, q_th_nom=None)
-                cost_cap.append(chp_invest*a_chp)
-                cost_op.append((q_nom/1000)/eta_th * t_ann_op * 0.0661)
-                rev.append(p_nom/1000 * t_ann_op * get_el_feedin_tariff_chp(q_nom))
+                cost_cap.append(chp_invest * a_chp)
+                cost_op.append((q_chp_nom)/eta_th * t_ann_op * 0.0661)
+                rev.append(p_chp_nom * t_ann_op * get_el_feedin_tariff_chp(q_chp_nom))
 
                 # Calculate costs for thermal energy storage
-                v_tes = (q_nom / 1000) * 60/1000  # (in m3) Förderung von Speichern für Mini-BHKW durch BAFA bei Speichergrößen über 60 l/kW_th
-                # TODO: Wie sieht die Dimensionierung für KWK-Anlagen über 30 kW aus? Sind die 20% realistisch?
+                v_tes = q_chp_nom * 60  # in liter
+
                 a_tes = 0.08 * (1 + 0.08) ** 20 / ((1 + 0.08) ** 20 - 1)    # annuity factor
-                tes_invest = tes_cost.calc_invest_cost_tes(v_tes, method='spieker')
-                cost_cap.append(tes_invest*a_tes)
-                rev.append(get_subs_tes_chp(chp_ratio, v_tes, tes_invest, p_nom))
-                rev.append(get_subs_minichp(p_nom, v_tes))
+                tes_invest = tes_cost.calc_invest_cost_tes(v_tes/1000, method='spieker')
+
+                cost_cap.append(tes_invest * a_tes)
+                rev.append(get_subs_tes_chp(chp_ratio, v_tes, tes_invest, p_chp_nom))
+                rev.append(get_subs_minichp(p_chp_nom, q_chp_nom, v_tes))
 
                 # Calculate costs for Boiler
-                q_boiler = max(max(th_LDC) - q_nom, 0)
+                q_boiler_nom = max(max(th_LDC) - q_nom, 0)/1000
+
                 a_boiler = 0.08 * (1 + 0.08) ** 18 / ((1 + 0.08) ** 18 - 1)    # annuity factor
-                cost_cap.append(boiler_cost.calc_abs_boiler_cost(q_boiler / 1000, method='viess2013')*a_boiler)
-                cost_op.append(((q_total - q_nom * t_ann_op)/1000)/0.8*0.0661) #  operational costs for boiler
+                boiler_invest = boiler_cost.calc_abs_boiler_cost(q_boiler_nom, method='viess2013')
+
+                cost_cap.append(boiler_invest * a_boiler)
+                cost_op.append((q_total/1000 - q_chp_nom * t_ann_op)/0.8*0.0661)  # operational costs for boiler
 
                 costs_total = sum(cost_cap) + sum(cost_op) - sum(rev)
 
@@ -357,7 +365,7 @@ def dim_central_chp(th_LDC, q_total, method=0):
         eewg = False
         count = 0
 
-        # Mindestwert 50% Deckung
+        # At least 50% heat per year from chp
         q_chp = 0.5 * q_total / 8760
         [eta_el, eta_th, p_nom, q_nom] = choose_chp(q_chp)
         (t_ann_op, t_x) = get_chp_ann_op_time(q_nom, th_LDC)
@@ -563,37 +571,75 @@ def choose_chp(q_ideal, method=1):
         return specs
 
 
-def get_el_feedin_tariff_chp(q_nom, el_feedin_epex=0.02978):
+def get_el_feedin_tariff_chp(q_nom, el_feedin_epex=0.02978, vnn=0.01):
+    '''
+    Calculates feed-in tariff for CHP-produced electricity.
+
+    Parameters
+    ----------
+    q_nom : nominal thermal power of chp in kW
+    el_feedin_epex : epex price for electricity in Euro/kWh
+    vnn : avoided grid charges ("vermiedenes Netznutzungsentgelt") in Euro/kWh
+
+    Returns : feed-in tariff in EUR/kWh
+    -------
+
+    '''
     # KWKG 2016 revenues for el. feed-in + feedin price from epex
-    if q_nom < 50000:
+    if q_nom < 50:
         return 0.08+el_feedin_epex  # Euro/kWh, only paid for 60.000 flh
-    elif q_nom > 50000 and q_nom < 100000:
+    elif q_nom > 50 and q_nom < 100:
         return 0.06+el_feedin_epex  # Euro/kWh, only paid for 30.000 flh
-    elif q_nom > 100000 and q_nom < 250000:
+    elif q_nom > 100 and q_nom < 250:
         return 0.05+el_feedin_epex  # Euro/kWh, only paid for 30.000 flh
-    elif q_nom > 250000 and q_nom < 2000000:
+    elif q_nom > 250 and q_nom < 2000:
         return 0.044+el_feedin_epex  # Euro/kWh, only paid for 30.000 flh
-    else:  # q_nom > 2000000:
+    else:  # q_nom > 2000:
         return 0.031+el_feedin_epex  # Euro/kWh, only paid for 30.000 flh
 
 
-def get_subs_minichp(p_nom, v_tes):
+def get_subs_minichp(p_nom, q_nom, v_tes):
+    '''
+
+    Parameters
+    ----------
+    p_nom : chp el. power in kW
+    q_nom : chp th. power in kW
+    v_tes : volume of thermal energy storage in liter
+
+    Returns
+    -------
+    bafa_subs_chp : subsidy for mini-chp
+    '''
     # BAFA subsidy for Mini-CHP (CHP device must be listed on BAFA-list)
     bafa_subs_chp = 0
     if v_tes > 0:
-        if p_nom < 20000 and v_tes >= 0.06:
-            if p_nom < 1000:
+        if p_nom < 20 and v_tes/q_nom >= 60:
+            if p_nom < 1:
                 bafa_subs_chp = 1900
-            elif p_nom < 4000:
+            elif p_nom < 4:
                 bafa_subs_chp = 1900 + (p_nom / 1000 - 1) * 300
-            elif p_nom < 10000:
+            elif p_nom < 10:
                 bafa_subs_chp = 1900 + 3 * 300 + (p_nom / 1000 - 4) * 100
-            else:  # bes.chp.pNominal < 20000:
+            else:  # bes.chp.pNominal < 20:
                 bafa_subs_chp = 1900 + 3 * 300 + 6 * 100 + (p_nom / 1000 - 10) * 10
     return bafa_subs_chp
 
 
 def get_subs_tes_chp(chp_ratio, v_tes, tes_invest, p_nom):
+    '''
+
+    Parameters
+    ----------
+    chp_ratio : chp_heat/total_heat per year
+    v_tes : tes volume in liter
+    tes_invest
+    p_nom : el. power in kW
+
+    Returns
+    -------
+
+    '''
 
     v_m3 = v_tes/1000
     kwkg_subs_tes = 0
@@ -604,7 +650,62 @@ def get_subs_tes_chp(chp_ratio, v_tes, tes_invest, p_nom):
         elif v_m3 > 50:
             kwkg_subs_tes = 0.3*tes_invest
         else:
-            if v_m3 >= 0.3*p_nom/1000:
+            if v_m3 >= 0.3*p_nom:
                 kwkg_subs_tes = 250 * v_m3
 
     return kwkg_subs_tes
+
+def get_bafa_subs_hp(q_nom, spf):
+    '''
+
+    BAFA subsidy for a/w heat pumps with nominal power <= 100 kW and spf >= 3.5
+
+    heat pump must be used for:
+        - combined space heating and dhw
+        - only space heating if dhw is generated with renewable energy
+        - generating heat for lhn
+
+    Values only for retrofit; subsidy for new buildings is lower (not implemented)
+
+    Parameters
+    ----------
+    q_nom : thermal nominal power of heat pump in kW
+    spf : seasonal performance factor ("Jahresarbeitszahl")
+
+    Returns
+    -------
+
+    '''
+    subs = 0
+    # innovation subsidy
+    if q_nom <= 100 and spf >= 4.5:
+        if q_nom < 32.5:
+            subs = 1950
+        else:
+            subs = 60*q_nom
+    # base subsidy
+    if q_nom <= 100 and spf >= 3.5:
+        if q_nom < 32.5:
+            subs = 1300
+        else:
+            subs = 40*q_nom
+    return subs
+
+
+def get_kfw_subs_430(invest_cost):
+    '''
+    KfW subsidy for single measures regarding program 430. Currently only applicable for first connection to lhn.
+    For further constraints see KfW website.
+
+    Parameters
+    ----------
+    invest_cost : invest cost of single measure
+
+    Returns
+    -------
+    kfw_subs_430 : possible subsidy from KfW
+    '''
+
+    kfw_subs_430 = invest_cost * 0.1
+
+    return kfw_subs_430
