@@ -206,4 +206,29 @@ if __name__ == '__main__':
               output_folder_name=output_folder_name,
               sim_val=sim_val)
 
+    print('Norm. sim. ref value: ', sim_val)
+    print()
+
+    mean = np.mean(list_sh)
+    print('Norm. mean: ', mean)
+    print()
+
+    median = np.median(list_sh)
+    print('Norm. median: ', median)
+    print()
+
+    std = np.std(list_sh)
+    print('Norm. std: ', std)
+    print()
+
+    minv = min(list_sh)
+    print('Norm. min.: ', minv)
+    print()
+
+    maxv = max(list_sh)
+    print('Norm. max.: ', maxv)
+    print()
+
+
+
     # make_boxplot(list_sh=list_sh, ref_val=ref_val)
