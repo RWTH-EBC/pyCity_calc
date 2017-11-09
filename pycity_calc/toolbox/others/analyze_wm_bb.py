@@ -91,7 +91,7 @@ def make_boxplot(list_sh, ref_val, fontsize=12, dpi=300, with_outliners=True):
     # plt.show()
     plt.close()
 
-def make_hist(list_sh, output_path, output_folder_name):
+def make_hist(list_sh, output_path, output_folder_name, sim_val):
     #  English infos
     title_engl = None  # Add 'u' in front of string to define it as unicode
     # (e.g. when using non-ascii characters)
@@ -106,7 +106,7 @@ def make_hist(list_sh, output_path, output_folder_name):
     #  ylab only used if plot_sub == False
 
     #  Fontsize
-    fontsize = 12
+    fontsize = 10
     #  dpi size
     dpi = 300
     #  Linewidth
@@ -148,7 +148,7 @@ def make_hist(list_sh, output_path, output_folder_name):
 
     plot_std = True
 
-    dict_v_lines = None
+    dict_v_lines = {'Reference\nsimulation': sim_val}
 
     #  #--------------------------------------------------------------
 
@@ -179,6 +179,8 @@ def make_hist(list_sh, output_path, output_folder_name):
 
 if __name__ == '__main__':
     ref_val = 1004  # MWh
+    sim_val = 990  # MWh
+    sim_val /= ref_val
 
     this_path = os.path.dirname(os.path.abspath(__file__))
 
@@ -197,10 +199,11 @@ if __name__ == '__main__':
         #  Convert kWh to MWh
         list_sh[i] /= (1000 * ref_val)
 
-    output_path = os.path.join(this_path, 'output')
+    output_path = os.path.join(this_path, 'output', 'mc_sh_res')
     output_folder_name = 'mc_sh_res'
 
     make_hist(list_sh=list_sh, output_path=output_path,
-              output_folder_name=output_folder_name)
+              output_folder_name=output_folder_name,
+              sim_val=sim_val)
 
     # make_boxplot(list_sh=list_sh, ref_val=ref_val)
