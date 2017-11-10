@@ -34,6 +34,7 @@ import pycity_calc.economic.energy_sys_cost.hp_cost as hp_cost
 import pycity_calc.economic.energy_sys_cost.lhn_cost as lhn_cost
 import pycity_calc.economic.energy_sys_cost.tes_cost as tes_cost
 
+import pycity_calc.environments.co2emissions as co2
 
 
 def run_approach(city,scenarios):
@@ -337,6 +338,8 @@ def dim_centralized(city, scenario, district_type):
 
     bafa_chp_tes = False
     bafa_lhn = False
+    q_gas = []
+    w_el = []
 
     # ---- CHP -----
     if 'chp' in scenario['base']:
@@ -360,6 +363,8 @@ def dim_centralized(city, scenario, district_type):
             print('CHP: Q_nom = ' + str(q_nom / 1000) + ' kW (' + str(round(q_nom * 100 / max(th_curve), 2)) +
                   '% of Q_max, ' + str(np.round(q_nom * t_ann_op * 100 / q_total,2)) + '% of ann. production) ->', t_x, 'full-load hours.')
 
+            q_gas.append((q_nom*t_ann_op/eta_th)/1000)   # gas demand for base supply in kWh/yr
+
             # Check if BAFA/KWKG subsidy for lhn is available
             if t_ann_op*q_nom/q_total > 0.75:
                 bafa_lhn = True
@@ -382,12 +387,16 @@ def dim_centralized(city, scenario, district_type):
                                                lower_activation_limit=0.1)
                 bes.addDevice(boiler)
                 print('Added Boiler: Q_nom = '+str(round(q_boiler/1000,2))+' kW')
+
+                q_gas.append(((q_total - q_nom * t_ann_op)/boiler.eta)/1000)    # gas demand for peak demand in kWh/yr
+
                 check_enev(area_total)
                 if q_boiler >= 4000 and q_boiler < 400000:
                     print('Boiler requires CE Label. (according to 92/42/EWG)')
 
-            ann_q_base = t_ann_op*q_nom/1000 # Annual produced heat with base supply in kWh
-            ann_q_peak = (q_total - q_nom * t_ann_op)/1000 # Annual produced heat with peak supply in kWh
+            ann_q_base = t_ann_op*q_nom/1000 # Annual produced heat with base supply in kWh/yr
+            ann_q_peak = (q_total - q_nom * t_ann_op)/1000 # Annual produced heat with peak supply in kWh/yr
+
 
     # ----- Boiler -----
     elif 'boiler' in scenario['base']:
@@ -397,14 +406,19 @@ def dim_centralized(city, scenario, district_type):
         print('Added Boiler: Q_nom = ' + str(round(q_boiler / 1000, 2)) + ' kW')
         check_enev(area_total)
 
-        ann_q_base = q_total / 1000  # Annual produced heat with base supply in kWh
+        ann_q_base = q_total / 1000  # annual produced heat with base supply in kWh/yr
         ann_q_peak = 0
+        q_gas = (q_total/boiler.eta) / 1000 # gas demand for supply in kWh/yr
 
     # ---- Add BES ----
-    assert not city.node[city.nodelist_building[0]]['entity'].hasBes, ('Building 0 has already BES. Mistakes may occur!')
+    assert not city.node[city.nodelist_building[0]]['entity'].hasBes, 'Building 0 has already BES. Mistakes may occur!'
     city.node[city.nodelist_building[0]]['entity'].addEntity(bes)
 
-    calc_costs(city,ann_q_base, ann_q_peak, bafa_lhn=bafa_lhn, bafa_chp_tes=bafa_chp_tes)
+    w_el.append(city.get_annual_el_demand()/1000) # electricity demand in kWh/yr
+
+    #TODO: Anstatt q_base und q_peak die berechneten Gas und Stromverbräuche nehmen!!
+    calc_costs(city,ann_q_base, ann_q_peak, w_total=w_el, bafa_lhn=bafa_lhn, bafa_chp_tes=bafa_chp_tes)
+    calc_emissions(q_gas, w_el)
 
     return city
 
@@ -416,7 +430,6 @@ def dim_decentralized(city, scenario):
     :return: scenario with sizes of devices - in welcher form? city_object
     '''
 
-    # TODO: EnEV für dezentrale Fälle berechnen, kontrollieren
     # TODO: EEWärmeG für dezentrale Fälle kontrollieren
 
     for b_node in city.nodelist_building:
@@ -426,8 +439,10 @@ def dim_decentralized(city, scenario):
         building = city.node[b_node]['entity']
 
         sh_curve = building.get_space_heating_power_curve()
+        sh_total = np.sum(sh_curve)
         dhw_curve = building.get_dhw_power_curve()
-        q_total = np.sum(sh_curve + dhw_curve)
+        dhw_total = np.sum(dhw_curve)
+        q_total = sh_total + dhw_total
 
         people_total = 0
         for ap in building.apartments:
@@ -436,6 +451,8 @@ def dim_decentralized(city, scenario):
         bes = BES.BES(city.environment)
 
         bafa_chp_tes = False
+        q_gas = []
+        w_el = []
 
         for device in scenario['base']:
             if device == 'chp':
@@ -444,15 +461,16 @@ def dim_decentralized(city, scenario):
                 chp_sol = dim_devices.dim_decentral_chp(th_LDC, q_total, method=0)
 
                 if chp_sol is None:
-                    print('CHP not suitable for lhn.')
+                    raise Warning('CHP not suitable for lhn.')
 
-                else:
-                    eta_el, eta_th, p_nom, q_nom, t_x, t_ann_op = chp_sol
+                eta_el, eta_th, p_nom, q_nom, t_x, t_ann_op = chp_sol
 
                 chp = CHP.ChpExtended(city.environment, p_nom, q_nom, eta_el + eta_th)
                 bes.addDevice(chp)
                 print('CHP: Q_nom = ' + str(q_nom / 1000) + ' kW (' + str(round(q_nom * 100 / max(th_LDC), 2)) +
                       '% of Q_max) ->', t_x, 'full-load hours.')
+
+                q_gas.append(((t_ann_op * q_nom)/eta_th) / 1000)    # gas demand for base supply in kWh/yr
 
                 # Add TES
                 v_tes = q_nom / 1000 * 60  # BAFA-subsidy for Mini-CHP if volume >= 60 l/kW_th
@@ -471,6 +489,8 @@ def dim_decentralized(city, scenario):
                                                    lower_activation_limit=0.1)
                     bes.addDevice(boiler)
                     print('Added Boiler: Q_nom = ' + str(round(q_boiler / 1000, 2)) + ' kW')
+                    q_gas.append(((q_total - q_nom * t_ann_op)/boiler.eta) / 1000)  # gas demand for peak supply in kWh/yr
+
                     if q_boiler >= 4000 and q_boiler < 400000:
                         print('Boiler requires CE Label. (according to 92/42/EWG)')
                     check_enev(building.net_floor_area)
@@ -485,6 +505,7 @@ def dim_decentralized(city, scenario):
                 else:
                     t_biv = -2
 
+                # Add heat pump
                 q_nom, cop_list, tMax, lowerActivationLimit, tSink, t_dem_ldc, biv_ind, hp_ee_ratio = \
                     dim_devices.dim_decentral_hp(city.environment, sh_curve, t_biv=t_biv)
 
@@ -497,6 +518,12 @@ def dim_decentralized(city, scenario):
                 bes.addDevice(heatPump)
                 print('Added HP: Q_nom = ' + str(q_nom / 1000) + ' kW')
 
+                # Calculate el. demand for heat pump
+                w_el_hp = 0
+                for t in range(len(sh_curve)):
+                    w_el_hp += heatPump.calc_hp_el_power_input(sh_curve[t], city.environment.weather.tAmbient[t])
+                w_el.append(w_el_hp/1000)   # el. power demand in kWh/yr
+
                 # Calculate seasonal performance factor (SPF)
                 spf = calc_hp_spf(heatPump=heatPump, environment=city.environment, sh_curve=sh_curve, cop=cop_list)
                 print('SPF = ' + str(spf))
@@ -507,15 +534,18 @@ def dim_decentralized(city, scenario):
                 if 'elHeater' in scenario['peak']:
 
                     # Dimensioning of elHeater
-                    safety_factor = 1.8    # over dimensioning to guarantee simulation success
+                    safety_factor = 2.2    # over dimensioning to guarantee simulation success
                     q_elHeater = (max(dhw_curve) + max(sh_curve) - q_nom)*safety_factor
                     if q_elHeater > 0:
                         elHeater = ElectricalHeater.ElectricalHeaterExtended(city.environment, q_elHeater, eta=0.95, t_max=95, lower_activation_limit=0.1)
                         bes.addDevice(elHeater)
                         print('Added elHeater: Q_nom = ' + str(round(q_elHeater / 1000, 2)) + ' kW')
+
+                        # Calculate el. demand for elHeater (sh peak supply and dhw) in kWh/yr
+                        w_el.append((((1-hp_ee_ratio)*np.sum(sh_curve) + np.sum(dhw_curve))/elHeater.eta)/1000)
                     else:
                         print('No elHeater installed.')
-
+                '''
                 elif 'boiler' in scenario['peak']:
 
                     # Dimensioning of Boiler - also covering hot water?
@@ -528,6 +558,7 @@ def dim_decentralized(city, scenario):
                         bes.addDevice(boiler)
                         print('Added Boiler: Q_nom = ' + str(round(q_boiler / 1000, 2)) + ' kW')
                         check_enev(building.net_floor_area)
+                        
 
                         # elHeater muss installiert werden zur TWW Deckung. Eigentlich sinnlos! Boiler kann das auch!!
                         q_elHeater = max(dhw_curve)
@@ -536,39 +567,90 @@ def dim_decentralized(city, scenario):
                         print('Added elHeater: Q_nom = ' + str(round(q_elHeater / 1000, 2)) + ' kW')
                     else:
                         print('No boiler installed.')
+                '''
 
-                # Warmwasserspeicher hinzufügen
-                # t_soll = 65  # Speichersolltemperatur
-                # t_cw = 10  # Kaltwassertemperatur
-
-                # v_tes = people_total * 25 * (60 - t_cw) / (
-                #     t_soll - t_cw)  # Speichervolumen nach Dimplex PHB (Kap.6.1.3)
-
-                v_tes = 20*q_nom/1000   # in liter (DIN EN 15450: volume between 12 - 35 l/kW // VDI4645: 20 l/kW (for q_hp < 50 kW, monovalent))
+                # Add TES
+                v_tes = 35*q_nom/1000   # in liter (DIN EN 15450: volume between 12 - 35 l/kW // VDI4645: 20 l/kW (for q_hp < 50 kW, monovalent))
                 tes = TES.thermalEnergyStorageExtended(environment=city.environment, t_init=50,
                                                        capacity=v_tes)
                 bes.addDevice(tes)
                 print('Added Thermal Energy Storage:', round(v_tes,2), 'liter ')
 
-                ann_q_base = hp_ee_ratio * q_total / 1000  # in kWh
+
+                #Falsch TWW Bedarf dabei
+                ann_q_base = hp_ee_ratio * sh_total / 1000  # in kWh
                 ann_q_peak = q_total / 1000 - ann_q_base  # in kWh
 
+            # TODO: Geothermie-WP
+            elif device == 'hp_geo':
+
+                q_nom, cop, tMax, lowerActivationLimit, tSink = \
+                    dim_devices.dim_decentral_hp(city.environment, sh_curve, type='ww')
+
+                heatPump = HP.heatPumpSimple(city.environment,
+                                             q_nominal=q_nom,
+                                             t_max=tMax,
+                                             lower_activation_limit=lowerActivationLimit,
+                                             hp_type='ww',
+                                             t_sink=tSink)
+                bes.addDevice(heatPump)
+                print('Added S/W-HP: Q_nom = ' + str(q_nom / 1000) + ' kW')
+
+                # Calculate el. demand for heat pump
+                w_el_hp = 0
+                for sh in sh_curve:
+                    w_el_hp += heatPump.calc_hp_el_power_input(sh, city.environment.temp_ground)
+                w_el.append(w_el_hp / 1000)  # el. power demand in kWh/yr
+
+                # Calculate seasonal performance factor (SPF)
+                spf = calc_hp_spf(heatPump=heatPump, environment=city.environment, sh_curve=sh_curve, cop=cop)
+                print('SPF = ' + str(spf))
+
+                ee_ratio = 1
+                if not check_eewaermeg(city, heatPump, ee_ratio, spf=spf):
+                    raise Warning('Energysystem not according to EEWaermeG!')
+
+                ann_q_base = q_total / 1000  # in kWh
+                ann_q_peak = 0  # in kWh
+
+                if 'elHeater' in scenario['peak']:
+
+                    # Add elHeater
+                    q_elHeater = max(dhw_curve)
+                    elHeater = ElectricalHeater.ElectricalHeaterExtended(city.environment, q_elHeater, eta=0.95,
+                                                                         t_max=95, lower_activation_limit=0.1)
+                    bes.addDevice(elHeater)
+                    print('Added elHeater: Q_nom = ' + str(round(q_elHeater / 1000, 2)) + ' kW')
+
+                    # Calculate el. demand for elHeater (only dhw supply) in kWh
+                    w_el.append((dhw_total/elHeater.eta)/1000)
+
+                v_tes = 20 * q_nom / 1000  # in liter (DIN EN 15450: volume between 12 - 35 l/kW // VDI4645: 20 l/kW (for q_hp < 50 kW, monovalent))
+                tes = TES.thermalEnergyStorageExtended(environment=city.environment, t_init=50,
+                                                       capacity=v_tes)
+                bes.addDevice(tes)
+                print('Added Thermal Energy Storage:', round(v_tes, 2), 'liter ')
 
             elif device == 'boiler':
                 q_boiler = max(sh_curve+dhw_curve)
                 boiler = Boiler.BoilerExtended(city.environment, q_boiler, eta=0.95, t_max=0.75, lower_activation_limit=0.2)
                 bes.addDevice(boiler)
                 print('Added Boiler: Q_nom = ' + str(round(q_boiler / 1000, 2)) + ' kW')
+
+                q_gas = (q_total / boiler.eta) / 1000  # gas demand for supply in kWh/yr
+
                 check_enev(building.net_floor_area)
 
                 ann_q_base = q_total/1000
                 ann_q_peak = 0
 
+        w_el.append(city.get_annual_el_demand() / 1000)  # electricity demand in kWh/yr
 
         assert not city.node[b_node]['entity'].hasBes, ('Building ', b_node ,' has already BES. Mistakes may occur!')
         city.node[b_node]['entity'].addEntity(bes)
 
-        calc_costs(city, ann_q_base, ann_q_peak,bafa_chp_tes=bafa_chp_tes)
+        calc_costs(city, ann_q_base, ann_q_peak, w_total=w_el, bafa_chp_tes=bafa_chp_tes)
+        calc_emissions(q_gas, w_el)
 
     return city
 
@@ -593,47 +675,65 @@ def calc_hp_spf(heatPump, environment, sh_curve, cop=(2.9, 3.7, 4.4), method=0):
     -------
 
     '''
-    if method == 0:     # VDI 4650
-        t_norm_outside = -12    # outside temperature for Aachen (DIN EN 12831)
+    if heatPump.hp_type == 'aw':
+        if method == 0:     # VDI 4650
+            t_norm_outside = -12    # outside temperature for Aachen (DIN EN 12831)
 
-        f_d_theta = 1.020   # temperature difference between test (5K) and operating conditions (7K)
+            f_d_theta = 1.020   # temperature difference between test (5K) and operating conditions (7K)
 
-        # Values for flow temperature = 35°C and norm_outside_temp = -12°C, taken from table 16 in VDI 4650
-        f_theta1 = 0.058
-        f_theta2 = 0.673
-        f_theta3 = 0.208
+            # Values for flow temperature = 35°C and norm_outside_temp = -12°C, taken from table 16 in VDI 4650
+            f_theta1 = 0.058
+            f_theta2 = 0.673
+            f_theta3 = 0.208
 
-        s_ab = 0.3  # correction for defrosting with reverse circulation ("Kreislaufumkehr")
+            s_ab = 0.3  # correction for defrosting with reverse circulation ("Kreislaufumkehr")
 
-        cop_n1 = cop[0]
-        cop_n2 = cop[1] - s_ab
-        cop_n3 = cop[2]
+            cop_n1 = cop[0]
+            cop_n2 = cop[1] - s_ab
+            cop_n3 = cop[2]
 
-        hp_spf = f_d_theta/(f_theta1/cop_n1 + f_theta2/cop_n2 + f_theta3/cop_n3)
+            hp_spf = f_d_theta/(f_theta1/cop_n1 + f_theta2/cop_n2 + f_theta3/cop_n3)
 
 
-    elif method == 1:
-        cop_array = np.zeros(8760)
-        el_in_array = np.zeros(8760)
-        q_out_array = np.zeros(8760)
+        elif method == 1:
+            cop_array = np.zeros(8760)
+            el_in_array = np.zeros(8760)
+            q_out_array = np.zeros(8760)
 
-        #  Get temperature array (source: outdoor air)
-        array_temp = environment.weather.tAmbient
+            #  Get temperature array (source: outdoor air)
+            array_temp = environment.weather.tAmbient
 
-        for i in range(8760):
-            curr_temp = array_temp[i]
-            curr_q_dem = sh_curve[i]
+            for i in range(8760):
+                curr_temp = array_temp[i]
+                curr_q_dem = sh_curve[i]
 
-            q_out_array[i] = heatPump.calc_hp_th_power_output(control_signal=curr_q_dem)
-            cop_array[i] = heatPump.calc_hp_cop_with_quality_grade(temp_source=curr_temp)
-            el_in_array[i] = heatPump.calc_hp_el_power_input(control_signal=q_out_array[i], t_source=curr_temp)
+                q_out_array[i] = heatPump.calc_hp_th_power_output(control_signal=curr_q_dem)
+                cop_array[i] = heatPump.calc_hp_cop_with_quality_grade(temp_source=curr_temp)
+                el_in_array[i] = heatPump.calc_hp_el_power_input(control_signal=q_out_array[i], t_source=curr_temp)
 
-        hp_spf = np.round(np.sum(q_out_array) / np.sum(el_in_array),2)
+            hp_spf = np.round(np.sum(q_out_array) / np.sum(el_in_array),2)
+
+        else:
+            raise Warning('Unknown method!')
+
+        return hp_spf
+
+    elif heatPump.hp_type == 'ww':
+
+        # method VDI4650 for t_ground = 0°C as recommended
+        f_d_theta = 1.020  # temperature difference between test (5K) and operating conditions (7K)
+        t_ground = 0
+
+        f_theta_dict = {-3:1.26, -2:1.142, -1:1.159, 0:1.177, 1:1.95, 2:1.214, 3:1.234, 4:1.253, 5:1.273}
+        f_theta = f_theta_dict[t_ground]
+        f_P = 1.075 # correction factor for pump
+
+        spf = cop[0] * f_d_theta * f_theta / f_P
+
+        return spf
 
     else:
-        raise Warning('Unknown method!')
-
-    return hp_spf
+        raise Warning('Wrong heatPump type!')
 
 
 def check_enev(area_total):
@@ -693,13 +793,18 @@ def check_eewaermeg(city, device, ee_ratio, spf=None):
             return False
 
         # -------------- HP --------------
-        if device.kind == 'hp':
-            if spf < 3.5:
-                print('SPF too low: ' + str(spf))
-                return False
-            else:
-                if ee_ratio >= 0.5:
-                    return True
+        elif device.kind == 'hp':
+            if device.hp_type == 'aw':
+                if spf < 3.5:
+                    print('SPF too low: ' + str(spf))
+                    return False
+            elif device.hp_type == 'ww':
+                if spf < 4:
+                    print('SPF too low: ' + str(spf))
+                    return False
+
+            if ee_ratio >= 0.5:
+                return True
 
     else:
         print('EEWaermeG is not obligatory due to building age.')
@@ -708,8 +813,31 @@ def check_eewaermeg(city, device, ee_ratio, spf=None):
 # -------------------------------- Economic Calculations ----------------------------------------------------
 # TODO: CO2 Überschlägige Berechnung reinbringen
 
+def calc_emissions(q_gas, w_el):
+    """
 
-def calc_costs(city, q_base, q_peak, i=0.08, price_gas=0.0661, price_el_hp=0.25, el_feedin_epex=0.02978, bafa_lhn=False, bafa_chp_tes=False):
+    Parameters
+    ----------
+    q_gas : list : total amount of gas used during one year in kWh/yr
+    w_el : list : total amount of electricity from the grid used during one year in kWh/yr
+    emf_gas : float : emission factor for gas
+    emf_el : float : emission factor for electricity from grid
+
+    Returns
+    -------
+
+    """
+    emf_el = co2.Emissions.get_co2_emission_factors(type='el_mix')  # kg/kWh
+    emf_gas = co2.Emissions.get_co2_emission_factors(type='gas')    # kg/kWh
+
+    co2_gas = q_gas * emf_gas
+    co2_el = w_el * emf_el
+    co2_total = co2_el + co2_gas
+
+    print('Total Emissions: ' + str(round(co2_total,2)) + ' kg CO2 / year')
+
+
+def calc_costs(city, q_base, q_peak, w_total, i=0.08, price_gas=0.0661, price_el_hp=0.25, el_feedin_epex=0.02978, bafa_lhn=False, bafa_chp_tes=False):
     """
     - Kosten
         - Kapitalgebundene Kosten (Investitionskosten über Annuitätenfaktor in jährliche Zahlung umrechnen)
@@ -761,16 +889,30 @@ def calc_costs(city, q_base, q_peak, i=0.08, price_gas=0.0661, price_el_hp=0.25,
             if bes.hasHeatpump:
                 t = 20  # nach VDI 2067
                 q_hp_nom = bes.heatpump.qNominal/1000   # in kW
-                spf = calc_hp_spf(bes.heatpump, city.environment, city.node[bn]['entity'].get_space_heating_power_curve())
 
-                hp_invest = hp_cost.calc_spec_cost_hp(q_hp_nom, method='wolf', hp_type='aw') * q_hp_nom
-                a = i * (1 + i) ** t / ((1 + i) ** t - 1)
+                if bes.heatpump.hp_type == 'aw':
 
-                cost_invest.append(hp_invest)
-                cost_cap.append(hp_invest * a)
-                cost_op.append(q_base / spf * price_el_hp)
-                cost_insp.append(hp_invest * (sum(insp_vdi2067['hp'][0:2])) + insp_vdi2067['hp'][2] * service_fee)
+                    spf = calc_hp_spf(bes.heatpump, city.environment, city.node[bn]['entity'].get_space_heating_power_curve())
 
+                    hp_invest = hp_cost.calc_spec_cost_hp(q_hp_nom, method='wolf', hp_type='aw') * q_hp_nom
+                    a = i * (1 + i) ** t / ((1 + i) ** t - 1)
+
+                    cost_invest.append(hp_invest)
+                    cost_cap.append(hp_invest * a)
+                    cost_op.append(q_base / spf * price_el_hp)
+                    cost_insp.append(hp_invest * (sum(insp_vdi2067['hp'][0:2])) + insp_vdi2067['hp'][2] * service_fee)
+
+                elif bes.heatpump.hp_type == 'ww':
+                    spf = calc_hp_spf(bes.heatpump, city.environment,
+                                      city.node[bn]['entity'].get_space_heating_power_curve(), cop=4.8)
+
+                    hp_invest = hp_cost.calc_spec_cost_hp(q_hp_nom, method='wolf', hp_type='ww') * q_hp_nom
+                    a = i * (1 + i) ** t / ((1 + i) ** t - 1)
+
+                    cost_invest.append(hp_invest)
+                    cost_cap.append(hp_invest * a)
+                    cost_op.append(q_base / spf * price_el_hp)
+                    cost_insp.append(hp_invest * (sum(insp_vdi2067['hp'][0:2])) + insp_vdi2067['hp'][2] * service_fee)
 
                 if bes.hasBoiler:
                     t = 20  # nach VDI 2067
@@ -931,15 +1073,17 @@ def calc_costs(city, q_base, q_peak, i=0.08, price_gas=0.0661, price_el_hp=0.25,
 if __name__ == '__main__':
 
     scenarios = []
-    scenarios.append({'type': ['centralized'], 'base': ['chp'], 'peak': ['boiler']})
-    scenarios.append({'type': ['centralized'], 'base': ['boiler'], 'peak': ['']})
 
-    scenarios.append({'type': ['decentralized'], 'base': ['boiler'], 'peak': ['']})
-    scenarios.append({'type': ['decentralized'], 'base': ['hp_air'], 'peak': ['boiler']})
-    scenarios.append({'type': ['decentralized'], 'base': ['hp_air'], 'peak': ['elHeater']})
-    scenarios.append({'type': ['decentralized'], 'base': ['chp'], 'peak': ['boiler']})
+    #scenarios.append({'type': ['centralized'], 'base': ['chp'], 'peak': ['boiler']})
+    #scenarios.append({'type': ['centralized'], 'base': ['boiler'], 'peak': ['']})
 
-    #scenarios.append({'type': ['centralized', 'decentralized'], 'base': ['hp_geo'], 'peak': ['boiler']})
+    #scenarios.append({'type': ['decentralized'], 'base': ['boiler'], 'peak': ['']})
+    #scenarios.append({'type': ['decentralized'], 'base': ['hp_air'], 'peak': ['boiler']})
+    #scenarios.append({'type': ['decentralized'], 'base': ['hp_air'], 'peak': ['elHeater']})
+    #scenarios.append({'type': ['decentralized'], 'base': ['chp'], 'peak': ['boiler']})
+
+
+    scenarios.append({'type': ['decentralized'], 'base': ['hp_geo'], 'peak': ['']})
     # scenarios.append({'type': ['centralized', 'decentralized'], 'base': ['hp_geo'], 'peak': ['elHeater']})
 
     #Choose example city_object
@@ -949,6 +1093,8 @@ if __name__ == '__main__':
     #  Run program
 
     city_f_name = 'aachen_kronenberg_3_mfh_ref_1.pkl'
+
+    #city_f_name = 'ex_city_4mfh_3zfh.pkl'
     # city_f_name = 'ex_city_7_geb_mixed.pkl'
     #city_f_name = 'ex_city_7_geb_mixed_setDem.pkl'
     #city_f_name = 'example_2_buildings.pkl'
@@ -966,7 +1112,8 @@ if __name__ == '__main__':
     for i in range(len(list_city_object)):
         cit = list_city_object[i]
         #city_name = 'output_(' + str(i+1) + ')_' + city_f_name
-        city_name = 'output_test_boiler_2_' + city_f_name
+        city_name = 'output_(5)_' + city_f_name
+        #city_name = 'output_test_boiler_2_' + city_f_name
         path_output = os.path.join(this_path, 'output', city_name)
         pickle.dump(cit, open(path_output, mode='wb'))
         citvis.plot_city_district(city=cit, plot_lhn=True, plot_deg=True,
