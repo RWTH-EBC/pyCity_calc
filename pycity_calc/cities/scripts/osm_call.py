@@ -188,15 +188,16 @@ if __name__ == '__main__':
 
     #  osm filename
     # filename = 'test.osm'
-    filename = 'aachen_forsterlinde.osm'
+    # filename = 'aachen_forsterlinde.osm'
     # filename = 'aachen_frankenberg.osm'
     # filename = 'aachen_huenefeld.osm'
     # filename = 'aachen_kronenberg.osm'
     # filename = 'aachen_preusweg.osm'
     # filename = 'aachen_tuerme.osm'
+    filename = 'aachen_ambro.osm'
 
     #  Minimal required building area in m2
-    min_area = 35
+    min_area = 50
 
     #  Save generated city objecct as pickle file?
     save_city = True
