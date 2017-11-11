@@ -939,7 +939,7 @@ def calc_costs(city, q_gas, w_el_in, w_el_out, i=0.08, price_gas=0.0661, price_e
     # Bewertungskriterien, Masterarbeit Hendrik Kapitel 2.3!
 
     # [maintenance in %, service in %, service hours in h]
-    insp_vdi2067 = {'boiler':[0.01,0.02,20],'chp':[0.06,0.02,100],'hp':[0.01,0.015,5]}
+    insp_vdi2067 = {'boiler':[0.01,0.02,20],'chp':[0.06,0.02,100],'hp':[0.01,0.015,5],'elHeater':[1,1,0],'tes':[1,1,0],'lhn_station':[2,1,0],'lhn_pipes':[0.5,0,0]}
     service_fee = 40    # service fee in Euro/h
 
     for bn in city.nodelist_building:
@@ -994,7 +994,7 @@ def calc_costs(city, q_gas, w_el_in, w_el_out, i=0.08, price_gas=0.0661, price_e
                         boiler_invest * (sum(insp_vdi2067['boiler'][0:2])) + insp_vdi2067['boiler'][2] * service_fee)
     
                 elif bes.hasElectricalHeater:
-                    t = 20 # nach VDI 2067
+                    t = 18 # nach VDI 2067
                     q_elHeater_nom = bes.electricalHeater.qNominal/1000 # in kW
 
                     elHeater_invest = eh_cost.calc_spec_cost_eh(q_elHeater_nom, method='spieker') * q_elHeater_nom
@@ -1002,7 +1002,7 @@ def calc_costs(city, q_gas, w_el_in, w_el_out, i=0.08, price_gas=0.0661, price_e
 
                     cost_invest.append(elHeater_invest)
                     cost_cap.append(elHeater_invest * a)
-                    #cost_op.append(q_peak / bes.electricalHeater.eta * price_el_hp)
+                    cost_insp.append(elHeater_invest*(sum(insp_vdi2067['elHeater'][0:2])) + insp_vdi2067['elHeater'][2] * service_fee)
 
             elif bes.hasChp:
                 t = 15  # nach VDI 2067
@@ -1026,7 +1026,6 @@ def calc_costs(city, q_gas, w_el_in, w_el_out, i=0.08, price_gas=0.0661, price_e
 
                 cost_invest.append(chp_invest - bafa_subs_chp)
                 cost_cap.append((chp_invest - bafa_subs_chp)*a)
-                #cost_op.append(q_base/eta_th*price_gas)
                 cost_insp.append(chp_invest *(sum(insp_vdi2067['chp'][0:2]))+insp_vdi2067['chp'][2]*service_fee)
                 rev.append(w_el_out*bes.chp.sigma*el_feedin_chp)
 
@@ -1039,7 +1038,6 @@ def calc_costs(city, q_gas, w_el_in, w_el_out, i=0.08, price_gas=0.0661, price_e
 
                     cost_invest.append(boiler_invest)
                     cost_cap.append(boiler_invest * a)
-                    #cost_op.append(q_peak/bes.boiler.eta*price_gas)
                     cost_insp.append(boiler_invest * (sum(insp_vdi2067['boiler'][0:2])) + insp_vdi2067['boiler'][2] * service_fee)
 
             elif bes.hasBoiler:
@@ -1051,7 +1049,6 @@ def calc_costs(city, q_gas, w_el_in, w_el_out, i=0.08, price_gas=0.0661, price_e
 
                 cost_invest.append(boiler_invest)
                 cost_cap.append(boiler_invest * a)
-                #cost_op.append(q_base / bes.boiler.eta * price_gas)
                 cost_insp.append(
                     boiler_invest * (sum(insp_vdi2067['boiler'][0:2])) + insp_vdi2067['boiler'][2] * service_fee)
 
@@ -1069,6 +1066,7 @@ def calc_costs(city, q_gas, w_el_in, w_el_out, i=0.08, price_gas=0.0661, price_e
                     bafa_subs_tes = 0
                 cost_invest.append(tes_invest-bafa_subs_tes)
                 cost_cap.append((tes_invest-bafa_subs_tes)*a)
+                cost_insp.append(tes_invest*(sum(insp_vdi2067['tes'][0:2])) + insp_vdi2067['tes'][2] * service_fee)
             break
     else:
         raise Exception('No BES installed!')
@@ -1077,6 +1075,19 @@ def calc_costs(city, q_gas, w_el_in, w_el_out, i=0.08, price_gas=0.0661, price_e
         if bool(v):
             # Only if edge exists
             # TODO: Kosten für Hausanschluss?! Bisher Kosten aus pyCity_calc Tabelle (Economic,LHN)
+            # Costs for single station in building
+            lhn_station_invest = []
+            for b in city.nodelist_building:
+                building = city.node[b]['entity']
+                q_max = max(building.get_space_heating_power_curve + building.get_dhw_power_curve)
+                lhn_station_invest.append(lhn_cost.calc_invest_single_lhn_station(q_max))
+
+            t = 20  # VDI 2067 (indirect connection)
+            a_station = i * (1 + i) ** t / ((1 + i) ** t - 1)
+            cost_invest.append(sum(lhn_station_invest))
+            cost_cap.append(sum(lhn_station_invest) * a_station)
+            cost_insp.append(sum(lhn_station_invest) * (sum(insp_vdi2067['lhn_station'][0:2])) + insp_vdi2067['lhn_station'][2] * service_fee)
+
             cost_pipes_dm = {0.0161:284,0.0217:284.25,0.0273:284.50,0.0372:284.75,0.0431:285,0.0545:301,0.0703:324.5,0.0825:348.5,0.1071:397,0.1325:443,0.1603:485}
             lhn_length = round(net_ops.sum_up_weights_of_edges(city),2)
 
@@ -1094,6 +1105,7 @@ def calc_costs(city, q_gas, w_el_in, w_el_out, i=0.08, price_gas=0.0661, price_e
                     print('Pipe costs:', pipes_invest)
                     cost_invest.append(pipes_invest)
                     cost_cap.append(pipes_invest*a_pipes)
+                    cost_insp.append(pipes_invest*(sum(insp_vdi2067['lhn_pipes'][0:2])) + insp_vdi2067['lhn_pipes'][2] * service_fee)
                     break
             else:
                 raise Exception('Pipe diameter too big!')
