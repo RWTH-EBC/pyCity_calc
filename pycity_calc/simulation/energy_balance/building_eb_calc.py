@@ -1394,7 +1394,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                     elif (sh_pow_remain + dhw_pow_remain) < q_nom_boi:
                         #  Use eh in part load
 
-                        boiler.calc_el_h_all_results(
+                        boiler.calc_boiler_all_results(
                             control_signal=(sh_pow_remain + dhw_pow_remain),
                             time_index=i)
 
