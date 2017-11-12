@@ -148,6 +148,38 @@ class CityEBCalculator(object):
         #  Get list of sub-cities
         self.set_subcity_lists()
 
+    def reinit(self, check_city=True):
+        """
+        Reinitialize CityEBCCalculator object (set result lists to None and
+        extract new infos about energy systems and networks), e.g.
+        when being used with modified city object in GA.
+
+        Parameters
+        ----------
+        check_city : bool, optional
+            Check, if city object fulfills requirements for energy balance
+            calculation (default: True)
+        """
+        self.list_pump_energy = None  # List with pump energy per LHN
+        self.dict_fe_city_balance = None  # Final energy results dict
+        self.co2 = None  # CO2 emissions of city district in kg/a
+
+        self.list_th_done = None
+        self.list_el_done = None
+
+        self._list_lists_lhn_ids = None
+        self._list_lists_lhn_ids_build = None
+        self._list_lists_deg_ids = None
+        self._list_lists_deg_ids_build = None
+        self._list_single_build = None
+        self._list_no_th_esys = None
+
+        if check_city:
+            check_eb.check_eb_requirements(city=self.city)
+
+        #  Get list of sub-cities
+        self.set_subcity_lists()
+
     def set_subcity_lists(self):
         """
         Calculate values subcity lists:
@@ -475,7 +507,7 @@ class CityEBCalculator(object):
                       ' you want to perform Monte-Carlo analysis.'
                 raise AssertionError(msg)
 
-        #  Dummy list for processed buildings
+        # Dummy list for processed buildings
         self.list_th_done = []
         self.list_el_done = []
 
@@ -516,7 +548,7 @@ class CityEBCalculator(object):
             for id in list_deg:
                 list_deg_all_b.append(id)
 
-        #  Solve electric energy balance for buildings with LHN connection
+        # Solve electric energy balance for buildings with LHN connection
         #  which are not connected to DEG
         for n in list_lhn_all_b:
             if n not in list_deg_all_b:
@@ -531,7 +563,7 @@ class CityEBCalculator(object):
 
                 #  Share with deg
 
-        #  Control check, if all buildings have been processed
+        # Control check, if all buildings have been processed
         list_buildings = copy.deepcopy(
             self.city.get_list_build_entity_node_ids())
 
@@ -547,7 +579,7 @@ class CityEBCalculator(object):
                   ' electric energy balance:' + str(diff)
             raise AssertionError(msg)
 
-        #  Reset lists
+        # Reset lists
         self.list_th_done = None
         self.list_el_done = None
 
@@ -1062,4 +1094,4 @@ if __name__ == '__main__':
     print()
 
     print('Total emissions of city district in t/a:')
-    print(round(co2/1000, 0))
+    print(round(co2 / 1000, 0))
