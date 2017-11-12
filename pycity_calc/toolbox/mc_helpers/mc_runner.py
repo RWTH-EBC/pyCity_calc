@@ -417,6 +417,43 @@ class McRunner(object):
 
         return dict_esys
 
+    def perform_esys_resampling(self, nb_runs, save_samples=True):
+        """
+        Re-sample all energy system parameters on city object
+
+        Parameters
+        ----------
+        nb_runs : int
+            Number of runs
+        save_samples : bool, optional
+            Defines, if sampling results should be saved on MC results object
+            (default: True)
+
+        Returns
+        -------
+        dict_samples_esys : dict (of dicts)
+            Dictionary holding dictionaries with energy system sampling
+            data for MC run
+            dict_samples_esys['<building_id>'] = dict_esys
+            (of building with id <building_id>)
+        """
+
+        dict_samples_esys = {}
+
+        for n in self._list_build_ids:
+            build = self._city_eco_calc.energy_balance.city.node[n]['entity']
+
+            dict_esys = self.perform_sampling_build_esys(nb_runs=nb_runs,
+                                                         building=build)
+
+            dict_samples_esys[str(n)] = dict_esys
+
+        if save_samples:
+            #  Save sampling dict to MC runner object
+            self._dict_samples_esys = dict_samples_esys
+
+        return dict_samples_esys
+
     def perform_sampling_city(self, nb_runs):
         """
         Perform sampling for city district parameters:
