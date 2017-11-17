@@ -12,18 +12,18 @@ import pycity_calc.economic.energy_sys_cost.boiler_cost as boiler_cost
 
 import pycity_calc.energysystems.heatPumpSimple as HP
 
-def dim_decentral_hp(environment, sh_curve, t_biv=-2, lowerActivationLimit=0.05, tSink=28):
+def dim_decentral_hp(environment, sh_curve, t_biv=-2, type='aw', lowerActivationLimit=0.5, tSink=35, t_blocked=4):
     '''
-    Dimensioning of air/water heat pump.
+    Dimensioning of air/water and brine/water heat pump.
 
     Parameters
     ----------
     environment : Environment class of city-object
     sh_curve : Space heating curve of building
     t_biv : bivalence temperature
-    tMax : max. flow temperature of heat pump
+    type : type of hp, 'aw'/'ww'
     lowerActivationLimit : lower activation limit of heat pump
-    tSink : return flow temperature
+    tSink : minimal flow temperature
 
     Returns
     -------
@@ -42,38 +42,51 @@ def dim_decentral_hp(environment, sh_curve, t_biv=-2, lowerActivationLimit=0.05,
 
     '''
     # Values according to Masterthesis
+    if type == 'aw':
+        # monoenergetic operation
 
-    # monoenergetic operation
+        t_dem_ldc = get_t_demand_list(environment.weather.tAmbient, sh_curve)  # ldc with sh-demand and tAmbient
+        # plt.plot(sorted(city.environment.weather.tAmbient), t_dem_ldc)
 
-    t_dem_ldc = get_t_demand_list(environment.weather.tAmbient, sh_curve)  # ldc with sh-demand and tAmbient
-    # plt.plot(sorted(city.environment.weather.tAmbient), t_dem_ldc)
+        for i in range(len(t_dem_ldc)):
+            if sorted(environment.weather.tAmbient)[i] > t_biv:
+                biv_ind = i - 1
+                # q_hp_biv = 0.6*max(t_dem_ldc[biv_ind:-1])  # 60% of highest demand before bivalence point should be met
+                # q_hp_biv = np.sum(t_dem_ldc[biv_ind:biv_ind+24])/24     # average demand around bivalence point
+                # q_hp_biv = t_dem_ldc[biv_ind]
 
-    for i in range(len(t_dem_ldc)):
-        if sorted(environment.weather.tAmbient)[i] > t_biv:
-            biv_ind = i - 1
-            # q_hp_biv = 0.6*max(t_dem_ldc[biv_ind:-1])  # 60% of highest demand before bivalence point should be met
-            # q_hp_biv = np.sum(t_dem_ldc[biv_ind:biv_ind+24])/24     # average demand around bivalence point
-            # q_hp_biv = t_dem_ldc[biv_ind]
+                q_hp_biv = max(sh_curve) / (min(environment.weather.tAmbient) - 20) * (t_biv - 20)  # Leistung im Bivalenzpunkt
+                q2 = 0
+                for q in sh_curve:
+                    if q > q_hp_biv:
+                        q2 += q - q_hp_biv
 
-            q_hp_biv = max(sh_curve) / (min(environment.weather.tAmbient) - 20) * (t_biv - 20)  # Leistung im Bivalenzpunkt
-            q2 = 0
-            for q in sh_curve:
-                if q > q_hp_biv:
-                    q2 += q - q_hp_biv
+                # If curves are generated with method 1 (SLP by Hellwig), ratio is always 0.91% - maybe bc curves are only scaled up?
+                print('peak supply produces ' + str(np.round(q2*100/np.sum(sh_curve),2)) + '% of annual heat demand.')
+                ee_ratio = 1 - q2 / np.sum(sh_curve)
+                break
+        else:
+            raise Exception('Error in demand calculation at bivalence point')
 
-            # If curves are generated with method 1 (SLP by Hellwig), ratio is always 0.91% - maybe bc curves are only scaled up?
-            print('peak supply produces ' + str(np.round(q2*100/np.sum(sh_curve),2)) + '% of annual heat demand.')
-            ee_ratio = 1 - q2 / np.sum(sh_curve)
-            break
+        q_nom, cop_list, tMax, tSink = choose_hp(q_hp_biv,t_biv)
+
+        return q_nom, cop_list, tMax, lowerActivationLimit, tSink, t_dem_ldc, biv_ind, ee_ratio
+
+    elif type == 'ww':
+        # monovalent
+        lowerActivationLimit = 0
+        f = round(24/(24-t_blocked), 1) # factor for blocked time
+
+        q_hp = max(sh_curve) * f
+        q_nom, cop_list, tMax, tSink = choose_hp(q_hp, method=1, hp_type='ww', t_ground=environment.temp_ground)
+
+        return q_nom, cop_list, tMax, lowerActivationLimit, tSink
+
     else:
-        raise Exception('Error in demand calculation at bivalence point')
-
-    q_nom, cop_list, tMax, tSink = choose_hp(q_hp_biv,t_biv)
-
-    return q_nom, cop_list, tMax, lowerActivationLimit, tSink, t_dem_ldc, biv_ind, ee_ratio
+        raise Warning('wrong heatpump type defined: ' + type)
 
 
-def choose_hp(q_ideal, t_biv, method=1):
+def choose_hp(q_ideal, t_biv=-2, method=1, hp_type='aw', t_ground=0):
     '''
     Choose heat pump depending on desired thermal power and bivalence point
     Method 0: Return best possible Heat Pump with average COPs
@@ -84,6 +97,8 @@ def choose_hp(q_ideal, t_biv, method=1):
     q_ideal
     t_biv
     method
+    hp_type
+    t_ground
 
     Returns
     -------
@@ -91,46 +106,97 @@ def choose_hp(q_ideal, t_biv, method=1):
     '''
 
     if method == 0:
+        if hp_type == 'aw':
+            best_q = q_ideal
+            best_cop_list = [2.9, 3.7, 4.4]
+            tMax = 43   #55
+            tSink = 43  #35
 
-        best_q_biv = q_ideal
-        best_cop_list = [2.9, 3.7, 4.4]
-        tMax = 35
-        tSink = 28
+        elif hp_type == 'ww':
+            best_q = q_ideal
+            if t_ground == 0:
+                best_cop_list = [4.8]
+            elif t_ground == 10:
+                best_cop_list = [6]   # for unrealistic t_ground = 10°C -> COP = 6, 4.8 for t_ground = 0°C (realistic)
+            else:
+                raise Warning('ground temperature not supported: ' + str(t_ground))
+            tMax = 62
+            tSink = 35
 
-        return best_q_biv, best_cop_list, tMax, tSink
+        else:
+            raise Warning('heat pump type unknown: ' + hp_type)
 
+        return best_q, best_cop_list, tMax, tSink
+
+
+    elif method == 1:
+        if hp_type == 'aw':
+
+            # [heating power],[COP] (at A-7/W35, A2/W35, A7/W35), [tMax, tMin] (source: Dimplex)
+            hp_list = {'LA6TU':([4000,5100,6400],[2.9,3.8,4.6],[60,18]),'LA9TU':([5200,7500,9200],[2.8,3.6,4.2],[58,18]),
+                       'LA12TU':([7600,9400,11600],[2.9,3.7,4.3],[58,18]),'LA17TU':([10300,14600,19600],[2.9,3.7,4.4],[58,18]),
+                       'LA25TU':([16700,19600,26100],[3.0,3.7,4.4],[58,18]),'LA40TU':([23800,30000,35700], [3.0,3.8,4.4],[58,18])}
+
+            best_hp = 'LA6TU'
+            best_q_biv = (hp_list['LA6TU'][0][2] - hp_list['LA6TU'][0][0]) / (7 + 7) * (t_biv + 7) + hp_list['LA6TU'][0][0]
+            best_cop_list = hp_list['LA6TU'][1]
+
+            for hp in hp_list:
+                q_nom = hp_list[hp][0]
+                q_biv = (q_nom[2] - q_nom[0])/(7 + 7) * (t_biv + 7) + q_nom[0]  # Interpolation for q at t_biv
+
+                if abs(q_biv - q_ideal) <= abs(best_q_biv - q_ideal):
+                    best_hp = hp
+                    best_q_biv = q_biv
+                    best_cop_list = hp_list[hp][1]
+
+            print('Best A/W-HP: ' + best_hp)
+
+            # temperature constraints
+            tMax = hp_list[best_hp][2][0]
+            tSink = 35
+
+            return best_q_biv, best_cop_list, tMax, tSink
+
+        elif hp_type == 'ww':
+            # [heating power],[COP] (at B0/W35, B10/W35),[tMax] (source: Dimplex)
+            hp_list = {'SI8TU':([8100,11000],[4.8,6.2],[62]),'SI11TU':([10900,14100],[4.9,6.2],[62]),'SI14TU':([13900,18000],[5,6.2],[62]),
+                       'SI18TU':([17500,22000],[4.7,5.6],[62]),'SI22TU':([22900,28000],[4.4,5.2],[58])}
+
+            if t_ground == 0:
+                t_ind = 0
+            elif t_ground == 10:
+                t_ind = 1
+            else:
+                raise Warning('hp for specific ground temperature not available: ' + str(t_ground) + '°C')
+
+            for hp in hp_list:
+                q_nom = hp_list[hp][0][t_ind]
+
+                if q_nom >= q_ideal:
+                    best_hp = hp
+                    best_q = q_nom
+                    best_cop_list = hp_list[hp][1]
+                    break
+            else:
+                raise Warning('Heat pumps in catalogue too small. Needed ' + str(round(q_ideal/1000,2))+'kW'+'; Found: '
+                              + str(round(hp_list[-1][0][t_ind]/1000,2)) + ' kW.')
+
+            print('Best S/W-HP: ' + best_hp)
+
+            # temperature constraints
+            tMax = hp_list[best_hp][2][0]
+            tSink = 35
+
+            return best_q, best_cop_list, tMax, tSink
+
+        else:
+            raise Warning('heat pump type unknown: ' + hp_type)
 
     else:
-        # [heating power],[COP] (at A-7/W35, A2/W35, A7/W35), [tMax, tMin] (source: Dimplex)
-        hp_list = {'LA6TU':([4000,5100,6400],[2.9,3.8,4.6],[60,18]),'LA9TU':([5200,7500,9200],[2.8,3.6,4.2],[58,18]),
-                   'LA12TU':([7600,9400,11600],[2.9,3.7,4.3],[58,18]),'LA17TU':([10300,14600,19600],[2.9,3.7,4.4],[58,18]),
-                   'LA25TU':([16700,19600,26100],[3.0,3.7,4.4],[58,18]),'LA40TU':([23800,30000,35700], [3.0,3.8,4.4],[58,18])}
+        raise Warning('method unknown: ' + str(method))
 
-        best_hp = 'LA6TU'
-        best_q_biv = (hp_list['LA6TU'][0][2] - hp_list['LA6TU'][0][0]) / (7 + 7) * (t_biv + 7) + hp_list['LA6TU'][0][0]
-        best_cop_list = hp_list['LA6TU'][1]
 
-        for hp in hp_list:
-            q_nom = hp_list[hp][0]
-            q_biv = (q_nom[2] - q_nom[0])/(7 + 7) * (t_biv + 7) + q_nom[0]  # Interpolation for q at t_biv
-
-            if abs(q_biv - q_ideal) <= abs(best_q_biv - q_ideal):
-                best_hp = hp
-                best_q_biv = q_biv
-                best_cop_list = hp_list[hp][1]
-
-        print('Best HP: ' + best_hp)
-
-        # temperature constraints
-        tMax = hp_list[best_hp][2][0]
-        tMin = hp_list[best_hp][2][1]
-
-        # TODO: How are the temperatures used? Use constraints or t in heating system?
-        # Temperature of heating system
-        tMax = 35
-        tSink = 28
-
-        return best_q_biv, best_cop_list, tMax, tSink
 
 
 def dim_decentral_chp(th_LDC, q_total, method=0):
@@ -437,19 +503,6 @@ def dim_central_chp(th_LDC, q_total, method=0):
 
     return eta_el, eta_th, p_nom, q_nom, t_x, t_ann_op
 
-def dim_central_tes(city):
-    """
-
-    Parameters
-    ----------
-    city    : city_object with BES and heat supply
-
-    Returns : city_object with implemented TES (if necessary)
-    -------
-
-    """
-    # TODO: (Reicht auch Boolean im return??)
-
 
 def dim_central_boiler(city):
     """
@@ -464,7 +517,6 @@ def dim_central_boiler(city):
     -------
 
     """
-    # TODO: (Reicht auch Boolean im return??)
 
     print('boiler')
 
@@ -526,7 +578,7 @@ def get_chp_ann_op_time(q_nom, th_LDC):
             delta_a = a2 - a1
 
 
-def choose_chp(q_ideal, method=1):
+def choose_chp(q_ideal, method=0):
     """
     Choose CHP device
     Method 0: Return device with desired thermal power and average effiency
@@ -542,17 +594,19 @@ def choose_chp(q_ideal, method=1):
     """
     if method == 0:
         q_nom = q_ideal
-        eta_el = 0.27
-        eta_th = 0.65
+        #eta_el = 0.27  # average for real devices
+        #eta_th = 0.65  # average for real devices
+        eta_el = 0.45   # default in pyCity_calc
+        eta_th = 0.45   # default in pyCity_calc
         p_nom = round(q_nom/eta_th * eta_el/10)*10
 
         return eta_el, eta_th, p_nom, q_nom
 
     else:
         # TODO: Import data from excel
-        # Source: BHKW-Kenndaten 2014, S.26 - [eta_el, eta_th, p_nom, q_nom]
+        # [eta_el, eta_th, p_nom, q_nom] - (Source: BHKW-Kenndaten 2014, S.26)
         chp_list = {'vai1':[0.263, 0.658, 1000, 2500], 'intelli':[0.245, 0.613, 2600, 6500], 'vai2':[0.25, 0.667, 3000, 8000],
-                    'kirsch':[0.19, 0.76, 1900, 9000], 'vai3':[0.247,0.658,4700,12500], 'ecp':[0.286, 0.644, 13500,6000],
+                    'kirsch':[0.19, 0.76, 1900, 9000], 'vai3':[0.247,0.658,4700,12500], 'ecp':[0.286, 0.644, 6000, 13500],
                     'vie':[0.27, 0.671, 6000, 14900], 'hoef':[0.27,0.664,7000,17200], 'rmb7.2':[0.263, 0.657, 7200, 18000],
                     'oet8':[0.268,0.633,8000,19000], 'xrgi9':[0.289,0.641,9000,20000], 'kwe':[0.268, 0.818, 7500, 22900],
                     'rmb11.0':[0.289,0.632,11000,24000], 'oet12':[0.279, 0.605, 12000, 26000], 'motat':[0.279, 0.651, 12000, 28000],
@@ -585,17 +639,17 @@ def get_el_feedin_tariff_chp(q_nom, el_feedin_epex=0.02978, vnn=0.01):
     -------
 
     '''
-    # KWKG 2016 revenues for el. feed-in + feedin price from epex
+    # KWKG 2016 revenues for el. feed-in + feedin price from epex + avoided grid charges
     if q_nom < 50:
-        return 0.08+el_feedin_epex  # Euro/kWh, only paid for 60.000 flh
+        return 0.08+el_feedin_epex+vnn  # Euro/kWh, only paid for 60.000 flh
     elif q_nom > 50 and q_nom < 100:
-        return 0.06+el_feedin_epex  # Euro/kWh, only paid for 30.000 flh
+        return 0.06+el_feedin_epex+vnn  # Euro/kWh, only paid for 30.000 flh
     elif q_nom > 100 and q_nom < 250:
-        return 0.05+el_feedin_epex  # Euro/kWh, only paid for 30.000 flh
+        return 0.05+el_feedin_epex+vnn  # Euro/kWh, only paid for 30.000 flh
     elif q_nom > 250 and q_nom < 2000:
-        return 0.044+el_feedin_epex  # Euro/kWh, only paid for 30.000 flh
+        return 0.044+el_feedin_epex+vnn  # Euro/kWh, only paid for 30.000 flh
     else:  # q_nom > 2000:
-        return 0.031+el_feedin_epex  # Euro/kWh, only paid for 30.000 flh
+        return 0.031+el_feedin_epex+vnn  # Euro/kWh, only paid for 30.000 flh
 
 
 def get_subs_minichp(p_nom, q_nom, v_tes):
