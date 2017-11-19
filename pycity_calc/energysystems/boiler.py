@@ -85,7 +85,8 @@ class BoilerExtended(Boil.Boiler):
                           'is negative. Therefore, output is defined as zero.')
             control_signal = 0
 
-        elif control_signal < self.lowerActivationLimit * self.qNominal:
+        elif (control_signal < self.lowerActivationLimit * self.qNominal
+              and control_signal !=0):
             warnings.warn('Control signal for boiler' + str(self) +
                           'is below minimum part load performance. '
                           'Therefore, output is defined as zero.')

@@ -285,7 +285,8 @@ class ChpExtended(chp.CHP):
 
         # If control signal is below minimal part load performance,
         #  output is defined as zero
-        elif control_signal < self.lowerActivationLimit * self.qNominal:
+        elif (control_signal < self.lowerActivationLimit * self.qNominal
+              and control_signal !=0):
             warnings.warn('Thermal control signal for CHP' + str(self) +
                           'is below minimum part load performance. '
                           'Therefore, output is defined as zero.')
@@ -612,7 +613,8 @@ class ChpExtended(chp.CHP):
 
         # If control signal is below minimal part load performance,
         #  output is defined as zero
-        elif control_signal < self.lowerActivationLimit * self.pNominal:
+        elif (control_signal < self.lowerActivationLimit * self.pNominal
+              and control_signal !=0):
             warnings.warn('Electrical control signal for CHP' + str(self) +
                           'is below minimum part load performance. '
                           'Therefore, output is defined as zero.')
