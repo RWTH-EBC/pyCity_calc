@@ -9,6 +9,7 @@ import numpy as np
 import warnings
 import shutil
 import matplotlib.pyplot as plt
+import scipy
 
 import ebc_ues_plot.hist_plot as ebchist
 import ebc_ues_plot.line_plots as ebcline
@@ -187,7 +188,7 @@ if __name__ == '__main__':
     #  Generate results object
     mc_res = mcan.McCityRes()
 
-    city_res_name = 'wm_bb_city_gen_jana_data_enrich_mc_city_samples_1000.pkl'
+    city_res_name = 'wm_bb_city_gen_jana_data_enrich_mc_city_samples_10000.pkl'
 
     load_path = os.path.join(this_path, 'input', city_res_name)
 
@@ -229,6 +230,15 @@ if __name__ == '__main__':
     print('Norm. max.: ', maxv)
     print()
 
+    median = np.median(list_sh)
+
+    iqr = scipy.stats.iqr(list_sh)
+
+    riqr = iqr / median
+
+    print('IQR: ', iqr)
+
+    print('RIQR: ', riqr)
 
 
     # make_boxplot(list_sh=list_sh, ref_val=ref_val)
