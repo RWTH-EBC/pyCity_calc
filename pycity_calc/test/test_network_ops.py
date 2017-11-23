@@ -40,9 +40,9 @@ class Test_NetworkOperations(object):
         graph.add_node(2, position=point.Point(5, 5))
         graph.add_edges_from([(0, 1), (1, 2), (0, 2)])
 
-        assert ((netop.get_min_span_tree(graph,
-                                         [0, 1, 2])).edges() == [(0, 1),
-                                                                 (1, 2)])
+        assert (list((netop.get_min_span_tree(graph,
+                                              [0, 1, 2])).edges()) == [(0, 1),
+                                                                       (1, 2)])
         #  Check for assertionError when node id is not within graph
         try:
             netop.get_min_span_tree(graph, [3])
@@ -484,7 +484,8 @@ class Test_NetworkOperations(object):
 
         #  Should include all existing nodes
         assert len(min_span_graph.nodes()) == 4
-        assert sorted(min_span_graph.nodes()) == [node_1, node_2, node_3, node_4]
+        assert sorted(min_span_graph.nodes()) == [node_1, node_2, node_3,
+                                                  node_4]
 
         list_edges = sorted(min_span_graph.edges())
         #  Should only hold minimum spanning tree edges
