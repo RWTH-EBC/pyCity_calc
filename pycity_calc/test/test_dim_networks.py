@@ -45,8 +45,8 @@ class Test_DimNetworks():
 
         assert len(city_object.nodes()) == 4
 
-        assert city_object.edge[node_1][node_2]['network_type'] == 'heating'
-        assert city_object.edge[node_1][node_3]['network_type'] == 'heating'
+        assert city_object.edges[node_1, node_2]['network_type'] == 'heating'
+        assert city_object.edges[node_1, node_3]['network_type'] == 'heating'
 
     def test_add_lhn_to_city_2(self, fixture_environment, fixture_building):
 

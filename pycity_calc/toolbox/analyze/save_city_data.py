@@ -55,11 +55,11 @@ def save_city_data_to_file(city, save_path, with_esys=False,
     nb_build = 0
     for n in city:
         #  If node holds attribute 'node_type'
-        if 'node_type' in city.node[n]:
+        if 'node_type' in city.nodes[n]:
             #  If node_type is building
-            if city.node[n]['node_type'] == 'building':
+            if city.nodes[n]['node_type'] == 'building':
                 #  If entity is kind building
-                if city.node[n]['entity']._kind == 'building':
+                if city.nodes[n]['entity']._kind == 'building':
                     nb_build += 1
 
     # Define 2d zeros array (to be filled with data)
@@ -70,16 +70,16 @@ def save_city_data_to_file(city, save_path, with_esys=False,
 
     for n in city:
         #  If node holds attribute 'node_type'
-        if 'node_type' in city.node[n]:
+        if 'node_type' in city.nodes[n]:
             #  If node_type is building
-            if city.node[n]['node_type'] == 'building':
+            if city.nodes[n]['node_type'] == 'building':
 
-                if 'entity' in city.node[n]:
+                if 'entity' in city.nodes[n]:
                     #  If entity is kind building
-                    if city.node[n]['entity']._kind == 'building':
+                    if city.nodes[n]['entity']._kind == 'building':
 
                         #  Define pointer to current building
-                        cur_b = city.node[n]['entity']
+                        cur_b = city.nodes[n]['entity']
 
                         #  Write data into data_array
 
@@ -87,10 +87,10 @@ def save_city_data_to_file(city, save_path, with_esys=False,
                         data_array[row][0] = n
 
                         #  x coordinate
-                        data_array[row][1] = city.node[n]['position'].x
+                        data_array[row][1] = city.nodes[n]['position'].x
 
                         #  y coordinate
-                        data_array[row][2] = city.node[n]['position'].y
+                        data_array[row][2] = city.nodes[n]['position'].y
 
                         #  build_type
                         data_array[row][3] = cur_b.build_type
@@ -162,10 +162,10 @@ def save_city_data_to_file(city, save_path, with_esys=False,
                         #  Go one row down
                         row += 1
 
-                    elif city.node[n]['entity']._kind == 'windenergyconverter':
+                    elif city.nodes[n]['entity']._kind == 'windenergyconverter':
                         #  TODO: To be implemented (plus new version of nb_build)
                         pass
-                    elif city.node[n]['entity']._kind == 'pv':
+                    elif city.nodes[n]['entity']._kind == 'pv':
                         #  TODO: To be implemented (plus new version of nb_build)
                         pass
 
@@ -305,17 +305,17 @@ def extract_and_save_building_load_profiles(city, save_path):
     for n in city.nodes():
 
         #  If node holds attribute 'node_type'
-        if 'node_type' in city.node[n]:
+        if 'node_type' in city.nodes[n]:
 
             #  If node_type is building
-            if city.node[n]['node_type'] == 'building':
+            if city.nodes[n]['node_type'] == 'building':
 
-                if 'entity' in city.node[n]:
+                if 'entity' in city.nodes[n]:
 
                     #  If entity is kind building
-                    if city.node[n]['entity']._kind == 'building':
+                    if city.nodes[n]['entity']._kind == 'building':
 
-                        curr_b = city.node[n]['entity']
+                        curr_b = city.nodes[n]['entity']
 
                         sh_curve = curr_b.get_space_heating_power_curve()
                         time_array = np.vstack((time_array, sh_curve))

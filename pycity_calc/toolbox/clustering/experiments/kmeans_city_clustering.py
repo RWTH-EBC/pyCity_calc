@@ -39,12 +39,12 @@ def kmeans_clustering(city, nb_clusters, show_kmeans=False):
     counter = 0
 
     for n in city.nodes():
-        if 'node_type' in city.node[n]:
+        if 'node_type' in city.nodes[n]:
             #  If node_type is building
-            if city.node[n]['node_type'] == 'building':
-                if city.node[n]['entity']._kind == 'building':
-                    curr_x = city.node[n]['position'].x
-                    curr_y = city.node[n]['position'].y
+            if city.nodes[n]['node_type'] == 'building':
+                if city.nodes[n]['entity']._kind == 'building':
+                    curr_x = city.nodes[n]['position'].x
+                    curr_y = city.nodes[n]['position'].y
                     #  Save within x_y_array
                     x_y_array[counter][0] = float(curr_x)
                     x_y_array[counter][1] = float(curr_y)

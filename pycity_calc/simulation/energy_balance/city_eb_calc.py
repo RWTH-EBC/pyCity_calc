@@ -44,7 +44,7 @@ def get_list_lhn_build_without_th_esys(city, list_buildings=None):
 
     for n in list_buildings:
 
-        build = city.node[n]['entity']
+        build = city.nodes[n]['entity']
 
         has_th_supply = False
 
@@ -315,7 +315,7 @@ class CityEBCalculator(object):
             th_lhn_power = np.zeros(int(365 * 24 * 3600 / timestep))
 
             for n in list_no_th_esys:
-                build = self.city.node[n]['entity']
+                build = self.city.nodes[n]['entity']
 
                 th_lhn_power += build.get_space_heating_power_curve()
                 th_lhn_power += build.get_dhw_power_curve()
@@ -346,17 +346,17 @@ class CityEBCalculator(object):
             #  Extract data
             for n in list_neighb:
 
-                if 'network_type' in self.city.edge[ref_id][n]:
+                if 'network_type' in self.city.edges[ref_id, n]:
 
-                    if (self.city.edge[ref_id][n]['network_type'] == 'heating'
-                        or self.city.edge[ref_id][n][
+                    if (self.city.edges[ref_id, n]['network_type'] == 'heating'
+                        or self.city.edges[ref_id, n][
                             'network_type'] == 'heating_and_deg'):
                         #  Extract lhn data
-                        temp_vl = self.city.edge[ref_id][n]['temp_vl']
-                        temp_rl = self.city.edge[ref_id][n]['temp_rl']
-                        d_i = self.city.edge[ref_id][n]['d_i']
-                        rho = self.city.edge[ref_id][n]['rho']
-                        c_p = self.city.edge[ref_id][n]['c_p']
+                        temp_vl = self.city.edges[ref_id, n]['temp_vl']
+                        temp_rl = self.city.edges[ref_id, n]['temp_rl']
+                        d_i = self.city.edges[ref_id, n]['d_i']
+                        rho = self.city.edges[ref_id, n]['rho']
+                        c_p = self.city.edges[ref_id, n]['c_p']
 
                         #  Estimate u-value of pipe in W/mK
                         u_value = dimnet.estimate_u_value(d_i)
@@ -442,7 +442,7 @@ class CityEBCalculator(object):
             #  Sort list_th_esys (CHP systems first)
             list_th_esys_copy = []
             for n in list_th_esys:
-                build = self.city.node[n]['entity']
+                build = self.city.nodes[n]['entity']
 
                 if build.bes.hasChp:
                     list_th_esys_copy.insert(0, n)
@@ -452,7 +452,7 @@ class CityEBCalculator(object):
             list_th_esys = list_th_esys_copy
 
             for n in list_th_esys:
-                build = self.city.node[n]['entity']
+                build = self.city.nodes[n]['entity']
 
                 #  Solve thermal energy balance for single building with
                 #  remaining LHN power demand
@@ -517,7 +517,7 @@ class CityEBCalculator(object):
             print('########################################################')
             print('Process stand-alone building with id: ', n)
 
-            building = self.city.node[n]['entity']
+            building = self.city.nodes[n]['entity']
 
             #  Calculate single building thermal energy balance
             beb.calc_build_therm_eb(build=building, id=n)
@@ -552,7 +552,7 @@ class CityEBCalculator(object):
         #  which are not connected to DEG
         for n in list_lhn_all_b:
             if n not in list_deg_all_b:
-                build = self.city.node[n]['entity']
+                build = self.city.nodes[n]['entity']
 
                 beb.calc_build_el_eb(build=build)
 
@@ -612,7 +612,7 @@ class CityEBCalculator(object):
         #  Dictionary with final energy demand results
         dict_fe_balance = {}
 
-        build = self.city.node[id]['entity']
+        build = self.city.nodes[id]['entity']
 
         if not hasattr(build, 'dict_el_eb_res'):
             msg = 'Building ' + str(id) + ' does not have dict_el_eb_res.'
@@ -1043,8 +1043,8 @@ if __name__ == '__main__':
                                                       merge_windows=merge_windows,
                                                       new_try=new_try)
 
-        city_object.node[1006]['entity'].bes.boiler.qNominal *= 5
-        city_object.node[1006]['entity'].bes.tes.capacity *= 5
+        city_object.nodes[1006]['entity'].bes.boiler.qNominal *= 5
+        city_object.nodes[1006]['entity'].bes.tes.capacity *= 5
 
         # Save new pickle file
         filename = 'city_clust_simple_with_esys.pkl'

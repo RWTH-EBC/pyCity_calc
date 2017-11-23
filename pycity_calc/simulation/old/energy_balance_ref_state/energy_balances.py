@@ -141,7 +141,7 @@ class calculator(object):
 
             building_with_bes = []
             for node in range(len(grids[subcity])):
-                Node = self.city_object.node[grids[subcity][node]]
+                Node = self.city_object.nodes[grids[subcity][node]]
                 if ('entity' in Node) == True:
                     if Node['entity']._kind == 'building':
                         if (Node['entity'].hasBes):
@@ -190,7 +190,7 @@ class calculator(object):
             for i in range(len(dict_city_data[index]['Buildings with bes'])):
 
                 #  Pointer to current node
-                Node = self.city_object.node[
+                Node = self.city_object.nodes[
                     dict_city_data[index]['Buildings in subcity'][i]]
 
                 #  Check if single building holds bes
@@ -994,7 +994,7 @@ class calculator(object):
                         #  TODO: Check boiler for full part load behavior
                         # Boiler operates with full part load behaviour
                         Bes = \
-                            self.city_object.node[
+                            self.city_object.nodes[
                                 dict_city_data[index]["Buildings with bes"][
                                     i]][
                                 'entity'].bes
@@ -1017,7 +1017,7 @@ class calculator(object):
             chp_list = []
 
             for i in range(len(dict_city_data[index]['Buildings with bes'])):
-                Node = self.city_object.node[
+                Node = self.city_object.nodes[
                     dict_city_data[index]['Buildings with bes'][i]]
 
                 # Thermal demands can be aggregated now because there is an lhn
@@ -1027,11 +1027,11 @@ class calculator(object):
                 for ii in range(
                         len(dict_city_data[index]["Buildings in subcity"])):
                     building_demand_th = \
-                        self.city_object.node[
+                        self.city_object.nodes[
                             dict_city_data[index]["Buildings in subcity"] \
                                 [ii]]['entity'].get_space_heating_power_curve()
 
-                    dhw_demand_building = self.city_object.node[
+                    dhw_demand_building = self.city_object.nodes[
                         dict_city_data[index]["Buildings in subcity"][ii]][
                         'entity'].get_dhw_power_curve()
                     aggregated_thermal_demand = aggregated_thermal_demand + \
@@ -1039,7 +1039,7 @@ class calculator(object):
                                                 dhw_demand_building
 
                 Bes = \
-                    self.city_object.node[
+                    self.city_object.nodes[
                         dict_city_data[index]["Buildings with bes"][i]][
                         'entity'].bes
                 tes_object = Bes.tes
@@ -1062,15 +1062,15 @@ class calculator(object):
                 #  Extract lhn edge attributes
                 for u, v in graph_copy.edges():
                     if graph_copy.has_edge(u, v):
-                        if 'network_type' in graph_copy.edge[u][v]:
-                            if (graph_copy.edge[u][v]['network_type'] ==
+                        if 'network_type' in graph_copy.edges[u, v]:
+                            if (graph_copy.edges[u, v]['network_type'] ==
                                     'heating' or
-                                        graph_copy.edge[u][v][
+                                        graph_copy.edges[u, v][
                                             'network_type'] ==
                                         'heating_and_deg'):
-                                temp_vl = graph_copy.edge[u][v]['temp_vl']
-                                temp_rl = graph_copy.edge[u][v]['temp_rl']
-                                d_i = graph_copy.edge[u][v]['d_i']
+                                temp_vl = graph_copy.edges[u, v]['temp_vl']
+                                temp_rl = graph_copy.edges[u, v]['temp_rl']
+                                d_i = graph_copy.edges[u, v]['d_i']
                                 break
 
                 # Calculate u_value of pipe
@@ -1121,11 +1121,11 @@ class calculator(object):
                             dict_city_data[index]["Buildings in subcity"])):
                         # first all buildings are initialised with a demand of zero;
                         # Value is later overwritten for the building, where the thermal bes is located!
-                        self.city_object.node[
+                        self.city_object.nodes[
                             dict_city_data[index]["Buildings in subcity"][ii]][
                             'fuel_demand'] = np.zeros(
                             len(time_vector.time_vector()))
-                        self.city_object.node[
+                        self.city_object.nodes[
                             dict_city_data[index]["Buildings in subcity"][ii]][
                             'electricity_heatpump'] = np.zeros(
                             len(time_vector.time_vector()))
@@ -1341,7 +1341,7 @@ class calculator(object):
                     Node['power_el_chp'] = (np.array(power_el_chp_list))
                     total_thermal_demand = np.array(
                         power_th_chp_list) + np.array(power_boiler_total)
-                    self.city_object.node[
+                    self.city_object.nodes[
                         dict_city_data[index]["Buildings with bes"][i]][
                         'fuel_demand'] = total_thermal_demand
 
@@ -1386,10 +1386,10 @@ class calculator(object):
                             dict_city_data[index]["Buildings in subcity"])):
                         # first all buildings are initialised with a demand of zero;
                         # Value is later overwritten for the building, where the thermal bes is located!
-                        self.city_object.node[
+                        self.city_object.nodes[
                             dict_city_data[index]["Buildings in subcity"][z]][
                             'fuel_demand'] = 0
-                        self.city_object.node[
+                        self.city_object.nodes[
                             dict_city_data[index]["Buildings in subcity"][z]][
                             'electricity_heatpump'] = 0
 
@@ -1528,7 +1528,7 @@ class calculator(object):
             #####################################################
 
             for i in range(len(dict_city_data[index]['Buildings in subcity'])):
-                Node = self.city_object.node[
+                Node = self.city_object.nodes[
                     dict_city_data[index]['Buildings in subcity'][i]]
                 demand_heatpump = Node['electricity_heatpump']
 
@@ -1570,7 +1570,7 @@ class calculator(object):
                         if (Node['entity'].bes.hasPv):
                             print(Node['entity'].bes.hasPv)
                             # pv electricity is very expensive and therefore more important to use than chp!
-                            supply_pv = self.city_object.node[
+                            supply_pv = self.city_object.nodes[
                                 dict_city_data[index]['Buildings in subcity'][
                                     i]][
                                 'entity'].bes.pv.getPower()
@@ -1760,7 +1760,7 @@ class calculator(object):
 
                         if (Node['entity'].bes.hasPv):
                             # pv electricity is very expensive and therefore more important to use than chp!
-                            supply_pv = self.city_object.node[
+                            supply_pv = self.city_object.nodes[
                                 dict_city_data[index]['Buildings in subcity'][
                                     i]][
                                 'entity'].bes.pv.getPower()
@@ -1813,7 +1813,7 @@ class calculator(object):
             cumulated_surplus = np.zeros(len(time_vector.time_vector()))
 
             for i in range(len(dict_city_data[index]['Buildings in subcity'])):
-                Node = self.city_object.node[
+                Node = self.city_object.nodes[
                     dict_city_data[index]['Buildings in subcity'][i]]
                 demand_heatpump = Node['electricity_heatpump']
 
@@ -1837,14 +1837,14 @@ class calculator(object):
             print()
             for i in range(len(dict_city_data[index]['Buildings with bes'])):
 
-                Node = self.city_object.node[
+                Node = self.city_object.nodes[
                     dict_city_data[index]['Buildings with bes'][i]]
                 demand_heatpump = Node['electricity_heatpump']
 
                 if (Node['entity'].hasBes) == True:
 
                     # print(dict_city_data[index]["Buildings with bes"][i])
-                    Bes = self.city_object.node[
+                    Bes = self.city_object.nodes[
                         dict_city_data[index]["Buildings with bes"][i]][
                         'entity'].bes
                     # if conditions checks if initial electrical demand is changed by bes
@@ -2114,11 +2114,11 @@ class calculator(object):
                 # The surplus which every house BES's creates is added
 
                 cumulated_demand += \
-                    self.city_object.node[
+                    self.city_object.nodes[
                         dict_city_data[index]['Buildings with bes'][ii]][
                         'entity'].get_electric_power_curve()
                 cumulated_surplus += \
-                    self.city_object.node[
+                    self.city_object.nodes[
                         dict_city_data[index]['Buildings with bes'][ii]][
                         'cumulated_surplus']
 
@@ -2128,11 +2128,11 @@ class calculator(object):
                 # the amount of power is determined by the initial demand of power
                 # if the cutsomer needs a lot of power he will receive more power from the deg
                 # the amount is linear weighed!
-                Node = self.city_object.node[
+                Node = self.city_object.nodes[
                     dict_city_data[index]['Buildings in subcity'][ii]]
                 final_electrical_demand_afer_deg = []
                 # Ratio is a percent value which says how much of the energy is for a specific customer
-                ratio = (sum(self.city_object.node[
+                ratio = (sum(self.city_object.nodes[
                                  dict_city_data[index]['Buildings in subcity'][
                                      ii]][
                                  'entity'].get_electric_power_curve()) / sum(
@@ -2141,7 +2141,7 @@ class calculator(object):
                 weighted_individual_surplus = np.array(
                     [-1 * ratio * x for x in cumulated_surplus]) + not_used
                 demand_deg = \
-                    self.city_object.node[
+                    self.city_object.nodes[
                         dict_city_data[index]['Buildings in subcity'][ii]][
                         'electrical demand_without_deg']
                 not_used = []
@@ -2220,246 +2220,246 @@ if __name__ == '__main__':
 
     print("")
     print("1001")
-    print("pv_used_self", city_object.node[1001]['pv_used_self'])
-    print("pv_used_with_batt", city_object.node[1001]['pv_used_with_batt'])
-    print("pv_not_used", city_object.node[1001]['pv_not_used'])
-    print('chp_used_self', city_object.node[1001]['chp_used_self'])
-    print('chp_used_with_batt', city_object.node[1001]['chp_used_with_batt'])
-    print('chp_not_used', city_object.node[1001]['chp_not_used'])
-    print('fuel_demand', (city_object.node[1001]['fuel_demand']))
+    print("pv_used_self", city_object.nodes[1001]['pv_used_self'])
+    print("pv_used_with_batt", city_object.nodes[1001]['pv_used_with_batt'])
+    print("pv_not_used", city_object.nodes[1001]['pv_not_used'])
+    print('chp_used_self', city_object.nodes[1001]['chp_used_self'])
+    print('chp_used_with_batt', city_object.nodes[1001]['chp_used_with_batt'])
+    print('chp_not_used', city_object.nodes[1001]['chp_not_used'])
+    print('fuel_demand', (city_object.nodes[1001]['fuel_demand']))
     print('electrical demand',
-          sum(city_object.node[1001]['electrical demand']))
+          sum(city_object.nodes[1001]['electrical demand']))
     print('electrical demand_with_deg',
-          sum(city_object.node[1001]['electrical demand_with_deg']))
+          sum(city_object.nodes[1001]['electrical demand_with_deg']))
     print()
     print("1002")
-    print("pv_used_self", city_object.node[1002]['pv_used_self'])
-    print("pv_used_with_batt", city_object.node[1002]['pv_used_with_batt'])
-    print("pv_not_used", city_object.node[1002]['pv_not_used'])
-    print('chp_used_self', city_object.node[1002]['chp_used_self'])
-    print('chp_used_with_batt', city_object.node[1002]['chp_used_with_batt'])
-    print('chp_not_used', city_object.node[1002]['chp_not_used'])
-    print('fuel_demand', sum(city_object.node[1002]['fuel_demand']))
+    print("pv_used_self", city_object.nodes[1002]['pv_used_self'])
+    print("pv_used_with_batt", city_object.nodes[1002]['pv_used_with_batt'])
+    print("pv_not_used", city_object.nodes[1002]['pv_not_used'])
+    print('chp_used_self', city_object.nodes[1002]['chp_used_self'])
+    print('chp_used_with_batt', city_object.nodes[1002]['chp_used_with_batt'])
+    print('chp_not_used', city_object.nodes[1002]['chp_not_used'])
+    print('fuel_demand', sum(city_object.nodes[1002]['fuel_demand']))
     print('electrical demand',
-          sum(city_object.node[1002]['electrical demand']))
+          sum(city_object.nodes[1002]['electrical demand']))
     print('electrical demand_with_deg',
-          sum(city_object.node[1002]['electrical demand_with_deg']))
+          sum(city_object.nodes[1002]['electrical demand_with_deg']))
     print()
     print("1003")
-    print("pv_used_self", city_object.node[1003]['pv_used_self'])
-    print("pv_used_with_batt", city_object.node[1003]['pv_used_with_batt'])
-    print("pv_not_used", city_object.node[1003]['pv_not_used'])
-    print('chp_used_self', city_object.node[1003]['chp_used_self'])
-    print('chp_used_with_batt', city_object.node[1003]['chp_used_with_batt'])
-    print('chp_not_used', city_object.node[1003]['chp_not_used'])
-    print('fuel_demand', (city_object.node[1003]['fuel_demand']))
+    print("pv_used_self", city_object.nodes[1003]['pv_used_self'])
+    print("pv_used_with_batt", city_object.nodes[1003]['pv_used_with_batt'])
+    print("pv_not_used", city_object.nodes[1003]['pv_not_used'])
+    print('chp_used_self', city_object.nodes[1003]['chp_used_self'])
+    print('chp_used_with_batt', city_object.nodes[1003]['chp_used_with_batt'])
+    print('chp_not_used', city_object.nodes[1003]['chp_not_used'])
+    print('fuel_demand', (city_object.nodes[1003]['fuel_demand']))
     print('electrical demand',
-          sum(city_object.node[1003]['electrical demand']))
+          sum(city_object.nodes[1003]['electrical demand']))
     print('electrical demand_with_deg',
-          sum(city_object.node[1003]['electrical demand_with_deg']))
+          sum(city_object.nodes[1003]['electrical demand_with_deg']))
     print()
     print("1004")
-    print("pv_used_self", city_object.node[1004]['pv_used_self'])
-    print("pv_used_with_batt", city_object.node[1004]['pv_used_with_batt'])
-    print("pv_not_used", city_object.node[1004]['pv_not_used'])
-    print('chp_used_self', city_object.node[1004]['chp_used_self'])
-    print('chp_used_with_batt', city_object.node[1004]['chp_used_with_batt'])
-    print('chp_not_used', city_object.node[1004]['chp_not_used'])
-    print('fuel_demand', sum(city_object.node[1004]['fuel_demand']))
+    print("pv_used_self", city_object.nodes[1004]['pv_used_self'])
+    print("pv_used_with_batt", city_object.nodes[1004]['pv_used_with_batt'])
+    print("pv_not_used", city_object.nodes[1004]['pv_not_used'])
+    print('chp_used_self', city_object.nodes[1004]['chp_used_self'])
+    print('chp_used_with_batt', city_object.nodes[1004]['chp_used_with_batt'])
+    print('chp_not_used', city_object.nodes[1004]['chp_not_used'])
+    print('fuel_demand', sum(city_object.nodes[1004]['fuel_demand']))
     print('electrical demand',
-          sum(city_object.node[1004]['electrical demand']))
+          sum(city_object.nodes[1004]['electrical demand']))
     print('electrical demand_with_deg',
-          sum(city_object.node[1004]['electrical demand_with_deg']))
+          sum(city_object.nodes[1004]['electrical demand_with_deg']))
     print()
 
     print("1005")
-    print("pv_used_self", city_object.node[1005]['pv_used_self'])
-    print("pv_used_with_batt", city_object.node[1005]['pv_used_with_batt'])
-    print("pv_not_used", city_object.node[1005]['pv_not_used'])
-    print('chp_used_self', city_object.node[1005]['chp_used_self'])
-    print('chp_used_with_batt', city_object.node[1005]['chp_used_with_batt'])
-    print('chp_not_used', city_object.node[1005]['chp_not_used'])
-    print('fuel_demand', sum(city_object.node[1005]['fuel_demand']))
+    print("pv_used_self", city_object.nodes[1005]['pv_used_self'])
+    print("pv_used_with_batt", city_object.nodes[1005]['pv_used_with_batt'])
+    print("pv_not_used", city_object.nodes[1005]['pv_not_used'])
+    print('chp_used_self', city_object.nodes[1005]['chp_used_self'])
+    print('chp_used_with_batt', city_object.nodes[1005]['chp_used_with_batt'])
+    print('chp_not_used', city_object.nodes[1005]['chp_not_used'])
+    print('fuel_demand', sum(city_object.nodes[1005]['fuel_demand']))
     print('electrical demand',
-          sum(city_object.node[1005]['electrical demand']))
+          sum(city_object.nodes[1005]['electrical demand']))
     print('electrical demand_with_deg',
-          sum(city_object.node[1005]['electrical demand_with_deg']))
+          sum(city_object.nodes[1005]['electrical demand_with_deg']))
 
     print()
     print("1006")
-    print("pv_used_self", city_object.node[1006]['pv_used_self'])
-    print("pv_used_with_batt", city_object.node[1006]['pv_used_with_batt'])
-    print("pv_not_used", city_object.node[1006]['pv_not_used'])
-    print('chp_used_self', city_object.node[1006]['chp_used_self'])
-    print('chp_used_with_batt', city_object.node[1006]['chp_used_with_batt'])
-    print('chp_not_used', city_object.node[1006]['chp_not_used'])
-    print('fuel_demand', sum(city_object.node[1006]['fuel_demand']))
+    print("pv_used_self", city_object.nodes[1006]['pv_used_self'])
+    print("pv_used_with_batt", city_object.nodes[1006]['pv_used_with_batt'])
+    print("pv_not_used", city_object.nodes[1006]['pv_not_used'])
+    print('chp_used_self', city_object.nodes[1006]['chp_used_self'])
+    print('chp_used_with_batt', city_object.nodes[1006]['chp_used_with_batt'])
+    print('chp_not_used', city_object.nodes[1006]['chp_not_used'])
+    print('fuel_demand', sum(city_object.nodes[1006]['fuel_demand']))
     print('electrical demand',
-          sum(city_object.node[1006]['electrical demand']))
+          sum(city_object.nodes[1006]['electrical demand']))
     print('electrical demand_with_deg',
-          sum(city_object.node[1006]['electrical demand_with_deg']))
+          sum(city_object.nodes[1006]['electrical demand_with_deg']))
     print()
     print("1007")
-    print("pv_used_self", city_object.node[1007]['pv_used_self'])
-    print("pv_used_with_batt", city_object.node[1007]['pv_used_with_batt'])
-    print("pv_not_used", city_object.node[1007]['pv_not_used'])
-    print('chp_used_self', city_object.node[1007]['chp_used_self'])
-    print('chp_used_with_batt', city_object.node[1007]['chp_used_with_batt'])
-    print('chp_not_used', city_object.node[1007]['chp_not_used'])
-    print('fuel_demand', sum(city_object.node[1007]['fuel_demand']))
+    print("pv_used_self", city_object.nodes[1007]['pv_used_self'])
+    print("pv_used_with_batt", city_object.nodes[1007]['pv_used_with_batt'])
+    print("pv_not_used", city_object.nodes[1007]['pv_not_used'])
+    print('chp_used_self', city_object.nodes[1007]['chp_used_self'])
+    print('chp_used_with_batt', city_object.nodes[1007]['chp_used_with_batt'])
+    print('chp_not_used', city_object.nodes[1007]['chp_not_used'])
+    print('fuel_demand', sum(city_object.nodes[1007]['fuel_demand']))
     print('electrical demand',
-          sum(city_object.node[1007]['electrical demand']))
+          sum(city_object.nodes[1007]['electrical demand']))
     print('electrical demand_with_deg',
-          sum(city_object.node[1007]['electrical demand_with_deg']))
+          sum(city_object.nodes[1007]['electrical demand_with_deg']))
 
     print()
     print("1008")
-    print("pv_used_self", city_object.node[1008]['pv_used_self'])
-    print("pv_used_with_batt", city_object.node[1008]['pv_used_with_batt'])
-    print("pv_not_used", city_object.node[1008]['pv_not_used'])
-    print('chp_used_self', city_object.node[1008]['chp_used_self'])
-    print('chp_used_with_batt', city_object.node[1008]['chp_used_with_batt'])
-    print('chp_not_used', city_object.node[1008]['chp_not_used'])
+    print("pv_used_self", city_object.nodes[1008]['pv_used_self'])
+    print("pv_used_with_batt", city_object.nodes[1008]['pv_used_with_batt'])
+    print("pv_not_used", city_object.nodes[1008]['pv_not_used'])
+    print('chp_used_self', city_object.nodes[1008]['chp_used_self'])
+    print('chp_used_with_batt', city_object.nodes[1008]['chp_used_with_batt'])
+    print('chp_not_used', city_object.nodes[1008]['chp_not_used'])
     print('electricity heatpump',
-          sum(city_object.node[1008]['electricity_heatpump']))
-    print('fuel_demand', (city_object.node[1008]['fuel_demand']))
+          sum(city_object.nodes[1008]['electricity_heatpump']))
+    print('fuel_demand', (city_object.nodes[1008]['fuel_demand']))
     print('electrical demand',
-          sum(city_object.node[1008]['electrical demand']))
+          sum(city_object.nodes[1008]['electrical demand']))
     print('electrical demand_with_deg',
-          sum(city_object.node[1008]['electrical demand_with_deg']))
+          sum(city_object.nodes[1008]['electrical demand_with_deg']))
     print('Total thermal output:',
-          sum(city_object.node[1008]['entity'].bes.heatpump.totalQOutput))
+          sum(city_object.nodes[1008]['entity'].bes.heatpump.totalQOutput))
 
     print()
     print("1009")
-    print("pv_used_self", city_object.node[1009]['pv_used_self'])
-    print("pv_used_with_batt", city_object.node[1009]['pv_used_with_batt'])
-    print("pv_not_used", city_object.node[1009]['pv_not_used'])
-    print('chp_used_self', city_object.node[1009]['chp_used_self'])
-    print('chp_used_with_batt', city_object.node[1009]['chp_used_with_batt'])
-    print('chp_not_used', city_object.node[1009]['chp_not_used'])
+    print("pv_used_self", city_object.nodes[1009]['pv_used_self'])
+    print("pv_used_with_batt", city_object.nodes[1009]['pv_used_with_batt'])
+    print("pv_not_used", city_object.nodes[1009]['pv_not_used'])
+    print('chp_used_self', city_object.nodes[1009]['chp_used_self'])
+    print('chp_used_with_batt', city_object.nodes[1009]['chp_used_with_batt'])
+    print('chp_not_used', city_object.nodes[1009]['chp_not_used'])
     print('electricity heatpump',
-          sum(city_object.node[1009]['electricity_heatpump']))
-    print('fuel_demand', (city_object.node[1009]['fuel_demand']))
+          sum(city_object.nodes[1009]['electricity_heatpump']))
+    print('fuel_demand', (city_object.nodes[1009]['fuel_demand']))
     print('electrical demand',
-          sum(city_object.node[1009]['electrical demand']))
+          sum(city_object.nodes[1009]['electrical demand']))
     print('electrical demand_with_deg',
-          sum(city_object.node[1009]['electrical demand_with_deg']))
+          sum(city_object.nodes[1009]['electrical demand_with_deg']))
 
     print()
     print("1010")
-    print("pv_used_self", city_object.node[1010]['pv_used_self'])
-    print("pv_used_with_batt", city_object.node[1010]['pv_used_with_batt'])
-    print("pv_not_used", city_object.node[1010]['pv_not_used'])
-    print('chp_used_self', city_object.node[1010]['chp_used_self'])
-    print('chp_used_with_batt', city_object.node[1010]['chp_used_with_batt'])
-    print('chp_not_used', city_object.node[1010]['chp_not_used'])
-    print('fuel_demand', sum(city_object.node[1010]['fuel_demand']))
+    print("pv_used_self", city_object.nodes[1010]['pv_used_self'])
+    print("pv_used_with_batt", city_object.nodes[1010]['pv_used_with_batt'])
+    print("pv_not_used", city_object.nodes[1010]['pv_not_used'])
+    print('chp_used_self', city_object.nodes[1010]['chp_used_self'])
+    print('chp_used_with_batt', city_object.nodes[1010]['chp_used_with_batt'])
+    print('chp_not_used', city_object.nodes[1010]['chp_not_used'])
+    print('fuel_demand', sum(city_object.nodes[1010]['fuel_demand']))
     print('electrical demand',
-          sum(city_object.node[1010]['electrical demand']))
+          sum(city_object.nodes[1010]['electrical demand']))
     print('electrical demand_with_deg',
-          sum(city_object.node[1010]['electrical demand_with_deg']))
+          sum(city_object.nodes[1010]['electrical demand_with_deg']))
     print()
     print("1011")
-    print("pv_used_self", city_object.node[1011]['pv_used_self'])
-    print("pv_used_with_batt", city_object.node[1011]['pv_used_with_batt'])
-    print("pv_not_used", city_object.node[1011]['pv_not_used'])
-    print('chp_used_self', city_object.node[1011]['chp_used_self'])
-    print('chp_used_with_batt', city_object.node[1011]['chp_used_with_batt'])
-    print('chp_not_used', city_object.node[1011]['chp_not_used'])
-    print('fuel_demand', sum(city_object.node[1011]['fuel_demand']))
+    print("pv_used_self", city_object.nodes[1011]['pv_used_self'])
+    print("pv_used_with_batt", city_object.nodes[1011]['pv_used_with_batt'])
+    print("pv_not_used", city_object.nodes[1011]['pv_not_used'])
+    print('chp_used_self', city_object.nodes[1011]['chp_used_self'])
+    print('chp_used_with_batt', city_object.nodes[1011]['chp_used_with_batt'])
+    print('chp_not_used', city_object.nodes[1011]['chp_not_used'])
+    print('fuel_demand', sum(city_object.nodes[1011]['fuel_demand']))
     print('electrical demand',
-          sum(city_object.node[1011]['electrical demand']))
+          sum(city_object.nodes[1011]['electrical demand']))
     print('electrical demand_with_deg',
-          sum(city_object.node[1011]['electrical demand_with_deg']))
+          sum(city_object.nodes[1011]['electrical demand_with_deg']))
     print()
     print("1012")
-    print("pv_used_self", city_object.node[1012]['pv_used_self'])
-    print("pv_used_with_batt", city_object.node[1012]['pv_used_with_batt'])
-    print("pv_not_used", city_object.node[1012]['pv_not_used'])
-    print('chp_used_self', city_object.node[1012]['chp_used_self'])
-    print('chp_used_with_batt', city_object.node[1012]['chp_used_with_batt'])
-    print('chp_not_used', city_object.node[1012]['chp_not_used'])
-    print('fuel_demand', sum(city_object.node[1012]['fuel_demand']))
+    print("pv_used_self", city_object.nodes[1012]['pv_used_self'])
+    print("pv_used_with_batt", city_object.nodes[1012]['pv_used_with_batt'])
+    print("pv_not_used", city_object.nodes[1012]['pv_not_used'])
+    print('chp_used_self', city_object.nodes[1012]['chp_used_self'])
+    print('chp_used_with_batt', city_object.nodes[1012]['chp_used_with_batt'])
+    print('chp_not_used', city_object.nodes[1012]['chp_not_used'])
+    print('fuel_demand', sum(city_object.nodes[1012]['fuel_demand']))
     print('electrical demand',
-          sum(city_object.node[1012]['electrical demand']))
+          sum(city_object.nodes[1012]['electrical demand']))
     print('electrical demand_with_deg',
-          sum(city_object.node[1012]['electrical demand_with_deg']))
+          sum(city_object.nodes[1012]['electrical demand_with_deg']))
     # print ()
     # print ("1013")
-    # print ("pv_used_self",city_object.node[1013]['pv_used_self'])
-    # print ("pv_used_with_batt",city_object.node[1013]['pv_used_with_batt'])
-    # print ("pv_not_used",city_object.node[1013]['pv_not_used'])
-    # print ('chp_used_self',city_object.node[1013]['chp_used_self'])
-    # print ('chp_used_with_batt',city_object.node[1013]['chp_used_with_batt'])
-    # print ('chp_not_used',city_object.node[1013]['chp_not_used'])
-    # print ('fuel_demand',sum(city_object.node[1013]['fuel_demand']))
-    # print ('electrical demand',sum(city_object.node[1013]['electrical demand']))
-    # print ('electrical demand_with_deg',sum(city_object.node[1013]['electrical demand_with_deg']))
+    # print ("pv_used_self",city_object.nodes[1013]['pv_used_self'])
+    # print ("pv_used_with_batt",city_object.nodes[1013]['pv_used_with_batt'])
+    # print ("pv_not_used",city_object.nodes[1013]['pv_not_used'])
+    # print ('chp_used_self',city_object.nodes[1013]['chp_used_self'])
+    # print ('chp_used_with_batt',city_object.nodes[1013]['chp_used_with_batt'])
+    # print ('chp_not_used',city_object.nodes[1013]['chp_not_used'])
+    # print ('fuel_demand',sum(city_object.nodes[1013]['fuel_demand']))
+    # print ('electrical demand',sum(city_object.nodes[1013]['electrical demand']))
+    # print ('electrical demand_with_deg',sum(city_object.nodes[1013]['electrical demand_with_deg']))
     # print ()
     # print ("1014")
-    # print ("pv_used_self",city_object.node[1014]['pv_used_self'])
-    # print ("pv_used_with_batt",city_object.node[1014]['pv_used_with_batt'])
-    # print ("pv_not_used",city_object.node[1014]['pv_not_used'])
-    # print ('chp_used_self',city_object.node[1014]['chp_used_self'])
-    # print ('chp_used_with_batt',city_object.node[1014]['chp_used_with_batt'])
-    # print ('chp_not_used',city_object.node[1014]['chp_not_used'])
-    # print ('fuel_demand',sum(city_object.node[1014]['fuel_demand']))
-    # print ('electrical demand',sum(city_object.node[1014]['electrical demand']))
-    # print ('electrical demand_with_deg',sum(city_object.node[1014]['electrical demand_with_deg']))
+    # print ("pv_used_self",city_object.nodes[1014]['pv_used_self'])
+    # print ("pv_used_with_batt",city_object.nodes[1014]['pv_used_with_batt'])
+    # print ("pv_not_used",city_object.nodes[1014]['pv_not_used'])
+    # print ('chp_used_self',city_object.nodes[1014]['chp_used_self'])
+    # print ('chp_used_with_batt',city_object.nodes[1014]['chp_used_with_batt'])
+    # print ('chp_not_used',city_object.nodes[1014]['chp_not_used'])
+    # print ('fuel_demand',sum(city_object.nodes[1014]['fuel_demand']))
+    # print ('electrical demand',sum(city_object.nodes[1014]['electrical demand']))
+    # print ('electrical demand_with_deg',sum(city_object.nodes[1014]['electrical demand_with_deg']))
     # print ()
     # print ("1015")
-    # print ("pv_used_self",city_object.node[1015]['pv_used_self'])
-    # print ("pv_used_with_batt",city_object.node[1015]['pv_used_with_batt'])
-    # print ("pv_not_used",city_object.node[1015]['pv_not_used'])
-    # print ('chp_used_self',city_object.node[1015]['chp_used_self'])
-    # print ('chp_used_with_batt',city_object.node[1015]['chp_used_with_batt'])
-    # print ('chp_not_used',city_object.node[1015]['chp_not_used'])
-    # print ('fuel_demand',sum(city_object.node[1015]['fuel_demand']))
-    # print ('electrical demand',sum(city_object.node[1015]['electrical demand']))
-    # print ('electrical demand_with_deg',sum(city_object.node[1015]['electrical demand_with_deg']))
+    # print ("pv_used_self",city_object.nodes[1015]['pv_used_self'])
+    # print ("pv_used_with_batt",city_object.nodes[1015]['pv_used_with_batt'])
+    # print ("pv_not_used",city_object.nodes[1015]['pv_not_used'])
+    # print ('chp_used_self',city_object.nodes[1015]['chp_used_self'])
+    # print ('chp_used_with_batt',city_object.nodes[1015]['chp_used_with_batt'])
+    # print ('chp_not_used',city_object.nodes[1015]['chp_not_used'])
+    # print ('fuel_demand',sum(city_object.nodes[1015]['fuel_demand']))
+    # print ('electrical demand',sum(city_object.nodes[1015]['electrical demand']))
+    # print ('electrical demand_with_deg',sum(city_object.nodes[1015]['electrical demand_with_deg']))
     # print ()
     # print ("1016")
-    # print ("pv_used_self",city_object.node[1016]['pv_used_self'])
-    # print ("pv_used_with_batt",city_object.node[1016]['pv_used_with_batt'])
-    # print ("pv_not_used",city_object.node[1016]['pv_not_used'])
-    # print ('chp_used_self',city_object.node[1016]['chp_used_self'])
-    # print ('chp_used_with_batt',city_object.node[1016]['chp_used_with_batt'])
-    # print ('chp_not_used',city_object.node[1016]['chp_not_used'])
-    # print ('fuel_demand',sum(city_object.node[1016]['fuel_demand']))
-    # print ('electrical demand',sum(city_object.node[1016]['electrical demand']))
-    # print ('electrical demand_with_deg',sum(city_object.node[1016]['electrical demand_with_deg']))
+    # print ("pv_used_self",city_object.nodes[1016]['pv_used_self'])
+    # print ("pv_used_with_batt",city_object.nodes[1016]['pv_used_with_batt'])
+    # print ("pv_not_used",city_object.nodes[1016]['pv_not_used'])
+    # print ('chp_used_self',city_object.nodes[1016]['chp_used_self'])
+    # print ('chp_used_with_batt',city_object.nodes[1016]['chp_used_with_batt'])
+    # print ('chp_not_used',city_object.nodes[1016]['chp_not_used'])
+    # print ('fuel_demand',sum(city_object.nodes[1016]['fuel_demand']))
+    # print ('electrical demand',sum(city_object.nodes[1016]['electrical demand']))
+    # print ('electrical demand_with_deg',sum(city_object.nodes[1016]['electrical demand_with_deg']))
     # print ()
     # print ("1017")
-    # print ("pv_used_self",city_object.node[1017]['pv_used_self'])
-    # print ("pv_used_with_batt",city_object.node[1017]['pv_used_with_batt'])
-    # print ("pv_not_used",city_object.node[1017]['pv_not_used'])
-    # print ('chp_used_self',city_object.node[1017]['chp_used_self'])
-    # print ('chp_used_with_batt',city_object.node[1017]['chp_used_with_batt'])
-    # print ('chp_not_used',city_object.node[1017]['chp_not_used'])
-    # print ('fuel_demand',sum(city_object.node[1017]['fuel_demand']))
-    # print ('electrical demand',sum(city_object.node[1017]['electrical demand']))
-    # print ('electrical demand_with_deg',sum(city_object.node[1017]['electrical demand_with_deg']))
+    # print ("pv_used_self",city_object.nodes[1017]['pv_used_self'])
+    # print ("pv_used_with_batt",city_object.nodes[1017]['pv_used_with_batt'])
+    # print ("pv_not_used",city_object.nodes[1017]['pv_not_used'])
+    # print ('chp_used_self',city_object.nodes[1017]['chp_used_self'])
+    # print ('chp_used_with_batt',city_object.nodes[1017]['chp_used_with_batt'])
+    # print ('chp_not_used',city_object.nodes[1017]['chp_not_used'])
+    # print ('fuel_demand',sum(city_object.nodes[1017]['fuel_demand']))
+    # print ('electrical demand',sum(city_object.nodes[1017]['electrical demand']))
+    # print ('electrical demand_with_deg',sum(city_object.nodes[1017]['electrical demand_with_deg']))
     # print ()
     # print ("1018")
-    # print ("pv_used_self",city_object.node[1018]['pv_used_self'])
-    # print ("pv_used_with_batt",city_object.node[1018]['pv_used_with_batt'])
-    # print ("pv_not_used",city_object.node[1018]['pv_not_used'])
-    # print ('chp_used_self',city_object.node[1018]['chp_used_self'])
-    # print ('chp_used_with_batt',city_object.node[1018]['chp_used_with_batt'])
-    # print ('chp_not_used',city_object.node[1018]['chp_not_used'])
-    # print ('fuel_demand',sum(city_object.node[1018]['fuel_demand']))
-    # print ('electrical demand',sum(city_object.node[1018]['electrical demand']))
-    # print ('electrical demand_with_deg',sum(city_object.node[1018]['electrical demand_with_deg']))
+    # print ("pv_used_self",city_object.nodes[1018]['pv_used_self'])
+    # print ("pv_used_with_batt",city_object.nodes[1018]['pv_used_with_batt'])
+    # print ("pv_not_used",city_object.nodes[1018]['pv_not_used'])
+    # print ('chp_used_self',city_object.nodes[1018]['chp_used_self'])
+    # print ('chp_used_with_batt',city_object.nodes[1018]['chp_used_with_batt'])
+    # print ('chp_not_used',city_object.nodes[1018]['chp_not_used'])
+    # print ('fuel_demand',sum(city_object.nodes[1018]['fuel_demand']))
+    # print ('electrical demand',sum(city_object.nodes[1018]['electrical demand']))
+    # print ('electrical demand_with_deg',sum(city_object.nodes[1018]['electrical demand_with_deg']))
     # print ()
     # print ("1019")
-    # print ("pv_used_self",city_object.node[1019]['pv_used_self'])
-    # print ("pv_used_with_batt",city_object.node[1019]['pv_used_with_batt'])
-    # print ("pv_not_used",city_object.node[1019]['pv_not_used'])
-    # print ('chp_used_self',city_object.node[1019]['chp_used_self'])
-    # print ('chp_used_with_batt',city_object.node[1019]['chp_used_with_batt'])
-    # print ('chp_not_used',city_object.node[1019]['chp_not_used'])
-    # print ('fuel_demand',sum(city_object.node[1019]['fuel_demand']))
-    # print ('electrical demand',sum(city_object.node[1019]['electrical demand']))
-    # print ('electrical demand_with_deg',sum(city_object.node[1019]['electrical demand_with_deg']))
+    # print ("pv_used_self",city_object.nodes[1019]['pv_used_self'])
+    # print ("pv_used_with_batt",city_object.nodes[1019]['pv_used_with_batt'])
+    # print ("pv_not_used",city_object.nodes[1019]['pv_not_used'])
+    # print ('chp_used_self',city_object.nodes[1019]['chp_used_self'])
+    # print ('chp_used_with_batt',city_object.nodes[1019]['chp_used_with_batt'])
+    # print ('chp_not_used',city_object.nodes[1019]['chp_not_used'])
+    # print ('fuel_demand',sum(city_object.nodes[1019]['fuel_demand']))
+    # print ('electrical demand',sum(city_object.nodes[1019]['electrical demand']))
+    # print ('electrical demand_with_deg',sum(city_object.nodes[1019]['electrical demand_with_deg']))
     # print ()

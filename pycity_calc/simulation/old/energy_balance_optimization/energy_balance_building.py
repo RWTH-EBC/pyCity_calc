@@ -161,7 +161,7 @@ class calculator(object):
 
             building_with_bes = []
             for node in range(len(grids[subcity])):
-                Node = self.city_object.node[grids[subcity][node]]
+                Node = self.city_object.nodes[grids[subcity][node]]
                 if ('entity' in Node) == True:
                     if Node['entity']._kind == 'building':
                         if (Node['entity'].hasBes):
@@ -225,7 +225,7 @@ class calculator(object):
 
 
             #  Pointer to current node
-            Node = self.city_object.node[dict_city_data[index]['Buildings in subcity'][i]]#TODO:'Buildings in subcity'
+            Node = self.city_object.nodes[dict_city_data[index]['Buildings in subcity'][i]]#TODO:'Buildings in subcity'
 
 
             #  Check if single building holds bes
@@ -1497,7 +1497,7 @@ class calculator(object):
 
                     total_heat_demand_for_boiler = np.zeros(len(time_vector.time_vector()))
 
-                    Bes = self.city_object.node[dict_city_data[index]["Buildings with bes"][i]]['entity'].bes
+                    Bes = self.city_object.nodes[dict_city_data[index]["Buildings with bes"][i]]['entity'].bes
                     if boiler_qNominal <= max(thermal_demand_building):
                         # if boilernom is smaller than demand check if LHN connected to cover missing demand
                         if (dict_city_data[index]['hasLHN']) == False:
@@ -1597,7 +1597,7 @@ class calculator(object):
 
             #for i in range(len(dict_city_data[index]['Buildings in subcity'])):
             for i in range(len(dict_city_data[index]['Buildings in subcity'])):#TODO:'Buildings in subcity'
-                Node = self.city_object.node[dict_city_data[index]['Buildings in subcity'][i]]#TODO:'Buildings in subcity'
+                Node = self.city_object.nodes[dict_city_data[index]['Buildings in subcity'][i]]#TODO:'Buildings in subcity'
 
                 if (Node['entity'].hasBes) == False:
                     # if no deg and no bes each building has to buy the full electrical demand
@@ -1660,7 +1660,7 @@ class calculator(object):
 
                             # pv electricity is very expensive and therefore more important to use than chp!
                             # Initialisation pv arrays
-                            supply_pv = self.city_object.node[dict_city_data[index]['Buildings in subcity'][i]]['entity'].bes.pv.getPower(currentValues=False, updatePower=True)#TODO:'Buildings in subcity'
+                            supply_pv = self.city_object.nodes[dict_city_data[index]['Buildings in subcity'][i]]['entity'].bes.pv.getPower(currentValues=False, updatePower=True)#TODO:'Buildings in subcity'
                             pv_used = np.zeros(len(time_vector.time_vector()))
                             pv_sold = np.zeros(len(time_vector.time_vector()))
                             demand_after_pv = np.zeros(len(time_vector.time_vector()))
@@ -1873,7 +1873,7 @@ class calculator(object):
                             # THEREFORE it was necessary to implement a case for PV AND CHP!
 
                             # Initialisation pv arrays
-                            supply_pv = self.city_object.node[dict_city_data[index]['Buildings in subcity'][i]]['entity'].bes.pv.getPower(currentValues=False, updatePower=True)#TODO:'Buildings in subcity'
+                            supply_pv = self.city_object.nodes[dict_city_data[index]['Buildings in subcity'][i]]['entity'].bes.pv.getPower(currentValues=False, updatePower=True)#TODO:'Buildings in subcity'
                             pv_used = np.zeros(len(time_vector.time_vector()))
                             pv_sold = np.zeros(len(time_vector.time_vector()))
                             demand_after_pv = np.zeros(len(time_vector.time_vector()))
@@ -2049,7 +2049,7 @@ class calculator(object):
                         if (Node['entity'].bes.hasPv):
 
                             # pv electricity is very expensive and therefore more important to use than chp!
-                            supply_pv = self.city_object.node[dict_city_data[index]['Buildings in subcity'][i]]['entity'].bes.pv.getPower(currentValues=False, updatePower=True)#TODO:'Buildings in subcity'
+                            supply_pv = self.city_object.nodes[dict_city_data[index]['Buildings in subcity'][i]]['entity'].bes.pv.getPower(currentValues=False, updatePower=True)#TODO:'Buildings in subcity'
 
                             # Initialisation
                             pv_sold = np.zeros(len(time_vector.time_vector()))
@@ -2148,7 +2148,7 @@ class calculator(object):
             # Loop over Buildings
             for i in range(len(dict_city_data[index]['Buildings in subcity'])):
                 #  Pointer to current building
-                Node = self.city_object.node[dict_city_data[index]['Buildings in subcity'][i]]
+                Node = self.city_object.nodes[dict_city_data[index]['Buildings in subcity'][i]]
                 demand_heatpump = Node['electricity_heatpump']
 
                 # if (Node['entity'].hasBes)==False:
@@ -2172,14 +2172,14 @@ class calculator(object):
 
             for i in range(len(dict_city_data[index]['Buildings with bes'])):
 
-                Node = self.city_object.node[
+                Node = self.city_object.nodes[
                     dict_city_data[index]['Buildings with bes'][i]]
                 demand_heatpump = Node['electricity_heatpump']
 
                 if (Node['entity'].hasBes) == True:
 
                     # print(dict_city_data[index]["Buildings with bes"][i])
-                    Bes = self.city_object.node[
+                    Bes = self.city_object.nodes[
                         dict_city_data[index]["Buildings with bes"][i]][
                         'entity'].bes
                     # if conditions checks if initial electrical demand is changed by bes
@@ -2474,11 +2474,11 @@ class calculator(object):
                 # The surplus which every house BES's creates is added
 
                 cumulated_demand += \
-                    self.city_object.node[
+                    self.city_object.nodes[
                         dict_city_data[index]['Buildings with bes'][ii]][
                         'entity'].get_electric_power_curve()
                 cumulated_surplus += \
-                    self.city_object.node[
+                    self.city_object.nodes[
                         dict_city_data[index]['Buildings with bes'][ii]][
                         'cumulated_surplus']
 
@@ -2488,11 +2488,11 @@ class calculator(object):
                 # the amount of power is determined by the initial demand of power
                 # if the cutsomer needs a lot of power he will receive more power from the deg
                 # the amount is linear weighed!
-                Node = self.city_object.node[
+                Node = self.city_object.nodes[
                     dict_city_data[index]['Buildings in subcity'][ii]]
                 final_electrical_demand_afer_deg = []
                 # Ratio is a percent value which says how much of the energy is for a specific customer
-                ratio = (sum(self.city_object.node[
+                ratio = (sum(self.city_object.nodes[
                                  dict_city_data[index]['Buildings in subcity'][
                                      ii]][
                                  'entity'].get_electric_power_curve()) / sum(
@@ -2501,7 +2501,7 @@ class calculator(object):
                 weighted_individual_surplus = np.array(
                     [-1 * ratio * x for x in cumulated_surplus]) + not_used
                 demand_deg = \
-                    self.city_object.node[
+                    self.city_object.nodes[
                         dict_city_data[index]['Buildings in subcity'][ii]][
                         'electrical demand_without_deg']
                 not_used = []
@@ -2584,7 +2584,7 @@ if __name__ == '__main__':
         #  False - Use original profile
         #  Only relevant, if th_gen_method == 1
         #  Sets thermal power to zero in time spaces, where average daily outdoor
-        #  temperature is equal to or larger than 12 °C. Rescales profile to
+        #  temperature is equal to or larger than 12 ï¿½C. Rescales profile to
         #  original demand value.
 
         #  Manipulate vdi space heating load to be normalized to given annual net
@@ -2775,8 +2775,8 @@ if __name__ == '__main__':
         for n in city_object.nodes():
             #  Workaround: To prevent AssertionError with non-existent BES,
             #  BES are added to all buildings
-            if 'entity' in city_object.node[n]:
-                build = city_object.node[n]['entity']
+            if 'entity' in city_object.nodes[n]:
+                build = city_object.nodes[n]['entity']
 
                 if build.hasBes == False:
                     bes = BES.BES(environment=city_object.environment)

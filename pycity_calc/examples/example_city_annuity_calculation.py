@@ -260,11 +260,11 @@ def run_example_city_energy_balance_and_annuity_calc():
                                            merge_windows=merge_windows,
                                            new_try=new_try)
 
-    city.node[1005]['entity'].bes.boiler.qNominal *= 10
-    city.node[1005]['entity'].bes.tes.capacity *= 10
-    city.node[1012]['entity'].bes.boiler.qNominal *= 10
-    city.node[1012]['entity'].bes.tes.capacity *= 10
-    city.node[1009]['entity'].bes.electricalHeater.qNominal *= 10
+    city.nodes[1005]['entity'].bes.boiler.qNominal *= 10
+    city.nodes[1005]['entity'].bes.tes.capacity *= 10
+    city.nodes[1012]['entity'].bes.boiler.qNominal *= 10
+    city.nodes[1012]['entity'].bes.tes.capacity *= 10
+    city.nodes[1009]['entity'].bes.electricalHeater.qNominal *= 10
 
     # # Save new pickle file
     # filename = 'city_clust_simple_with_esys.pkl'

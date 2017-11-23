@@ -62,7 +62,7 @@ def MC_rescale_esys(City, esys_unknown=True, recent_systems=True):
     for id_building in list_of_building:
 
         # Pointer on current building
-        building = City.node[id_building]['entity']
+        building = City.nodes[id_building]['entity']
 
         # change building environment
         building.environment = City.environment
@@ -399,14 +399,14 @@ def gen_esys_for_city(city, list_data, size_esys = False, boiler_buffer_factor=1
         print('Process node with id ', node_id)
 
         #  Check if building at node_id does not have BES, already
-        if city.node[node_id]['entity'].hasBes is False:
+        if city.nodes[node_id]['entity'].hasBes is False:
             #  Generate BES, if not existent
             bes = BES.BES(environment=city.environment)
         else:
-            bes = city.node[node_id]['entity'].bes
+            bes = city.nodes[node_id]['entity'].bes
 
         # Pointer to building
-        build = city.node[node_id]['entity']
+        build = city.nodes[node_id]['entity']
 
         # #-------------------------------------------------------------
         if type == 1:  # Boiler
@@ -443,7 +443,7 @@ def gen_esys_for_city(city, list_data, size_esys = False, boiler_buffer_factor=1
 
             if size_esys:
 
-                build_single = city.node[node_id]['entity']
+                build_single = city.nodes[node_id]['entity']
 
                 th_curve = dimfunc.get_max_power_of_building(build, with_dhw=False)
 
@@ -493,7 +493,7 @@ def gen_esys_for_city(city, list_data, size_esys = False, boiler_buffer_factor=1
             # CHP
             #  #------------------------------------
             # Pointer to building
-            build = city.node[node_id]['entity']
+            build = city.nodes[node_id]['entity']
 
             if size_esys:
                 chp_th_power = dimfunc.get_max_power_of_building(build, with_dhw=False)
@@ -549,7 +549,7 @@ def gen_esys_for_city(city, list_data, size_esys = False, boiler_buffer_factor=1
             #  pam --> Defines HP nominal power as float value (kW)
 
             # Pointer to building
-            build = city.node[node_id]['entity']
+            build = city.nodes[node_id]['entity']
 
             if size_esys:
                 hp_th_power = dimfunc.get_max_power_of_building(build, with_dhw=False)
@@ -581,7 +581,7 @@ def gen_esys_for_city(city, list_data, size_esys = False, boiler_buffer_factor=1
             #  pam --> Defines EH nominal power as float value (kW)
 
             # Pointer to building
-            build = city.node[node_id]['entity']
+            build = city.nodes[node_id]['entity']
 
             if size_esys:
                 eh_th_power = dimfunc.get_max_power_of_building(build, with_dhw=False)
@@ -626,7 +626,7 @@ def gen_esys_for_city(city, list_data, size_esys = False, boiler_buffer_factor=1
             raise ValueError('Type is unknown. Check list_data input!')
 
         # Add bes to building
-        city.node[node_id]['entity'].addEntity(bes)
+        city.nodes[node_id]['entity'].addEntity(bes)
         print()
 
 if __name__ == '__main__':
@@ -670,7 +670,7 @@ if __name__ == '__main__':
     for i in range(Nsamples):
         print(i)
         City, dict_city_sample = MC_rescale_esys(ref_city)
-        list_boiler_sampling.append(City.node[1001]['entity'].bes.boiler.eta)
+        list_boiler_sampling.append(City.nodes[1001]['entity'].bes.boiler.eta)
 
     plt.hist(list_boiler_sampling, 100, normed=1)
     plt.show()

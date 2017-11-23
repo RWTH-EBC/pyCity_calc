@@ -138,8 +138,8 @@ def show_demand_map(quarter, building_list, dem):
     plt.rcParams['figure.figsize'] = 10, 10
     plt.axis('equal')
     # for building in quarter.nodelist_building:
-    #     plt.text(quarter.node[building]['position'].x,
-    #                              quarter.node[building]['position'].y + 0.1,
+    #     plt.text(quarter.nodes[building]['position'].x,
+    #                              quarter.nodes[building]['position'].y + 0.1,
     #                              s=str(building),
     # #                             bbox=dict(facecolor='red', alpha=0.5),
     #                              horizontalalignment='center',
@@ -157,7 +157,7 @@ def show_demand_map(quarter, building_list, dem):
             draw.set_edgecolor('black')
     for edge in quarter.edges():
         for node in edge:
-            if 'street' in quarter.node[node]['node_type']:
+            if 'street' in quarter.nodes[node]['node_type']:
                 color = 'black'
                 style = 'solid'
                 alpha = 0.2
@@ -282,11 +282,11 @@ def get_clusters_street(district, street_type='real_simple', n_max=10, side_stre
     # commit building information
     for n in node_number_list:
         building_list.append([n,                                                            # node number
-                              quarter.node[n]['entity'].get_annual_space_heat_demand(),     # annual th. demand
-                              quarter.node[n]['entity'].get_annual_el_demand(),             # annual el. demand
-                              quarter.node[n]['entity'].get_annual_space_heat_demand() \
-                              + quarter.node[n]['entity'].get_annual_el_demand(),           # total demand (el./th.)
-                              quarter.node[n]['position']])                                 # position of building
+                              quarter.nodes[n]['entity'].get_annual_space_heat_demand(),     # annual th. demand
+                              quarter.nodes[n]['entity'].get_annual_el_demand(),             # annual el. demand
+                              quarter.nodes[n]['entity'].get_annual_space_heat_demand() \
+                              + quarter.nodes[n]['entity'].get_annual_el_demand(),           # total demand (el./th.)
+                              quarter.nodes[n]['position']])                                 # position of building
 
     if street_type == 'real_simple':
         #   #-----------------------------------------------------------------------------------------------------------
@@ -346,8 +346,8 @@ def get_clusters_street(district, street_type='real_simple', n_max=10, side_stre
                 break
 
             # reference edge as vector
-            u = [quarter.node[nd_one]['position'].x - quarter.node[nd_two]['position'].x,
-                 quarter.node[nd_one]['position'].y - quarter.node[nd_two]['position'].y]
+            u = [quarter.nodes[nd_one]['position'].x - quarter.nodes[nd_two]['position'].x,
+                 quarter.nodes[nd_one]['position'].y - quarter.nodes[nd_two]['position'].y]
 
             angles = {}
             sides = []
@@ -356,8 +356,8 @@ def get_clusters_street(district, street_type='real_simple', n_max=10, side_stre
                     pass
                 else:
                     # edge at intersection as vector
-                    v = [quarter.node[nd_one]['position'].x - quarter.node[i]['position'].x,
-                         quarter.node[nd_one]['position'].y - quarter.node[i]['position'].y]
+                    v = [quarter.nodes[nd_one]['position'].x - quarter.nodes[i]['position'].x,
+                         quarter.nodes[nd_one]['position'].y - quarter.nodes[i]['position'].y]
                     dot_prod = u[0] * v[0] + u[1] * v[1]    # dot product of u & v
                     lu = (u[0] ** 2 + u[1] ** 2) ** .5    # length of vector u
                     lv = (v[0] ** 2 + v[1] ** 2) ** .5    # length of vector v
@@ -372,10 +372,10 @@ def get_clusters_street(district, street_type='real_simple', n_max=10, side_stre
 
             if angles == {}:
                 # check angle of other two edges
-                u = [quarter.node[nd_one]['position'].x - quarter.node[sides[0]]['position'].x,
-                     quarter.node[nd_one]['position'].y - quarter.node[sides[0]]['position'].y]
-                v = [quarter.node[nd_one]['position'].x - quarter.node[sides[1]]['position'].x,
-                     quarter.node[nd_one]['position'].y - quarter.node[sides[1]]['position'].y]
+                u = [quarter.nodes[nd_one]['position'].x - quarter.nodes[sides[0]]['position'].x,
+                     quarter.nodes[nd_one]['position'].y - quarter.nodes[sides[0]]['position'].y]
+                v = [quarter.nodes[nd_one]['position'].x - quarter.nodes[sides[1]]['position'].x,
+                     quarter.nodes[nd_one]['position'].y - quarter.nodes[sides[1]]['position'].y]
                 dot_prod = u[0] * v[0] + u[1] * v[1]    # dot product of u & v
                 lu = (u[0] ** 2 + u[1] ** 2) ** .5    # length of vector u
                 lv = (v[0] ** 2 + v[1] ** 2) ** .5    # length of vector v
@@ -725,10 +725,10 @@ def get_clusters_street(district, street_type='real_simple', n_max=10, side_stre
     y_end = {}
     a = 0
     for i in streets:
-        x_start[i] = quarter.node[streetedges[a][0]]['position'].x     # get start x-position of node i
-        y_start[i] = quarter.node[streetedges[a][0]]['position'].y     # get start y-position of node i
-        x_end[i] = quarter.node[streetedges[a][1]]['position'].x       # get end x-position of node i
-        y_end[i] = quarter.node[streetedges[a][1]]['position'].y       # get end y-position of node i
+        x_start[i] = quarter.nodes[streetedges[a][0]]['position'].x     # get start x-position of node i
+        y_start[i] = quarter.nodes[streetedges[a][0]]['position'].y     # get start y-position of node i
+        x_end[i] = quarter.nodes[streetedges[a][1]]['position'].x       # get end x-position of node i
+        y_end[i] = quarter.nodes[streetedges[a][1]]['position'].y       # get end y-position of node i
         a += 1
 
     # find minimal distance from building to street & add node on street
@@ -762,9 +762,9 @@ def get_clusters_street(district, street_type='real_simple', n_max=10, side_stre
         next_node1 = [x_start[next_str], y_start[next_str]]
         next_node2 = [x_end[next_str], y_end[next_str]]
         for no in streetnodes:  # search for nodes with positions of next_str
-            if quarter.node[no]['position'] == point.Point(next_node1):
+            if quarter.nodes[no]['position'] == point.Point(next_node1):
                 nd_one = no
-            elif quarter.node[no]['position'] == point.Point(next_node2):
+            elif quarter.nodes[no]['position'] == point.Point(next_node2):
                 nd_two = no
         for ed in streetedges:  # search for edge with nodes of next_str
             if nd_one in ed and nd_two in ed:
@@ -791,10 +791,10 @@ def get_clusters_street(district, street_type='real_simple', n_max=10, side_stre
             x_end = {}
             y_end = {}
             for i in street[1]:
-                x_start[i] = quarter.node[i[0]]['position'].x     # get start x-position of node i
-                y_start[i] = quarter.node[i[0]]['position'].y     # get start y-position of node i
-                x_end[i] = quarter.node[i[1]]['position'].x       # get end x-position of node i
-                y_end[i] = quarter.node[i[1]]['position'].y       # get end y-position of node i
+                x_start[i] = quarter.nodes[i[0]]['position'].x     # get start x-position of node i
+                y_start[i] = quarter.nodes[i[0]]['position'].y     # get start y-position of node i
+                x_end[i] = quarter.nodes[i[1]]['position'].x       # get end x-position of node i
+                y_end[i] = quarter.nodes[i[1]]['position'].y       # get end y-position of node i
 
             # find distance from building node on street to start node of edge
             for e in street[1]:
@@ -802,7 +802,7 @@ def get_clusters_street(district, street_type='real_simple', n_max=10, side_stre
                 for n in street[3]:
                     a = [x_start[e], y_start[e]]  # start point edge
                     u = [x_end[e] - x_start[e], y_end[e] - y_start[e]]  # direction vector edge
-                    p = [quarter.node[building_list[n][5]]['position'].x, quarter.node[building_list[n][5]]['position'].y]  # position of building node on street
+                    p = [quarter.nodes[building_list[n][5]]['position'].x, quarter.nodes[building_list[n][5]]['position'].y]  # position of building node on street
                     lam1 = float((p[0] - a[0]) / u[0])
                     lam2 = float((p[1] - a[1]) / u[1])
                     if lam1 != lam2:    # node not on edge
@@ -844,8 +844,8 @@ def get_clusters_street(district, street_type='real_simple', n_max=10, side_stre
                 x = []
                 for i in range(len(street[3])):
                     if node_mode == 'street':
-                        x.append([quarter.node[building_list[street[3][i]][5]]['position'].x,
-                                  quarter.node[building_list[street[3][i]][5]]['position'].y])
+                        x.append([quarter.nodes[building_list[street[3][i]][5]]['position'].x,
+                                  quarter.nodes[building_list[street[3][i]][5]]['position'].y])
                     else:
                         x.append([building_list[street[3][i]][4].x,
                                   building_list[street[3][i]][4].y])
@@ -907,7 +907,7 @@ def get_clusters_street(district, street_type='real_simple', n_max=10, side_stre
             for b in c:
                 bpoints.append([b[4].x, b[4].y])   # position of building node
                 points.append([b[4].x, b[4].y])   # position of buildings
-                points.append([quarter.node[b[5]]['position'].x, quarter.node[b[5]]['position'].y])
+                points.append([quarter.nodes[b[5]]['position'].x, quarter.nodes[b[5]]['position'].y])
             bpoints = np.array(bpoints)
             points = np.array(points)
             hull = ConvexHull(points)   # calc convexhull of cluster
@@ -916,8 +916,8 @@ def get_clusters_street(district, street_type='real_simple', n_max=10, side_stre
 
             plt.plot(vert[:, 0], vert[:, 1], 'r--', lw=2)
             plt.plot(bpoints[:,0], bpoints[:,1], 'o')
-            plt.text(quarter.node[c[0][0]]['position'].x,
-                                 quarter.node[c[0][0]]['position'].y + 0.8,
+            plt.text(quarter.nodes[c[0][0]]['position'].x,
+                                 quarter.nodes[c[0][0]]['position'].y + 0.8,
                                  s=str(clusterlist.index(c)),
                                  horizontalalignment='center',
                                  fontsize=12)
@@ -929,8 +929,8 @@ def get_clusters_street(district, street_type='real_simple', n_max=10, side_stre
             bpoints = np.array(bpoints)
             plt.plot(bpoints[:, 0], bpoints[:, 1], 'o')
             plt.plot(c[0][4].x, c[0][4].y, 's')
-            plt.text(quarter.node[c[0][0]]['position'].x,
-                                 quarter.node[c[0][0]]['position'].y + 0.8,
+            plt.text(quarter.nodes[c[0][0]]['position'].x,
+                                 quarter.nodes[c[0][0]]['position'].y + 0.8,
                                  s=str(clusterlist.index(c)),
                                  horizontalalignment='center',
                                  fontsize=12)
@@ -950,7 +950,7 @@ def get_clusters_street(district, street_type='real_simple', n_max=10, side_stre
             draw.set_edgecolor('black')
     for edge in quarter.edges():
         for node in edge:
-            if 'street' in quarter.node[node]['node_type']:
+            if 'street' in quarter.nodes[node]['node_type']:
                 color = 'black'
                 style = 'solid'
                 alpha = 0.2
@@ -1083,11 +1083,11 @@ def get_clusters_demand(district, n_max=10, demand_mode='thermal', dst_center_mi
     # create building_list with information about:
     # number, annual thermal demand, annual electrical demand, total annual demand, position
     for n in node_number_list:
-        building_list.append([n, quarter.node[n]['entity'].get_annual_space_heat_demand(),
-                              quarter.node[n]['entity'].get_annual_el_demand(),
-                              quarter.node[n]['entity'].get_annual_space_heat_demand() \
-                              + quarter.node[n]['entity'].get_annual_el_demand(), # total demand (el./th.)
-                              quarter.node[n]['position']])   # position of building
+        building_list.append([n, quarter.nodes[n]['entity'].get_annual_space_heat_demand(),
+                              quarter.nodes[n]['entity'].get_annual_el_demand(),
+                              quarter.nodes[n]['entity'].get_annual_space_heat_demand() \
+                              + quarter.nodes[n]['entity'].get_annual_el_demand(), # total demand (el./th.)
+                              quarter.nodes[n]['position']])   # position of building
 
     # combine quarter with streetnetwork
     streetnodes = quarter.nodelist_street  # list of all nodes in streetnetwork
@@ -1112,10 +1112,10 @@ def get_clusters_demand(district, n_max=10, demand_mode='thermal', dst_center_mi
     y_end = {}
     a = 0
     for i in streets:
-        x_start[i] = quarter.node[streetedges[a][0]]['position'].x     # get start x-position of node i
-        y_start[i] = quarter.node[streetedges[a][0]]['position'].y     # get start y-position of node i
-        x_end[i] = quarter.node[streetedges[a][1]]['position'].x       # get end x-position of node i
-        y_end[i] = quarter.node[streetedges[a][1]]['position'].y       # get end y-position of node i
+        x_start[i] = quarter.nodes[streetedges[a][0]]['position'].x     # get start x-position of node i
+        y_start[i] = quarter.nodes[streetedges[a][0]]['position'].y     # get start y-position of node i
+        x_end[i] = quarter.nodes[streetedges[a][1]]['position'].x       # get end x-position of node i
+        y_end[i] = quarter.nodes[streetedges[a][1]]['position'].y       # get end y-position of node i
         a += 1
 
     # find minimal distance from building to street
@@ -1152,9 +1152,9 @@ def get_clusters_demand(district, n_max=10, demand_mode='thermal', dst_center_mi
         next_node1 = [x_start[next_str], y_start[next_str]]
         next_node2 = [x_end[next_str], y_end[next_str]]
         for no in streetnodes:  # search for nodes with positions of next_str
-            if quarter.node[no]['position'] == point.Point(next_node1):
+            if quarter.nodes[no]['position'] == point.Point(next_node1):
                 nd_one = no
-            elif quarter.node[no]['position'] == point.Point(next_node2):
+            elif quarter.nodes[no]['position'] == point.Point(next_node2):
                 nd_two = no
         for ed in streetedges:  # search for edge with nodes of next_str
             if nd_one in ed and nd_two in ed:
@@ -1208,9 +1208,9 @@ def get_clusters_demand(district, n_max=10, demand_mode='thermal', dst_center_mi
         # check nodes for n_max
         for b1 in building_list:
             count_nodes = 0
-            pos = quarter.node[b1[5]]['position']
+            pos = quarter.nodes[b1[5]]['position']
             for b2 in building_list:
-                if quarter.node[b2[5]]['position'] == pos:
+                if quarter.nodes[b2[5]]['position'] == pos:
                     count_nodes += 1
             if count_nodes > n_max:
                 warnings.warn('There are more than n_max nodes (' + str(count_nodes) + ') on same position on street! Try grouping_mode=building or set n_max to a higher value.')
@@ -1263,7 +1263,7 @@ def get_clusters_demand(district, n_max=10, demand_mode='thermal', dst_center_mi
             draw.set_edgecolor('black')
     for edge in quarter.edges():
         for node in edge:
-            if 'street' in quarter.node[node]['node_type']:
+            if 'street' in quarter.nodes[node]['node_type']:
                 color = 'black'
                 style = 'solid'
                 alpha = 0.2
@@ -1625,7 +1625,7 @@ def get_clusters_demand(district, n_max=10, demand_mode='thermal', dst_center_mi
             draw.set_edgecolor('black')
     for edge in quarter.edges():
         for node in edge:
-            if 'street' in quarter.node[node]['node_type']:
+            if 'street' in quarter.nodes[node]['node_type']:
                 color = 'black'
                 style = 'solid'
                 alpha = 0.2
@@ -1656,7 +1656,7 @@ def get_clusters_demand(district, n_max=10, demand_mode='thermal', dst_center_mi
             for b in c:
                 bpoints.append([b[4].x, b[4].y])   # position of building node
                 points.append([b[4].x, b[4].y])   # position of building node
-                points.append([quarter.node[b[5]]['position'].x, quarter.node[b[5]]['position'].y])
+                points.append([quarter.nodes[b[5]]['position'].x, quarter.nodes[b[5]]['position'].y])
             bpoints = np.array(bpoints)
             points = np.array(points)
             hull = ConvexHull(points, 2)   # calc convexhull of cluster
@@ -1666,8 +1666,8 @@ def get_clusters_demand(district, n_max=10, demand_mode='thermal', dst_center_mi
             plt.plot(bpoints[:,0], bpoints[:,1], 'o')
             #plt.plot(points[hull.vertices[0],0], points[hull.vertices[0],1], 'ro')
             plt.plot(c[0][4].x, c[0][4].y, '*', markersize=12)
-            plt.text(quarter.node[c[0][0]]['position'].x,
-                                 quarter.node[c[0][0]]['position'].y + 0.8,
+            plt.text(quarter.nodes[c[0][0]]['position'].x,
+                                 quarter.nodes[c[0][0]]['position'].y + 0.8,
                                  s=str(clusterlist.index(c)),
                                  horizontalalignment='center',
                                  fontsize=12)
@@ -1679,8 +1679,8 @@ def get_clusters_demand(district, n_max=10, demand_mode='thermal', dst_center_mi
             bpoints = np.array(bpoints)
             plt.plot(bpoints[:, 0], bpoints[:, 1], 'o')
             plt.plot(c[0][4].x, c[0][4].y, 's')
-            plt.text(quarter.node[c[0][0]]['position'].x,
-                                 quarter.node[c[0][0]]['position'].y + 0.8,
+            plt.text(quarter.nodes[c[0][0]]['position'].x,
+                                 quarter.nodes[c[0][0]]['position'].y + 0.8,
                                  s=str(clusterlist.index(c)),
                                  horizontalalignment='center',
                                  fontsize=12)

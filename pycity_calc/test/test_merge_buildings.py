@@ -101,8 +101,8 @@ class TestMergeBuild(object):
         # ######################################################################
 
         #  Modify specific attributes of buildings
-        city_object.node[1004]['entity'].roof_usabl_pv_area = 10
-        city_object.node[1004]['entity'].net_floor_area = 100
+        city_object.nodes[1004]['entity'].roof_usabl_pv_area = 10
+        city_object.nodes[1004]['entity'].net_floor_area = 100
 
         #  Merge buildings together
         city_new = mergebuild.merge_buildings_in_city(city=city_object,
@@ -112,15 +112,15 @@ class TestMergeBuild(object):
         assert len(city_new.nodes()) == 3
         assert sorted(city_new.nodes()) == [1001, 1003, 1005]
 
-        assert len(city_new.node[1001]['entity'].apartments) == 2
-        assert len(city_new.node[1003]['entity'].apartments) == 2
-        assert len(city_new.node[1005]['entity'].apartments) == 1
+        assert len(city_new.nodes[1001]['entity'].apartments) == 2
+        assert len(city_new.nodes[1003]['entity'].apartments) == 2
+        assert len(city_new.nodes[1005]['entity'].apartments) == 1
 
-        assert city_new.node[1001]['entity'].build_year == 1962
-        assert city_new.node[1001]['entity'].mod_year == 2003
-        assert city_new.node[1001]['entity'].build_type == 0
-        assert city_new.node[1001]['entity'].net_floor_area == 300
-        assert city_new.node[1001]['entity'].roof_usabl_pv_area == 2 * 30
+        assert city_new.nodes[1001]['entity'].build_year == 1962
+        assert city_new.nodes[1001]['entity'].mod_year == 2003
+        assert city_new.nodes[1001]['entity'].build_type == 0
+        assert city_new.nodes[1001]['entity'].net_floor_area == 300
+        assert city_new.nodes[1001]['entity'].roof_usabl_pv_area == 2 * 30
 
-        assert city_new.node[1003]['entity'].roof_usabl_pv_area == 10 + 30
-        assert city_new.node[1003]['entity'].net_floor_area == 250
+        assert city_new.nodes[1003]['entity'].roof_usabl_pv_area == 10 + 30
+        assert city_new.nodes[1003]['entity'].net_floor_area == 250

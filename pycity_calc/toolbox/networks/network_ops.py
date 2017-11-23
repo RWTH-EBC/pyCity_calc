@@ -101,10 +101,10 @@ def calc_node_distance(graph, node_1, node_2):
     """
     assert graph.has_node(node_1)
     assert graph.has_node(node_2)
-    node_1_x = graph.node[node_1]['position'].x
-    node_1_y = graph.node[node_1]['position'].y
-    node_2_x = graph.node[node_2]['position'].x
-    node_2_y = graph.node[node_2]['position'].y
+    node_1_x = graph.nodes[node_1]['position'].x
+    node_1_y = graph.nodes[node_1]['position'].y
+    node_2_x = graph.nodes[node_2]['position'].x
+    node_2_y = graph.nodes[node_2]['position'].y
 
     distance = math.sqrt((node_1_x - node_2_x) ** 2 +
                          (node_1_y - node_2_y) ** 2)
@@ -161,9 +161,9 @@ def check_node_on_pos(graph, position, resolution=1e-4):
     node_on_pos = False  # Initial value
 
     for n in graph.nodes():
-        if 'position' in graph.node[n]:
+        if 'position' in graph.nodes[n]:
             #  If positions are identical, save name and node_id to dict
-            if graph.node[n]['position'].distance(position) < resolution:
+            if graph.nodes[n]['position'].distance(position) < resolution:
                 node_on_pos = True
                 break
 
@@ -209,7 +209,7 @@ def gen_pos_tuple_dict(city):
 
     for n in city.nodes():
         #  Get current point position (shapely point object)
-        curr_point = city.node[n]['position']
+        curr_point = city.nodes[n]['position']
 
         #  Convert to tuple
         pos_tuple = convert_shapely_point_to_tuple(curr_point)
@@ -330,7 +330,7 @@ def is_street(node):
 
     Parameters
     ----------
-    node : graph.node[id] object
+    node : graph.nodes[id] object
 
     Returns
     -------
@@ -369,8 +369,8 @@ def get_street_linestrings(graph, check_street=True):
     list_lstr = []
 
     for e1, e2 in edge_list:  # Loop over all edges in street graph
-        node1 = graph.node[e1]
-        node2 = graph.node[e2]
+        node1 = graph.nodes[e1]
+        node2 = graph.nodes[e2]
 
         if check_street:
             # check if both nodes are streets
@@ -539,10 +539,10 @@ def get_node_id_by_position(graph, position, resolution=1e-4):
     node_id = None
 
     for node in graph:
-        if 'position' in graph.node[node]:
+        if 'position' in graph.nodes[node]:
 
             #  Get node position (shapely point object)
-            point_1 = graph.node[node]['position']
+            point_1 = graph.nodes[node]['position']
 
             #  If positions are identical, save name and node_id to dict
             if calc_point_distance(point_1, position) < resolution:
@@ -576,8 +576,8 @@ def calc_center_pos(city, nodelist):
     nb_nodes = len(nodelist)
 
     for id in nodelist:
-        node_x = city.node[id]['position'].x
-        node_y = city.node[id]['position'].y
+        node_x = city.nodes[id]['position'].x
+        node_y = city.nodes[id]['position'].y
 
         x_sum += node_x
         y_sum += node_y
@@ -691,8 +691,8 @@ def delete_nodes_build(graph, nodelist):
 
     nodelist_copy = copy.deepcopy(nodelist)
     for n in nodelist_copy:
-        if 'node_type' in graph.node[n]:
-            if graph.node[n]['node_type'] == 'building':
+        if 'node_type' in graph.nodes[n]:
+            if graph.nodes[n]['node_type'] == 'building':
                 graph.remove_building(n)
             else:
                 warnings.warn('Unknown node type. Node ' + str(n) +
@@ -733,17 +733,17 @@ def get_street_subgraph(city, nodelist_str=None):
     list_n_str = []
     #  Add building nodes of nodelist to street_graph
     for n in nodelist_str:
-        if 'node_type' in city.node[n]:
-            if city.node[n]['node_type'] == 'street':
-                curr_pos = city.node[n]['position']
+        if 'node_type' in city.nodes[n]:
+            if city.nodes[n]['node_type'] == 'street':
+                curr_pos = city.nodes[n]['position']
                 #  Add nodes to city_copy
                 street_graph.add_node(n, position=curr_pos, node_type='street')
                 list_n_str.append(n)
 
     #  Add all edges of type street
     for u, v in city.edges():
-        if 'network_type' in city.edge[u][v]:
-            if city.edge[u][v]['network_type'] == 'street':
+        if 'network_type' in city.edges[u, v]:
+            if city.edges[u, v]['network_type'] == 'street':
                 #  Add street edge to street_graph
                 street_graph.add_edge(u, v, network_type='street')
 
@@ -777,9 +777,9 @@ def get_lhn_subgraph(city, search_node):
     list_n_lhn = []
     #  Add building nodes of nodelist to lhn_graph
     for n in lhn_con_nodes:
-        if 'node_type' in city.node[n]:
-            if city.node[n]['node_type'] == 'heating' or city.node[n]['node_type'] == 'building':
-                curr_pos = city.node[n]['position']
+        if 'node_type' in city.nodes[n]:
+            if city.nodes[n]['node_type'] == 'heating' or city.nodes[n]['node_type'] == 'building':
+                curr_pos = city.nodes[n]['position']
                 #  Add nodes to city_copy
                 lhn_graph.add_node(n, position=curr_pos, node_type='heating')
                 list_n_lhn.append(n)
@@ -787,8 +787,8 @@ def get_lhn_subgraph(city, search_node):
     #  Add all edges of type heating to lhn_graph
     for u, v in city.edges():
         if u in lhn_con_nodes and v in lhn_con_nodes:
-            if 'network_type' in city.edge[u][v]:
-                if city.edge[u][v]['network_type'] == 'heating':
+            if 'network_type' in city.edges[u, v]:
+                if city.edges[u, v]['network_type'] == 'heating':
                     #  Add street edge to street_graph
                     lhn_graph.add_edge(u, v, network_type='heating')
 
@@ -824,11 +824,11 @@ def get_build_str_subgraph(city, nodelist=None):
             assert id in city.nodelist_building, ('ID ' + str(id) + 'is not ' +
                                                   'within city object.')
         for id in nodelist:
-            if 'node_type' in city.node[id]:
+            if 'node_type' in city.nodes[id]:
                 #  If node_type is building
-                if city.node[id]['node_type'] == 'building':
+                if city.nodes[id]['node_type'] == 'building':
                     #  Check if entity is kind building (and not pv or wind)
-                    assert city.node[id]['entity']._kind == 'building'
+                    assert city.nodes[id]['entity']._kind == 'building'
 
     # Initialize street_graph as deepcopy of self.city
     city_copy = copy.deepcopy(city)
@@ -843,20 +843,20 @@ def get_build_str_subgraph(city, nodelist=None):
     street = get_street_subgraph(city)
 
     #  Add street graph to subcity
-    subcity.add_nodes_from(street)
+    subcity.add_nodes_from(list(street.nodes()))
 
     #  Add attribute node_type = street to every node
     for n in street.nodelist_street:
-        subcity.node[n]['node_type'] = 'street'
+        subcity.nodes[n]['node_type'] = 'street'
         #  Extract original position
-        curr_pos = street.node[n]['position']
+        curr_pos = street.nodes[n]['position']
         #  Add position to subcity street
-        subcity.node[n]['position'] = curr_pos
+        subcity.nodes[n]['position'] = curr_pos
 
     # Add all edges of type street
     for u, v in street.edges():
-        if 'network_type' in street.edge[u][v]:
-            if street.edge[u][v]['network_type'] == 'street':
+        if 'network_type' in street.edges[u, v]:
+            if street.edges[u, v]['network_type'] == 'street':
                 #  Add street edge to street_graph
                 subcity.add_edge(u, v, network_type='street')
 
@@ -911,8 +911,8 @@ def get_min_span_tree_for_x_y_positions(city, nodelist):
         for j in nodelist:
             if i != j:
                 #  Calculate distance
-                p_1 = city.node[i]['position']
-                p_2 = city.node[j]['position']
+                p_1 = city.nodes[i]['position']
+                p_2 = city.nodes[j]['position']
                 distance = calc_point_distance(point_1=p_1, point_2=p_2)
                 #  Create empty graph with original nodes and distances
                 #  as attribute
@@ -973,17 +973,17 @@ def process_neighbors(city, node, etype, list_conn_nodes, list_curr_nodes,
             #  Preprocess list_of_neighbors (erase neighbors for non-etype
             #  connections)
             for nb in list_of_neighbors:
-                if 'network_type' in city.edge[node][nb]:
-                    if city.edge[node][nb]['network_type'] != etype and \
-                            city.edge[node][nb]['network_type'] != 'heating_and_deg':
+                if 'network_type' in city.edges[node, nb]:
+                    if city.edges[node, nb]['network_type'] != etype and \
+                            city.edges[node, nb]['network_type'] != 'heating_and_deg':
                         list_of_neighbors.remove(nb)
             # Iter over neighbor list
             for nb in list_of_neighbors:
                 #  If neighbor is connected with edge type etype or
                 #  lhn_and_mg, add to temp_list and conn_list
-                if 'network_type' in city.edge[node][nb]:
-                    if city.edge[node][nb]['network_type'] == etype or \
-                            city.edge[node][nb]['network_type'] == 'heating_and_deg':
+                if 'network_type' in city.edges[node, nb]:
+                    if city.edges[node, nb]['network_type'] == etype or \
+                            city.edges[node, nb]['network_type'] == 'heating_and_deg':
                         #  If not within list_curr_nodes (list of lhn connected
                         #  nodes), add node to list
                         if node not in list_curr_nodes:
@@ -1071,8 +1071,8 @@ def get_list_with_energy_net_con_node_ids(city, network_type='heating',
                 sublist_clean = []
 
                 for n in sublist:
-                    if 'node_type' in city.node[n]:
-                        if city.node[n]['node_type'] == 'building':
+                    if 'node_type' in city.nodes[n]:
+                        if city.nodes[n]['node_type'] == 'building':
                             sublist_clean.append(n)
                 if sublist_clean != []:
                     list_nodes_clean.append(sublist_clean)
@@ -1099,8 +1099,8 @@ def get_list_with_energy_net_con_node_ids(city, network_type='heating',
             list_nodes_clean = []
 
             for n in list_conn_nodes:
-                if 'node_type' in city.node[n]:
-                    if city.node[n]['node_type'] == 'building':
+                if 'node_type' in city.nodes[n]:
+                    if city.nodes[n]['node_type'] == 'building':
                         list_nodes_clean.append(n)
 
             #  Overwrite list_conn_nodes with cleaned up list
@@ -1143,15 +1143,15 @@ def get_list_build_without_energy_network(city):
         else:
             valid_net = True
             for k in city.neighbors(n):
-                if 'network_type' in city.edge[k][n]:
-                    net_type = city.edge[k][n]['network_type']
+                if 'network_type' in city.edges[k, n]:
+                    net_type = city.edges[k, n]['network_type']
                     if (net_type == 'heating' or
                                 net_type == 'heating_and_deg' or
                                 net_type == 'electricity'):
                         valid_net = False
                         break
-                if 'network_type' in city.edge[n][k]:
-                    net_type = city.edge[n][k]['network_type']
+                if 'network_type' in city.edges[n, k]:
+                    net_type = city.edges[n, k]['network_type']
                     if (net_type == 'heating' or
                                 net_type == 'heating_and_deg' or
                                 net_type == 'electricity'):
@@ -1248,7 +1248,7 @@ def gen_min_span_tree_along_street(city, nodelist, plot_graphs=False):
     for n in nodelist:
 
         #  Get current point position
-        curr_pos = graph_temp.node[n]['position']
+        curr_pos = graph_temp.nodes[n]['position']
 
         #  Extract closest point as well as start and stop points of closest
         #  segment

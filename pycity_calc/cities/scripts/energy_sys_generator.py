@@ -122,10 +122,10 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
             #  exlusively, is allowed.
             if n_list != []:
                 for nei in n_list:
-                    if 'network_type' in city.edge[node_id][nei]:
-                        if (city.edge[node_id][nei]['network_type']
+                    if 'network_type' in city.edges[node_id, nei]:
+                        if (city.edges[node_id, nei]['network_type']
                                 == 'heating' or
-                                    city.edge[node_id][nei]['network_type']
+                                    city.edges[node_id, nei]['network_type']
                                     == 'heating_and_deg'):
                             raise AssertionError('Building ' + str(node_id) +
                                                  ' should not be connected ' +
@@ -246,10 +246,10 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
 
             if n_list != []:
                 for nei in n_list:
-                    if 'network_type' in city.edge[node_id][nei]:
-                        if (city.edge[node_id][nei]['network_type']
+                    if 'network_type' in city.edges[node_id, nei]:
+                        if (city.edges[node_id, nei]['network_type']
                                 == 'heating' or
-                                    city.edge[node_id][nei]['network_type']
+                                    city.edges[node_id, nei]['network_type']
                                     == 'heating_and_deg'):
                             has_lhn_con = True
                             print('Found lhn connected to node ', node_id)
@@ -415,10 +415,10 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
             #  Check that no lhn connection exists
             if n_list != []:
                 for nei in n_list:
-                    if 'network_type' in city.edge[node_id][nei]:
-                        if (city.edge[node_id][nei]['network_type']
+                    if 'network_type' in city.edges[node_id][nei]:
+                        if (city.edges[node_id][nei]['network_type']
                                 == 'heating' or
-                                    city.edge[node_id][nei]['network_type']
+                                    city.edges[node_id][nei]['network_type']
                                     == 'heating_and_deg'):
                             raise AssertionError('Building ' + str(node_id) +
                                                  ' should not be connected ' +

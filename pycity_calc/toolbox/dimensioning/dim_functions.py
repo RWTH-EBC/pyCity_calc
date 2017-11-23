@@ -323,7 +323,7 @@ def get_ann_load_dur_curve(city_object, get_thermal=True, with_dhw=False,
         aggr_load_curve = np.zeros(city_object.environment.timer.timestepsTotal)
         #  for all ids in nodelist
         for n in nodelist:
-            th_power_curve = city_object.node[n]['entity']. \
+            th_power_curve = city_object.nodes[n]['entity']. \
                                 get_space_heating_power_curve\
                                     (current_values=False)
             aggr_load_curve += th_power_curve
@@ -331,7 +331,7 @@ def get_ann_load_dur_curve(city_object, get_thermal=True, with_dhw=False,
         if with_dhw:
             #  for all ids in nodelist
             for n in nodelist:
-                dhw_power_curve = city_object.node[n]['entity']. \
+                dhw_power_curve = city_object.nodes[n]['entity']. \
                                     get_dhw_power_curve\
                                         (current_values=False)
                 aggr_load_curve += dhw_power_curve
@@ -340,7 +340,7 @@ def get_ann_load_dur_curve(city_object, get_thermal=True, with_dhw=False,
         aggr_load_curve = np.zeros(city_object.environment.timer.timestepsTotal)
         #  for all ids in nodelist
         for n in nodelist:
-            el_power_curve = city_object.node[n]['entity']. \
+            el_power_curve = city_object.nodes[n]['entity']. \
                                 get_aggr_el_power_curve\
                                     (current_values=False)
             aggr_load_curve += el_power_curve
@@ -436,20 +436,20 @@ def get_id_max_th_power(city, with_dhw=False, current_values=False,
     #  Loop over all nodes
     for n in city:
         #  If node holds attribute 'node_type'
-        if 'node_type' in city.node[n]:
+        if 'node_type' in city.nodes[n]:
             #  If node_type is building
-            if city.node[n]['node_type'] == 'building':
+            if city.nodes[n]['node_type'] == 'building':
                 #  If entity is kind building
-                if city.node[n]['entity']._kind == 'building':
+                if city.nodes[n]['entity']._kind == 'building':
 
                     #  Get thermal power curve
-                    th_power_curve = city.node[n]['entity']. \
+                    th_power_curve = city.nodes[n]['entity']. \
                         get_space_heating_power_curve(
                         current_values=current_values)
 
                     #  Add dhw power, if necessary
                     if with_dhw:
-                        dhw_power_curve = city.node[n]['entity']. \
+                        dhw_power_curve = city.nodes[n]['entity']. \
                             get_dhw_power_curve(
                             current_values=current_values)
                         th_power_curve += dhw_power_curve
@@ -733,11 +733,11 @@ def calc_chp_el_sizes_for_opt(city, nb_sizes, mode, with_dhw=False):
 
     #  Get max. th. power of building with largest thermal power
     q_dot_b_peak_max = \
-        get_max_power_of_building(building=city.node[id_max]['entity'],
+        get_max_power_of_building(building=city.nodes[id_max]['entity'],
                                   with_dhw=with_dhw)
     #  Get max. th. power of building with smallest, max. power demand
     q_dot_b_peak_min = \
-        get_max_power_of_building(building=city.node[id_min]['entity'],
+        get_max_power_of_building(building=city.nodes[id_min]['entity'],
                                   with_dhw=with_dhw)
 
     #  Get max. thermal power of city

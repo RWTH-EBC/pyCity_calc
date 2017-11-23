@@ -259,21 +259,21 @@ class TestCityEnergyBalance():
         #  ##################################################################
 
         id = 1005
-        exbuild = city.node[id]['entity']
+        exbuild = city.nodes[id]['entity']
         exbuild.bes.boiler.qNominal *= 10
         exbuild.bes.tes.capacity *= 1
         #  Comment: Rescaling is necessary, as dhw_method = 1 is used.
         #  This leads to dhw peaks for all buildings at the same timesteps
 
         id = 1006
-        exbuild = city.node[id]['entity']
+        exbuild = city.nodes[id]['entity']
         exbuild.bes.boiler.qNominal *= 10
         exbuild.bes.tes.capacity *= 1
         #  Comment: Rescaling is necessary, as dhw_method = 1 is used.
         #  This leads to dhw peaks for all buildings at the same timesteps
 
         id = 1012
-        exbuild = city.node[id]['entity']
+        exbuild = city.nodes[id]['entity']
         exbuild.bes.boiler.qNominal *= 10
         exbuild.bes.tes.capacity *= 1
 
@@ -359,8 +359,8 @@ class TestCityEnergyBalance():
 
         #  Set inlet-flow and return-flow temperatures to environment
         #  temperatures to eliminate losses of LHN system
-        city.edge[1001][1002]['temp_vl'] = 10
-        city.edge[1001][1002]['temp_rl'] = 9.999999999999
+        city.edges[1001, 1002]['temp_vl'] = 10
+        city.edges[1001, 1002]['temp_rl'] = 9.999999999999
 
         #  Calculate city energy balance
         city_eb = cityeb.CityEBCalculator(city=city)

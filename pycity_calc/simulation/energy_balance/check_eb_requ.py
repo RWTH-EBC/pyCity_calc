@@ -101,7 +101,7 @@ def check_eb_requirements(city, pycity_deap=False):
 
     #  Loop over all buildings
     for id in list_build_ids:
-        build = city.node[id]['entity']
+        build = city.nodes[id]['entity']
 
         #  Dummy value for status (assumes missing thermal supply, until
         #  thermal supply or lhn is found)
@@ -140,11 +140,11 @@ def check_eb_requirements(city, pycity_deap=False):
 
         #  Check, if at least one edge is of type
         for i in list_neigh:
-            if 'network_type' in city.edge[i][id]:
-                if (city.edge[i][id]['network_type'] == 'heating' or
-                    city.edge[id][i]['network_type'] == 'heating' or
-                    city.edge[i][id]['network_type'] == 'heating_and_deg' or
-                    city.edge[id][i]['network_type'] == 'heating_and_deg'):
+            if 'network_type' in city.edges[i, id]:
+                if (city.edges[i, id]['network_type'] == 'heating' or
+                    city.edges[id, i]['network_type'] == 'heating' or
+                    city.edges[i, id]['network_type'] == 'heating_and_deg' or
+                    city.edges[id, i]['network_type'] == 'heating_and_deg'):
                     status_okay = True
                     found_lhn = True
                     break
@@ -168,7 +168,7 @@ def check_eb_requirements(city, pycity_deap=False):
 
             for list_lhn in list_lists_lhn:
                 for n in list_lhn:
-                    build = city.node[n]['entity']
+                    build = city.nodes[n]['entity']
 
                     #  Check if building has bes
                     if build.hasBes is True:
