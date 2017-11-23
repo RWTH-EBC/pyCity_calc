@@ -722,10 +722,10 @@ def get_street_subgraph(city, nodelist_str=None):
 
     #  If set to None, search over all nodes
     if nodelist_str is None:
-        nodelist_str = city.nodes()
+        nodelist_str = list(city.nodes())
     else:
         for n in nodelist_str:
-            assert n in city.nodes()
+            assert n in list(city.nodes())
 
     #  Set up new city (empty)
     street_graph = cit.City(environment=city.environment)

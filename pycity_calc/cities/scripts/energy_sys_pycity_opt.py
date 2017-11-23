@@ -120,23 +120,23 @@ system sized to be more realistic.
 #
 #             #  Loop over heating network nodes:
 #             for n in list_h:
-#                 # if 'node_type' in city.node[n]:
-#                 #     if city.node[n]['node_type'] == 'building':
-#                 if 'entity' in esopt_res.node[n]:
-#                     if esopt_res.node[n]['entity']._kind == 'building':
-#                         if esopt_res.node[n]['entity'].hasBes:
+#                 # if 'node_type' in city.nodes[n]:
+#                 #     if city.nodes[n]['node_type'] == 'building':
+#                 if 'entity' in esopt_res.nodes[n]:
+#                     if esopt_res.nodes[n]['entity']._kind == 'building':
+#                         if esopt_res.nodes[n]['entity'].hasBes:
 #
 #                             #  If device is found, add power to total power
-#                             if esopt_res.node[n]['entity'].bes.hasBoiler:
-#                                 p_boil_th_nom += esopt_res.node[n]['entity'] \
+#                             if esopt_res.nodes[n]['entity'].bes.hasBoiler:
+#                                 p_boil_th_nom += esopt_res.nodes[n]['entity'] \
 #                                     .bes.boiler.qNominal
-#                             if esopt_res.node[n]['entity'].bes.hasChp:
-#                                 p_chp_el_nom += esopt_res.node[n]['entity'] \
+#                             if esopt_res.nodes[n]['entity'].bes.hasChp:
+#                                 p_chp_el_nom += esopt_res.nodes[n]['entity'] \
 #                                     .bes.chp.pNominal
-#                                 p_chp_th_nom += esopt_res.node[n]['entity'] \
+#                                 p_chp_th_nom += esopt_res.nodes[n]['entity'] \
 #                                     .bes.boiler.qNominal
-#                             if esopt_res.node[n]['entity'].bes.hasTes:
-#                                 cap_tes_nom += esopt_res.node[n]['entity'] \
+#                             if esopt_res.nodes[n]['entity'].bes.hasTes:
+#                                 cap_tes_nom += esopt_res.nodes[n]['entity'] \
 #                                     .bes.tes.capacity
 #
 #                             source_count += 1
@@ -224,9 +224,9 @@ system sized to be more realistic.
 #         #  Check if node is of type building
 #         for n in esopt_res.nodes():
 #             #  Check if entity is of kind building
-#             if 'entity' in esopt_res.node[n]:
-#                 if esopt_res.node[n]['entity']._kind == 'building':
-#                     if esopt_res.node[n]['entity'].hasBes:
+#             if 'entity' in esopt_res.nodes[n]:
+#                 if esopt_res.nodes[n]['entity']._kind == 'building':
+#                     if esopt_res.nodes[n]['entity'].hasBes:
 #
 #                         #  TODO: Check with which units parameters are handed over!
 #
@@ -239,60 +239,60 @@ system sized to be more realistic.
 #                         found_bat = False
 #
 #                         #  Search for boiler
-#                         if esopt_res.node[n]['entity'].bes.hasBoiler:
+#                         if esopt_res.nodes[n]['entity'].bes.hasBoiler:
 #                             found_boiler = True
-#                             cur_boil_th_nom = esopt_res.node[n]['entity'] \
+#                             cur_boil_th_nom = esopt_res.nodes[n]['entity'] \
 #                                 .bes.boiler.qNominal  # in Watt
 #
 #                         #  Search for chp
-#                         if esopt_res.node[n]['entity'].bes.hasChp:
+#                         if esopt_res.nodes[n]['entity'].bes.hasChp:
 #                             found_chp = True
-#                             cur_chp_el_nom = esopt_res.node[n]['entity'] \
+#                             cur_chp_el_nom = esopt_res.nodes[n]['entity'] \
 #                                 .bes.chp.pNominal
-#                             cur_chp_th_nom = esopt_res.node[n]['entity'] \
+#                             cur_chp_th_nom = esopt_res.nodes[n]['entity'] \
 #                                 .bes.boiler.qNominal
 #
 #                             #  in Watt
 #
 #                         #  Search for tes
-#                         if esopt_res.node[n]['entity'].bes.hasTes:
+#                         if esopt_res.nodes[n]['entity'].bes.hasTes:
 #                             found_tes = True
-#                             cur_cap_tes_nom = esopt_res.node[n]['entity'] \
+#                             cur_cap_tes_nom = esopt_res.nodes[n]['entity'] \
 #                                 .bes.tes.capacity
 #
 #                             #  in kG
 #
 #                         #  Search for heatpump
-#                         if esopt_res.node[n]['entity'].bes.hasHeatpump:
+#                         if esopt_res.nodes[n]['entity'].bes.hasHeatpump:
 #                             found_hp = True
-#                             cur_hp_th_nom = esopt_res.node[n]['entity'] \
+#                             cur_hp_th_nom = esopt_res.nodes[n]['entity'] \
 #                                 .bes.heatpump.qNominal
 #                             #  Fixme: Figure out type of heatpump!
 #
 #                             #  in W
 #
 #                         #  Search for electrical heater
-#                         if esopt_res.node[n]['entity'].bes.hasElectricalHeater:
+#                         if esopt_res.nodes[n]['entity'].bes.hasElectricalHeater:
 #                             found_eh = True
-#                             curr_eh_th_nom = esopt_res.node[n]['entity'] \
+#                             curr_eh_th_nom = esopt_res.nodes[n]['entity'] \
 #                                 .bes.electricalHeater.qNominal
 #
 #                             #  in W
 #
 #                         #  Search for PV system
-#                         if esopt_res.node[n]['entity'].bes.hasPv:
+#                         if esopt_res.nodes[n]['entity'].bes.hasPv:
 #                             found_pv = True
-#                             curr_pv_area = esopt_res.node[n]['entity'] \
+#                             curr_pv_area = esopt_res.nodes[n]['entity'] \
 #                                 .bes.pv.area
-#                             curr_pv_eta = esopt_res.node[n]['entity'] \
+#                             curr_pv_eta = esopt_res.nodes[n]['entity'] \
 #                                 .bes.pv.eta
 #
 #                         # Search for battery system
-#                         if esopt_res.node[n]['entity'].bes.hasBattery:
+#                         if esopt_res.nodes[n]['entity'].bes.hasBattery:
 #                             found_pv = True
-#                             curr_bat_cap = esopt_res.node[n]['entity'] \
+#                             curr_bat_cap = esopt_res.nodes[n]['entity'] \
 #                                 .bes.battery.capacity
-#                             curr_bat_socInit = esopt_res.node[n]['entity'] \
+#                             curr_bat_socInit = esopt_res.nodes[n]['entity'] \
 #                                 .bes.battery.capacity
 #
 #                             #  in Joule
@@ -300,14 +300,14 @@ system sized to be more realistic.
 #                         #  Resize and add energy systems to city object
 #                         #  #-------------------------------------------------
 #
-#                         cur_b = city.node[n]['entity']  # Current building
+#                         cur_b = city.nodes[n]['entity']  # Current building
 #                         print('##############')
 #                         print('Process building node with id ' + str(n))
 #
 #                         #  Add bes to current building
 #                         bes = BES.BES(environment=city.environment)
 #                         cur_b.addEntity(bes)
-#                         cur_bes = city.node[n]['entity'].bes
+#                         cur_bes = city.nodes[n]['entity'].bes
 #
 #                         #  # Process boiler
 #                         #  #---------------------------------------------------
