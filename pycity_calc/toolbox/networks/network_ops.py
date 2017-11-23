@@ -976,7 +976,7 @@ def process_neighbors(city, node, etype, list_conn_nodes, list_curr_nodes,
 
     if node not in processed_nodes:
         #  Get list of neighbors of node
-        list_of_neighbors = city.neighbors(node)
+        list_of_neighbors = list(city.neighbors(node))
         #  Add node to list of processed nodes
         processed_nodes.append(node)
         #  If node has neighbors nb, continue to analyse neighbors
