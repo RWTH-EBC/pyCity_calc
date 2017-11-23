@@ -619,7 +619,7 @@ def find_closest_node(graph, target_node, node_list=None):
             assert node in graph
 
     if node_list is None:  # Search complete graph
-        search_list = graph.nodes()
+        search_list = list(graph.nodes())
     else:  # Only search within node_list
         search_list = node_list
 

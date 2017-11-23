@@ -72,7 +72,7 @@ class Test_NetworkOperations(object):
         graph.add_edge(0, 1)
 
         netop.add_weights_to_edges(graph)
-        assert graph.edges(data=True) == [(0, 1, {'weight': 5.0})]
+        assert list(graph.edges(data=True)) == [(0, 1, {'weight': 5.0})]
 
     def test_calc_graph_pos_closest_to(self):
         graph = nx.Graph()
@@ -149,8 +149,8 @@ class Test_NetworkOperations(object):
 
         street = netop.get_street_subgraph(city)
 
-        assert street.nodes() == [node_1, node_2, node_3]
-        assert street.edges() == [(node_1, node_2), (node_2, node_3)]
+        assert list(street.nodes()) == [node_1, node_2, node_3]
+        assert list(street.edges()) == [(node_1, node_2), (node_2, node_3)]
 
     def test_get_build_str_subgraph(self, fixture_building):
 
@@ -174,8 +174,8 @@ class Test_NetworkOperations(object):
 
         subcity = netop.get_build_str_subgraph(city, nodelist=[node_4])
 
-        assert sorted(subcity.nodes()) == [node_1, node_2, node_3, node_4]
-        assert subcity.edges() == [(node_1, node_2), (node_2, node_3)]
+        assert sorted(list(subcity.nodes())) == [node_1, node_2, node_3, node_4]
+        assert list(subcity.edges()) == [(node_1, node_2), (node_2, node_3)]
 
     def test_get_list_with_energy_net_con_node_ids_1(self, fixture_building):
 
@@ -483,8 +483,8 @@ class Test_NetworkOperations(object):
                                                       nodelist=list_to_be_conn)
 
         #  Should include all existing nodes
-        assert len(min_span_graph.nodes()) == 4
-        assert sorted(min_span_graph.nodes()) == [node_1, node_2, node_3,
+        assert len(list(min_span_graph.nodes())) == 4
+        assert sorted(list(min_span_graph.nodes())) == [node_1, node_2, node_3,
                                                   node_4]
 
         list_edges = sorted(min_span_graph.edges())
@@ -530,10 +530,10 @@ class Test_NetworkOperations(object):
                                                  nodelist=list_to_be_conn)
 
         #  Should include all existing nodes plus new nodes
-        assert len(min_span_graph.nodes()) == 6
+        assert len(list(min_span_graph.nodes())) == 6
         assert len(list_new_nodes) == 3
 
-        mst_nodes = sorted(min_span_graph.nodes())
+        mst_nodes = sorted(list(min_span_graph.nodes()))
 
         assert mst_nodes == [node_1, node_2, node_3, 1007, 1008, 1009]
         assert list_new_nodes == [1007, 1008, 1009]
