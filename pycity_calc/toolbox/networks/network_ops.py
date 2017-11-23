@@ -830,11 +830,24 @@ def get_build_str_subgraph(city, nodelist=None):
                     #  Check if entity is kind building (and not pv or wind)
                     assert city.nodes[id]['entity']._kind == 'building'
 
-    # Initialize street_graph as deepcopy of self.city
-    city_copy = copy.deepcopy(city)
+    #  Search for all building node ids, if nodelist is None
+    if nodelist is None:
+        #  Get all building node ids
+        nodelist = city.get_list_build_entity_node_ids()
 
-    #  Get subgraph (only holding nodes within nodelist)
-    subcity = city_copy.subgraph(nodelist)
+    # # Initialize street_graph as deepcopy of self.city
+    # city_copy = copy.deepcopy(city)
+    #
+    # #  Get subgraph (only holding nodes within nodelist)
+    # subcity = city_copy.subgraph(nodelist)
+
+    # Initialize street_graph as deepcopy of self.city
+    subcity = copy.deepcopy(city)
+
+    #  Erase all nodes, which are not in nodelist (of building ids)
+    for n in city.nodes():
+        if n not in nodelist:
+            subcity.remove_node(n)
 
     #  Read environment pointer
     subcity.environment = city.environment
@@ -843,7 +856,7 @@ def get_build_str_subgraph(city, nodelist=None):
     street = get_street_subgraph(city)
 
     #  Add street graph to subcity
-    subcity.add_nodes_from(list(street.nodes()))
+    subcity.add_nodes_from(street)
 
     #  Add attribute node_type = street to every node
     for n in street.nodelist_street:
@@ -860,13 +873,11 @@ def get_build_str_subgraph(city, nodelist=None):
                 #  Add street edge to street_graph
                 subcity.add_edge(u, v, network_type='street')
 
-    if nodelist is None:
-        subcity.nodelist_building = city_copy.nodelist_building
-    else:
-        subcity.nodelist_building = nodelist
+    #  Save new nodelist of buildings to subcity
+    subcity.nodelist_building = nodelist
 
     # Add nodelist_street
-    subcity.nodelist_street = city_copy.nodelist_street
+    subcity.nodelist_street = copy.copy(city.nodelist_street)
 
     #  Set next node number value
     set_new_next_node_number(city)
