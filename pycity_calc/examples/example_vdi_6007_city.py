@@ -86,7 +86,7 @@ def run_example_vdi_city(plot_res=False):
         plt.ylabel('City district space heating load in W')
         plt.show()
 
-        build_1 = city.node[1001]['entity']
+        build_1 = city.nodes[1001]['entity']
 
         sp_heat_load = build_1.get_space_heating_power_curve()
 

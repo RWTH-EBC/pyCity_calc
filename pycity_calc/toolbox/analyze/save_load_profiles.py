@@ -54,15 +54,15 @@ def extract_build_base_data(city, id, file_path, use_german=False):
         (default: False). If False, uses English language.
     """
     #  Building pointer
-    build = city.node[id]['entity']
+    build = city.nodes[id]['entity']
 
     if use_german:
 
         with open(file_path, mode='w') as f:
             f.write(u'Gebäude-ID: ' + str(id) + '\n')
 
-            x_coord = city.node[id]['position'].x
-            y_coord = city.node[id]['position'].y
+            x_coord = city.nodes[id]['position'].x
+            y_coord = city.nodes[id]['position'].y
             f.write('X-Koordinate in m: ' + str(int(x_coord)) + '\n')
             f.write('Y-Koordinate in m: ' + str(int(y_coord)) + '\n')
 
@@ -112,19 +112,19 @@ def extract_build_base_data(city, id, file_path, use_german=False):
                     + str(int(ann_dhw_demand)) + '\n')
             f.write('\n')
 
-            if 'osm_id' in city.node[id]:
+            if 'osm_id' in city.nodes[id]:
                 f.write(
-                    'openstreetmap id: ' + str(city.node[id]['osm_id']) + '\n')
-            if 'name' in city.node[id]:
-                f.write('OSM name: ' + str(city.node[id]['name']) + '\n')
-            if 'addr_street' in city.node[id]:
-                f.write('Street: ' + str(city.node[id]['addr_street']) + '\n')
-            if 'addr_housenumber' in city.node[id]:
+                    'openstreetmap id: ' + str(city.nodes[id]['osm_id']) + '\n')
+            if 'name' in city.nodes[id]:
+                f.write('OSM name: ' + str(city.nodes[id]['name']) + '\n')
+            if 'addr_street' in city.nodes[id]:
+                f.write('Street: ' + str(city.nodes[id]['addr_street']) + '\n')
+            if 'addr_housenumber' in city.nodes[id]:
                 f.write('Street nb.: ' +
-                        str(city.node[id]['addr_housenumber']) + '\n')
-            if 'comment' in city.node[id]:
+                        str(city.nodes[id]['addr_housenumber']) + '\n')
+            if 'comment' in city.nodes[id]:
                 f.write('OSM comment: ' +
-                        str(city.node[id]['comment']) + '\n')
+                        str(city.nodes[id]['comment']) + '\n')
 
             # print(vars(build))
 
@@ -135,8 +135,8 @@ def extract_build_base_data(city, id, file_path, use_german=False):
         with open(file_path, mode='w') as f:
             f.write('Building node id: ' + str(id) + '\n')
 
-            x_coord = city.node[id]['position'].x
-            y_coord = city.node[id]['position'].y
+            x_coord = city.nodes[id]['position'].x
+            y_coord = city.nodes[id]['position'].y
             f.write('X-coordinate in m: ' + str(int(x_coord)) + '\n')
             f.write('Y-coordinate in m: ' + str(int(y_coord)) + '\n')
 
@@ -184,19 +184,19 @@ def extract_build_base_data(city, id, file_path, use_german=False):
                     + str(int(ann_dhw_demand)) + '\n')
             f.write('\n')
 
-            if 'osm_id' in city.node[id]:
+            if 'osm_id' in city.nodes[id]:
                 f.write(
-                    'openstreetmap id: ' + str(city.node[id]['osm_id']) + '\n')
-            if 'name' in city.node[id]:
-                f.write('OSM name: ' + str(city.node[id]['name']) + '\n')
-            if 'addr_street' in city.node[id]:
-                f.write('Street: ' + str(city.node[id]['addr_street']) + '\n')
-            if 'addr_housenumber' in city.node[id]:
+                    'openstreetmap id: ' + str(city.nodes[id]['osm_id']) + '\n')
+            if 'name' in city.nodes[id]:
+                f.write('OSM name: ' + str(city.nodes[id]['name']) + '\n')
+            if 'addr_street' in city.nodes[id]:
+                f.write('Street: ' + str(city.nodes[id]['addr_street']) + '\n')
+            if 'addr_housenumber' in city.nodes[id]:
                 f.write('Street nb.: ' +
-                        str(city.node[id]['addr_housenumber']) + '\n')
-            if 'comment' in city.node[id]:
+                        str(city.nodes[id]['addr_housenumber']) + '\n')
+            if 'comment' in city.nodes[id]:
                 f.write('OSM comment: ' +
-                        str(city.node[id]['comment']) + '\n')
+                        str(city.nodes[id]['comment']) + '\n')
 
             # print(vars(build))
 
@@ -230,7 +230,7 @@ def extract_build_profiles(city, id, file_path, do_plot=False,
     """
 
     #  Building pointer
-    build = city.node[id]['entity']
+    build = city.nodes[id]['entity']
 
     #  Get power curves
     sh_profile = build.get_space_heating_power_curve()

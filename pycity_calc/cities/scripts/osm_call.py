@@ -105,7 +105,7 @@ def conv_city_long_lat_to_utm(city, zone_number=None):
     #  Loop over every node in city
     for n in city.nodes():
         #  Current node
-        cur_pos = city.node[n]['position']
+        cur_pos = city.nodes[n]['position']
 
         #  Current x/y coordinates
         x_cor = cur_pos.x  # Longitude
@@ -119,7 +119,7 @@ def conv_city_long_lat_to_utm(city, zone_number=None):
         cur_point = point.Point((x_new, y_new))
 
         #  Overwrite positional attributes
-        city.node[n]['position'] = cur_point
+        city.nodes[n]['position'] = cur_point
 
     city.graph['zone_nb'] = zone_nb
     city.graph['zone_str'] = zone_str
@@ -146,9 +146,9 @@ def get_list_b_nodes_without_area(city):
     list_missing_area = []
 
     for n in city.nodes():
-        if 'node_type' in city.node[n]:
-            if city.node[n]['node_type'] == 'building':
-                if 'area' not in city.node[n]:
+        if 'node_type' in city.nodes[n]:
+            if city.nodes[n]['node_type'] == 'building':
+                if 'area' not in city.nodes[n]:
                     list_missing_area.append(n)
 
     return list_missing_area
@@ -168,21 +168,21 @@ def add_build_entities(city, add_ap=False):
     """
 
     for n in city.nodes():
-        if 'node_type' in city.node[n]:
-            if city.node[n]['node_type'] == 'building':
+        if 'node_type' in city.nodes[n]:
+            if city.nodes[n]['node_type'] == 'building':
 
                 #  Add building object instance
                 build = exbuild.BuildingExtended(environment=city.environment)
 
                 #  Add ground floor area
-                build.ground_area = city.node[n]['area']
+                build.ground_area = city.nodes[n]['area']
 
                 if add_ap:
                     ap = apart.Apartment(environment=city.environment)
 
                     build.addEntity(ap)
 
-                city.node[n]['entity'] = build
+                city.nodes[n]['entity'] = build
 
 if __name__ == '__main__':
 
@@ -260,16 +260,16 @@ if __name__ == '__main__':
     citvis.plot_city_district(city=city, node_size=10, plot_build_labels=False)
 
     if 1001 in city.nodes():
-        print('Area of building 1001: ', city.node[1001]['area'])
-        print('OSM id of building 1001: ', city.node[1001]['osm_id'])
-        print('x-coordinate of building 1001: ', city.node[1001]['position'].x)
-        print('y-coordinate of building 1001: ', city.node[1001]['position'].y)
+        print('Area of building 1001: ', city.nodes[1001]['area'])
+        print('OSM id of building 1001: ', city.nodes[1001]['osm_id'])
+        print('x-coordinate of building 1001: ', city.nodes[1001]['position'].x)
+        print('y-coordinate of building 1001: ', city.nodes[1001]['position'].y)
 
-        if 'addr:street' in city.node[1001]:
-            print('Street name at node 1001: ', city.node[1001]['addr:street'])
-        if 'addr:street' in city.node[1001]:
+        if 'addr:street' in city.nodes[1001]:
+            print('Street name at node 1001: ', city.nodes[1001]['addr:street'])
+        if 'addr:street' in city.nodes[1001]:
             print('House number of node 1001: ',
-                  city.node[1001]['addr:housenumber'])
+                  city.nodes[1001]['addr:housenumber'])
         print()
 
     list_miss_area = get_list_b_nodes_without_area(city)

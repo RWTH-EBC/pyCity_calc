@@ -107,7 +107,7 @@ def run_mc_sh_uncertain_city(city, nb_samples,
         for n in list_build_ids:
 
             #  Get list of space heating demand samples for each building
-            curr_b = city.node[n]['entity']
+            curr_b = city.nodes[n]['entity']
 
             if curr_b.build_type == 0:  # Residential building
                 #  TODO: Add office simulation building type
@@ -200,7 +200,7 @@ if __name__ == '__main__':
         #  Change all construction years to new_consr_year
         list_build_ids = city.get_list_build_entity_node_ids()
         for n in list_build_ids:
-            city.node[n]['entity'].build_year = new_constr_year
+            city.nodes[n]['entity'].build_year = new_constr_year
 
     #  Perform MC analysis for whole city
     (list_sh, list_el, list_dhw, list_sh_curves) = \

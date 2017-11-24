@@ -110,7 +110,7 @@ def mod_dhw_city_dem(city, dhw_dem, list_nodes=None, makecopy=False):
     con_factor = dhw_dem / curr_city_dhw_dem
 
     for n in list_nodes:
-        curr_b = city.node[n]['entity']
+        curr_b = city.nodes[n]['entity']
 
         dhw_resc = con_factor * curr_b.get_annual_dhw_demand()
 

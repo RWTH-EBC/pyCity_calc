@@ -2477,11 +2477,11 @@ def run_city_generator(generation_mode, timestep,
                 #  Add building as entity to corresponding building node
 
                 #  Positions should be (nearly) equal
-                assert position.x - city_object.node[int(curr_id)][
+                assert position.x - city_object.nodes[int(curr_id)][
                     'position'].x <= 0.1
-                assert position.y - city_object.node[int(curr_id)][
+                assert position.y - city_object.nodes[int(curr_id)][
                     'position'].y <= 0.1
-                city_object.node[int(curr_id)]['entity'] = building
+                city_object.nodes[int(curr_id)]['entity'] = building
 
                 id = curr_id
 
@@ -2532,18 +2532,18 @@ def run_city_generator(generation_mode, timestep,
                 #  Normalize VDI 6007 load curves to match given annual
                 #  thermal space heating energy demand
                 for n in city_object.nodes():
-                    if 'node_type' in city_object.node[n]:
+                    if 'node_type' in city_object.nodes[n]:
                         #  If node_type is building
-                        if city_object.node[n]['node_type'] == 'building':
+                        if city_object.nodes[n]['node_type'] == 'building':
                             #  If entity is kind building
-                            if city_object.node[n][
+                            if city_object.nodes[n][
                                 'entity']._kind == 'building':
 
                                 #  Given value (user input)
                                 ann_sh = dict_id_vdi_sh[n]
 
                                 #  Building pointer
-                                curr_b = city_object.node[n]['entity']
+                                curr_b = city_object.nodes[n]['entity']
 
                                 #  Current value on object
                                 curr_sh = curr_b.get_annual_space_heat_demand()
@@ -2560,15 +2560,15 @@ def run_city_generator(generation_mode, timestep,
         print('Generation results:')
         print('###########################################')
         for n in city_object.nodes():
-            if 'node_type' in city_object.node[n]:
-                if city_object.node[n]['node_type'] == 'building':
-                    if 'entity' in city_object.node[n]:
-                        if city_object.node[n]['entity']._kind == 'building':
+            if 'node_type' in city_object.nodes[n]:
+                if city_object.nodes[n]['node_type'] == 'building':
+                    if 'entity' in city_object.nodes[n]:
+                        if city_object.nodes[n]['entity']._kind == 'building':
                             print('Results of building: ', n)
                             print('################################')
                             print()
 
-                            curr_b = city_object.node[n]['entity']
+                            curr_b = city_object.nodes[n]['entity']
                             sh_demand = curr_b.get_annual_space_heat_demand()
                             el_demand = curr_b.get_annual_el_demand()
                             dhw_demand = curr_b.get_annual_dhw_demand()

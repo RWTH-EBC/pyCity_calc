@@ -284,8 +284,8 @@ def plot_city_district(city, city_list=None, plot_buildings=True,
 
                 edgelist_street = []
                 for u, v in city.edges():
-                    if 'network_type' in city.edge[u][v]:
-                        if city.edge[u][v]['network_type'] == 'street':
+                    if 'network_type' in city.edges[u, v]:
+                        if city.edges[u, v]['network_type'] == 'street':
                             edgelist_street.append((u, v))
                 nx.draw_networkx_edges(city, pos=pos, edgelist=edgelist_street,
                                        width=1, edge_color='k')
@@ -314,8 +314,8 @@ def plot_city_district(city, city_list=None, plot_buildings=True,
                 for s1 in list_str_close:
                     for s2 in list_str_close:
                         if (s1, s2) in city.edges():
-                            if 'network_type' in city.edge[s1][s2]:
-                                if city.edge[s1][s2][
+                            if 'network_type' in city.edges[s1, s2]:
+                                if city.edges[s1, s2][
                                     'network_type'] == 'street':
                                     edgelist_street.append((s1, s2))
 
@@ -342,8 +342,8 @@ def plot_city_district(city, city_list=None, plot_buildings=True,
                                        node_color=node_color)
             edgelist_heating = []
             for u, v in city.edges():
-                if 'network_type' in city.edge[u][v]:
-                    if city.edge[u][v]['network_type'] == 'heating':
+                if 'network_type' in city.edges[u, v]:
+                    if city.edges[u, v]['network_type'] == 'heating':
                         edgelist_heating.append((u, v))
             nx.draw_networkx_edges(city, pos=pos, edgelist=edgelist_heating,
                                    width=3, edge_color=edge_color,
@@ -369,8 +369,8 @@ def plot_city_district(city, city_list=None, plot_buildings=True,
                                        node_color=node_color)
             edgelist_el = []
             for u, v in city.edges():
-                if 'network_type' in city.edge[u][v]:
-                    if city.edge[u][v]['network_type'] == 'electricity':
+                if 'network_type' in city.edges[u, v]:
+                    if city.edges[u, v]['network_type'] == 'electricity':
                         edgelist_el.append((u, v))
             nx.draw_networkx_edges(city, pos=pos, edgelist=edgelist_el,
                                    width=3, edge_color=edge_color,
@@ -379,8 +379,8 @@ def plot_city_district(city, city_list=None, plot_buildings=True,
             #   add transformers
             edgelist_transformer = []
             for u, v in city.edges():
-                if 'network_type' in city.edge[u][v]:
-                    if (city.edge[u][v]['network_type'] == 'transformer'):
+                if 'network_type' in city.edges[u, v]:
+                    if (city.edges[u, v]['network_type'] == 'transformer'):
                         edgelist_transformer.append((u, v))
             nx.draw_networkx_edges(city, pos=pos,
                                    edgelist=edgelist_transformer,
@@ -398,8 +398,8 @@ def plot_city_district(city, city_list=None, plot_buildings=True,
 
             edgelist_el = []
             for u, v in city.edges():
-                if 'network_type' in city.edge[u][v]:
-                    if city.edge[u][v]['network_type'] == 'heating_and_deg':
+                if 'network_type' in city.edges[u, v]:
+                    if city.edges[u, v]['network_type'] == 'heating_and_deg':
                         edgelist_el.append((u, v))
             nx.draw_networkx_edges(city, pos=pos, edgelist=edgelist_el,
                                    width=2, edge_color=edge_color,
@@ -442,9 +442,9 @@ def plot_city_district(city, city_list=None, plot_buildings=True,
             #  Plot building node ids
             labels = {}
             for n in city.nodes():
-                if 'node_type' in city.node[n]:
-                    if (city.node[n]['node_type'] == 'heating' or
-                                city.node[n][
+                if 'node_type' in city.nodes[n]:
+                    if (city.nodes[n]['node_type'] == 'heating' or
+                                city.nodes[n][
                                     'node_type'] == 'heating_and_deg'):
                         labels[n] = n
             nx.draw_networkx_labels(city, pos=pos_labels, labels=labels)
@@ -455,11 +455,11 @@ def plot_city_district(city, city_list=None, plot_buildings=True,
             ax = fig.add_subplot(111)
             #  Plot energy systems by name
             for n in city.nodelist_building:
-                if city.node[n]['entity']._kind == 'building':
+                if city.nodes[n]['entity']._kind == 'building':
                     #  Look if building has bes
-                    if city.node[n]['entity'].hasBes:
+                    if city.nodes[n]['entity'].hasBes:
                         #  Extract types of energy systems
-                        esys_tuple = city.node[n]['entity'].bes.getHasDevices()
+                        esys_tuple = city.nodes[n]['entity'].bes.getHasDevices()
                         # esys_tuple = (self.hasBattery,
                         #               self.hasBoiler,
                         #               self.hasChp,
@@ -522,8 +522,8 @@ def plot_city_district(city, city_list=None, plot_buildings=True,
                                     esys_str += ', ' + str(esys_str_list[i])
 
                             # Define position next to building node
-                            x_p = city.node[n]['position'].x + 12
-                            y_p = city.node[n]['position'].y
+                            x_p = city.nodes[n]['position'].x + 12
+                            y_p = city.nodes[n]['position'].y
 
                             #  Plot textbox
                             ax.text(x_p, y_p, esys_str,
@@ -885,8 +885,8 @@ def plot_cluster_results(city, cluster_dict, plot_street=True,
             for s1 in list_str_close:
                 for s2 in list_str_close:
                     if (s1, s2) in city.edges():
-                        if 'network_type' in city.edge[s1][s2]:
-                            if city.edge[s1][s2]['network_type'] == 'street':
+                        if 'network_type' in city.edges[s1, s2]:
+                            if city.edges[s1, s2]['network_type'] == 'street':
                                 edgelist_street.append((s1, s2))
 
             nx.draw_networkx_edges(city, pos=pos, edgelist=edgelist_street,
@@ -976,7 +976,7 @@ if __name__ == '__main__':
     bes.addMultipleDevices([boiler, chp, battery])
 
     #  Add bes to one building within city
-    city_object.node[city_object.nodelist_building[0]]['entity']. \
+    city_object.nodes[city_object.nodelist_building[0]]['entity']. \
         addEntity(entity=bes)
 
     #  Plot city

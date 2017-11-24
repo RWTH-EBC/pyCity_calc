@@ -871,7 +871,7 @@ if __name__ == '__main__':
         #  Load city object instance
         city = pickle.load(open(load_city_path, mode='rb'))
 
-        extended_building = city.node[build_node_nb]['entity']
+        extended_building = city.nodes[build_node_nb]['entity']
 
         save_file = city_f_name[:-4] + '_single_b_new_dhw_' + str(
             build_node_nb) + '.pkl'

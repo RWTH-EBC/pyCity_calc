@@ -441,7 +441,7 @@ class McRunner(object):
         dict_samples_esys = {}
 
         for n in self._list_build_ids:
-            build = self._city_eco_calc.energy_balance.city.node[n]['entity']
+            build = self._city_eco_calc.energy_balance.city.nodes[n]['entity']
 
             dict_esys = self.perform_sampling_build_esys(nb_runs=nb_runs,
                                                          building=build)
@@ -577,7 +577,7 @@ class McRunner(object):
         #  Loop over node ids and add samples to result dict with building
         #  id as key
         for n in self._list_build_ids:
-            build = self._city_eco_calc.energy_balance.city.node[n]['entity']
+            build = self._city_eco_calc.energy_balance.city.nodes[n]['entity']
 
             dict_build_dem = self.perform_sampling_build_dem(nb_runs=nb_runs,
                                                              building=build)
@@ -700,7 +700,7 @@ class McRunner(object):
             #  Add building sample input data
             #  ###############################################################
             for n in self._list_build_ids:
-                curr_build = city.node[n]['entity']
+                curr_build = city.nodes[n]['entity']
 
                 dict_build_dem = self._dict_samples_const[str(n)]
                 dict_esys = self._dict_samples_esys[str(n)]
@@ -872,7 +872,7 @@ class McRunner(object):
                                      set(array_heat_on))
 
                 for n in list_heat_off:
-                    curr_build = city.node[n]['entity']
+                    curr_build = city.nodes[n]['entity']
 
                     #  Modify space heating (switch off during summer)
                     shmod.sh_curve_summer_off_build(building=curr_build)

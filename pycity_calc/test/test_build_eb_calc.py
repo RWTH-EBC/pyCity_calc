@@ -271,7 +271,7 @@ class TestBuildingEnergyBalance():
         #  Get buiding 1007 (boiler, only)
         #  Add EH to test energy balance for boiler and eh without tes
         id = 1007
-        exbuild = city.node[id]['entity']
+        exbuild = city.nodes[id]['entity']
 
         #  Calculate thermal energy balance
         buildeb.calc_build_therm_eb(build=exbuild, id=id)
@@ -298,7 +298,7 @@ class TestBuildingEnergyBalance():
         #  Get buiding 1001 (CHP, boiler, tes)
         #  Add EH to test energy balance for CHP, boiler, EH with TES
         id = 1001
-        exbuild = city.node[id]['entity']
+        exbuild = city.nodes[id]['entity']
 
         # eh = elheat.ElectricalHeaterExtended(environment=exbuild.environment,
         #                                      q_nominal=10000)
@@ -344,7 +344,7 @@ class TestBuildingEnergyBalance():
         # #  ################################################################
         #  Extract building 1008 (HP, EH, PV and TES)
         id = 1008
-        exbuild = city.node[id]['entity']
+        exbuild = city.nodes[id]['entity']
 
         #  Modify size of electrical heater
         exbuild.bes.electricalHeater.qNominal *= 1.5
@@ -391,7 +391,7 @@ class TestBuildingEnergyBalance():
         #  Get buiding 1006 (boiler, tes, PV, battery)
         #  Add EH to test energy balance for boiler and eh without tes
         id = 1006
-        exbuild = city.node[id]['entity']
+        exbuild = city.nodes[id]['entity']
 
         exbuild.bes.boiler.qNominal *= 5
         exbuild.bes.tes.capacity *= 2
@@ -429,7 +429,7 @@ class TestBuildingEnergyBalance():
         #  Get building 1002 (no thermal energy system)
         #  and calculate electric energy balance
         id = 1002
-        exbuild = city.node[id]['entity']
+        exbuild = city.nodes[id]['entity']
 
         #  Calculate electric energy balance
         buildeb.calc_build_el_eb(build=exbuild)

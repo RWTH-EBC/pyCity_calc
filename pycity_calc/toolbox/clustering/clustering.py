@@ -142,7 +142,7 @@ def get_id_min_x_pos(city):
 
     #  Find start node at outer area (min. x pos. of uesgraph)
     for n in city.nodelist_building:
-        x_pos = city.node[n]['position'].x
+        x_pos = city.nodes[n]['position'].x
 
         if min_x is None:
             min_x = x_pos
@@ -701,17 +701,22 @@ class StreetCluster(object):
 
         Requires city object within cluster object.
         """
+        list_remove = []
+
         if self.city is not None:
             for n in self.city.nodes():
                 #  If node has attribute 'node_type'
-                if 'node_type' in self.city.node[n]:
+                if 'node_type' in self.city.nodes[n]:
                     #  If node_type is 'street'
-                    if self.city.node[n]['node_type'] == 'street':
+                    if self.city.nodes[n]['node_type'] == 'street':
                         #  If street_node has no edge connection
                         if nx.degree(self.city, n) == 0:
-                            #  Erase node
-                            self.city.remove_street_node(n)
-                            print('Removed street node ', n)
+                            list_remove.append(n)
+
+        #  Erase node
+        for n in list_remove:
+            self.city.remove_street_node(n)
+            print('Removed street node ', n)
 
     def gen_str_dicts(self):
         """
@@ -739,9 +744,9 @@ class StreetCluster(object):
             node_id = self.city.nodelist_building[i]
             #  Check if entity is also of type building (otherwise, could
             #  be PV- or windfarm
-            if self.city.node[node_id]['entity']._kind == 'building':
-                if 'position' in self.city.node[node_id]:
-                    build_pos = self.city.node[node_id]['position']
+            if self.city.nodes[node_id]['entity']._kind == 'building':
+                if 'position' in self.city.nodes[node_id]:
+                    build_pos = self.city.nodes[node_id]['position']
                     #  Find str node or edge closest to building node
                     closest_point, seg_point_1, seg_point_2 = \
                         netop.calc_graph_pos_closest_to(graph=self.street,
@@ -839,7 +844,7 @@ class StreetCluster(object):
 
         #  Define start point
         str_start_node = self.set_str_start_point()
-        st_point = self.street.node[str_start_node]['position']
+        st_point = self.street.nodes[str_start_node]['position']
 
         print('Start node:')
         print('Node id:', str_start_node)
@@ -851,7 +856,7 @@ class StreetCluster(object):
         #  Erase all node ids, which do not belong to building entity
         to_erase_list = []
         for node in remain_build_list:
-            if self.city.node[node]['entity']._kind != 'building':
+            if self.city.nodes[node]['entity']._kind != 'building':
                 to_erase_list.append(node)
         for node in to_erase_list:
             if node in remain_build_list:
@@ -920,10 +925,10 @@ class StreetCluster(object):
         """
 
         #  Convert curr_str_tuple to list of segments
-        str_start_x = graph.node[curr_str_tuple[0]]['position'].x
-        str_start_y = graph.node[curr_str_tuple[0]]['position'].y
-        str_stop_x = graph.node[curr_str_tuple[1]]['position'].x
-        str_stop_y = graph.node[curr_str_tuple[1]]['position'].y
+        str_start_x = graph.nodes[curr_str_tuple[0]]['position'].x
+        str_start_y = graph.nodes[curr_str_tuple[0]]['position'].y
+        str_stop_x = graph.nodes[curr_str_tuple[1]]['position'].x
+        str_stop_y = graph.nodes[curr_str_tuple[1]]['position'].y
         list_seg = [Segment(Point(str_start_x, str_start_y),
                             Point(str_stop_x, str_stop_y))]
 
@@ -932,7 +937,7 @@ class StreetCluster(object):
         #  Calculate cutting point for every building node with street edge
         #  (perpendicular to street)
         for i in range(len(b_node_list)):
-            node_pos = self.city.node[b_node_list[i]]['position']
+            node_pos = self.city.nodes[b_node_list[i]]['position']
 
             #  Calculate intersection point
             inter_point, seg_min_dist = \
@@ -943,7 +948,7 @@ class StreetCluster(object):
         # Calculate distance between intersection point and str_start_point
         n_sec_dist_list = []
         for i in range(len(int_point_list)):
-            str_pos = self.street.node[str_start_node]['position']
+            str_pos = self.street.nodes[str_start_node]['position']
             intersec_pos = int_point_list[i]
             dist = netop.calc_point_distance(str_pos, intersec_pos)
             n_sec_dist_list.append(dist)
@@ -987,9 +992,9 @@ class StreetCluster(object):
             Distance between node and edge/segment
         """
 
-        target_point = graph.node[node_id]['position']
-        seg_point_1 = graph.node[str_tuple[0]]['position']
-        seg_point_2 = graph.node[str_tuple[1]]['position']
+        target_point = graph.nodes[node_id]['position']
+        seg_point_1 = graph.nodes[str_tuple[0]]['position']
+        seg_point_2 = graph.nodes[str_tuple[1]]['position']
         list_seg = [Segment(seg_point_1, seg_point_2)]
 
         intersec_point, seg_min_dist = \

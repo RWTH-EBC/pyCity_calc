@@ -431,7 +431,7 @@ def get_ref_sh_nom_powers(mc_res, build=True):
         if build:
             node_id = mc_res.dict_build_ids[key]
 
-            curr_build = city.node[node_id]['entity']
+            curr_build = city.nodes[node_id]['entity']
 
             #  Get reference space heating nominal power
             q_sh_ref = dimfunc.get_max_power_of_building(building=curr_build,
@@ -663,7 +663,7 @@ def analyze_demands_hist(mc_res, key, mode, output_path, dpi=1000,
     else:
         node_id = mc_res.dict_build_ids[key]
 
-        curr_build = city.node[node_id]['entity']
+        curr_build = city.nodes[node_id]['entity']
 
         #  Get reference  demand in kWh (per building)
         if mode == 'sh':
@@ -847,7 +847,7 @@ def analyze_sh_powers_hist(mc_res, key, output_path):
     city = mc_res.get_city(key=key)
     node_id = mc_res.dict_build_ids[key]
 
-    curr_build = city.node[node_id]['entity']
+    curr_build = city.nodes[node_id]['entity']
 
     #  Get reference space heating nominal power
     q_sh_ref = dimfunc.get_max_power_of_building(building=curr_build,
@@ -1316,7 +1316,7 @@ def box_plot_analysis_triple_plot(mc_res, output_path, output_filename,
                     curr_city.get_annual_dhw_demand() / 1000
         else:
             curr_id = mc_res.dict_build_ids[key]
-            curr_build = curr_city.node[curr_id]['entity']
+            curr_build = curr_city.nodes[curr_id]['entity']
             if mode == 'sh':
                 ref_dem = \
                     curr_build.get_annual_space_heat_demand() / 1000

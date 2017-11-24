@@ -92,7 +92,7 @@ def meanshift_cluster(city, plot_results=False):
     #  Extract building ndoe positions and add to X
     for i in range(nb_buildings):
         node = city.nodelist_building[i]
-        point = city.node[node]['position']
+        point = city.nodes[node]['position']
         x_array[i][0] = point.x
         x_array[i][1] = point.y
 
