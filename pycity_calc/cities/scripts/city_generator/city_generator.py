@@ -2705,7 +2705,7 @@ if __name__ == '__main__':
     #  2 - Load and rescale Modelica simulation profile
     #  (generated with TRY region 12, 2010)
     #  3 - VDI 6007 calculation (requires el_gen_method = 2)
-    th_gen_method = 3
+    th_gen_method = 1
     #  For non-residential buildings, SLPs are generated automatically.
 
     #  Manipulate thermal slp to fit to space heating demand?
@@ -2726,7 +2726,7 @@ if __name__ == '__main__':
     #  Choose electric load profile generation method (1 - SLP; 2 - Stochastic)
     #  Stochastic profile is only generated for residential buildings,
     #  which have a defined number of occupants (otherwise, SLP is used)
-    el_gen_method = 2
+    el_gen_method = 1
     #  If user defindes method_3_nb or method_4_nb within input file
     #  (only valid for non-residential buildings), SLP will not be used.
     #  Instead, corresponding profile will be loaded (based on measurement
@@ -2765,7 +2765,7 @@ if __name__ == '__main__':
     #  as profile stays the same and only changes scaling.
     #  Stochastic profiles require defined nb of occupants per residential
     #  building
-    dhw_method = 2  # Only relevant for residential buildings
+    dhw_method = 1  # Only relevant for residential buildings
 
     #  Define dhw volume per person and day (use_dhw=True)
     dhw_volumen = None  # Only relevant for residential buildings
@@ -2779,24 +2779,35 @@ if __name__ == '__main__':
 
     # filename = 'city_3_buildings_mixed.txt'
     # filename = 'city_clust_simple.txt'
-    filename = 'aachen_forsterlinde_mod_new_1.txt'
+    # filename = 'aachen_forsterlinde_mod_new_1.txt'
     # filename = 'aachen_frankenberg_mod_new_1.txt'
     # filename = 'aachen_huenefeld_mod_new_1.txt'
     # filename = 'aachen_kronenberg_mod_new_1.txt'
     # filename = 'aachen_preusweg_mod_new_1.txt'
-    # filename = 'aachen_tuerme_mod_new_1.txt'
+    filename = 'aachen_tuerme_mod_new_1.txt'
 
     #  Output filename
     pickle_city_filename = filename[:-4] + '.pkl'
 
     #  For generation_mode == 1:
     # city_osm_input = None
-    city_osm_input = 'aachen_forsterlinde_osm_mod_1_nx2.pkl'
-    # city_osm_input = 'aachen_frankenberg_osm_mod_1_nx2.pkl'
-    # city_osm_input = 'aachen_huenefeld_osm_mod_1_nx2.pkl'
-    # city_osm_input = 'aachen_kronenberg_osm_mod_1_nx2.pkl'
-    # city_osm_input = 'aachen_preusweg_osm_mod_1_nx2.pkl'
-    # city_osm_input = 'aachen_tuerme_osm_mod_1_nx2.pkl'
+    # city_osm_input = 'aachen_forsterlinde_osm_nx2.pkl'
+    # city_osm_input = 'aachen_frankenberg_osm_nx2.pkl'
+    # city_osm_input = 'aachen_huenefeld_osm_nx2.pkl'
+    # city_osm_input = 'aachen_kronenberg_osm_nx2.pkl'
+    # city_osm_input = 'aachen_preusweg_osm_nx2.pkl'
+    city_osm_input = 'aachen_tuerme_osm_nx2.pkl'
+
+    #  delete
+    list_del_frankenberg = [1034, 1036, 1035, 1033, 1027, 1031, 1028, 1032,
+                            1029, 1030, 1001]
+    list_del_huenefeld = [1001, 1005]
+    list_del_kronenberg = [1004, 1016, 1015, 1005]
+
+    list_preusweg_extract = [1092, 1079, 1094, 1097, 1098, 1036, 1048, 1109]
+    list_extract_tuerme = [1010, 1011, 1012, 1013]
+
+    #  Info Tuerme Rescale el. energy demand to 530 MWh (th. with 0.75 1/h)
 
     #  Pickle and dump city object instance?
     do_save = True
