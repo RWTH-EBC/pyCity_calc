@@ -369,8 +369,7 @@ class CityEBCalculator(object):
 
             # Get LHN network length
             list_lhn_weights = \
-                list(self.city.edges_iter(nbunch=list_lhn_build_ids,
-                                          data='weight'))
+                list(self.city.edges(nbunch=list_lhn_build_ids, data='weight'))
 
             #  Sum up weights to get total network lenght
             lhn_len = 0
