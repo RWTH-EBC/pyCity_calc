@@ -1050,7 +1050,8 @@ class calculator(object):
                 list_lhn = dict_city_data[index]['Buildings in subcity']
 
                 #  Get subgraph copy
-                graph_copy = copy.deepcopy(self.city_object.subgraph(list_lhn))
+                # graph_copy = copy.deepcopy(self.city_object.subgraph(list_lhn))
+                graph_copy = self.city_object.subgraph(list_lhn).copy()
 
                 #  Add weights to edges
                 netop.add_weights_to_edges(graph_copy)

@@ -304,7 +304,7 @@ def get_clusters_street(district, street_type='real_simple', n_max=10, side_stre
         start_intersec_edges = []
         triangle_intersec = []
         connect_dict = {}
-        for n,nbrdict in quarter.adjacency_iter():  # search in adjacency_iter for intersections
+        for n,nbrdict in quarter.adjacency():  # search in adjacency_iter for intersections
             adj_dict[n] = nbrdict   # general adjacency dictionary {node: {neighbor: {}}}
 
             if len(nbrdict) > 3:    # more than 3 edges at one node
@@ -702,7 +702,7 @@ def get_clusters_street(district, street_type='real_simple', n_max=10, side_stre
         intersectiondict = {}
         adj_dict = {}
         start_list = []
-        for n,nbrdict in quarter.adjacency_iter():  # search in adjacency_iter for intersections
+        for n,nbrdict in quarter.adjacency():  # search in adjacency_iter for intersections
             adj_dict[n] = nbrdict   # general adjacency dictionary {node: {neighbor: {}}}
             if len(nbrdict) >= 3:   # more than 3 edges at one node
                 intersectiondict[n] = nbrdict   # adjacency dictionary of intersection nodes

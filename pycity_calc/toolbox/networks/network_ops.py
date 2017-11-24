@@ -266,7 +266,7 @@ def sum_up_weights_of_edges(graph, network_type=None):
 
     if network_type is None:
         #  Sum up weight to total length of network
-        for n, nbrsdict in graph.adjacency_iter():
+        for n, nbrsdict in graph.adjacency():
             for nbr, eattr in nbrsdict.items():
                 if 'weight' in eattr:
                     length += eattr['weight']
@@ -279,7 +279,7 @@ def sum_up_weights_of_edges(graph, network_type=None):
         elif network_type == 'heating_and_deg':
             list_network_type = ['heating_and_deg']
 
-        for n, nbrsdict in graph.adjacency_iter():
+        for n, nbrsdict in graph.adjacency():
             for nbr, eattr in nbrsdict.items():
                 if 'weight' in eattr:
                     if 'network_type' in eattr:
@@ -1148,7 +1148,7 @@ def get_list_build_without_energy_network(city):
 
     for n in list_b_entities:
         #  Add all buildings without graph neighbours
-        if len(city.neighbors(n)) == 0:
+        if len(list(city.neighbors(n))) == 0:
             list_single_build.append(n)
         # If buildings are connected to graph, check network_type
         else:
