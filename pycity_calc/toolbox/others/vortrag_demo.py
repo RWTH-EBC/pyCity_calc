@@ -159,8 +159,8 @@ def run_demo():
 
     nb_buildings = 0
     for n in city.nodelist_building:
-        if 'entity' in city.node[n]:
-            if city.node[n]['entity']._kind == 'building':
+        if 'entity' in city.nodes[n]:
+            if city.nodes[n]['entity']._kind == 'building':
                 nb_buildings += 1
 
     print('Number of buildings: ', nb_buildings)
@@ -235,7 +235,7 @@ def run_demo():
     print('Give me some information about building 1001:')
     print('####################################################')
 
-    b_1140 = city.node[1001]['entity']
+    b_1140 = city.nodes[1001]['entity']
 
     print('Type of building: ')
     if b_1140.build_type == 0:

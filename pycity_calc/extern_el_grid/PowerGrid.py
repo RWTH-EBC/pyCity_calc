@@ -140,7 +140,7 @@ class PowerGrid(object):
 
         #   add network node
         node_number = self.node_number_at_bus[0]
-        new_point = point.Point(self.city_district.node[node_number]['position'].x+length_transformer, distance_feeders)
+        new_point = point.Point(self.city_district.nodes[node_number]['position'].x+length_transformer, distance_feeders)
         self.node_number_at_bus[1] = self.city_district.add_network_node(network_type='electricity',
                                                                          network_id=network_id,
                                                                          position=new_point)
@@ -162,10 +162,10 @@ class PowerGrid(object):
                 if self.line_lengths[1][n] > 0:
                     node_number = self.node_number_at_bus[1]
                     #   position of the next node
-                    pos_x = self.city_district.node[node_number]['position'].x + self.line_lengths[1][n]
+                    pos_x = self.city_district.nodes[node_number]['position'].x + self.line_lengths[1][n]
                     new_point = point.Point(pos_x,
-                                            self.city_district.node[node_number]['position'].y -
-                                            self.city_district.node[node_number]['position'].y * factor)
+                                            self.city_district.nodes[node_number]['position'].y -
+                                            self.city_district.nodes[node_number]['position'].y * factor)
                     #   add entity
                     self.node_number_at_bus[n] = self.city_district.addEntity(entity=self.building_list[next_building],
                                                                               position=new_point)
@@ -184,8 +184,8 @@ class PowerGrid(object):
                     if self.line_lengths[start][end] > 0:
                         node_number = self.node_number_at_bus[start]
                         #   position of node 'end' depending on position of node 'start'
-                        pos_x = self.city_district.node[node_number]['position'].x + self.line_lengths[start][end]
-                        new_point = point.Point(pos_x, self.city_district.node[node_number]['position'].y)
+                        pos_x = self.city_district.nodes[node_number]['position'].x + self.line_lengths[start][end]
+                        new_point = point.Point(pos_x, self.city_district.nodes[node_number]['position'].y)
                         #   add entity
                         self.node_number_at_bus[end] = \
                             self.city_district.addEntity(entity=self.building_list[next_building],
@@ -210,10 +210,10 @@ class PowerGrid(object):
                 if self.line_lengths[1][n] > 0:
                     node_number = self.node_number_at_bus[1]
                     #   position of the next node
-                    pos_x = self.city_district.node[node_number]['position'].x + self.line_lengths[1][n]
+                    pos_x = self.city_district.nodes[node_number]['position'].x + self.line_lengths[1][n]
                     new_point = point.Point(pos_x,
-                                            self.city_district.node[node_number]['position'].y -
-                                            self.city_district.node[node_number]['position'].y * factor)
+                                            self.city_district.nodes[node_number]['position'].y -
+                                            self.city_district.nodes[node_number]['position'].y * factor)
                     #   add network node
                     self.node_number_at_bus[n] = self.city_district.add_network_node(network_type='electricity',
                                                                                      network_id=network_id,
@@ -233,8 +233,8 @@ class PowerGrid(object):
                         #   busses with add bus numbers are entities
                         if end % 2 != 0:
                             #   position of node 'end' depending on position of node 'start'
-                            pos_y = self.city_district.node[node_number]['position'].y - self.line_lengths[start][end]
-                            new_point = point.Point(self.city_district.node[node_number]['position'].x, pos_y)
+                            pos_y = self.city_district.nodes[node_number]['position'].y - self.line_lengths[start][end]
+                            new_point = point.Point(self.city_district.nodes[node_number]['position'].x, pos_y)
                             #   add entity
                             self.node_number_at_bus[end] = \
                                 self.city_district.addEntity(entity=self.building_list[next_building],
@@ -249,9 +249,9 @@ class PowerGrid(object):
                             next_building += 1
                         else:
                             #   position of node 'end' depending on position of node 'start'
-                            pos_x = self.city_district.node[node_number]['position'].x + self.line_lengths[start][end]
+                            pos_x = self.city_district.nodes[node_number]['position'].x + self.line_lengths[start][end]
                             new_point = point.Point(pos_x,
-                                                    self.city_district.node[node_number]['position'].y)
+                                                    self.city_district.nodes[node_number]['position'].y)
                             #   add network node
                             self.node_number_at_bus[end] = \
                                 self.city_district.add_network_node(network_type='electricity',
@@ -309,10 +309,10 @@ class PowerGrid(object):
                 node_number = self.node_number_at_bus[curr_bus]
                 if node_number in self.city_district.node:
                     #   'node_type' == 'building' can be a 'building', 'pv' or 'windenergyconverter'
-                    if self.city_district.node[node_number]['node_type'] == 'building':
+                    if self.city_district.nodes[node_number]['node_type'] == 'building':
                         #   check if node is a building
-                        if self.city_district.node[node_number]['entity']._kind == 'building':
-                            building = self.city_district.node[node_number]['entity']
+                        if self.city_district.nodes[node_number]['entity']._kind == 'building':
+                            building = self.city_district.nodes[node_number]['entity']
                             #   value of 'get_electric_power_curve()' are in Watt; W/10^6=MW
                             #  TODO: Extend function to get 'building' residual load
                             power_curve = building.get_electric_power_curve()
@@ -465,13 +465,13 @@ class PowerGrid(object):
             node_number = self.node_number_at_bus[curr_bus[idx_bus.BUS_I]-1]
             if node_number in self.city_district.node:
                 #   voltage in [kV]
-                res_city_district.node[node_number]['voltage'][time_step] = curr_bus[idx_bus.VM]*curr_bus[idx_bus.BASE_KV]
+                res_city_district.nodes[node_number]['voltage'][time_step] = curr_bus[idx_bus.VM]*curr_bus[idx_bus.BASE_KV]
                 #   min voltage in [kV]
-                res_city_district.node[node_number]['min_voltage'][time_step] = curr_bus[idx_bus.VMIN]*curr_bus[idx_bus.BASE_KV]
+                res_city_district.nodes[node_number]['min_voltage'][time_step] = curr_bus[idx_bus.VMIN]*curr_bus[idx_bus.BASE_KV]
                 #   max voltage in [kV]
-                res_city_district.node[node_number]['max_voltage'][time_step] = curr_bus[idx_bus.VMAX]*curr_bus[idx_bus.BASE_KV]
+                res_city_district.nodes[node_number]['max_voltage'][time_step] = curr_bus[idx_bus.VMAX]*curr_bus[idx_bus.BASE_KV]
                 #   real power demand in [kW]
-                res_city_district.node[node_number]['real_power_demand'][time_step] = curr_bus[idx_bus.PD]*(10**3)
+                res_city_district.nodes[node_number]['real_power_demand'][time_step] = curr_bus[idx_bus.PD]*(10**3)
 
         #   add current at every electrical line
         for curr_brch in branch_results:
@@ -489,8 +489,8 @@ class PowerGrid(object):
                 start_number = self.node_number_at_bus[curr_brch[idx_brch.F_BUS]-1]
                 end_number = self.node_number_at_bus[curr_brch[idx_brch.T_BUS]-1]
                 #   current in [kA]
-                res_city_district.edge[start_number][end_number]['current'][time_step] = current_branch
-                res_city_district.edge[start_number][end_number]['max_current'][time_step] = curr_brch[idx_brch.RATE_A]/(np.sqrt(3)*curr_bus[idx_bus.BASE_KV])
+                res_city_district.edges[start_number, end_number]['current'][time_step] = current_branch
+                res_city_district.edges[start_number, end_number]['max_current'][time_step] = curr_brch[idx_brch.RATE_A]/(np.sqrt(3)*curr_bus[idx_bus.BASE_KV])
 
         #   add apparent power to transformer
         for curr_brch in branch_results:
@@ -502,8 +502,8 @@ class PowerGrid(object):
                 start_number = self.node_number_at_bus[curr_brch[idx_brch.F_BUS]-1]
                 end_number = self.node_number_at_bus[curr_brch[idx_brch.T_BUS]-1]
                 #   power in [MVA]
-                res_city_district.edge[start_number][end_number]['power'][time_step] = apparent_power
-                res_city_district.edge[start_number][end_number]['max_power'][time_step] = curr_brch[idx_brch.RATE_A]
+                res_city_district.edges[start_number, end_number]['power'][time_step] = apparent_power
+                res_city_district.edges[start_number, end_number]['max_power'][time_step] = curr_brch[idx_brch.RATE_A]
 
         return res_city_district
 
@@ -552,7 +552,7 @@ class PowerGrid(object):
             off_limit_v = False
             for curr_bus in self.bus:
                 node_number = self.node_number_at_bus[curr_bus[idx_bus.BUS_I]-1]
-                voltage = res_city_district.node[node_number]['voltage'][time_step]
+                voltage = res_city_district.nodes[node_number]['voltage'][time_step]
                 max_voltage = curr_bus[idx_bus.VMAX]*curr_bus[idx_bus.BASE_KV]
                 min_voltage = curr_bus[idx_bus.VMIN]*curr_bus[idx_bus.BASE_KV]
                 if voltage > max_voltage or voltage < min_voltage:
@@ -571,7 +571,7 @@ class PowerGrid(object):
                 if curr_branch[idx_brch.TAP] == 0:
                     f_node = self.node_number_at_bus[curr_branch[idx_brch.F_BUS]-1]
                     t_node = self.node_number_at_bus[curr_branch[idx_brch.T_BUS]-1]
-                    current_branch = res_city_district.edge[f_node][t_node]['current'][time_step]
+                    current_branch = res_city_district.edges[f_node, t_node]['current'][time_step]
                     for curr_bus in self.bus:
                         if curr_branch[idx_brch.F_BUS] == curr_bus[idx_bus.BUS_I]:
                             current_max = curr_branch[idx_brch.RATE_A]/(np.sqrt(3)*curr_bus[idx_bus.BASE_KV])
@@ -592,7 +592,7 @@ class PowerGrid(object):
                 if curr_brch[idx_brch.TAP] != 0:
                     f_node = self.node_number_at_bus[curr_brch[idx_brch.F_BUS]-1]
                     t_node = self.node_number_at_bus[curr_brch[idx_brch.T_BUS]-1]
-                    power = res_city_district.edge[f_node][t_node]['power'][time_step]
+                    power = res_city_district.edges[f_node, t_node]['power'][time_step]
                     if power > curr_brch[idx_brch.RATE_A]:
                         off_limit = True
                         off_limit_t = True
@@ -1257,13 +1257,13 @@ class PowerGrid(object):
             voltage_building = []
             voltage_network_node = []
             for node_number in res_city_district.node:
-                vol = res_city_district.node[node_number]['voltage'][time_step]
-                max_vol = res_city_district.node[node_number]['max_voltage'][time_step]
-                min_vol = res_city_district.node[node_number]['min_voltage'][time_step]
+                vol = res_city_district.nodes[node_number]['voltage'][time_step]
+                max_vol = res_city_district.nodes[node_number]['max_voltage'][time_step]
+                min_vol = res_city_district.nodes[node_number]['min_voltage'][time_step]
                 if vol > max_vol or vol < min_vol:
-                    if res_city_district.node[node_number]['node_type'] == 'building':
+                    if res_city_district.nodes[node_number]['node_type'] == 'building':
                         voltage_building.append(node_number)
-                    if res_city_district.node[node_number]['node_type'] == 'network_electricity':
+                    if res_city_district.nodes[node_number]['node_type'] == 'network_electricity':
                         voltage_network_node.append(node_number)
             scat_building = nx.draw_networkx_nodes(res_city_district,
                                                    pos=pos,
@@ -1283,7 +1283,7 @@ class PowerGrid(object):
             current = []
             for ed in res_city_district.edges():
                 #   ed is tuple e.g. (1002, 1003)
-                edge = res_city_district.edge[ed[0]][ed[1]]
+                edge = res_city_district.edges[ed[0], ed[1]]
                 if edge['network_type'] == 'electricity':
                     cur = edge['current'][time_step]
                     max_cur = edge['max_current'][time_step]
@@ -1299,7 +1299,7 @@ class PowerGrid(object):
             transformer = []
             for ed in res_city_district.edges():
                 #   ed is tuple e.g. (1002, 1003)
-                edge = res_city_district.edge[ed[0]][ed[1]]
+                edge = res_city_district.edges[ed[0], ed[1]]
                 if edge['network_type'] == 'transformer':
                     power = edge['power'][time_step]
                     max_power = edge['max_power'][time_step]

@@ -1394,7 +1394,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                     elif (sh_pow_remain + dhw_pow_remain) < q_nom_boi:
                         #  Use eh in part load
 
-                        boiler.calc_el_h_all_results(
+                        boiler.calc_boiler_all_results(
                             control_signal=(sh_pow_remain + dhw_pow_remain),
                             time_index=i)
 
@@ -2684,8 +2684,8 @@ if __name__ == '__main__':
                                                       merge_windows=merge_windows,
                                                       new_try=new_try)
 
-        city.node[1006]['entity'].bes.boiler.qNominal *= 5
-        city.node[1006]['entity'].bes.tes.capacity *= 5
+        city.nodes[1006]['entity'].bes.boiler.qNominal *= 5
+        city.nodes[1006]['entity'].bes.tes.capacity *= 5
 
         # Save new pickle file
         filename = 'city_clust_simple_with_esys.pkl'
@@ -2704,7 +2704,7 @@ if __name__ == '__main__':
     #  Get buiding 1007 (boiler, only)
     #  Add EH to test energy balance for boiler and eh without tes
     id = 1007
-    exbuild = city.node[id]['entity']
+    exbuild = city.nodes[id]['entity']
 
     eh = elheat.ElectricalHeaterExtended(environment=exbuild.environment,
                                          q_nominal=10000)
@@ -2735,7 +2735,7 @@ if __name__ == '__main__':
     #  Get buiding 1001 (CHP, boiler, tes)
     #  Add EH to test energy balance for CHP, boiler, EH with TES
     id = 1001
-    exbuild = city.node[id]['entity']
+    exbuild = city.nodes[id]['entity']
 
     # eh = elheat.ElectricalHeaterExtended(environment=exbuild.environment,
     #                                      q_nominal=10000)
@@ -2829,7 +2829,7 @@ if __name__ == '__main__':
     # #  ####################################################################
     #  Extract building 1008 (HP, EH, PV and TES)
     id = 1008
-    exbuild = city.node[id]['entity']
+    exbuild = city.nodes[id]['entity']
 
     #  Modify size of electrical heater
     exbuild.bes.electricalHeater.qNominal *= 1.5
@@ -2901,7 +2901,7 @@ if __name__ == '__main__':
     # #  ####################################################################
     #  Extract building 1008 (Boiler, TES, PV, Battery)
     id = 1006
-    exbuild = city.node[id]['entity']
+    exbuild = city.nodes[id]['entity']
 
     print('Capacity of TES in kg: ', exbuild.bes.tes.capacity)
 

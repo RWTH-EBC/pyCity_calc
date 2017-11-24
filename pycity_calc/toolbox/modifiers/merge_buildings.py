@@ -369,7 +369,7 @@ def merge_buildings_in_city(city, list_lists_merge):
         #  Extract building objects
         list_build = []
         for n in list_merge:
-            build = city_copy.node[n]['entity']
+            build = city_copy.nodes[n]['entity']
             list_build.append(build)
 
         # Generate new building entity
@@ -377,7 +377,7 @@ def merge_buildings_in_city(city, list_lists_merge):
                                         list_building_obj=list_build)
 
         #  Save building entity to first index / node id in list_merge
-        city_copy.node[list_merge[0]]['entity'] = new_build
+        city_copy.nodes[list_merge[0]]['entity'] = new_build
 
         #  Erase all remaining building nodes, which have been merged
         for i in range(len(list_merge)):
@@ -494,7 +494,7 @@ if __name__ == '__main__':
     # ######################################################################
 
     # #  Checker for comparison function
-    # city_object.node[1004]['entity'].build_year = None
+    # city_object.nodes[1004]['entity'].build_year = None
 
     #  Merge buildings together
     city_new = merge_buildings_in_city(city=city_object,

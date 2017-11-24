@@ -113,7 +113,7 @@ class CityAnnuityCalc(object):
         #  Get capital-related annuities per energy system unit
         #  ###################################################################
         for n in self._list_buildings:
-            build = self.energy_balance.city.node[n]['entity']
+            build = self.energy_balance.city.nodes[n]['entity']
             if build.hasBes:
 
                 #  BES pointer
@@ -285,14 +285,14 @@ class CityAnnuityCalc(object):
                     invest_lhn_trans += inv_unc * 5000
                 else:
                     for n in self.energy_balance.city.nodes():
-                        if 'node_type' in self.energy_balance.city.node[n]:
+                        if 'node_type' in self.energy_balance.city.nodes[n]:
                             #  If node_type is building
-                            if self.energy_balance.city.node[n][
+                            if self.energy_balance.city.nodes[n][
                                 'node_type'] == 'building':
                                 #  If entity is kind building
-                                if self.energy_balance.city.node[n][
+                                if self.energy_balance.city.nodes[n][
                                     'entity']._kind == 'building':
-                                    build = self.energy_balance.city.node[n][
+                                    build = self.energy_balance.city.nodes[n][
                                         'entity']
                                     th_pow = \
                                         dimfunc.get_max_power_of_building(build,
@@ -313,15 +313,14 @@ class CityAnnuityCalc(object):
                     for v in sublist:
                         if self.energy_balance.city.has_edge(u, v):
                             if 'network_type' in \
-                                    self.energy_balance.city.edge[u][
-                                        v]:
-                                if (self.energy_balance.city.edge[u][v][
+                                    self.energy_balance.city.edges[u, v]:
+                                if (self.energy_balance.city.edges[u, v][
                                         'network_type'] == 'heating' or
-                                            self.energy_balance.city.edge[u][
+                                            self.energy_balance.city.edges[u,
                                                 v][
                                                 'network_type'] == 'heating_and_deg'):
                                     #  Pointer to pipe (edge)
-                                    pipe = self.energy_balance.city.edge[u][v]
+                                    pipe = self.energy_balance.city.edges[u, v]
                                     d_i = pipe['d_i']
                                     length = pipe['weight']
 
@@ -371,12 +370,12 @@ class CityAnnuityCalc(object):
                 #  Get number of buildings within district
                 #  Defines the number of meters
                 for n in self.energy_balance.city.nodes():
-                    if 'node_type' in self.energy_balance.city.node[n]:
+                    if 'node_type' in self.energy_balance.city.nodes[n]:
                         #  If node_type is building
-                        if self.energy_balance.city.node[n][
+                        if self.energy_balance.city.nodes[n][
                             'node_type'] == 'building':
                             #  If entity is kind building
-                            if self.energy_balance.city.node[n][
+                            if self.energy_balance.city.nodes[n][
                                 'entity']._kind == 'building':
                                 nb_build += 1
 
@@ -388,17 +387,17 @@ class CityAnnuityCalc(object):
                     for v in sublist:
                         if self.energy_balance.city.has_edge(u, v):
                             if 'network_type' in \
-                                    self.energy_balance.city.edge[u][
+                                    self.energy_balance.city.edges[u,
                                         v]:
-                                if self.energy_balance.city.edge[u][v][
+                                if self.energy_balance.city.edges[u, v][
                                     'network_type'] == 'electricity':
                                     deg_len += \
-                                        self.energy_balance.city.edge[u][v][
+                                        self.energy_balance.city.edges[u, v][
                                             'weight']
-                                elif self.energy_balance.city.edge[u][v][
+                                elif self.energy_balance.city.edges[u, v][
                                     'network_type'] == 'heating_and_deg':
                                     deg_len_w_lhn += \
-                                        self.energy_balance.city.edge[u][v][
+                                        self.energy_balance.city.edges[u, v][
                                             'weight']
 
                 # Calculate deg investment cost for (sub-)deg
@@ -501,7 +500,7 @@ class CityAnnuityCalc(object):
         """
 
         #  Building pointer
-        build = self.energy_balance.city.node[id]['entity']
+        build = self.energy_balance.city.nodes[id]['entity']
 
         timestep = build.environment.timer.timeDiscretization
 
@@ -655,7 +654,7 @@ class CityAnnuityCalc(object):
         """
 
         #  Building pointer
-        build = self.energy_balance.city.node[id]['entity']
+        build = self.energy_balance.city.nodes[id]['entity']
 
         timestep = build.environment.timer.timeDiscretization
 

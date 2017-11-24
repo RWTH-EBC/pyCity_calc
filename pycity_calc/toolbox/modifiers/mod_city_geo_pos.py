@@ -129,8 +129,8 @@ def get_min_x_y_coord(city):
 
     #  Find min x and y coordinate
     for n in city.nodes():
-        x_curr = city.node[n]['position'].x
-        y_curr = city.node[n]['position'].y
+        x_curr = city.nodes[n]['position'].x
+        y_curr = city.nodes[n]['position'].y
 
         if x_min is None or x_min > x_curr:
             x_min = x_curr
@@ -160,7 +160,7 @@ def set_zero_coordinate(city, buffer=10):
     """
 
     for n in city.nodes():
-        if 'position' not in city.node[n]:
+        if 'position' not in city.nodes[n]:
             msg = str('Error: No position attribute on node ' + str(n))
             raise AssertionError(msg)
 
@@ -176,14 +176,14 @@ def set_zero_coordinate(city, buffer=10):
 
     # Convert every point position
     for n in city.nodes():
-        x_new = city.node[n]['position'].x - x_min
-        y_new = city.node[n]['position'].y - y_min
+        x_new = city.nodes[n]['position'].x - x_min
+        y_new = city.nodes[n]['position'].y - y_min
 
         #  Generate new point
         point_new = point.Point(x_new, y_new)
 
         #  Overwrite point
-        city.node[n]['position'] = point_new
+        city.nodes[n]['position'] = point_new
 
 
 if __name__ == '__main__':

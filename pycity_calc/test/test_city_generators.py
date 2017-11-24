@@ -79,10 +79,10 @@ class Test_City_Generators():
         assert city.get_nb_of_building_entities() == 12
         assert len(city.nodes()) == 12
 
-        assert city.node[1004]['position'].x == 10
-        assert city.node[1004]['position'].y == 70
+        assert city.nodes[1004]['position'].x == 10
+        assert city.nodes[1004]['position'].y == 70
 
-        build_4 = city.node[1004]['entity']
+        build_4 = city.nodes[1004]['entity']
 
         assert build_4._kind == 'building'
         assert build_4.get_number_of_apartments() == 1
@@ -108,10 +108,10 @@ class Test_City_Generators():
         assert city.get_nb_of_building_entities() == 12
         assert len(city.nodes()) == 12 + 6
 
-        assert city.node[1018]['position'].x == 40
-        assert city.node[1018]['position'].y == 0
+        assert city.nodes[1018]['position'].x == 40
+        assert city.nodes[1018]['position'].y == 0
 
-        assert city.edge[1017][1018]['network_type'] == 'street'
+        assert city.edges[1017, 1018]['network_type'] == 'street'
 
         #  Load energy networks planing data
         dict_e_net_data = enetgen.load_en_network_input_data(network_path)
@@ -125,9 +125,9 @@ class Test_City_Generators():
         assert city.get_nb_of_building_entities() == 12
         assert len(city.nodes()) == 12 + 6
 
-        assert city.edge[1002][1003]['network_type'] == 'heating'
-        assert city.edge[1010][1011]['network_type'] == 'heating_and_deg'
-        assert city.edge[1006][1007]['network_type'] == 'electricity'
+        assert city.edges[1002, 1003]['network_type'] == 'heating'
+        assert city.edges[1010, 1011]['network_type'] == 'heating_and_deg'
+        assert city.edges[1006, 1007]['network_type'] == 'electricity'
 
         #  Load energy networks planing data
         list_esys = esysgen.load_enersys_input_data(esys_path)
@@ -139,11 +139,11 @@ class Test_City_Generators():
         assert city.get_nb_of_building_entities() == 12
         assert len(city.nodes()) == 12 + 6
 
-        build_1001 = city.node[1001]['entity']
-        build_1006 = city.node[1006]['entity']
-        build_1007 = city.node[1007]['entity']
-        build_1008 = city.node[1008]['entity']
-        build_1012 = city.node[1012]['entity']
+        build_1001 = city.nodes[1001]['entity']
+        build_1006 = city.nodes[1006]['entity']
+        build_1007 = city.nodes[1007]['entity']
+        build_1008 = city.nodes[1008]['entity']
+        build_1012 = city.nodes[1012]['entity']
 
         assert build_1001.bes.hasChp == True
         assert build_1001.bes.hasBoiler == True
@@ -222,11 +222,11 @@ class Test_City_Generators():
         assert city.get_nb_of_building_entities() == 12
         assert len(city.nodes()) == 12
 
-        assert city.node[1004]['position'].x == 10
-        assert city.node[1004]['position'].y == 70
+        assert city.nodes[1004]['position'].x == 10
+        assert city.nodes[1004]['position'].y == 70
 
-        build_1 = city.node[1001]['entity']
-        build_4 = city.node[1004]['entity']
+        build_1 = city.nodes[1001]['entity']
+        build_4 = city.nodes[1004]['entity']
 
         assert build_4._kind == 'building'
         assert build_4.get_number_of_apartments() == 1

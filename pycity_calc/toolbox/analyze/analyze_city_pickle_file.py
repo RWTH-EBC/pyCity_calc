@@ -64,18 +64,18 @@ def get_nb_build_nodes_and_entities(city, print_out=False):
 
     for n in city.nodes():
 
-        if 'node_type' in city.node[n]:
-            if city.node[n]['node_type'] == 'building':
+        if 'node_type' in city.nodes[n]:
+            if city.nodes[n]['node_type'] == 'building':
 
-                if 'entity' in city.node[n]:
+                if 'entity' in city.nodes[n]:
 
-                    if city.node[n]['entity']._kind == 'building':
+                    if city.nodes[n]['entity']._kind == 'building':
                         nb_buildings += 1
 
-                    if (city.node[n]['entity']._kind == 'building' or
-                                city.node[n][
+                    if (city.nodes[n]['entity']._kind == 'building' or
+                                city.nodes[n][
                                     'entity']._kind == 'windenergyconverter' or
-                                city.node[n]['entity']._kind == 'pv'):
+                                city.nodes[n]['entity']._kind == 'pv'):
                         nb_b_nodes += 1
 
     if print_out:  # pragma: no cover
@@ -254,14 +254,14 @@ def get_mod_year_hist(city, plot_hist=True, facecolor='#EC635C',
     list_mod_years = []
 
     for n in city.nodes():
-        if 'node_type' in city.node[n]:
-            if city.node[n]['node_type'] == 'building':
-                if 'entity' in city.node[n]:
-                    if city.node[n]['entity']._kind == 'building':
+        if 'node_type' in city.nodes[n]:
+            if city.nodes[n]['node_type'] == 'building':
+                if 'entity' in city.nodes[n]:
+                    if city.nodes[n]['entity']._kind == 'building':
 
-                        if city.node[n]['entity'].mod_year is not None:
+                        if city.nodes[n]['entity'].mod_year is not None:
 
-                            mod_year = city.node[n]['entity'].mod_year
+                            mod_year = city.nodes[n]['entity'].mod_year
 
                             list_mod_years.append(mod_year)
 
@@ -369,15 +369,15 @@ def check_kfw_standard_city(city, kfw=40, pe_gas=1.1, eff_boiler=0.9):
 
     for n in city.nodes():
 
-        if 'node_type' in city.node[n]:
-            if city.node[n]['node_type'] == 'building':
+        if 'node_type' in city.nodes[n]:
+            if city.nodes[n]['node_type'] == 'building':
 
-                if 'entity' in city.node[n]:
+                if 'entity' in city.nodes[n]:
 
-                    if city.node[n]['entity']._kind == 'building':
+                    if city.nodes[n]['entity']._kind == 'building':
 
                         #  Define pointer to building
-                        build = city.node[n]['entity']
+                        build = city.nodes[n]['entity']
 
                         #  Specific primary energy demand per building
                         #  in kWh/m2*a
@@ -731,15 +731,15 @@ def check_city_consinstency(city, check_sh=True, check_el=True,
 
     for n in city.nodes():
 
-        if 'node_type' in city.node[n]:
-            if city.node[n]['node_type'] == 'building':
+        if 'node_type' in city.nodes[n]:
+            if city.nodes[n]['node_type'] == 'building':
 
-                if 'entity' in city.node[n]:
+                if 'entity' in city.nodes[n]:
 
-                    if city.node[n]['entity']._kind == 'building':
+                    if city.nodes[n]['entity']._kind == 'building':
 
                         #  Define pointer to building
-                        build = city.node[n]['entity']
+                        build = city.nodes[n]['entity']
 
                         #  Process building analysis
                         is_consistent = \
@@ -757,8 +757,8 @@ def check_city_consinstency(city, check_sh=True, check_el=True,
 
                         if check_typebuilding:
                             found_t_build = False
-                            if 'type_building' in city.node[n]:
-                                if city.node[n]['node_type'] is not None:
+                            if 'type_building' in city.nodes[n]:
+                                if city.nodes[n]['node_type'] is not None:
                                     found_t_build = True
                             if found_t_build is False:
                                 msg = 'Building node ' + str(n) + ' has no' \
@@ -943,7 +943,7 @@ if __name__ == '__main__':
 
     #  Save load curves to file
     #  ###################################################################
-    # build_1 = city.node[1001]['entity']
+    # build_1 = city.nodes[1001]['entity']
     #
     # space_h_load = build_1.get_space_heating_power_curve()
     # el_load = build_1.get_electric_power_curve()

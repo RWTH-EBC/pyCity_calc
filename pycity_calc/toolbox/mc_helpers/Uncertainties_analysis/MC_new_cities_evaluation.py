@@ -170,7 +170,7 @@ def new_city_evaluation_monte_carlo(ref_City, dict_sample):
         dict_city_pb[str(buildnb)]['nb_occ'] = []
 
        # get dictionnary of max thermal power for lhn cost calculation
-        th_pow_ref[str(buildnb)] = max(City.node[buildnb]['entity'].get_space_heating_power_curve())
+        th_pow_ref[str(buildnb)] = max(City.nodes[buildnb]['entity'].get_space_heating_power_curve())
 
     for loop in range (Nloop):
 
@@ -447,8 +447,8 @@ def MC_new_city_generation (City, new_weather, max_retro_year=2014, time_sp_forc
     # #######################################################################
 
     for build in list_building:
-        City.node[build]['entity'], dict_problem, el_demand, dhw_energy, sum_heat = \
-            newB.new_building_evaluation_mc(City.node[build]['entity'], new_weather=new_weather_list,
+        City.nodes[build]['entity'], dict_problem, el_demand, dhw_energy, sum_heat = \
+            newB.new_building_evaluation_mc(City.nodes[build]['entity'], new_weather=new_weather_list,
                                                 max_retro_year=max_retro_year, time_sp_force_retro=time_sp_force_retro,
                                                 build_physic_unc=build_physic_unc, MC_analysis=MC_analysis,
                                                 nb_occ_unc=nb_occ_unc)
@@ -748,36 +748,36 @@ def MC_EBB_calc (City):
         list_of_building = City.get_list_build_entity_node_ids()
         for build in list_of_building:
             # Start try to rescale boiler or EH
-            if City.node[build]['entity'].bes.hasBoiler == True:
-                City.node[build]['entity'].bes.boiler.lowerActivationLimit = 0
+            if City.nodes[build]['entity'].bes.hasBoiler == True:
+                City.nodes[build]['entity'].bes.boiler.lowerActivationLimit = 0
                 Lal_rescaled = True
 
                 print()
                 print('Rescale LAl boiler')
-                print('new boiler Lal kW: ', City.node[build]['entity'].bes.boiler.lowerActivationLimit)
+                print('new boiler Lal kW: ', City.nodes[build]['entity'].bes.boiler.lowerActivationLimit)
                 print()
 
-            if City.node[build]['entity'].bes.hasBoiler == True:
-                City.node[build]['entity'].bes.boiler.qNominal = \
-                City.node[build]['entity'].bes.boiler.qNominal * 1.1 / City.node[build]['entity'].bes.boiler.eta
+            if City.nodes[build]['entity'].bes.hasBoiler == True:
+                City.nodes[build]['entity'].bes.boiler.qNominal = \
+                City.nodes[build]['entity'].bes.boiler.qNominal * 1.1 / City.nodes[build]['entity'].bes.boiler.eta
 
                 # rescale_boiler_small = True
 
                 print()
                 print('Rescale boiler first round 10%')
-                print('new boiler capacity kW: ', City.node[build]['entity'].bes.boiler.qNominal / 1000)
+                print('new boiler capacity kW: ', City.nodes[build]['entity'].bes.boiler.qNominal / 1000)
                 print()
 
-            if City.node[build]['entity'].bes.hasElectricalHeater == True:
-                City.node[build]['entity'].bes.electricalHeater.qNominal = \
-                    City.node[build]['entity'].bes.electricalHeater.qNominal * 1.1 \
-                    / City.node[build]['entity'].bes.electricalHeater.eta
+            if City.nodes[build]['entity'].bes.hasElectricalHeater == True:
+                City.nodes[build]['entity'].bes.electricalHeater.qNominal = \
+                    City.nodes[build]['entity'].bes.electricalHeater.qNominal * 1.1 \
+                    / City.nodes[build]['entity'].bes.electricalHeater.eta
 
                 Rescale_eh_first_time = True
 
                 print()
                 print('Rescale EH first round 10%')
-                print('new EH capacity kW: ', City.node[build]['entity'].bes.electricalHeater.qNominal / 1000)
+                print('new EH capacity kW: ', City.nodes[build]['entity'].bes.electricalHeater.qNominal / 1000)
                 print()
 
         # Do another time EBB
@@ -792,35 +792,35 @@ def MC_EBB_calc (City):
                 list_of_building = City.get_list_build_entity_node_ids()
                 for build in list_of_building:
                     # Rescal Boiler capacity
-                    if City.node[build]['entity'].bes.hasBoiler == True:
-                        City.node[build]['entity'].bes.boiler.qNominal = \
-                            City.node[build]['entity'].bes.boiler.qNominal * 1.2
+                    if City.nodes[build]['entity'].bes.hasBoiler == True:
+                        City.nodes[build]['entity'].bes.boiler.qNominal = \
+                            City.nodes[build]['entity'].bes.boiler.qNominal * 1.2
 
                         rescale_boiler_second_time = True
 
                         print()
                         print('Rescale boiler second round ')
-                        print('new boiler capacity kW: ', City.node[build]['entity'].bes.boiler.qNominal / 1000)
+                        print('new boiler capacity kW: ', City.nodes[build]['entity'].bes.boiler.qNominal / 1000)
                         print()
 
                     # Rescal TES capacity
-                    if City.node[build]['entity'].bes.hasTes == True:
-                        City.node[build]['entity'].bes.tes.capacity = City.node[build]['entity'].bes.tes.capacity * 1.1
+                    if City.nodes[build]['entity'].bes.hasTes == True:
+                        City.nodes[build]['entity'].bes.tes.capacity = City.nodes[build]['entity'].bes.tes.capacity * 1.1
 
                         print()
                         print('Rescale Tes first round 10%')
-                        print('new Tes capacity kg: ', City.node[build]['entity'].bes.tes.capacity)
+                        print('new Tes capacity kg: ', City.nodes[build]['entity'].bes.tes.capacity)
                         print()
 
-                    if City.node[build]['entity'].bes.hasElectricalHeater == True:
-                        City.node[build]['entity'].bes.electricalHeater.qNominal = \
-                            City.node[build]['entity'].bes.electricalHeater.qNominal * 1.2
+                    if City.nodes[build]['entity'].bes.hasElectricalHeater == True:
+                        City.nodes[build]['entity'].bes.electricalHeater.qNominal = \
+                            City.nodes[build]['entity'].bes.electricalHeater.qNominal * 1.2
 
                         rescale_eh_second_time = True
 
                         print()
                         print('Rescale EH for the second time 20%')
-                        print('new EH capacity kW: ', City.node[build]['entity'].bes.electricalHeater.qNominal / 1000)
+                        print('new EH capacity kW: ', City.nodes[build]['entity'].bes.electricalHeater.qNominal / 1000)
                         print()
 
                 # Do another time EBB
@@ -835,26 +835,26 @@ def MC_EBB_calc (City):
                         list_of_building = City.get_list_build_entity_node_ids()
                         for build in list_of_building:
                             # Rescal Boiler capacity
-                            if City.node[build]['entity'].bes.hasBoiler == True:
-                                City.node[build]['entity'].bes.boiler.qNominal = City.node[build][
+                            if City.nodes[build]['entity'].bes.hasBoiler == True:
+                                City.nodes[build]['entity'].bes.boiler.qNominal = City.nodes[build][
                                                                                  'entity'].bes.boiler.qNominal * 1.5
 
                                 rescale_boiler_third_time = True
                                 print()
                                 print('Rescale boiler third time: 50%')
-                                print('new boiler capacity kW: ', City.node[build]['entity'].bes.boiler.qNominal / 1000)
+                                print('new boiler capacity kW: ', City.nodes[build]['entity'].bes.boiler.qNominal / 1000)
                                 print()
 
-                            if City.node[build]['entity'].bes.hasElectricalHeater == True:
-                                City.node[build]['entity'].bes.electricalHeater.qNominal = \
-                                    City.node[build]['entity'].bes.electricalHeater.qNominal * 1.5
+                            if City.nodes[build]['entity'].bes.hasElectricalHeater == True:
+                                City.nodes[build]['entity'].bes.electricalHeater.qNominal = \
+                                    City.nodes[build]['entity'].bes.electricalHeater.qNominal * 1.5
 
                                 Rescal_eh_third_time = True
 
                                 print()
                                 print('Rescale EH for the third time 50%')
                                 print('new EH capacity kW: ',
-                                      City.node[build]['entity'].bes.electricalHeater.qNominal / 1000)
+                                      City.nodes[build]['entity'].bes.electricalHeater.qNominal / 1000)
                                 print()
 
                         # Do another time EBB
@@ -870,29 +870,29 @@ def MC_EBB_calc (City):
                                 for build in list_of_building:
 
                                     # Rescal TES capacity
-                                    if City.node[build]['entity'].bes.hasTes == True:
-                                        City.node[build]['entity'].bes.tes.capacity = City.node[build][
+                                    if City.nodes[build]['entity'].bes.hasTes == True:
+                                        City.nodes[build]['entity'].bes.tes.capacity = City.nodes[build][
                                                                                           'entity'].bes.tes.capacity * 100000
 
                                         print()
                                         print('Rescale Tes totally')
-                                        print('new Tes capacity kg: ', City.node[build]['entity'].bes.tes.capacity)
+                                        print('new Tes capacity kg: ', City.nodes[build]['entity'].bes.tes.capacity)
                                         print()
 
                                         Rescaled_tes = True
 
                                     # Rescal Boiler capacity
-                                    if City.node[build]['entity'].bes.hasBoiler == True:
-                                        City.node[build]['entity'].bes.boiler.qNominal = \
-                                            City.node[build]['entity'].bes.boiler.qNominal * 10
+                                    if City.nodes[build]['entity'].bes.hasBoiler == True:
+                                        City.nodes[build]['entity'].bes.boiler.qNominal = \
+                                            City.nodes[build]['entity'].bes.boiler.qNominal * 10
 
-                                    if City.node[build]['entity'].bes.hasElectricalHeater == True:
-                                        City.node[build]['entity'].bes.electricalHeater.qNominal = \
-                                            City.node[build]['entity'].bes.electricalHeater.qNominal * 10
+                                    if City.nodes[build]['entity'].bes.hasElectricalHeater == True:
+                                        City.nodes[build]['entity'].bes.electricalHeater.qNominal = \
+                                            City.nodes[build]['entity'].bes.electricalHeater.qNominal * 10
 
                                         print()
                                         print('Rescale EH totally')
-                                        print('new EH capacity kW: ',City.node[build]['entity'].bes.electricalHeater.qNominal / 1000)
+                                        print('new EH capacity kW: ',City.nodes[build]['entity'].bes.electricalHeater.qNominal / 1000)
                                         print()
 
                                 # Do another time EBB
@@ -908,37 +908,37 @@ def MC_EBB_calc (City):
         list_of_building = City.get_list_build_entity_node_ids()
         for build in list_of_building:
             # Start try to rescale boiler or EH
-            if City.node[build]['entity'].bes.hasBoiler == True:
-                City.node[build]['entity'].bes.boiler.lowerActivationLimit = 0
+            if City.nodes[build]['entity'].bes.hasBoiler == True:
+                City.nodes[build]['entity'].bes.boiler.lowerActivationLimit = 0
                 Lal_rescaled = True
 
                 print()
                 print('Rescale LAl boiler')
-                print('new boiler Lal kW: ', City.node[build]['entity'].bes.boiler.lowerActivationLimit )
+                print('new boiler Lal kW: ', City.nodes[build]['entity'].bes.boiler.lowerActivationLimit )
                 print()
 
 
-            if City.node[build]['entity'].bes.hasBoiler == True:
-                City.node[build]['entity'].bes.boiler.qNominal = \
-                    City.node[build]['entity'].bes.boiler.qNominal * 1.1/City.node[build]['entity'].bes.boiler.eta
+            if City.nodes[build]['entity'].bes.hasBoiler == True:
+                City.nodes[build]['entity'].bes.boiler.qNominal = \
+                    City.nodes[build]['entity'].bes.boiler.qNominal * 1.1/City.nodes[build]['entity'].bes.boiler.eta
 
                 #rescale_boiler_small = True
 
                 print()
                 print('Rescale boiler first round 10%')
-                print('new boiler capacity kW: ', City.node[build]['entity'].bes.boiler.qNominal / 1000)
+                print('new boiler capacity kW: ', City.nodes[build]['entity'].bes.boiler.qNominal / 1000)
                 print()
 
-            if City.node[build]['entity'].bes.hasElectricalHeater == True:
-                City.node[build]['entity'].bes.electricalHeater.qNominal =\
-                    City.node[build]['entity'].bes.electricalHeater.qNominal*1.1\
-                    /City.node[build]['entity'].bes.electricalHeater.eta
+            if City.nodes[build]['entity'].bes.hasElectricalHeater == True:
+                City.nodes[build]['entity'].bes.electricalHeater.qNominal =\
+                    City.nodes[build]['entity'].bes.electricalHeater.qNominal*1.1\
+                    /City.nodes[build]['entity'].bes.electricalHeater.eta
 
                 Rescal_eh_third_time = True
 
                 print()
                 print('Rescale EH first round 10%')
-                print('new EH capacity kW: ', City.node[build]['entity'].bes.electricalHeater.qNominal / 1000)
+                print('new EH capacity kW: ', City.nodes[build]['entity'].bes.electricalHeater.qNominal / 1000)
                 print()
 
         # Do another time EBB
@@ -953,36 +953,36 @@ def MC_EBB_calc (City):
                 list_of_building = City.get_list_build_entity_node_ids()
                 for build in list_of_building:
                     # Rescal Boiler capacity
-                    if City.node[build]['entity'].bes.hasBoiler == True:
-                        City.node[build]['entity'].bes.boiler.qNominal = \
-                            City.node[build]['entity'].bes.boiler.qNominal*1.2
+                    if City.nodes[build]['entity'].bes.hasBoiler == True:
+                        City.nodes[build]['entity'].bes.boiler.qNominal = \
+                            City.nodes[build]['entity'].bes.boiler.qNominal*1.2
 
                         rescale_boiler_second_time = True
 
                         print()
                         print('Rescale boiler second round ')
-                        print('new boiler capacity kW: ', City.node[build]['entity'].bes.boiler.qNominal / 1000)
+                        print('new boiler capacity kW: ', City.nodes[build]['entity'].bes.boiler.qNominal / 1000)
                         print()
 
                     # Rescal TES capacity
-                    if City.node[build]['entity'].bes.hasTes == True:
-                        City.node[build]['entity'].bes.tes.capacity = City.node[build]['entity'].bes.tes.capacity * 1.1
+                    if City.nodes[build]['entity'].bes.hasTes == True:
+                        City.nodes[build]['entity'].bes.tes.capacity = City.nodes[build]['entity'].bes.tes.capacity * 1.1
 
                         print()
                         print('Rescale Tes first round 10%')
-                        print('new Tes capacity kg: ', City.node[build]['entity'].bes.tes.capacity)
+                        print('new Tes capacity kg: ', City.nodes[build]['entity'].bes.tes.capacity)
                         print()
 
 
-                    if City.node[build]['entity'].bes.hasElectricalHeater == True:
-                        City.node[build]['entity'].bes.electricalHeater.qNominal = \
-                            City.node[build]['entity'].bes.electricalHeater.qNominal * 1.2
+                    if City.nodes[build]['entity'].bes.hasElectricalHeater == True:
+                        City.nodes[build]['entity'].bes.electricalHeater.qNominal = \
+                            City.nodes[build]['entity'].bes.electricalHeater.qNominal * 1.2
 
                         rescale_eh_second_time = True
 
                         print()
                         print('Rescale EH for the second time 20%')
-                        print('new EH capacity kW: ', City.node[build]['entity'].bes.electricalHeater.qNominal / 1000)
+                        print('new EH capacity kW: ', City.nodes[build]['entity'].bes.electricalHeater.qNominal / 1000)
                         print()
 
                 # Do another time EBB
@@ -997,25 +997,25 @@ def MC_EBB_calc (City):
                         list_of_building = City.get_list_build_entity_node_ids()
                         for build in list_of_building:
                             # Rescal Boiler capacity
-                            if City.node[build]['entity'].bes.hasBoiler == True:
-                                City.node[build]['entity'].bes.boiler.qNominal = City.node[build]['entity'].bes.boiler.qNominal*1.5
+                            if City.nodes[build]['entity'].bes.hasBoiler == True:
+                                City.nodes[build]['entity'].bes.boiler.qNominal = City.nodes[build]['entity'].bes.boiler.qNominal*1.5
 
                                 rescale_boiler_third_time = True
                                 print()
                                 print('Rescale boiler third time: 50%')
-                                print('new boiler capacity kW: ', City.node[build]['entity'].bes.boiler.qNominal / 1000)
+                                print('new boiler capacity kW: ', City.nodes[build]['entity'].bes.boiler.qNominal / 1000)
                                 print()
 
-                            if City.node[build]['entity'].bes.hasElectricalHeater == True:
-                                City.node[build]['entity'].bes.electricalHeater.qNominal = \
-                                    City.node[build]['entity'].bes.electricalHeater.qNominal * 1.5
+                            if City.nodes[build]['entity'].bes.hasElectricalHeater == True:
+                                City.nodes[build]['entity'].bes.electricalHeater.qNominal = \
+                                    City.nodes[build]['entity'].bes.electricalHeater.qNominal * 1.5
 
                                 rescale_boiler_third_time = True
 
                                 print()
                                 print('Rescale EH for the third time 50%')
                                 print('new EH capacity kW: ',
-                                      City.node[build]['entity'].bes.electricalHeater.qNominal / 1000)
+                                      City.nodes[build]['entity'].bes.electricalHeater.qNominal / 1000)
                                 print()
 
                         # Do another time EBB
@@ -1031,31 +1031,31 @@ def MC_EBB_calc (City):
                                 for build in list_of_building:
 
                                     # Rescal TES capacity
-                                    if City.node[build]['entity'].bes.hasTes == True:
-                                        City.node[build]['entity'].bes.tes.capacity = City.node[build][
+                                    if City.nodes[build]['entity'].bes.hasTes == True:
+                                        City.nodes[build]['entity'].bes.tes.capacity = City.nodes[build][
                                                                                           'entity'].bes.tes.capacity * 100000
 
                                         print()
                                         print('Rescale Tes totally')
-                                        print('new Tes capacity kg: ',City.node[build]['entity'].bes.tes.capacity)
+                                        print('new Tes capacity kg: ',City.nodes[build]['entity'].bes.tes.capacity)
                                         print()
 
                                         Rescaled_tes = True
 
                                     # Rescal Boiler capacity
-                                    if City.node[build]['entity'].bes.hasBoiler == True:
-                                        City.node[build]['entity'].bes.boiler.qNominal = \
-                                            City.node[build]['entity'].bes.boiler.qNominal * 10
+                                    if City.nodes[build]['entity'].bes.hasBoiler == True:
+                                        City.nodes[build]['entity'].bes.boiler.qNominal = \
+                                            City.nodes[build]['entity'].bes.boiler.qNominal * 10
 
-                                    if City.node[build]['entity'].bes.hasElectricalHeater == True:
-                                        City.node[build]['entity'].bes.electricalHeater.qNominal = \
-                                            City.node[build]['entity'].bes.electricalHeater.qNominal * 10
+                                    if City.nodes[build]['entity'].bes.hasElectricalHeater == True:
+                                        City.nodes[build]['entity'].bes.electricalHeater.qNominal = \
+                                            City.nodes[build]['entity'].bes.electricalHeater.qNominal * 10
 
 
                                         print()
                                         print('Rescale EH totally')
                                         print('new EH capacity kW: ',
-                                              City.node[build]['entity'].bes.electricalHeater.qNominal / 1000)
+                                              City.nodes[build]['entity'].bes.electricalHeater.qNominal / 1000)
                                         print()
 
                                 # Do another time EBB
@@ -1073,36 +1073,36 @@ def MC_EBB_calc (City):
     chp_sold = 0
 
     for n in City.nodes():
-        if 'node_type' in City.node[n]:
+        if 'node_type' in City.nodes[n]:
             #  If node_type is building
-            if City.node[n]['node_type'] == 'building':
+            if City.nodes[n]['node_type'] == 'building':
                 #  If entity is kind building
-                if City.node[n]['entity']._kind == 'building':
-                    if 'electrical demand' in City.node[n]:
-                        el_dem += sum(City.node[n]['electrical demand']) *\
+                if City.nodes[n]['entity']._kind == 'building':
+                    if 'electrical demand' in City.nodes[n]:
+                        el_dem += sum(City.nodes[n]['electrical demand']) *\
                                   City.environment.timer.timeDiscretization / 1000 / 3600
 
-                    if 'fuel demand' in City.node[n]:
-                        gas_dem += sum(City.node[n]['fuel demand']) * \
+                    if 'fuel demand' in City.nodes[n]:
+                        gas_dem += sum(City.nodes[n]['fuel demand']) * \
                                    City.environment.timer.timeDiscretization / 1000 / 3600
 
 
-                    if 'pv_used_self' in City.node[n]:
-                        pv_used_self += sum(City.node[n]['pv_used_self']) * \
+                    if 'pv_used_self' in City.nodes[n]:
+                        pv_used_self += sum(City.nodes[n]['pv_used_self']) * \
                                    City.environment.timer.timeDiscretization / 1000 / 3600
 
 
-                    if 'pv_sold' in City.node[n]:
-                        pv_sold += sum(City.node[n]['pv_sold']) * \
+                    if 'pv_sold' in City.nodes[n]:
+                        pv_sold += sum(City.nodes[n]['pv_sold']) * \
                                    City.environment.timer.timeDiscretization / 1000 / 3600
 
-                    if 'chp_used_self' in City.node[n]:
-                        chp_self_used += sum(City.node[n]['pv_used_self']) * \
+                    if 'chp_used_self' in City.nodes[n]:
+                        chp_self_used += sum(City.nodes[n]['pv_used_self']) * \
                                    City.environment.timer.timeDiscretization / 1000 / 3600
 
 
-                    if 'chp_sold' in City.node[n]:
-                        chp_sold += sum(City.node[n]['pv_sold']) * \
+                    if 'chp_sold' in City.nodes[n]:
+                        chp_sold += sum(City.nodes[n]['pv_sold']) * \
                                    City.environment.timer.timeDiscretization / 1000 / 3600
 
     return el_dem, gas_dem, Lal_rescaled, rescale_boiler_second_time, rescale_boiler_third_time, Rescaled_tes, \
@@ -1181,12 +1181,12 @@ if __name__ == '__main__':
     #print (edge_list)
 
     #for key in city.node:
-        #for key2 in city.node[key]:
-            #print(key2, '--', city.node[key][key2])
+        #for key2 in city.nodes[key]:
+            #print(key2, '--', city.nodes[key][key2])
 
     #for key in city.edge:
-        #for key2 in city.edge[key]:
-            #print(key2, '--', city.edge[key][key2])
+        #for key2 in city.edges[key]:
+            #print(key2, '--', city.edges[key, key2])
 
     dict_pam = {}
     dict_pam['Nsamples'] = nb_samples

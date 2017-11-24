@@ -240,9 +240,9 @@ def run_city_generator(list_types=['BTES'],year = 2010,
 
         if PVarea[i] > 0:
             # Create PV
-            if city_object.node[node]['entity'].roof_usabl_pv_area < PVarea[i]:
+            if city_object.nodes[node]['entity'].roof_usabl_pv_area < PVarea[i]:
                 # Check if there is enough roof area for PV, if not set PV area to maximum roof area
-                PVarea[i] = city_object.node[node]['entity'].roof_usabl_pv_area
+                PVarea[i] = city_object.nodes[node]['entity'].roof_usabl_pv_area
             pv_simple = PV.PV(environment, PVarea[i], eta=0.9, beta=0)
             bes.addDevice(pv_simple)
             # TODO: eta and beta must be set properly

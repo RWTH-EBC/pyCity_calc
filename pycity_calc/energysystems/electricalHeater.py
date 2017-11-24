@@ -4,6 +4,7 @@
 Extended electricalHeater class (based on electricalHeater object of pycity)
 """
 from __future__ import division
+
 import pycity_base.classes.supply.ElectricalHeater as EHeat
 import warnings
 
@@ -82,7 +83,8 @@ class ElectricalHeaterExtended(EHeat.ElectricalHeater):
             warnings.warn('Control signal for electrical heater' + str(self) +
                           'is negative. Output is defined as zero.')
             control_signal = 0
-        elif control_signal < self.lowerActivationLimit * self.qNominal:
+        elif (control_signal < self.lowerActivationLimit * self.qNominal
+              and control_signal !=0):
             warnings.warn('Control signal for electrical heater' + str(self) +
                           'is below minimum part load performance. '
                           'Therefore, output is defined as zero.')

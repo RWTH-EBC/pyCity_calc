@@ -129,12 +129,12 @@ def dhw_manipulation_city(city):
     #  Loop over all buildings
     for n in city:
         #  If node holds attribute 'node_type'
-        if 'node_type' in city.node[n]:
+        if 'node_type' in city.nodes[n]:
             #  If node_type is building
-            if city.node[n]['node_type'] == 'building':
+            if city.nodes[n]['node_type'] == 'building':
                 #  If entity is kind building
-                if city.node[n]['entity']._kind == 'building':
-                    cur_b = city.node[n]['entity']
+                if city.nodes[n]['entity']._kind == 'building':
+                    cur_b = city.nodes[n]['entity']
 
                     #  Loop over apartments
                     for a in cur_b.apartments:

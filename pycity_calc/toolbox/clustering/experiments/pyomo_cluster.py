@@ -38,16 +38,16 @@ def run_min_clust_dist(city, max_nb_b, max_b_dist):
     list_y_pos = []
     #  Extract position lists
     for n in city.nodelist_building:
-        list_x_pos.append(city.node[n]['position'].x)
-        list_y_pos.append(city.node[n]['position'].y)
+        list_x_pos.append(city.nodes[n]['position'].x)
+        list_y_pos.append(city.nodes[n]['position'].y)
 
     # #  Calculate distance values
     # matrix_d = []
     # for n in city.nodelist_building:
     #     list_2 = []
     #     for m in city.nodelist_building:
-    #         p1 = city.node[n]['position']
-    #         p2 = city.node[m]['position']
+    #         p1 = city.nodes[n]['position']
+    #         p2 = city.nodes[m]['position']
     #         dist = netop.calc_point_distance(point_1=p1, point_2=p2)
     #         list_2.append(dist)
     #     matrix_d.append(list_2)
@@ -58,8 +58,8 @@ def run_min_clust_dist(city, max_nb_b, max_b_dist):
         b1 = city.nodelist_building[i]
         for j in range(len(city.nodelist_building)):
             b2 = city.nodelist_building[j]
-            p1 = city.node[b1]['position']
-            p2 = city.node[b2]['position']
+            p1 = city.nodes[b1]['position']
+            p2 = city.nodes[b2]['position']
             dist_input[b1, b2] = netop.calc_point_distance(point_1=p1,
                                                            point_2=p2)
 

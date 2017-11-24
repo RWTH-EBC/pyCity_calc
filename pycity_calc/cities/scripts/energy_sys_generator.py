@@ -102,11 +102,11 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
         print('Process node with id ', node_id)
 
         #  Check if building at node_id does not have BES, already
-        if city.node[node_id]['entity'].hasBes is False:
+        if city.nodes[node_id]['entity'].hasBes is False:
             #  Generate BES, if not existent
             bes = BES.BES(environment=city.environment)
         else:
-            bes = city.node[node_id]['entity'].bes
+            bes = city.nodes[node_id]['entity'].bes
 
         # #-------------------------------------------------------------
         if type == 0:  # Boiler (+ TES)
@@ -122,16 +122,16 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
             #  exlusively, is allowed.
             if n_list != []:
                 for nei in n_list:
-                    if 'network_type' in city.edge[node_id][nei]:
-                        if (city.edge[node_id][nei]['network_type']
+                    if 'network_type' in city.edges[node_id, nei]:
+                        if (city.edges[node_id, nei]['network_type']
                                 == 'heating' or
-                                    city.edge[node_id][nei]['network_type']
+                                    city.edges[node_id, nei]['network_type']
                                     == 'heating_and_deg'):
                             raise AssertionError('Building ' + str(node_id) +
                                                  ' should not be connected ' +
                                                  'to lhn!')
             # Pointer to building
-            build = city.node[node_id]['entity']
+            build = city.nodes[node_id]['entity']
 
             #  Size boiler with max. building th. power load
             if dhw_scale:
@@ -246,10 +246,10 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
 
             if n_list != []:
                 for nei in n_list:
-                    if 'network_type' in city.edge[node_id][nei]:
-                        if (city.edge[node_id][nei]['network_type']
+                    if 'network_type' in city.edges[node_id, nei]:
+                        if (city.edges[node_id, nei]['network_type']
                                 == 'heating' or
-                                    city.edge[node_id][nei]['network_type']
+                                    city.edges[node_id, nei]['network_type']
                                     == 'heating_and_deg'):
                             has_lhn_con = True
                             print('Found lhn connected to node ', node_id)
@@ -266,11 +266,11 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
                 list_build = []  # List of building entities
                 #  Loop over list_lhn
                 for n in list_lhn:
-                    if 'node_type' in city.node[n]:
+                    if 'node_type' in city.nodes[n]:
                         #  If node_type is building
-                        if city.node[n]['node_type'] == 'building':
+                        if city.nodes[n]['node_type'] == 'building':
                             #  If entity is kind building
-                            if city.node[n]['entity']._kind == 'building':
+                            if city.nodes[n]['entity']._kind == 'building':
                                 #  If node n holds building entity, add it.
                                 list_build.append((n))
 
@@ -306,7 +306,7 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
             # #------------------------------------
             else:  # Only single building energy demand is relevant
 
-                build_single = city.node[node_id]['entity']
+                build_single = city.nodes[node_id]['entity']
 
                 th_dur_curve = dimfunc. \
                     get_load_dur_curve_building(building=build_single)
@@ -415,16 +415,16 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
             #  Check that no lhn connection exists
             if n_list != []:
                 for nei in n_list:
-                    if 'network_type' in city.edge[node_id][nei]:
-                        if (city.edge[node_id][nei]['network_type']
+                    if 'network_type' in city.edges[node_id][nei]:
+                        if (city.edges[node_id][nei]['network_type']
                                 == 'heating' or
-                                    city.edge[node_id][nei]['network_type']
+                                    city.edges[node_id][nei]['network_type']
                                     == 'heating_and_deg'):
                             raise AssertionError('Building ' + str(node_id) +
                                                  ' should not be connected ' +
                                                  'to lhn (for heat pump)!')
             # Pointer to building
-            build = city.node[node_id]['entity']
+            build = city.nodes[node_id]['entity']
 
             hp_th_power = dimfunc. \
                 get_max_power_of_building(build, with_dhw=False)
@@ -512,7 +512,7 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
             raise ValueError('Type is unknown. Check list_data input!')
 
         # Add bes to building
-        city.node[node_id]['entity'].addEntity(bes)
+        city.nodes[node_id]['entity'].addEntity(bes)
         print()
 
 
