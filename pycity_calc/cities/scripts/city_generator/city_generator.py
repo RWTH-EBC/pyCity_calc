@@ -2738,7 +2738,7 @@ if __name__ == '__main__':
     do_normalization = True
 
     #  Randomize electrical demand value (residential buildings, only)
-    el_random = True
+    el_random = False
 
     #  Prevent usage of electrical heating and hot water devices in
     #  electrical load generation (only relevant if el_gen_method == 2)
@@ -2771,7 +2771,7 @@ if __name__ == '__main__':
     dhw_volumen = None  # Only relevant for residential buildings
 
     #  Randomize choosen dhw_volume reference value by selecting new value
-    dhw_random = True
+    dhw_random = False
 
     #  Input file names and pathes
     #  ######################################################
@@ -2791,12 +2791,12 @@ if __name__ == '__main__':
 
     #  For generation_mode == 1:
     # city_osm_input = None
-    city_osm_input = 'aachen_forsterlinde_osm_mod_1.pkl'
-    # city_osm_input = 'aachen_frankenberg_osm_mod_1.pkl'
-    # city_osm_input = 'aachen_huenefeld_osm_mod_1.pkl'
-    # city_osm_input = 'aachen_kronenberg_osm_mod_1.pkl'
-    # city_osm_input = 'aachen_preusweg_osm_mod_1.pkl'
-    # city_osm_input = 'aachen_tuerme_osm_mod_1.pkl'
+    city_osm_input = 'aachen_forsterlinde_osm_mod_1_nx2.pkl'
+    # city_osm_input = 'aachen_frankenberg_osm_mod_1_nx2.pkl'
+    # city_osm_input = 'aachen_huenefeld_osm_mod_1_nx2.pkl'
+    # city_osm_input = 'aachen_kronenberg_osm_mod_1_nx2.pkl'
+    # city_osm_input = 'aachen_preusweg_osm_mod_1_nx2.pkl'
+    # city_osm_input = 'aachen_tuerme_osm_mod_1_nx2.pkl'
 
     #  Pickle and dump city object instance?
     do_save = True
@@ -2816,7 +2816,7 @@ if __name__ == '__main__':
     t_set_cool = 70  # Cooling set temperature in degree Celsius
 
     #  Air exchange rate (required for th_gen_method = 3 (VDI 6007 sim.))
-    air_vent_mode = 2
+    air_vent_mode = 0
     #  int; Define mode for air ventilation rate generation
     #  0 : Use constant value (vent_factor in 1/h)
     #  1 : Use deterministic, temperature-dependent profile

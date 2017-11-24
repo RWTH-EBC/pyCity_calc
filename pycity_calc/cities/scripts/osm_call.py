@@ -193,15 +193,15 @@ if __name__ == '__main__':
     # filename = 'aachen_huenefeld.osm'
     # filename = 'aachen_kronenberg.osm'
     # filename = 'aachen_preusweg.osm'
-    # filename = 'aachen_tuerme.osm'
-    filename = 'aachen_ambro.osm'
+    filename = 'aachen_tuerme.osm'
+    # filename = 'aachen_ambro.osm'
 
     #  Minimal required building area in m2
     min_area = 50
 
     #  Save generated city objecct as pickle file?
     save_city = True
-    city_filename = filename[:-4] + '_osm.pkl'
+    city_filename = filename[:-4] + '_osm_nx2.pkl'
 
     #  Convert lat/long to utm coordinates in meters?
     #  Only necessary, if no conversion is done within uesgraphs itself
