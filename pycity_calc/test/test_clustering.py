@@ -48,7 +48,7 @@ class TestClustering(object):
         #  Add edge
         city.add_edge(node_1, node_2, networktype='street')
 
-        assert city.nodes() == [node_1, node_2, node_3, node_4]
+        assert sorted(list(city.nodes())) == [node_1, node_2, node_3, node_4]
 
         #  Remove unnecessary nodes
         cluster.city = city
@@ -85,7 +85,7 @@ class TestClustering(object):
         cluster.city = city
         street = netop.get_street_subgraph(city)
 
-        assert street.nodes() == [node_1, node_2, node_3]
+        assert sorted(list(street.nodes())) == [node_1, node_2, node_3]
 
     # def test_gen_str_dicts(self, fixture_environment, fixture_building):
     #
