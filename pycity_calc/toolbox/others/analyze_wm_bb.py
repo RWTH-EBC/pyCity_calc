@@ -96,13 +96,13 @@ def make_hist(list_sh, output_path, output_folder_name, sim_val):
     #  English infos
     title_engl = None  # Add 'u' in front of string to define it as unicode
     # (e.g. when using non-ascii characters)
-    xlab_engl = 'Normalized space heating net\nenergy demand in MWh'
+    xlab_engl = 'Normalized space heating net\nenergy demand'
     ylab_engl = 'Number of demand values'
 
     #  German infos
     title_dt = None  # Add 'u' in front of string to define it as unicode
     # (e.g. when using non-ascii characters)
-    xlab_dt = u'Normierter Raumwärmebedarf\n in MWh'
+    xlab_dt = u'Normierter Raumwärmebedarf\n'
     ylab_dt = 'Anzahl Energiebedarfswerte'
     #  ylab only used if plot_sub == False
 
