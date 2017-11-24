@@ -54,7 +54,7 @@ class TestClustering(object):
         cluster.city = city
         cluster.erase_str_nodes_without_connection()
 
-        assert cluster.city.nodes() == [node_1, node_2]
+        assert sorted(list(cluster.city.nodes())) == [node_1, node_2]
 
     def test_get_street_subgraph(self, fixture_environment, fixture_building):
 

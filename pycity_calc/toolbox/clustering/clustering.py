@@ -701,6 +701,8 @@ class StreetCluster(object):
 
         Requires city object within cluster object.
         """
+        list_remove = []
+
         if self.city is not None:
             for n in self.city.nodes():
                 #  If node has attribute 'node_type'
@@ -709,9 +711,12 @@ class StreetCluster(object):
                     if self.city.nodes[n]['node_type'] == 'street':
                         #  If street_node has no edge connection
                         if nx.degree(self.city, n) == 0:
-                            #  Erase node
-                            self.city.remove_street_node(n)
-                            print('Removed street node ', n)
+                            list_remove.append(n)
+
+        #  Erase node
+        for n in list_remove:
+            self.city.remove_street_node(n)
+            print('Removed street node ', n)
 
     def gen_str_dicts(self):
         """
