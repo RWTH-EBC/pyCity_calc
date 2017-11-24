@@ -103,5 +103,5 @@ class Test_RunExamples():
     def test_example_osm(self):
         example_osm.run_osm_example()
 
-    def test_city_eb_and_annuity_calc(self):
-        city_ann.run_example_city_energy_balance_and_annuity_calc()
+    # def test_city_eb_and_annuity_calc(self):
+    #     city_ann.run_example_city_energy_balance_and_annuity_calc()
