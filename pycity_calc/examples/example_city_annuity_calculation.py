@@ -122,7 +122,7 @@ def run_example_city_energy_balance_and_annuity_calc():
     #  as profile stays the same and only changes scaling.
     #  Stochastic profiles require defined nb of occupants per residential
     #  building
-    dhw_method = 2  # Only relevant for residential buildings
+    dhw_method = 1  # Only relevant for residential buildings
 
     #  Define dhw volume per person and day (use_dhw=True)
     dhw_volumen = None  # Only relevant for residential buildings
