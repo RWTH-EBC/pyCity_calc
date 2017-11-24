@@ -132,7 +132,7 @@ def run_example_city_energy_balance_and_annuity_calc():
     dhw_random = False
 
     #  Use dhw profiles for esys dimensioning
-    dhw_dim_esys = True
+    dhw_dim_esys = False
 
     #  Plot city district with pycity_calc visualisation
     plot_pycity_calc = False

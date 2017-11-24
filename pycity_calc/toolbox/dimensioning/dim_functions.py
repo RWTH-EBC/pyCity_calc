@@ -228,7 +228,7 @@ def get_load_dur_curve_building(building, get_therm=True, with_dhw=False):
 
     if get_therm:  # Thermal power
         power_curve = building.get_space_heating_power_curve()
-        if with_dhw and sum(building.get_dhw_power_curve()) > 0:
+        if with_dhw:
             power_curve += building.get_dhw_power_curve()
     else:  # Electrical power
         power_curve = building.get_electric_power_curve()
@@ -267,7 +267,7 @@ def get_max_power_of_building(building, get_therm=True, with_dhw=False):
 
     if get_therm:  # Thermal power
         power_curve = building.get_space_heating_power_curve()
-        if with_dhw and sum(building.get_dhw_power_curve()) > 0:
+        if with_dhw:
             power_curve += building.get_dhw_power_curve()
     else:  # Electrical power
         power_curve = building.get_electric_power_curve()
