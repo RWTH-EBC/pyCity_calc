@@ -115,7 +115,7 @@ def run_example_city_energy_balance_and_annuity_calc():
     #  Hot water profile generation
     #  ######################################################
     #  Generate DHW profiles? (True/False)
-    use_dhw = False  # Only relevant for residential buildings
+    use_dhw = True  # Only relevant for residential buildings
 
     #  DHW generation method? (1 - Annex 42; 2 - Stochastic profiles)
     #  Choice of Anex 42 profiles NOT recommended for multiple builings,
@@ -123,6 +123,11 @@ def run_example_city_energy_balance_and_annuity_calc():
     #  Stochastic profiles require defined nb of occupants per residential
     #  building
     dhw_method = 1  # Only relevant for residential buildings
+    #  Warning: dhw_method == 1 leads to identical peak loads for dhw in
+    #  every building! This has only been chosen to activate fast pytest runs
+    #  of this example! If you consider running this example for your purpose,
+    #  you should set el. and dhw method to 2 to enable stochastic profile
+    #  generation.
 
     #  Define dhw volume per person and day (use_dhw=True)
     dhw_volumen = None  # Only relevant for residential buildings
