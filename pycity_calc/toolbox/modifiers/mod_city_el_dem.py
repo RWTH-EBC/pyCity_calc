@@ -110,7 +110,7 @@ def mod_el_city_dem(city, el_dem, list_nodes=None, makecopy=False):
     con_factor = el_dem / curr_city_el_dem
 
     for n in list_nodes:
-        curr_b = city.node[n]['entity']
+        curr_b = city.nodes[n]['entity']
 
         el_resc = con_factor * curr_b.get_annual_el_demand()
 

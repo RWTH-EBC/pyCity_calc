@@ -116,12 +116,12 @@ class Test_PowerGrid(object):
     #     test_res_city_district = test_grid.power_flow_evaluation(test_results)
     #
     #     for n in test_res_city_district.node:
-    #         if test_res_city_district.node[n]['node_type'] == 'building':
-    #             if test_res_city_district.node[n]['entity']._kind == 'building':
-    #                 assert (test_res_city_district.node[n]['real_power_demand'][0]*10**3)\
-    #                    == test_res_city_district.node[n]['entity'].get_electric_power_curve()[test_start]
+    #         if test_res_city_district.nodes[n]['node_type'] == 'building':
+    #             if test_res_city_district.nodes[n]['entity']._kind == 'building':
+    #                 assert (test_res_city_district.nodes[n]['real_power_demand'][0]*10**3)\
+    #                    == test_res_city_district.nodes[n]['entity'].get_electric_power_curve()[test_start]
     #
-    #     assert test_res_city_district.node[1001]['voltage'][0] == test_grid.medium_voltage
+    #     assert test_res_city_district.nodes[1001]['voltage'][0] == test_grid.medium_voltage
     #
     #
     #

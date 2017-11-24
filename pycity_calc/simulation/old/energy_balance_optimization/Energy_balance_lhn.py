@@ -57,9 +57,9 @@ def city_energy_balance(City_Object, dict_Qlhn, sortingmethod='CO2', LHN_supply_
     list_n_lhn = []
     #  Add building nodes of nodelist to lhn_graph
     for n in lhn_con_nodes:
-        if 'node_type' in City_Object.node[n]:
-            if City_Object.node[n]['node_type'] == 'heating' or City_Object.node[n]['node_type'] == 'building':
-                curr_pos = City_Object.node[n]['position']
+        if 'node_type' in City_Object.nodes[n]:
+            if City_Object.nodes[n]['node_type'] == 'heating' or City_Object.nodes[n]['node_type'] == 'building':
+                curr_pos = City_Object.nodes[n]['position']
                 #  Add nodes to city_copy
                 lhn_graph.add_node(n, position=curr_pos, node_type='heating')
                 list_n_lhn.append(n)
@@ -67,13 +67,13 @@ def city_energy_balance(City_Object, dict_Qlhn, sortingmethod='CO2', LHN_supply_
     #  Add all edges of type heating to lhn_graph
     for u, v in City_Object.edges():
         if u in lhn_con_nodes and v in lhn_con_nodes:
-            if 'network_type' in City_Object.edge[u][v]:
-                if City_Object.edge[u][v]['network_type'] == 'heating' or City_Object.edge[u][v]['network_type'] == 'heating_and_deg':
+            if 'network_type' in City_Object.edges[u, v]:
+                if City_Object.edges[u, v]['network_type'] == 'heating' or City_Object.edges[u, v]['network_type'] == 'heating_and_deg':
                     #  Add street edge to street_graph
                     lhn_graph.add_edge(u, v, network_type='heating')
-                    temp_vl = City_Object.edge[u][v]['temp_vl']
-                    temp_rl = City_Object.edge[u][v]['temp_rl']
-                    d_i = City_Object.edge[u][v]['d_i']
+                    temp_vl = City_Object.edges[u, v]['temp_vl']
+                    temp_rl = City_Object.edges[u, v]['temp_rl']
+                    d_i = City_Object.edges[u, v]['d_i']
                     #TODO: find better way to get temp and di
 
     #Add nodelist street
@@ -331,19 +331,19 @@ def city_energy_balance(City_Object, dict_Qlhn, sortingmethod='CO2', LHN_supply_
 
     #def add_LHN_results_to_city_object(dict_supply, City_Object, timesteps):
     for node in dict_supply.keys(): # loop over all buildings with LHN
-        Bes = City_Object.node[int(node)]['entity'].bes # get Bes from City_Object
+        Bes = City_Object.nodes[int(node)]['entity'].bes # get Bes from City_Object
         for t in range(timesteps): #timesteps
             if dict_supply[node]['Qboiler_nom'][t] != 0:
                 # Add the LHN supply amount to the current stored value
-                boiler_supply=dict_supply[str(node)]['Qboiler_nom'][t]+City_Object.node[int(node)]['heat_demand_for_boiler'][t]
+                boiler_supply=dict_supply[str(node)]['Qboiler_nom'][t]+City_Object.nodes[int(node)]['heat_demand_for_boiler'][t]
                 if boiler_supply<Bes.boiler.qNominal*Bes.boiler.lowerActivationLimit:
                     #if the needed amount is below LAL run in LAL and waste rest of the energy
                     boiler_supply=Bes.boiler.qNominal*Bes.boiler.lowerActivationLimit
                 power_boiler, power_boiler_in = Bes.boiler.calc_boiler_all_results(boiler_supply, t)
             if dict_supply[node]['Qchp_nom'][t] != 0:
                 # Add the LHN supply amount to the current stored value
-                chp_supply=dict_supply[str(node)]['Qchp_nom'][t]+City_Object.node[int(node)]['heat_demand_for_chp'][t]
-                boiler_supply = dict_supply[str(node)]['Qboiler_nom'][t] + City_Object.node[int(node)]['heat_demand_for_boiler'][t]
+                chp_supply=dict_supply[str(node)]['Qchp_nom'][t]+City_Object.nodes[int(node)]['heat_demand_for_chp'][t]
+                boiler_supply = dict_supply[str(node)]['Qboiler_nom'][t] + City_Object.nodes[int(node)]['heat_demand_for_boiler'][t]
                 if chp_supply<Bes.chp.qNominal*Bes.chp.lowerActivationLimit:
                     #if the needed amount is below CHP LAL try to shift demand to boiler
                     if chp_supply + boiler_supply <= Bes.boiler.qNominal and chp_supply + boiler_supply > Bes.boiler.qNominal*Bes.boiler.lowerActivationLimit:
@@ -363,10 +363,10 @@ def city_energy_balance(City_Object, dict_Qlhn, sortingmethod='CO2', LHN_supply_
 
 
         if Bes.hasChp and Bes.hasBoiler:
-            City_Object.node[int(node)]['fuel demand'] = Bes.chp.array_fuel_power+Bes.boiler.array_fuel_power
-            City_Object.node[int(node)]['power_el_chp'] = Bes.chp.totalPOutput
+            City_Object.nodes[int(node)]['fuel demand'] = Bes.chp.array_fuel_power+Bes.boiler.array_fuel_power
+            City_Object.nodes[int(node)]['power_el_chp'] = Bes.chp.totalPOutput
         elif Bes.hasChp == False and Bes.hasBoiler:
-            City_Object.node[int(node)]['fuel demand'] = Bes.boiler.array_fuel_power
+            City_Object.nodes[int(node)]['fuel demand'] = Bes.boiler.array_fuel_power
 
 
 

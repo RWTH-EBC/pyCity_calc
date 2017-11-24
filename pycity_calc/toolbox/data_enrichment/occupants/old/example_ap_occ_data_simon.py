@@ -149,13 +149,13 @@ if __name__ == '__main__':
 
     print('Buildingnodes:', list(city_Object.node.keys()))
     for node in city_Object.node:
-        apartments = city_Object.node[node]['entity'].apartments.__len__()
+        apartments = city_Object.nodes[node]['entity'].apartments.__len__()
         occ_list = []
-        for ap in range(city_Object.node[node]['entity'].apartments.__len__()):
-            occ_list.append(city_Object.node[node]['entity'].apartments[
+        for ap in range(city_Object.nodes[node]['entity'].apartments.__len__()):
+            occ_list.append(city_Object.nodes[node]['entity'].apartments[
                                 ap].occupancy.number_occupants[0:1][0].T)
         print("Building", node, "has", apartments,
               'Apartments, with following numbers of occupants:', [occ_list])
         print("Each apartment has a net_floor_area of:",
-              city_Object.node[node]['entity'].apartments[ap].net_floor_area[
+              city_Object.nodes[node]['entity'].apartments[ap].net_floor_area[
               0:1][0], "m^2")
