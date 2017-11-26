@@ -1676,7 +1676,7 @@ def run_clustering(city, method, max_nb_build=7, max_b_str=10, max_b_b=20,
     elif method == 1:  # Use kmeans
 
         cluster_dict = \
-            run_kmeans_clustering(city, kmeans_method, nb_clusters=None)
+            run_kmeans_clustering(city, kmeans_method, nb_clusters=nb_clusters)
 
     elif method == 2:  # Meanshift (http://scikit-learn.org/stable/index.html)
         cluster_dict = cex.meanshift_cluster(city, plot_results=False)
@@ -1781,7 +1781,7 @@ if __name__ == '__main__':
 
     #  Select clustering method
     #  #-----------------------
-    method = 3
+    method = 2
     #  method = 0 - Use street clustering
     #  method = 1 - Use kmeans clustering
     #  method = 2 - Use meanshift clustering
@@ -1803,9 +1803,9 @@ if __name__ == '__main__':
     #  Following values are only relevant for method 1 (kmeans)
     #  #-----------------------
     #  Number of clusters
-    nb_clusters = 25
+    nb_clusters = 3
     #  Run kmeans in loop, if cluster sizes are too big
-    kmeans_method = 2
+    kmeans_method = 0
     #  0 - Single run of kmeans (neglect max_nb_build constraint)
     #  1 - Loop over kmeans with ascending number of clusters until
     #      max_nb_build is kept for every cluster (very slow method!)
@@ -1827,14 +1827,14 @@ if __name__ == '__main__':
     #  Further inputs
     #  #-----------------------
     #  Plot results:
-    plot_city = False
+    plot_city = True
     plot_clustering = True
 
     #  City pickle object filename
     #  (city object should include street graph)
-    filename = 'test_city.p'
+    filename = 'city_clust_simple_with_esys.p'
     #  Load pickle city file
-    file_path = os.path.join(this_path, 'test_city_object', filename)
+    file_path = os.path.join(this_path, 'inputs', filename)
 
     #  Save cluster dict?
     save_dict = True
