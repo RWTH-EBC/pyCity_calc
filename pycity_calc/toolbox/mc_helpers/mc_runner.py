@@ -508,13 +508,14 @@ class McRunner(object):
                                            array_ratio_on=array_summer_heat_on,
                                            list_b_ids=self._list_build_ids)
 
-        if self._has_lhn:
-            #  If LHN exists, sample for LHN with ref. investment cost of 1
-            array_lhn_inv = esyssample.sample_invest_unc(nb_samples=nb_runs,
-                                                         ref_inv=1)
-            #  If LHN exists, sample losses for LHN (ref loss 1)
-            array_lhn_loss = esyssample.sample_lhn_loss_unc(nb_samples=nb_runs,
-                                                            ref_loss=1)
+        #  Only used, if LHN exists, but required to prevent ref.
+        #  before assignment error #289
+        #  If LHN exists, sample for LHN with ref. investment cost of 1
+        array_lhn_inv = esyssample.sample_invest_unc(nb_samples=nb_runs,
+                                                     ref_inv=1)
+        #  If LHN exists, sample losses for LHN (ref loss 1)
+        array_lhn_loss = esyssample.sample_lhn_loss_unc(nb_samples=nb_runs,
+                                                        ref_loss=1)
 
         dict_city_samples['interest'] = array_interest
         dict_city_samples['ch_cap'] = array_ch_cap
