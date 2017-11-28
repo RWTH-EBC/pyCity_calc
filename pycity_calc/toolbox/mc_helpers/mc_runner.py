@@ -30,6 +30,7 @@ import pycity_calc.toolbox.modifiers.mod_city_dhw_dem as dhwmod
 import pycity_calc.toolbox.networks.network_ops as netop
 import pycity_calc.simulation.energy_balance.building_eb_calc as buildeb
 import pycity_calc.toolbox.modifiers.mod_city_esys_size as modesys
+import pycity_calc.energysystems.thermalEnergyStorage as tessys
 import pycity_calc.visualization.city_visual as citvis
 
 
@@ -972,6 +973,14 @@ class McRunner(object):
                 dict_mc_res['grid_exp_chp'] = array_grid_exp_chp
                 dict_mc_res['grid_exp_pv'] = array_grid_exp_pv
             except buildeb.EnergyBalanceException as ermessage:
+                print(ermessage)
+                traceback.print_exc()
+                #  Count failure nb. up
+                self._nb_failed_runs += 1
+                self._list_failed_runs.append(i)
+                msg = 'Run %d failed with EnergyBalanceException' % (i)
+                warnings.warn(msg)
+            except tessys.TESChargingException as ermessage:
                 print(ermessage)
                 traceback.print_exc()
                 #  Count failure nb. up
