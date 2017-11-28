@@ -11,6 +11,19 @@ import numpy as np
 import pycity_base.classes.supply.ThermalEnergyStorage as TES
 import pycity_calc.toolbox.unit_conversion as unitcon
 
+class TESChargingException(Exception):
+    def __init__(self, message):
+        """
+        Constructor for own TES Charging Exception
+
+        Parameters
+        ----------
+        message : str
+            Error message
+        """
+
+        super(TESChargingException, self).__init__(message)
+
 
 class thermalEnergyStorageExtended(TES.ThermalEnergyStorage):
     """
@@ -243,10 +256,17 @@ class thermalEnergyStorageExtended(TES.ThermalEnergyStorage):
         """
 
         # check if charging or discharging is possible
-        assert q_out <= self.calc_storage_q_out_max(t_ambient=t_ambient,
-                                                    q_in=q_in), 'Discharging is not possible'
-        assert q_in <= self.calc_storage_q_in_max(t_ambient=t_ambient,
-                                                  q_out=q_out), 'Charging is not possible'
+        if q_out > self.calc_storage_q_out_max(t_ambient=t_ambient,
+                                                q_in=q_in):
+            msg = 'Output power q_out exceeds maximum possible output power ' \
+                  'of thermal storage! Discharging is not possible!'
+            raise TESChargingException(msg)
+
+        if q_out > self.calc_storage_q_in_max(t_ambient=t_ambient,
+                                              q_out=q_out):
+            msg = 'Input power q_in exceeds maximum possible input power ' \
+                  'of thermal storage! Charging is not possible!'
+            raise TESChargingException(msg)
 
         #  If environment outside temp should be used
         if self.use_outside_temp:
