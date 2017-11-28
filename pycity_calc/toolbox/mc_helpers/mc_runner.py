@@ -1112,50 +1112,24 @@ class McRunner(object):
         #  Copy CityAnnuityCalc object
         c_eco_copy = copy.deepcopy(self._city_eco_calc)
 
-        #  Perform eb run and annuity runs
-        try:
-            (total_annuity, co2) = c_eco_copy. \
-                perform_overall_energy_balance_and_economic_calc(run_mc=False)
+        (total_annuity, co2) = c_eco_copy. \
+            perform_overall_energy_balance_and_economic_calc(run_mc=False)
 
-            #  Extract further results
-            sh_dem = c_eco_copy.energy_balance. \
-                city.get_annual_space_heating_demand()
-            el_dem = c_eco_copy.energy_balance. \
-                city.get_annual_el_demand()
-            dhw_dem = c_eco_copy.energy_balance. \
-                city.get_annual_dhw_demand()
+        #  Extract further results
+        sh_dem = c_eco_copy.energy_balance. \
+            city.get_annual_space_heating_demand()
+        el_dem = c_eco_copy.energy_balance. \
+            city.get_annual_el_demand()
+        dhw_dem = c_eco_copy.energy_balance. \
+            city.get_annual_dhw_demand()
 
-            # gas_boiler = c_eco_copy.energy_balance.dict_fe_city_balance[
-            #     'fuel_boiler']
-            # gas_chp = c_eco_copy.energy_balance.dict_fe_city_balance[
-            #     'fuel_chp']
-            # grid_imp_dem = c_eco_copy.energy_balance.dict_fe_city_balance[
-            #     'grid_import_dem']
-            # grid_imp_hp = c_eco_copy.energy_balance.dict_fe_city_balance[
-            #     'grid_import_hp']
-            # grid_imp_eh = c_eco_copy.energy_balance.dict_fe_city_balance[
-            #     'grid_import_eh']
-            # lhn_pump = c_eco_copy.energy_balance.dict_fe_city_balance[
-            #     'pump_energy']
-            #
-            # grid_exp_chp = c_eco_copy.energy_balance.dict_fe_city_balance[
-            #     'chp_feed']
-            # grid_exp_pv = c_eco_copy.energy_balance.dict_fe_city_balance[
-            #     'pv_feed']
+        if save_res:
+            self._tuple_ref_results = (total_annuity, co2, sh_dem,
+                                       el_dem, dhw_dem)
+            self._dict_fe_ref_run = c_eco_copy. \
+                energy_balance.dict_fe_city_balance
 
-            if save_res:
-                self._tuple_ref_results = (total_annuity, co2, sh_dem,
-                                           el_dem, dhw_dem)
-                self._dict_fe_ref_run = c_eco_copy.\
-                    energy_balance.dict_fe_city_balance
-
-            return (total_annuity, co2, sh_dem, el_dem, dhw_dem)
-
-        except buildeb.EnergyBalanceException as ermessage:
-            print(ermessage)
-            traceback.print_exc()
-            msg = 'Reference run failed with EnergyBalanceException'
-            warnings.warn(msg)
+        return (total_annuity, co2, sh_dem, el_dem, dhw_dem)
 
 
 if __name__ == '__main__':
