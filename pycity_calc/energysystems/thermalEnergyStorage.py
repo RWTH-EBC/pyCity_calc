@@ -262,7 +262,7 @@ class thermalEnergyStorageExtended(TES.ThermalEnergyStorage):
                   'of thermal storage! Discharging is not possible!'
             raise TESChargingException(msg)
 
-        if q_out > self.calc_storage_q_in_max(t_ambient=t_ambient,
+        if q_in > self.calc_storage_q_in_max(t_ambient=t_ambient,
                                               q_out=q_out):
             msg = 'Input power q_in exceeds maximum possible input power ' \
                   'of thermal storage! Charging is not possible!'
