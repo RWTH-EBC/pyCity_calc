@@ -141,9 +141,10 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
     if build.bes.hasHeatpump is True:
         has_hp = True
 
-        if build.bes.hasElectricalHeater is False and \
-                        build.get_annual_dhw_demand() > 0:  # pragma: no cover
-            msg = 'Building ' + str() + ' does only have HP without EH.' \
+        if (build.bes.hasElectricalHeater is False
+            and build.bes.hasBoiler is False
+            and build.get_annual_dhw_demand() > 0):  # pragma: no cover
+            msg = 'Building ' + str() + ' only has HP (no boiler or EH).' \
                                         ' Thus, it cannot cover hot water' \
                                         ' energy demand, which is larger ' \
                                         'than zero!'
