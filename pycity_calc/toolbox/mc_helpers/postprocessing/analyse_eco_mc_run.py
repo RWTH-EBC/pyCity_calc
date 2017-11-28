@@ -464,7 +464,6 @@ class EcoMCRunAnalyze(object):
         # Dummy arrays
         array_en_to_co2 = np.zeros(len(self._array_co2_mod))
 
-
         #  Sum up energy values
         array_total_net_en = self._array_sh_dem_mod \
                              + self._array_el_dem_mod \
@@ -513,8 +512,8 @@ class EcoMCRunAnalyze(object):
 
         #  Total net exergy
         array_ex_to_co2 = array_net_ex_sh \
-                             + array_net_ex_dhw \
-                             + self._array_el_dem_mod
+                          + array_net_ex_dhw \
+                          + self._array_el_dem_mod
 
         for i in range(len(array_ex_to_co2)):
             array_ex_to_co2[i] = array_ex_to_co2[i] / self._array_co2_mod[i]
@@ -523,71 +522,6 @@ class EcoMCRunAnalyze(object):
             self._array_ex_to_co2 = array_ex_to_co2
 
         return array_ex_to_co2
-
-    # def calc_net_energy_to_annuity_ratio(self, energy_equal=True,
-    #                                      save_res=True):
-    #     """
-    #     Calculates net energy to annuity ratio as estimator for
-    #     economic efficiency.
-    #     If energy_equal is False, uses net exergy instead of net energy.
-    #
-    #     Parameters
-    #     ----------
-    #     energy_equal : bool, optional
-    #         Values thermal and electric net energy equally (default: True)
-    #     save_res : bool, optional
-    #         Defines, if results should be saved to _array_en_to_an
-    #         (default: True)
-    #
-    #     Returns
-    #     -------
-    #     array_en_to_an : np.array (of floats)
-    #         Numpy array holding net energy to annuity ratios in kWh / Euro
-    #     or
-    #     array_ex_to_an : np.array (of floats)
-    #         Numpy array holding net exergy to annuity ratios in kWh / Euro
-    #     """
-    #
-    #     if (self._array_ann_mod is None
-    #         or self._array_sh_dem_mod is None
-    #         or self._array_el_dem_mod is None
-    #         or self._array_dhw_dem_mod is None):
-    #         msg = 'Cannot calculate net energy to annuity ratio, as inputs ' \
-    #               'are missing. Have you loaded all results files and called' \
-    #               ' extract_basic_results?'
-    #         raise AssertionError(msg)
-    #
-    #     # Dummy arrays
-    #     array_en_to_an = np.zeros(len(self._array_ann_mod))
-    #
-    #     if energy_equal:
-    #         #  Sum up energy values
-    #         array_total_net_en = self._array_sh_dem_mod \
-    #                              + self._array_el_dem_mod \
-    #                              + self._array_dhw_dem_mod
-    #     else:
-    #         #  Use net exergy concept
-    #         array_net_ex_sh = self._array_sh_dem_mod * (1 - 20 / 70)
-    #         array_net_ex_dhw = self._array_dhw_dem_mod * (1 - 20 / 80)
-    #
-    #         #  Total net exergy
-    #         array_ex_to_an = array_net_ex_sh \
-    #                              + array_net_ex_dhw \
-    #                              + self._array_el_dem_mod
-    #
-    #     for i in range(len(array_en_to_an)):
-    #         array_en_to_an[i] = array_total_net_en[i] / self._array_ann_mod[i]
-    #
-    #     if energy_equal:
-    #         if save_res:
-    #             self._array_en_to_an = array_en_to_an
-    #
-    #         return array_en_to_an
-    #     else:
-    #         if save_res:
-    #             self._array_ex_to_an = array_ex_to_an
-    #
-    #         return array_ex_to_an
 
     def calc_net_energy_to_annuity_ratio(self, save_res=True):
         """
@@ -618,7 +552,6 @@ class EcoMCRunAnalyze(object):
         # Dummy arrays
         array_en_to_an = np.zeros(len(self._array_ann_mod))
 
-
         #  Sum up energy values
         array_total_net_en = self._array_sh_dem_mod \
                              + self._array_el_dem_mod \
@@ -626,7 +559,6 @@ class EcoMCRunAnalyze(object):
 
         for i in range(len(array_en_to_an)):
             array_en_to_an[i] = array_total_net_en[i] / self._array_ann_mod[i]
-
 
         if save_res:
             self._array_en_to_an = array_en_to_an
@@ -668,8 +600,8 @@ class EcoMCRunAnalyze(object):
 
         #  Total net exergy
         array_ex_total = array_net_ex_sh \
-                             + array_net_ex_dhw \
-                             + self._array_el_dem_mod
+                         + array_net_ex_dhw \
+                         + self._array_el_dem_mod
 
         for i in range(len(array_ex_to_an)):
             array_ex_to_an[i] = array_ex_total[i] / self._array_ann_mod[i]
@@ -833,7 +765,7 @@ if __name__ == '__main__':
 
     print('Mean of net energy to annuity ratios:')
     print(round(mean_net_e_to_ann, 2))
-    print()
+
     print('Mean of net energy to CO2 ratios:')
     print(round(mean_net_e_to_co2, 2))
     print()
@@ -844,7 +776,7 @@ if __name__ == '__main__':
 
     print('Standard deviation of net energy to annuity ratios:')
     print(round(std_net_e_to_ann, 2))
-    print()
+
     print('Standard deviation of net energy to CO2 ratios:')
     print(round(std_net_e_to_co2, 2))
     print()
@@ -855,10 +787,20 @@ if __name__ == '__main__':
 
     print('Risk aversion evaluation factor of net energy to annuity ratio:')
     print(round(win_en_to_an, 2))
-    print()
 
     print('Risk aversion evaluation factor of net energy to co2 ratio:')
     print(round(win_en_to_co2, 2))
+    print()
+
+    #  Evaluate net exergy to annuity / CO2 values
+    win_ex_to_an = mc_analyze.calc_net_exergy_to_annuity_ratio()
+    win_ex_to_co2 = mc_analyze.calc_net_exergy_to_co2_ratio()
+
+    print('Risk aversion evaluation factor of net exergy to annuity ratio:')
+    print(round(win_ex_to_an, 2))
+
+    print('Risk aversion evaluation factor of net exergy to co2 ratio:')
+    print(round(win_ex_to_co2, 2))
     print()
 
     # #  Evaluation
