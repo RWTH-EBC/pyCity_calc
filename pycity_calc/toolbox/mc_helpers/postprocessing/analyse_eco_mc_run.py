@@ -511,12 +511,12 @@ class EcoMCRunAnalyze(object):
         array_net_ex_dhw = self._array_dhw_dem_mod * (1 - 20 / 80)
 
         #  Total net exergy
-        array_ex_to_co2 = array_net_ex_sh \
-                          + array_net_ex_dhw \
-                          + self._array_el_dem_mod
+        array_net_ex_total = array_net_ex_sh \
+                             + array_net_ex_dhw \
+                             + self._array_el_dem_mod
 
         for i in range(len(array_ex_to_co2)):
-            array_ex_to_co2[i] = array_ex_to_co2[i] / self._array_co2_mod[i]
+            array_ex_to_co2[i] = array_net_ex_total[i] / self._array_co2_mod[i]
 
         if save_res:
             self._array_ex_to_co2 = array_ex_to_co2
@@ -599,12 +599,12 @@ class EcoMCRunAnalyze(object):
         array_net_ex_dhw = self._array_dhw_dem_mod * (1 - 20 / 80)
 
         #  Total net exergy
-        array_ex_total = array_net_ex_sh \
-                         + array_net_ex_dhw \
-                         + self._array_el_dem_mod
+        array_net_ex_total = array_net_ex_sh \
+                             + array_net_ex_dhw \
+                             + self._array_el_dem_mod
 
         for i in range(len(array_ex_to_an)):
-            array_ex_to_an[i] = array_ex_total[i] / self._array_ann_mod[i]
+            array_ex_to_an[i] = array_net_ex_total[i] / self._array_ann_mod[i]
 
         if save_res:
             self._array_ex_to_an = array_ex_to_an
@@ -699,6 +699,8 @@ class EcoMCRunAnalyze(object):
             - 'co2' : Emissions
             - 'en_to_an' : Net energy to annuity ratio
             - 'en_to_co2' : Net energy to co2 ratio
+            - 'ex_to_an' : Net exergy to annuity ratio
+            - 'ex_to_co2' : Net exergy to co2 ratio
 
         Returns
         -------
@@ -706,7 +708,8 @@ class EcoMCRunAnalyze(object):
             Risk aversion factor to evaluate solution
         """
 
-        if type not in ['annuity', 'co2', 'en_to_an', 'en_to_co2']:
+        if type not in ['annuity', 'co2', 'en_to_an', 'en_to_co2',
+                        'ex_to_an', 'ex_to_co2']:
             msg = 'Unknown input type for calc_risk_averse_parameters()'
             raise AssertionError(msg)
 
@@ -718,6 +721,10 @@ class EcoMCRunAnalyze(object):
             array_in = self._array_en_to_an
         elif type == 'en_to_co2':
             array_in = self._array_en_to_co2
+        elif type == 'ex_to_an':
+            array_in = self._array_ex_to_an
+        elif type == 'ex_to_co2':
+            array_in = self._array_ex_to_co2
 
         risk_av_factor = self.calc_res_factor(array_in=array_in)
 
@@ -758,6 +765,8 @@ if __name__ == '__main__':
     mc_analyze.extract_basic_results()
     mc_analyze.calc_net_energy_to_annuity_ratio()
     mc_analyze.calc_net_energy_to_co2_ratio()
+    mc_analyze.calc_net_exergy_to_annuity_ratio()
+    mc_analyze.calc_net_exergy_to_co2_ratio()
 
     #  Evaluate means
     mean_net_e_to_ann = mc_analyze.calc_net_energy_to_ann_mean()
@@ -792,9 +801,9 @@ if __name__ == '__main__':
     print(round(win_en_to_co2, 2))
     print()
 
-    #  Evaluate net exergy to annuity / CO2 values
-    win_ex_to_an = mc_analyze.calc_net_exergy_to_annuity_ratio()
-    win_ex_to_co2 = mc_analyze.calc_net_exergy_to_co2_ratio()
+    #  Evaluate risk aversion (exergy)
+    win_ex_to_an = mc_analyze.calc_risk_averse_parameters(type='ex_to_an')
+    win_ex_to_co2 = mc_analyze.calc_risk_averse_parameters(type='ex_to_co2')
 
     print('Risk aversion evaluation factor of net exergy to annuity ratio:')
     print(round(win_ex_to_an, 2))
