@@ -990,7 +990,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                     #  if sh_pow_remain > 0 or dhw_pow_remain > 0, use EH
                     if (sh_pow_remain + dhw_pow_remain
                             + q_tes_in_remain + th_lhn_pow_rem[i]) \
-                            >= q_nom_boi:
+                            >= q_nom_eh:
                         #  Cover part of power with full EH load
                         eheater.calc_el_h_all_results(
                             control_signal=q_nom_eh,
