@@ -368,6 +368,16 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                     #  Cover part of remaining th. demand with full storage
                     #  load (leave buffer)
 
+                    #  Check if q_out is not exceeding maximum possible
+                    #  dharging power
+                    q_out_limit = tes.calc_storage_q_out_max()
+                    if q_out_max > q_out_limit:
+                        msg = 'q_out_max (' \
+                              + str(q_out_max) + ' W) exceeds tes output' \
+                                                 'power limit of ' \
+                              + str(q_out_limit) + ' W.'
+                        raise EnergyBalanceException(msg)
+
                     tes.calc_storage_temp_for_next_timestep(q_in=0,
                                                             q_out=q_out_max,
                                                             t_prior=t_prior,
@@ -399,10 +409,20 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                 else:
                     #  Cover remaining demand with storage load
 
+                    #  Check if q_out is not exceeding maximum possible
+                    #  charging power
+                    q_out_check = sh_pow_remain + dhw_pow_remain \
+                                  + th_lhn_pow_rem[i]
+                    q_out_limit = tes.calc_storage_q_out_max()
+                    if q_out_check > q_out_limit:
+                        msg = 'q_out_max (' \
+                              + str(q_out_check) + ' W) exceeds tes output' \
+                                                 'power limit of ' \
+                              + str(q_out_limit) + ' W.'
+                        raise EnergyBalanceException(msg)
+
                     tes.calc_storage_temp_for_next_timestep(q_in=0,
-                                                            q_out=sh_pow_remain +
-                                                                  dhw_pow_remain +
-                                                                  th_lhn_pow_rem[i],
+                                                            q_out=q_out_check,
                                                             t_prior=t_prior,
                                                             t_ambient=None,
                                                             set_new_temperature=True,
@@ -752,6 +772,16 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                           'building' + str(id) + ' at timestep ' + str(i) + '.'
                     raise EnergyBalanceException(msg)
 
+                # Check if q_in is not exceeding maximum possible
+                #  discharging power
+                q_in_limit = tes.calc_storage_q_in_max(q_out=q_tes_out)
+                if q_tes_in > q_in_limit:
+                    msg = 'q_tes_in (' \
+                          + str(q_tes_in) + ' W) exceeds tes input' \
+                                            'power limit of ' \
+                          + str(q_in_limit) + ' W.'
+                    raise EnergyBalanceException(msg)
+
                 # Load storage with q_tes_in
                 tes.calc_storage_temp_for_next_timestep(q_in=q_tes_in,
                                                         q_out=q_tes_out,
@@ -1061,6 +1091,26 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
 
                 temp_prior = tes.t_current
 
+                #  Check if q_out is not exceeding maximum possible
+                #  dharging power
+                q_out_limit = tes.calc_storage_q_out_max(q_in=q_tes_in)
+                if q_out_requ > q_out_limit:
+                    msg = 'q_out_requ (' \
+                          + str(q_out_requ) + ' W) exceeds tes output' \
+                                             'power limit of ' \
+                          + str(q_out_limit) + ' W.'
+                    raise EnergyBalanceException(msg)
+
+                # Check if q_in is not exceeding maximum possible
+                #  discharging power
+                q_in_limit = tes.calc_storage_q_in_max(q_out=q_out_requ)
+                if q_tes_in > q_in_limit:
+                    msg = 'q_tes_in (' \
+                          + str(q_tes_in) + ' W) exceeds tes input' \
+                                            'power limit of ' \
+                          + str(q_in_limit) + ' W.'
+                    raise EnergyBalanceException(msg)
+
                 # Calc. storage energy balance for this timestep
                 tes.calc_storage_temp_for_next_timestep(q_in=q_tes_in,
                                                         q_out=q_out_requ,
@@ -1174,6 +1224,16 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                     #  Cover part of remaining th. demand with full storage
                     #  load (leave buffer)
 
+                    #  Check if q_out is not exceeding maximum possible
+                    #  dharging power
+                    q_out_limit = tes.calc_storage_q_out_max()
+                    if q_out_max > q_out_limit:
+                        msg = 'q_out_max (' \
+                              + str(q_out_max) + ' W) exceeds tes output' \
+                                                 'power limit of ' \
+                              + str(q_out_limit) + ' W.'
+                        raise EnergyBalanceException(msg)
+
                     tes.calc_storage_temp_for_next_timestep(q_in=0,
                                                             q_out=q_out_max,
                                                             t_prior=t_prior,
@@ -1190,6 +1250,16 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
 
                 else:
                     #  Cover remaining demand with storage load
+
+                    #  Check if q_out is not exceeding maximum possible
+                    #  dharging power
+                    q_out_limit = tes.calc_storage_q_out_max()
+                    if sh_pow_remain > q_out_limit:
+                        msg = 'sh_pow_remain (' \
+                              + str(sh_pow_remain) + ' W) exceeds tes output' \
+                                                 'power limit of ' \
+                              + str(q_out_limit) + ' W.'
+                        raise EnergyBalanceException(msg)
 
                     tes.calc_storage_temp_for_next_timestep(q_in=0,
                                                             q_out=sh_pow_remain,
@@ -1356,6 +1426,16 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                     msg = 'TES stored energy cannot cover remaining ' \
                           'demand in ' \
                           'building' + str(id) + ' at timestep ' + str(i) + '.'
+                    raise EnergyBalanceException(msg)
+
+                # Check if q_in is not exceeding maximum possible
+                #  discharging power
+                q_in_limit = tes.calc_storage_q_in_max(q_out=q_tes_out)
+                if q_tes_in > q_in_limit:
+                    msg = 'q_tes_in (' \
+                          + str(q_tes_in) + ' W) exceeds tes input' \
+                                            'power limit of ' \
+                          + str(q_in_limit) + ' W.'
                     raise EnergyBalanceException(msg)
 
                 # Load storage with q_tes_in
@@ -1621,6 +1701,26 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
 
                 temp_prior = tes.t_current
 
+                #  Check if q_out is not exceeding maximum possible
+                #  dharging power
+                q_out_limit = tes.calc_storage_q_out_max(q_in=q_tes_in)
+                if q_out_requ > q_out_limit:
+                    msg = 'q_out_requ (' \
+                          + str(q_out_requ) + ' W) exceeds tes output' \
+                                             'power limit of ' \
+                          + str(q_out_limit) + ' W.'
+                    raise EnergyBalanceException(msg)
+
+                # Check if q_in is not exceeding maximum possible
+                #  discharging power
+                q_in_limit = tes.calc_storage_q_in_max(q_out=q_out_requ)
+                if q_tes_in > q_in_limit:
+                    msg = 'q_tes_in (' \
+                          + str(q_tes_in) + ' W) exceeds tes input' \
+                                            'power limit of ' \
+                          + str(q_in_limit) + ' W.'
+                    raise EnergyBalanceException(msg)
+
                 #  Calc. storage energy balance for this timestep
                 tes.calc_storage_temp_for_next_timestep(q_in=q_tes_in,
                                                         q_out=q_out_requ,
@@ -1753,6 +1853,26 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                     q_out_requ = 0
 
                 temp_prior = tes.t_current
+
+                #  Check if q_out is not exceeding maximum possible
+                #  dharging power
+                q_out_limit = tes.calc_storage_q_out_max(q_in=q_tes_in)
+                if q_out_requ > q_out_limit:
+                    msg = 'q_out_requ (' \
+                          + str(q_out_requ) + ' W) exceeds tes output' \
+                                             'power limit of ' \
+                          + str(q_out_limit) + ' W.'
+                    raise EnergyBalanceException(msg)
+
+                # Check if q_in is not exceeding maximum possible
+                #  discharging power
+                q_in_limit = tes.calc_storage_q_in_max(q_out=q_out_requ)
+                if q_tes_in > q_in_limit:
+                    msg = 'q_tes_in (' \
+                          + str(q_tes_in) + ' W) exceeds tes input' \
+                                            'power limit of ' \
+                          + str(q_in_limit) + ' W.'
+                    raise EnergyBalanceException(msg)
 
                 # Calc. storage energy balance for this timestep
                 tes.calc_storage_temp_for_next_timestep(q_in=q_tes_in,
@@ -1900,6 +2020,26 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                     q_out_requ = 0
 
                 temp_prior = tes.t_current
+
+                #  Check if q_out is not exceeding maximum possible
+                #  dharging power
+                q_out_limit = tes.calc_storage_q_out_max(q_in=q_tes_in)
+                if q_out_requ > q_out_limit:
+                    msg = 'q_out_requ (' \
+                          + str(q_out_requ) + ' W) exceeds tes output' \
+                                             'power limit of ' \
+                          + str(q_out_limit) + ' W.'
+                    raise EnergyBalanceException(msg)
+
+                # Check if q_in is not exceeding maximum possible
+                #  discharging power
+                q_in_limit = tes.calc_storage_q_in_max(q_out=q_out_requ)
+                if q_tes_in > q_in_limit:
+                    msg = 'q_tes_in (' \
+                          + str(q_tes_in) + ' W) exceeds tes input' \
+                                            'power limit of ' \
+                          + str(q_in_limit) + ' W.'
+                    raise EnergyBalanceException(msg)
 
                 # Calc. storage energy balance for this timestep
                 tes.calc_storage_temp_for_next_timestep(q_in=q_tes_in,

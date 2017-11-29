@@ -256,16 +256,22 @@ class thermalEnergyStorageExtended(TES.ThermalEnergyStorage):
         """
 
         # check if charging or discharging is possible
-        if q_out > self.calc_storage_q_out_max(t_ambient=t_ambient,
-                                                q_in=q_in):
-            msg = 'Output power q_out exceeds maximum possible output power ' \
-                  'of thermal storage! Discharging is not possible!'
+        q_out_limit = self.calc_storage_q_out_max(t_ambient=t_ambient,
+                                                  q_in=q_in)
+        if q_out > q_out_limit:
+            msg = 'Output power q_out (' \
+                  + str(q_out) + 'W) exceeds maximum possible output power ' \
+                  + str(q_out_limit) + ' W of thermal storage! Discharging ' \
+                                       'is not possible!'
             raise TESChargingException(msg)
 
-        if q_in > self.calc_storage_q_in_max(t_ambient=t_ambient,
-                                              q_out=q_out):
-            msg = 'Input power q_in exceeds maximum possible input power ' \
-                  'of thermal storage! Charging is not possible!'
+        q_in_limit = self.calc_storage_q_in_max(t_ambient=t_ambient,
+                                                q_out=q_out)
+        if q_in > q_in_limit:
+            msg = 'Input power q_in (' \
+                  + str(q_in) + 'W) exceeds maximum possible input power ' \
+                  + str(q_in_limit) + ' W of thermal storage! Charging ' \
+                                       'is not possible!'
             raise TESChargingException(msg)
 
         #  If environment outside temp should be used
