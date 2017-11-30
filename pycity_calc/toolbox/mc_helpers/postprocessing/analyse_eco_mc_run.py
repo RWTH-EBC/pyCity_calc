@@ -119,6 +119,10 @@ class EcoMCRunAnalyze(object):
         self._array_ex_to_an = None
         self._array_ex_to_co2 = None
 
+        #  Annuity / CO2 to net exergy
+        self._array_ann_to_ex = None
+        self._array_co2_to_ex = None
+
     def __repr__(self):
         return 'EcoMCRunAnalyze object of pyCity_resilience. Can be used ' \
                'to analyze results of economic Monte-Carlo uncertainty run.'
@@ -660,6 +664,98 @@ class EcoMCRunAnalyze(object):
 
         return np.std(a=self._array_en_to_an)
 
+    def calc_co2_to_net_exergy_ratio(self, save_res=True):
+        """
+        Calculates CO2 to net exergy to co2 ratio as estimator for
+        ecologic efficiency.
+
+        Parameters
+        ----------
+        save_res : bool, optional
+            Defines, if results should be saved
+            (default: True)
+
+        Returns
+        -------
+        array_co2_to_ex: np.array (of floats)
+            Numpy array holding CO2 to net exergy to ratios in kg (CO2) / kWh
+        """
+
+        if (self._array_co2_mod is None
+            or self._array_sh_dem_mod is None
+            or self._array_el_dem_mod is None
+            or self._array_dhw_dem_mod is None):
+            msg = 'Cannot calculate net energy to annuity ratio, as inputs ' \
+                  'are missing. Have you loaded all results files and called' \
+                  ' extract_basic_results?'
+            raise AssertionError(msg)
+
+        # Dummy arrays
+        array_co2_to_ex = np.zeros(len(self._array_co2_mod))
+
+        #  Use net exergy concept
+        array_net_ex_sh = self._array_sh_dem_mod * (1 - 20 / 70)
+        array_net_ex_dhw = self._array_dhw_dem_mod * (1 - 20 / 80)
+
+        #  Total net exergy
+        array_net_ex_total = array_net_ex_sh \
+                             + array_net_ex_dhw \
+                             + self._array_el_dem_mod
+
+        for i in range(len(array_co2_to_ex)):
+            array_co2_to_ex[i] = self._array_co2_mod[i] / array_net_ex_total[i]
+
+        if save_res:
+            self._array_co2_to_ex = array_co2_to_ex
+
+        return array_co2_to_ex
+
+    def calc_annuity_to_net_exergy_ratio(self, save_res=True):
+        """
+        Calculates annuity to net exergy to co2 ratio as estimator for
+        ecologic efficiency.
+
+        Parameters
+        ----------
+        save_res : bool, optional
+            Defines, if results should be saved
+            (default: True)
+
+        Returns
+        -------
+        array_ann_to_ex: np.array (of floats)
+            Numpy array holding annuity to net exergy to ratios in Euro / kWh
+        """
+
+        if (self._array_ann_mod is None
+            or self._array_sh_dem_mod is None
+            or self._array_el_dem_mod is None
+            or self._array_dhw_dem_mod is None):
+            msg = 'Cannot calculate net energy to annuity ratio, as inputs ' \
+                  'are missing. Have you loaded all results files and called' \
+                  ' extract_basic_results?'
+            raise AssertionError(msg)
+
+        # Dummy arrays
+        array_ann_to_ex = np.zeros(len(self._array_ann_mod))
+
+        #  Use net exergy concept
+        array_net_ex_sh = self._array_sh_dem_mod * (1 - 20 / 70)
+        array_net_ex_dhw = self._array_dhw_dem_mod * (1 - 20 / 80)
+
+        #  Total net exergy
+        array_net_ex_total = array_net_ex_sh \
+                             + array_net_ex_dhw \
+                             + self._array_el_dem_mod
+
+        for i in range(len(array_ann_to_ex)):
+            array_ann_to_ex[i] = array_net_ex_total[i] / self._array_co2_mod[i]
+
+        if save_res:
+            self._array_ann_to_ex = array_ann_to_ex
+
+        return array_ann_to_ex
+
     @staticmethod
     def calc_res_factor(array_in):
         """
@@ -767,50 +863,52 @@ if __name__ == '__main__':
     mc_analyze.calc_net_energy_to_co2_ratio()
     mc_analyze.calc_net_exergy_to_annuity_ratio()
     mc_analyze.calc_net_exergy_to_co2_ratio()
+    mc_analyze.calc_co2_to_net_exergy_ratio()
+    mc_analyze.calc_annuity_to_net_exergy_ratio()
 
-    #  Evaluate means
-    mean_net_e_to_ann = mc_analyze.calc_net_energy_to_ann_mean()
-    mean_net_e_to_co2 = mc_analyze.calc_net_energy_to_co2_mean()
+    # #  Evaluate means
+    # mean_net_e_to_ann = mc_analyze.calc_net_energy_to_ann_mean()
+    # mean_net_e_to_co2 = mc_analyze.calc_net_energy_to_co2_mean()
+    #
+    # print('Mean of net energy to annuity ratios:')
+    # print(round(mean_net_e_to_ann, 2))
+    #
+    # print('Mean of net energy to CO2 ratios:')
+    # print(round(mean_net_e_to_co2, 2))
+    # print()
+    #
+    # #  Evaluate standard deviations
+    # std_net_e_to_ann = mc_analyze.calc_net_energy_to_ann_std()
+    # std_net_e_to_co2 = mc_analyze.calc_net_energy_to_co2_std()
+    #
+    # print('Standard deviation of net energy to annuity ratios:')
+    # print(round(std_net_e_to_ann, 2))
+    #
+    # print('Standard deviation of net energy to CO2 ratios:')
+    # print(round(std_net_e_to_co2, 2))
+    # print()
 
-    print('Mean of net energy to annuity ratios:')
-    print(round(mean_net_e_to_ann, 2))
-
-    print('Mean of net energy to CO2 ratios:')
-    print(round(mean_net_e_to_co2, 2))
-    print()
-
-    #  Evaluate standard deviations
-    std_net_e_to_ann = mc_analyze.calc_net_energy_to_ann_std()
-    std_net_e_to_co2 = mc_analyze.calc_net_energy_to_co2_std()
-
-    print('Standard deviation of net energy to annuity ratios:')
-    print(round(std_net_e_to_ann, 2))
-
-    print('Standard deviation of net energy to CO2 ratios:')
-    print(round(std_net_e_to_co2, 2))
-    print()
-
-    #  Evaluate risk aversion
-    win_en_to_an = mc_analyze.calc_risk_averse_parameters(type='en_to_an')
-    win_en_to_co2 = mc_analyze.calc_risk_averse_parameters(type='en_to_co2')
-
-    print('Risk aversion evaluation factor of net energy to annuity ratio:')
-    print(round(win_en_to_an, 2))
-
-    print('Risk aversion evaluation factor of net energy to co2 ratio:')
-    print(round(win_en_to_co2, 2))
-    print()
-
-    #  Evaluate risk aversion (exergy)
-    win_ex_to_an = mc_analyze.calc_risk_averse_parameters(type='ex_to_an')
-    win_ex_to_co2 = mc_analyze.calc_risk_averse_parameters(type='ex_to_co2')
-
-    print('Risk aversion evaluation factor of net exergy to annuity ratio:')
-    print(round(win_ex_to_an, 2))
-
-    print('Risk aversion evaluation factor of net exergy to co2 ratio:')
-    print(round(win_ex_to_co2, 2))
-    print()
+    # #  Evaluate risk aversion
+    # win_en_to_an = mc_analyze.calc_risk_averse_parameters(type='en_to_an')
+    # win_en_to_co2 = mc_analyze.calc_risk_averse_parameters(type='en_to_co2')
+    #
+    # print('Risk aversion evaluation factor of net energy to annuity ratio:')
+    # print(round(win_en_to_an, 2))
+    #
+    # print('Risk aversion evaluation factor of net energy to co2 ratio:')
+    # print(round(win_en_to_co2, 2))
+    # print()
+    #
+    # #  Evaluate risk aversion (exergy)
+    # win_ex_to_an = mc_analyze.calc_risk_averse_parameters(type='ex_to_an')
+    # win_ex_to_co2 = mc_analyze.calc_risk_averse_parameters(type='ex_to_co2')
+    #
+    # print('Risk aversion evaluation factor of net exergy to annuity ratio:')
+    # print(round(win_ex_to_an, 2))
+    #
+    # print('Risk aversion evaluation factor of net exergy to co2 ratio:')
+    # print(round(win_ex_to_co2, 2))
+    # print()
 
     # #  Evaluation
     # #  ####################################################################
@@ -825,14 +923,16 @@ if __name__ == '__main__':
     plt.show()
     plt.close()
 
-    plt.hist(mc_analyze._array_en_to_an, bins='auto')
-    plt.xlabel('Net energy to annuity ratio in kWh/Euro')
+    plt.hist(mc_analyze._array_ann_to_ex, bins='auto')
+    plt.xlabel('Effort in annualized cost per net exergy unit in Euro/kWh')
     plt.ylabel('Nb. of occurence')
     plt.show()
     plt.close()
 
-    plt.hist(mc_analyze._array_en_to_co2, bins='auto')
-    plt.xlabel('Net energy to CO2 ratio in kWh/kg(CO2)')
+    plt.hist(mc_analyze._array_co2_to_ex, bins='auto')
+    plt.xlabel('Effort in emissions per net exergy unit in kg/kWh')
     plt.ylabel('Nb. of occurence')
     plt.show()
     plt.close()
+
+
