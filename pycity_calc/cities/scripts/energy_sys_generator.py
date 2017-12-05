@@ -70,7 +70,7 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
     city : object
         City object of pycity_calc
     list_data : list
-        List (of tuples). Each tuple holds eneryg system data with following
+        List (of tuples). Each tuple holds energy system data with following
         information: (node_id, type, method)
     dhw_scale : bool, optional
         Defines, if hot water thermal energy demand should be taken into
@@ -405,7 +405,8 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
             bes.addMultipleDevices(list_entities)
 
         # #-------------------------------------------------------------
-        elif type == 2:  # HP + EH + TES
+        elif type == 2:  # HP (air/water) + EH + TES or
+            #  HP (water/water) + EH + TES
             #  #-------------------------------------------------------------
 
             #  Check if chosen node_id building is connected via lhn to
@@ -435,8 +436,18 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
             print('Chosen heat pump nominal th. power in kW:')
             print(hp_th_power / 1000)
 
+            #  HP type
+            if method == 1:
+                hp_type = 'aw'
+            elif method == 2:
+                hp_type = 'ww'
+            else:
+                msg = 'Unknown method for HP type generation!'
+                raise AssertionError(msg)
+
             heatpump = hpsys.heatPumpSimple(environment=city.environment,
-                                            q_nominal=hp_th_power)
+                                            q_nominal=hp_th_power,
+                                            hp_type=hp_type)
 
             #  TODO: Size el. heater based on max. space heating and dhw power
             el_h_space_h_power = hp_th_power * buffer_factor
@@ -521,9 +532,9 @@ if __name__ == '__main__':
     dhw_usage = True
 
     #  Path to city pickle file
-    city_filename = 'city_3_buildings_with_networks.p'
+    city_filename = 'city_3_buildings_with_networks.pkl'
     this_path = os.path.dirname(os.path.abspath(__file__))
-    city_path = os.path.join(this_path, 'input_esys_generator',
+    city_path = os.path.join(this_path, 'output_en_network_generator',
                              city_filename)
 
     #  Path to energy system input file (csv/txt; tab separated)
@@ -531,8 +542,8 @@ if __name__ == '__main__':
     esys_path = os.path.join(this_path, 'input_esys_generator',
                              esys_filename)
 
-    #  Path to save pickle city file with networks
-    save_filename = 'city_3_building_enersys_enersys.p'
+    #  Path to save pickle city file with energy systems
+    save_filename = 'city_3_building_enersys_enersys.pkl'
     save_path = os.path.join(this_path, 'output_esys_generator',
                              save_filename)
 
