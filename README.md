@@ -105,8 +105,7 @@ pyCity_calc is released under the [MIT License](https://opensource.org/licenses/
 
 ## Acknowledgements
 
-We gratefully acknowledge the financial support by BMWi 
-(German Federal Ministry for Economic Affairs and Energy) 
-under promotional references 03ET1138D and 03ET1381A.
+Grateful acknowledgement is made for financial support by Federal Ministry for Economic Affairs and Energy (BMWi), 
+promotional references 03ET1138D and 03ET1381A.
 
 <img src="http://www.innovation-beratung-foerderung.de/INNO/Redaktion/DE/Bilder/Titelbilder/titel_foerderlogo_bmwi.jpg;jsessionid=4BD60B6CD6337CDB6DE21DC1F3D6FEC5?__blob=poster&v=2)" width="200">

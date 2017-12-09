@@ -30,6 +30,7 @@ import pycity_calc.toolbox.modifiers.mod_city_dhw_dem as dhwmod
 import pycity_calc.toolbox.networks.network_ops as netop
 import pycity_calc.simulation.energy_balance.building_eb_calc as buildeb
 import pycity_calc.toolbox.modifiers.mod_city_esys_size as modesys
+import pycity_calc.energysystems.thermalEnergyStorage as tessys
 import pycity_calc.visualization.city_visual as citvis
 
 
@@ -99,6 +100,12 @@ class McRunner(object):
 
         self._nb_failed_runs = None  # Counter for failed runs
         self._list_failed_runs = []
+
+        self._tuple_ref_results = None
+        #  Tuple with results of reference run (annuity, co2, space heating,
+        #  electric demand, dhw demand)
+        self._dict_fe_ref_run = None
+        #  Final energy demand results dictionary of reference run
 
         if get_build_ids:
             #  Extract building node ids
@@ -508,13 +515,14 @@ class McRunner(object):
                                            array_ratio_on=array_summer_heat_on,
                                            list_b_ids=self._list_build_ids)
 
-        if self._has_lhn:
-            #  If LHN exists, sample for LHN with ref. investment cost of 1
-            array_lhn_inv = esyssample.sample_invest_unc(nb_samples=nb_runs,
-                                                         ref_inv=1)
-            #  If LHN exists, sample losses for LHN (ref loss 1)
-            array_lhn_loss = esyssample.sample_lhn_loss_unc(nb_samples=nb_runs,
-                                                            ref_loss=1)
+        #  Only used, if LHN exists, but required to prevent ref.
+        #  before assignment error #289
+        #  If LHN exists, sample for LHN with ref. investment cost of 1
+        array_lhn_inv = esyssample.sample_invest_unc(nb_samples=nb_runs,
+                                                     ref_inv=1)
+        #  If LHN exists, sample losses for LHN (ref loss 1)
+        array_lhn_loss = esyssample.sample_lhn_loss_unc(nb_samples=nb_runs,
+                                                        ref_loss=1)
 
         dict_city_samples['interest'] = array_interest
         dict_city_samples['ch_cap'] = array_ch_cap
@@ -972,6 +980,14 @@ class McRunner(object):
                 self._list_failed_runs.append(i)
                 msg = 'Run %d failed with EnergyBalanceException' % (i)
                 warnings.warn(msg)
+            except tessys.TESChargingException as ermessage:
+                print(ermessage)
+                traceback.print_exc()
+                #  Count failure nb. up
+                self._nb_failed_runs += 1
+                self._list_failed_runs.append(i)
+                msg = 'Run %d failed with EnergyBalanceException' % (i)
+                warnings.warn(msg)
 
             if self._nb_failed_runs > failure_tolerance * nb_runs:
                 msg = 'Number of failed runs exceeds ' \
@@ -1074,6 +1090,55 @@ class McRunner(object):
 
         return (dict_samples_const, dict_samples_esys, dict_mc_res,
                 dict_mc_setup)
+
+    def perform_ref_run(self, save_res=True):
+        """
+        Perform reference energy balance and annuity run with default values
+        given by city object, environment etc.
+
+        Parameters
+        ----------
+        save_res : bool, optional
+            Defines, if results should be saved on McRunner object
+            (default: True)
+
+        Returns
+        -------
+        tuple_res : tuple
+            Results tuple (total_annuity, co2, sh_dem, el_dem, dhw_dem)
+            total_annuity : float
+                Total annuity in Euro/a
+            co2 : float
+                Total CO2 emissions in kg/a
+            sh_dem : float
+                Net space heating demand in kWH/a
+            el_dem : float
+                Net electric demand in kWH/a
+            dhw_dem : float
+                Net hot water thermal energy demand in kWH/a
+        """
+
+        #  Copy CityAnnuityCalc object
+        c_eco_copy = copy.deepcopy(self._city_eco_calc)
+
+        (total_annuity, co2) = c_eco_copy. \
+            perform_overall_energy_balance_and_economic_calc(run_mc=False)
+
+        #  Extract further results
+        sh_dem = c_eco_copy.energy_balance. \
+            city.get_annual_space_heating_demand()
+        el_dem = c_eco_copy.energy_balance. \
+            city.get_annual_el_demand()
+        dhw_dem = c_eco_copy.energy_balance. \
+            city.get_annual_dhw_demand()
+
+        if save_res:
+            self._tuple_ref_results = (total_annuity, co2, sh_dem,
+                                       el_dem, dhw_dem)
+            self._dict_fe_ref_run = c_eco_copy. \
+                energy_balance.dict_fe_city_balance
+
+        return (total_annuity, co2, sh_dem, el_dem, dhw_dem)
 
 
 if __name__ == '__main__':
@@ -1395,6 +1460,17 @@ if __name__ == '__main__':
                                failure_tolerance=failure_tolerance,
                                do_sampling=do_sampling,
                                prevent_printing=prevent_printing)
+
+    #  Perform reference run:
+    #  #####################################################################
+    (total_annuity, co2, sh_dem, el_dem, dhw_dem) = mc_run.perform_ref_run()
+
+    print()
+    print('Total annualized cost in Euro/a of reference run:')
+    print(round(total_annuity, 2))
+    print('Total CO2 emissions in kg/a of reference run:')
+    print(round(co2, 2))
+    print()
 
     #  Evaluation
     #  #####################################################################

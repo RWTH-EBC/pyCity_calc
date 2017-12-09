@@ -11,6 +11,19 @@ import numpy as np
 import pycity_base.classes.supply.ThermalEnergyStorage as TES
 import pycity_calc.toolbox.unit_conversion as unitcon
 
+class TESChargingException(Exception):
+    def __init__(self, message):
+        """
+        Constructor for own TES Charging Exception
+
+        Parameters
+        ----------
+        message : str
+            Error message
+        """
+
+        super(TESChargingException, self).__init__(message)
+
 
 class thermalEnergyStorageExtended(TES.ThermalEnergyStorage):
     """
@@ -243,10 +256,23 @@ class thermalEnergyStorageExtended(TES.ThermalEnergyStorage):
         """
 
         # check if charging or discharging is possible
-        assert q_out <= self.calc_storage_q_out_max(t_ambient=t_ambient,
-                                                    q_in=q_in), 'Discharging is not possible'
-        assert q_in <= self.calc_storage_q_in_max(t_ambient=t_ambient,
-                                                  q_out=q_out), 'Charging is not possible'
+        q_out_limit = self.calc_storage_q_out_max(t_ambient=t_ambient,
+                                                  q_in=q_in)
+        if q_out > q_out_limit:
+            msg = 'Output power q_out (' \
+                  + str(q_out) + 'W) exceeds maximum possible output power ' \
+                  + str(q_out_limit) + ' W of thermal storage! Discharging ' \
+                                       'is not possible!'
+            raise TESChargingException(msg)
+
+        q_in_limit = self.calc_storage_q_in_max(t_ambient=t_ambient,
+                                                q_out=q_out)
+        if q_in > q_in_limit:
+            msg = 'Input power q_in (' \
+                  + str(q_in) + 'W) exceeds maximum possible input power ' \
+                  + str(q_in_limit) + ' W of thermal storage! Charging ' \
+                                       'is not possible!'
+            raise TESChargingException(msg)
 
         #  If environment outside temp should be used
         if self.use_outside_temp:

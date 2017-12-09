@@ -10,6 +10,7 @@ without energy systems)
 Annotation: Current input limit for single network is 1000 characters
 (see load_en_network_input_data --> genfromtxt call)
 """
+from __future__ import division
 
 import os
 import csv
@@ -126,9 +127,9 @@ def add_energy_networks_to_city(city, dict_data):
 if __name__ == '__main__':
 
     #  Path to city pickle file
-    city_filename = 'city_3_buildings.p'
+    city_filename = 'city_3_buildings_w_street.pkl'
     this_path = os.path.dirname(os.path.abspath(__file__))
-    city_path = os.path.join(this_path, 'input_en_network_generator',
+    city_path = os.path.join(this_path, 'output_complex_city_gen',
                              city_filename)
 
     #  Path to energy network input file (csv/txt; tab separated)
@@ -137,7 +138,7 @@ if __name__ == '__main__':
                                 network_filename)
 
     #  Path to save pickle city file with networks
-    save_filename = 'city_3_buildings_with_networks.p'
+    save_filename = 'city_3_buildings_with_networks.pkl'
     save_path = os.path.join(this_path, 'output_en_network_generator',
                              save_filename)
 

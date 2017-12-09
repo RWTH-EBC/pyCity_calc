@@ -60,10 +60,11 @@ def check_eb_build_requ(build):
             status_okay = True
             if build.bes.hasTes is False:  # pragma: no cover
                 tes_okay = False
-            if build.bes.hasElectricalHeater is False:  # pragma: no cover
+            if (build.bes.hasElectricalHeater is False
+                and build.bes.hasBoiler is False):  # pragma: no cover
                 msg = 'Building does have heatpump, but no electric heater' \
-                      ' for hot water supply! If your building has hot' \
-                      ' water demand, the energy balance is going to ' \
+                      ' or boiler for hot water supply! If your building ' \
+                      'has hot water demand, the energy balance is going to ' \
                       'crash!'
                 warnings.warn(msg)
 
