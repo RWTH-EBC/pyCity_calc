@@ -2679,7 +2679,7 @@ if __name__ == '__main__':
     #  osm call (city object should hold nodes, but no entities. City
     #  generator is going to add building, apartment and load entities to
     #  building nodes
-    generation_mode = 1
+    generation_mode = 0
 
     #  Generate environment
     #  ######################################################
@@ -2779,24 +2779,26 @@ if __name__ == '__main__':
 
     # filename = 'city_3_buildings_mixed.txt'
     # filename = 'city_clust_simple.txt'
-    filename = 'aachen_forsterlinde_mod_new_1.txt'
+    # filename = 'aachen_forsterlinde_mod_new_1.txt'
     # filename = 'aachen_frankenberg_mod_new_1.txt'
     # filename = 'aachen_huenefeld_mod_new_1.txt'
     # filename = 'aachen_kronenberg_mod_new_1.txt'
     # filename = 'aachen_preusweg_mod_new_1.txt'
     # filename = 'aachen_tuerme_mod_new_1.txt'
+    filename = 'aachen_ambackes_1.txt'
 
     #  Output filename
     pickle_city_filename = filename[:-4] + '.pkl'
 
     #  For generation_mode == 1:
     # city_osm_input = None
-    city_osm_input = 'aachen_forsterlinde_osm_nx2.pkl'
+    # city_osm_input = 'aachen_forsterlinde_osm_nx2.pkl'
     # city_osm_input = 'aachen_frankenberg_osm_nx2.pkl'
     # city_osm_input = 'aachen_huenefeld_osm_nx2.pkl'
     # city_osm_input = 'aachen_kronenberg_osm_nx2.pkl'
     # city_osm_input = 'aachen_preusweg_osm_nx2.pkl'
     # city_osm_input = 'aachen_tuerme_osm_nx2.pkl'
+    city_osm_input = 'ambackes_overpass_osm.pkl'
 
     #  delete
     list_del_frankenberg = [1034, 1036, 1035, 1033, 1027, 1031, 1028, 1032,

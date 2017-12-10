@@ -351,10 +351,10 @@ if __name__ == '__main__':
     this_path = os.path.dirname(os.path.abspath(__file__))
     src_path = os.path.dirname(os.path.dirname(this_path))
 
-    #  City file name (to
-    city_f_name = 'city_3_buildings_mixed.pkl'
+    #  City file name
+    city_f_name = 'ambackes_overpass_osm_nx2_extr.pkl'
 
-	list_files = []
+    list_files = []
 
     use_german = False
     with_esys = False
@@ -393,30 +393,40 @@ if __name__ == '__main__':
     #city_file = 'aachen_tuerme_osm_mod_1.pkl'
     #list_files.append(city_file)
 
+    #  Load city object
+    city = pickle.load(open(city_path, mode='rb'))
+
     #  Txt output filename
     out_name = city_f_name[:-4] + '.txt'
 
-    for n in list_files:
-
-        #  Path to load city object
-        city_path = os.path.join(this_path, 'input', 'aachen', n)
+    #  Path to save data to
+    out_path = os.path.join(this_path, 'output',
+                            # 'aachen',
+                            # #  'osm_extract',
+                            # 'osm_extract_mod',
+                            out_name)
 
     #  Extract and save city object data
     save_city_data_to_file(city=city, save_path=out_path, with_esys=with_esys,
                            use_german=use_german, save_as_xlsx=save_as_xlsx)
 
-        #  Path to save data to
-        out_path = os.path.join(this_path, 'output', 'aachen',
-                                #  'osm_extract',
-                                'osm_extract_mod',
-                                out_name)
-
-		##  Txt output filename
-        #out_name = n[:-1] + '.txt'
-
-        #  Load city object
-        city = pickle.load(open(city_path, mode='rb'))
-
-        #  Extract and save city object data
-        save_city_data_to_file(city=city, save_path=out_path, with_esys=False)
+    # for n in list_files:
+    #
+    #     #  Path to load city object
+    #     city_path = os.path.join(this_path, 'input', 'aachen', n)
+    #
+    #     #  Path to save data to
+    #     out_path = os.path.join(this_path, 'output', 'aachen',
+    #                             #  'osm_extract',
+    #                             'osm_extract_mod',
+    #                             out_name)
+    #
+		# ##  Txt output filename
+    #     #out_name = n[:-1] + '.txt'
+    #
+    #     #  Load city object
+    #     city = pickle.load(open(city_path, mode='rb'))
+    #
+    #     #  Extract and save city object data
+    #     save_city_data_to_file(city=city, save_path=out_path, with_esys=False)
 

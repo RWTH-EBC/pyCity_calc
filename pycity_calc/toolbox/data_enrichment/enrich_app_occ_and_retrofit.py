@@ -588,8 +588,8 @@ if __name__ == '__main__':
     #  ####################################################################
 
     #  Input and output filename
-    filename = 'city_5_enrich.txt'
-    file_out = filename[:-4] + '_enrich.txt'
+    filename = 'aachen_ambackes_enrich.txt'
+    file_out = filename[:-4] + '_occ.txt'
 
     #  Input and output filepath
     file_path = os.path.join(this_path, 'input', filename)
@@ -610,7 +610,7 @@ if __name__ == '__main__':
 
     #  Estimate last year of modernization, based on given thermal net space
     #  heating demand
-    est_m_year = True
+    est_m_year = False
 
     #  Save modified district_data
     save_data = True

@@ -859,16 +859,16 @@ if __name__ == '__main__':
     check_bes = False  # Check existence of BES on building
     check_typebuilding = False  # Check existence of TEASER typebuilding
 
-    #  Check consistency of file
-    check_city_consinstency(city=city, check_sh=check_sh, check_el=check_el,
-                            check_dhw=check_dhw, check_occ=check_occ,
-                            check_base_par=check_base_par, check_bes=check_bes,
-                            check_typebuilding=check_typebuilding)
-
-    #  Run analyzation script
-    run_c_file_an(city_object=city)
-
-    get_min_max_th_sh_powers(city, print_out=True)
+    # #  Check consistency of file
+    # check_city_consinstency(city=city, check_sh=check_sh, check_el=check_el,
+    #                         check_dhw=check_dhw, check_occ=check_occ,
+    #                         check_base_par=check_base_par, check_bes=check_bes,
+    #                         check_typebuilding=check_typebuilding)
+    #
+    # #  Run analyzation script
+    # run_c_file_an(city_object=city)
+    #
+    # get_min_max_th_sh_powers(city, print_out=True)
 
     #  Plot city district
     citvis.plot_city_district(city=city, offset=7,
