@@ -588,7 +588,7 @@ if __name__ == '__main__':
     #  ####################################################################
 
     #  Input and output filename
-    filename = 'aachen_ambackes_enrich.txt'
+    filename = 'aachen_ambackes_1.txt'
     file_out = filename[:-4] + '_occ.txt'
 
     #  Input and output filepath

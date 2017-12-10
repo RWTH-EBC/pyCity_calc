@@ -828,7 +828,7 @@ if __name__ == '__main__':
     # city_file = 'aachen_tuerme_osm.pkl'
     # city_file = 'ambackes_bbb_osm_nx2.pkl'
     # city_file = 'ambackes_overpass_osm_nx2.pkl'
-    city_file = 'ambackes_overpass_osm_nx2_extr.pkl'
+    # city_file = 'ambackes_overpass_osm_nx2_extr.pkl'
 
     # city_file = 'aachen_forsterlinde_mod_new_1.pkl'
     # city_file = 'aachen_frankenberg_mod_new_1.pkl'
@@ -836,6 +836,7 @@ if __name__ == '__main__':
     # city_file = 'aachen_kronenberg_mod_new_1.pkl'
     # city_file = 'aachen_preusweg_mod_new_1.pkl'
     # city_file = 'aachen_tuerme_mod_new_1.pkl'
+    city_file = 'aachen_ambackes_1.pkl'
 
     print('Analyse city file: ', city_file)
 
@@ -859,23 +860,23 @@ if __name__ == '__main__':
     check_bes = False  # Check existence of BES on building
     check_typebuilding = False  # Check existence of TEASER typebuilding
 
-    # #  Check consistency of file
-    # check_city_consinstency(city=city, check_sh=check_sh, check_el=check_el,
-    #                         check_dhw=check_dhw, check_occ=check_occ,
-    #                         check_base_par=check_base_par, check_bes=check_bes,
-    #                         check_typebuilding=check_typebuilding)
-    #
-    # #  Run analyzation script
-    # run_c_file_an(city_object=city)
-    #
-    # get_min_max_th_sh_powers(city, print_out=True)
+    #  Check consistency of file
+    check_city_consinstency(city=city, check_sh=check_sh, check_el=check_el,
+                            check_dhw=check_dhw, check_occ=check_occ,
+                            check_base_par=check_base_par, check_bes=check_bes,
+                            check_typebuilding=check_typebuilding)
 
-    #  Plot city district
-    citvis.plot_city_district(city=city, offset=7,
-                              x_label='x-coordinate in m',
-                              y_label='y-coordinate in m',
-                              equal_axis=True,
-                              plot_build_labels=True)
+    #  Run analyzation script
+    run_c_file_an(city_object=city)
+
+    get_min_max_th_sh_powers(city, print_out=True)
+
+    # #  Plot city district
+    # citvis.plot_city_district(city=city, offset=7,
+    #                           x_label='x-coordinate in m',
+    #                           y_label='y-coordinate in m',
+    #                           equal_axis=True,
+    #                           plot_build_labels=True)
 
 
 
