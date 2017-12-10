@@ -193,8 +193,10 @@ if __name__ == '__main__':
     # filename = 'aachen_huenefeld.osm'
     # filename = 'aachen_kronenberg.osm'
     # filename = 'aachen_preusweg.osm'
-    filename = 'aachen_tuerme.osm'
+    # filename = 'aachen_tuerme.osm'
     # filename = 'aachen_ambro.osm'
+    # filename = 'ambackes_bbb.osm'
+    filename = 'ambackes_overpass.osm'
 
     #  Minimal required building area in m2
     min_area = 50
@@ -220,7 +222,7 @@ if __name__ == '__main__':
 
     #  Parameters for environment
     timestep = 3600  # in seconds
-    year = 2010
+    year = 2017
     location = (50.781743,6.083470)  #  Aachen
     #  location = (51.529086, 6.944689)  # Bottrop
     altitude = 266
@@ -264,7 +266,7 @@ if __name__ == '__main__':
     print()
 
     #  Plot city district
-    citvis.plot_city_district(city=city, node_size=10, plot_build_labels=False)
+    citvis.plot_city_district(city=city, node_size=10, plot_build_labels=True)
 
     if 1001 in city.nodes():
         print('Area of building 1001: ', city.nodes[1001]['area'])

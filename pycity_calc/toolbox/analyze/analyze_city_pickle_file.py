@@ -826,8 +826,11 @@ if __name__ == '__main__':
     # city_file = 'aachen_kronenberg_osm.pkl'
     # city_file = 'aachen_preusweg_osm.pkl'
     # city_file = 'aachen_tuerme_osm.pkl'
+    # city_file = 'ambackes_bbb_osm_nx2.pkl'
+    # city_file = 'ambackes_overpass_osm_nx2.pkl'
+    city_file = 'ambackes_overpass_osm_nx2_extr.pkl'
 
-    city_file = 'aachen_forsterlinde_mod_new_1.pkl'
+    # city_file = 'aachen_forsterlinde_mod_new_1.pkl'
     # city_file = 'aachen_frankenberg_mod_new_1.pkl'
     # city_file = 'aachen_huenefeld_mod_new_1.pkl'
     # city_file = 'aachen_kronenberg_mod_new_1.pkl'
@@ -840,10 +843,10 @@ if __name__ == '__main__':
     this_path = os.path.dirname(os.path.abspath(__file__))
     pycity_path = os.path.dirname(os.path.dirname(this_path))
 
-    # file_path = os.path.join(this_path, 'input', 'aachen', city_file)
-    file_path = os.path.join(pycity_path, 'cities', 'scripts',
-                             'city_generator',
-                             'output', city_file)
+    file_path = os.path.join(this_path, 'input', city_file)
+    # file_path = os.path.join(pycity_path, 'cities', 'scripts',
+    #                          'city_generator',
+    #                          'output', city_file)
 
     #  Load city object from pickle file
     city = load_pickled_city_file(file_path)
@@ -867,7 +870,12 @@ if __name__ == '__main__':
 
     get_min_max_th_sh_powers(city, print_out=True)
 
-
+    #  Plot city district
+    citvis.plot_city_district(city=city, offset=7,
+                              x_label='x-coordinate in m',
+                              y_label='y-coordinate in m',
+                              equal_axis=True,
+                              plot_build_labels=True)
 
 
 
@@ -916,6 +924,15 @@ if __name__ == '__main__':
     #
     # pickle.dump(subcity, open(save_path, mode='wb'))
 
+    # list_del = [1001, 1010]
+    #
+    # for n in list_del:
+    #     city.remove_building(n)
+    #
+    # out_name = city_file[:-4] + '_extr.pkl'
+    # save_path = os.path.join(this_path, 'output', out_name)
+    #
+    # pickle.dump(city, open(save_path, mode='wb'))
 
     # #  Add KFW retrofit to buildings
     #  ###################################################################
