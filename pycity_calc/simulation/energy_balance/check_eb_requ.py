@@ -159,15 +159,15 @@ def check_eb_requirements(city, pycity_deap=False):
         if found_lhn:
             #  Check, if each LHN network has, at least, one feeder node
 
-            #  Dummy value (assumes, that no feeder exists in LHN)
-            lhn_status = False
-
             #  Get list of lists of lhn connected buildings
             list_lists_lhn = \
                 netop.get_list_with_energy_net_con_node_ids(city=city,
                                                             build_node_only=True)
 
             for list_lhn in list_lists_lhn:
+                #  Dummy value (assumes, that no feeder exists in LHN)
+                lhn_status = False
+
                 for n in list_lhn:
                     build = city.nodes[n]['entity']
 
@@ -189,10 +189,10 @@ def check_eb_requirements(city, pycity_deap=False):
                             lhn_status = True
                             break
 
-                if lhn_status is False:  # pragma: no cover
-                    msg = 'LHN network has no feeder node (LHN network ' \
-                          'with node ids ' + str(list_lhn) + '.'
-                    raise EnergySupplyException(msg)
+            if lhn_status is False:  # pragma: no cover
+                msg = 'LHN network has no feeder node (LHN network ' \
+                      'with node ids ' + str(list_lhn) + '.'
+                raise EnergySupplyException(msg)
 
     print('Energy balance input check has been sucessful')
 
