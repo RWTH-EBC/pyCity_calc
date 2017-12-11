@@ -164,6 +164,8 @@ def check_eb_requirements(city, pycity_deap=False):
                 netop.get_list_with_energy_net_con_node_ids(city=city,
                                                             build_node_only=True)
 
+            list_stati = []
+
             for list_lhn in list_lists_lhn:
                 #  Dummy value (assumes, that no feeder exists in LHN)
                 lhn_status = False
@@ -178,21 +180,27 @@ def check_eb_requirements(city, pycity_deap=False):
                         #  exists
                         if build.bes.hasBoiler is True:
                             lhn_status = True
+                            list_stati.append(lhn_status)
                             break
                         if build.bes.hasChp is True:
                             lhn_status = True
+                            list_stati.append(lhn_status)
                             break
                         if build.bes.hasHeatpump is True:
                             lhn_status = True
+                            list_stati.append(lhn_status)
                             break
                         if build.bes.hasElectricalHeater is True:
                             lhn_status = True
+                            list_stati.append(lhn_status)
                             break
+                list_stati.append(lhn_status)
 
-            if lhn_status is False:  # pragma: no cover
-                msg = 'LHN network has no feeder node (LHN network ' \
-                      'with node ids ' + str(list_lhn) + '.'
-                raise EnergySupplyException(msg)
+            for status in list_stati:
+                if status is False:  # pragma: no cover
+                    msg = 'LHN network has no feeder node (LHN network ' \
+                          'with node ids ' + str(list_lhn) + '.'
+                    raise EnergySupplyException(msg)
 
     print('Energy balance input check has been sucessful')
 
