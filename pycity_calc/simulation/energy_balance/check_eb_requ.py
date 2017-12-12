@@ -202,25 +202,32 @@ def check_eb_requirements(city, pycity_deap=False):
                 list_lhn_no_sup.append(list_lhn)
 
             for status in list_stati:
+                msg = ''
                 if status is False:  # pragma: no cover
                     for list_lhn in list_lhn_no_sup:
                         for n in list_lhn:
                             print('n', n)
+                            msg += 'n ' + str(n) + ' \n'
                             build = city.nodes[n]['entity']
                             if build.hasBes:
                                 bes = build.bes
                                 if bes.hasBoiler:
                                     print('Has boiler')
+                                    msg += 'has boiler' + ' \n'
                                 if bes.hasChp:
                                     print('Has CHP')
+                                    msg += 'has CHP' + ' \n'
                                 if bes.hasElectricalHeater:
                                     print('Has EH')
+                                    msg += 'has EH' + ' \n'
                                 if bes.hasHeatpump:
                                     print('Has HP')
+                                    msg += 'has HP' + ' \n'
                                 if bes.hasTes:
                                     print('Has TES')
+                                    msg += 'has TES' + ' \n'
 
-                    msg = 'LHN network has no feeder node (LHN network ' \
+                    msg += 'LHN network has no feeder node (LHN network ' \
                           'with node ids ' + str(list_lhn_no_sup) + '.'
                     raise EnergySupplyException(msg)
 
