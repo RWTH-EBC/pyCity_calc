@@ -224,10 +224,4 @@ class TestCheckEBRequ():
 
         esysgen.gen_esys_for_city(city=city, list_data=list_esys)
 
-        #  Check if requirements are fulfilld
-        try:
-            checkeb.check_eb_requirements(city=city)
-        except checkeb.EnergySupplyException:
-            print('Raised EnergySupplyException --> Passed')
-        except:
-            raise AssertionError()
+        checkeb.check_eb_requirements(city=city)
