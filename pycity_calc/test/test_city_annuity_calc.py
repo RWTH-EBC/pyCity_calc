@@ -67,7 +67,6 @@ class TestCityAnnuityCalc():
                                               location=location,
                                               co2em=co2emissions)
 
-
         #  City
         city = cit.City(environment=environment)
 
@@ -274,7 +273,7 @@ class TestCityAnnuityCalc():
 
         #  Assert demand related annuity
         assert abs(dem_rel_annuity -
-                   (payment_gas + payment_electr + eeg_payment))\
+                   (payment_gas + payment_electr + eeg_payment)) \
                <= 0.01 * dem_rel_annuity
 
         #  Income/proceedings
@@ -343,7 +342,6 @@ class TestCityAnnuityCalc():
                                               prices=gmarket,
                                               location=location,
                                               co2em=co2emissions)
-
 
         #  City
         city = cit.City(environment=environment)
@@ -535,7 +533,7 @@ class TestCityAnnuityCalc():
         eeg_payment = eeg_chp * el_energy_self
 
         # #  Assert demand related annuity
-        assert abs(dem_rel_annuity - (payment_gas + eeg_payment))\
+        assert abs(dem_rel_annuity - (payment_gas + eeg_payment)) \
                <= 0.01 * dem_rel_annuity
 
         #  Income/proceedings
@@ -577,7 +575,22 @@ class TestCityAnnuityCalc():
 
         print('chp_subsidy_sold: ', chp_subsidy_sold)
 
+        #  Calculate EEX payments and avoided grid usage fee
+        sub_eex = sum(
+            city_eco_calc.energy_balance.city.
+                environment.prices.eex_baseload) / len(
+            city_eco_calc.energy_balance.city.
+                environment.prices.eex_baseload)
+
+        #  Get grid usage avoidance fee
+        sub_avoid_grid_use = city_eco_calc.energy_balance.city.environment. \
+            prices.grid_av_fee
+
+        eex_payment = sub_eex * el_energy_export
+        grid_av_pay = sub_avoid_grid_use * el_energy_export
+
         #  Assert proceedings
         assert abs(proc_rel_annuity - (tax_exception + chp_subsidy_self +
-                                   chp_subsidy_sold)) <= \
-               0.05 * proc_rel_annuity
+                                       chp_subsidy_sold + eex_payment
+                                       + grid_av_pay)) <= \
+               0.01 * proc_rel_annuity
