@@ -40,8 +40,8 @@ class TestCityAnnuityCalc():
         """
 
         #  Create extended environment of pycity_calc
-        year = 2010
-        timestep = 3600  # Timestep in seconds
+        year = 2017
+        timestep = 900  # Timestep in seconds
         location = (51.529086, 6.944689)  # (latitude, longitute) of Bottrop
         altitude = 55  # Altitude of Bottrop
 
@@ -72,7 +72,8 @@ class TestCityAnnuityCalc():
         city = cit.City(environment=environment)
 
         #  One building
-        building = build.BuildingExtended(environment=environment)
+        building = build.BuildingExtended(environment=environment,
+                                          build_type=0)
 
         #  One apartment
         apartment = apart.Apartment(environment=environment)
@@ -197,6 +198,8 @@ class TestCityAnnuityCalc():
         #  Calculate demand related annuity
         dem_rel_annuity = city_eco_calc.calc_dem_rel_annuity_city()
 
+        print('dem_rel_annuity: ', dem_rel_annuity)
+
         #  Calculate proceedings
         proc_rel_annuity = city_eco_calc.calc_proceeds_annuity_city()
 
@@ -237,6 +240,9 @@ class TestCityAnnuityCalc():
         el_energy_import = el_energy - el_energy_self
         assert el_energy_import >= 0
 
+        print('el_energy_self: ', el_energy_self)
+        print('el_energy_import:', el_energy_import)
+
         #  Payment gas (with gas price (WITHOUT tax exception --> Within
         #  proceedings))
 
@@ -246,6 +252,8 @@ class TestCityAnnuityCalc():
                 get_spec_gas_cost(type='res',
                                   year=year,
                                   annual_demand=chp_energy_gas)
+
+        print('spec_cost_gas: ', spec_cost_gas)
 
         payment_gas = spec_cost_gas * chp_energy_gas
 
@@ -264,10 +272,10 @@ class TestCityAnnuityCalc():
 
         eeg_payment = eeg_chp * el_energy_self
 
-        # #  Assert demand related annuity
-        # assert abs(dem_rel_annuity -
-        #            (payment_gas + payment_electr + eeg_payment))\
-        #        <= 0.01 * dem_rel_annuity
+        #  Assert demand related annuity
+        assert abs(dem_rel_annuity -
+                   (payment_gas + payment_electr + eeg_payment))\
+               <= 0.01 * dem_rel_annuity
 
         #  Income/proceedings
         #  Tax return/exception for CHP
@@ -300,6 +308,8 @@ class TestCityAnnuityCalc():
         assert abs(proc_rel_annuity - (tax_exception + chp_subsidy)) <= \
                0.01 * proc_rel_annuity
 
+        print('Annuity factor: ', annuity_obj.ann_factor)
+
     def test_city_annuity_chp_calc2(self):
         """
         Compares annuity calculation of CHP for single building district with
@@ -308,7 +318,7 @@ class TestCityAnnuityCalc():
 
         #  Create extended environment of pycity_calc
         year = 2010
-        timestep = 3600  # Timestep in seconds
+        timestep = 900  # Timestep in seconds
         location = (51.529086, 6.944689)  # (latitude, longitute) of Bottrop
         altitude = 55  # Altitude of Bottrop
 
@@ -339,7 +349,8 @@ class TestCityAnnuityCalc():
         city = cit.City(environment=environment)
 
         #  One building
-        building = build.BuildingExtended(environment=environment)
+        building = build.BuildingExtended(environment=environment,
+                                          build_type=0)
 
         #  One apartment
         apartment = apart.Apartment(environment=environment)
@@ -524,8 +535,8 @@ class TestCityAnnuityCalc():
         eeg_payment = eeg_chp * el_energy_self
 
         # #  Assert demand related annuity
-        # assert abs(dem_rel_annuity - (payment_gas + eeg_payment))\
-        #        <= 0.01 * dem_rel_annuity
+        assert abs(dem_rel_annuity - (payment_gas + eeg_payment))\
+               <= 0.01 * dem_rel_annuity
 
         #  Income/proceedings
         #  Tax return/exception for CHP

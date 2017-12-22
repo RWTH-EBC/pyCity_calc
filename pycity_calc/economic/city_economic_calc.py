@@ -7,6 +7,7 @@ from __future__ import division
 
 import os
 import pickle
+import warnings
 
 import pycity_calc.environments.germanmarket as gmarket
 import pycity_calc.simulation.energy_balance.city_eb_calc as citeb
@@ -525,10 +526,18 @@ class CityAnnuityCalc(object):
         #  TODO: Extract year for annuity calculation
         year = self.energy_balance.city.environment.timer.year
 
-        if build.build_type == 0:
+        if build.build_type is None:
+            msg = 'build.build_type is None. Assume, that this building is' \
+                  ' residential building to estimate specific energy cost.'
+            warnings.warn(msg)
             type = 'res'
-        else:
+        elif build.build_type == 0:
+            type = 'res'
+        elif build.build_type > 0:
             type = 'ind'
+        else:
+            msg = 'Wrong input for build.build_type!'
+            raise AssertionError(msg)
 
         # Calculate specific cost values for energy demands
         spec_cost_gas = \
