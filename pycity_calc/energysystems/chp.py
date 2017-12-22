@@ -99,8 +99,21 @@ class ChpExtended(chp.CHP):
                                          'thermal_operation_mode is True and' \
                                          ' q_nominal has been given!'
                 warnings.warn(msg)
-        else:
-            assert p_nominal >= 0, 'Electrical Power cannot be below zero.'
+        else:  # Electrical driven mode
+            if p_nominal < 0:
+                msg = 'CHP electrical power cannot be below zero!'
+                raise AssertionError(msg)
+            elif p_nominal == 0:
+                msg = 'CHP electrical power is set to zero!'
+                warnings.warn(msg)
+
+            if q_nominal is not None:
+                msg = 'Nominal th. CHP power is set to ' \
+                      + str(p_nominal) + ' Watt. However, this value is ' \
+                                         'going to be overwritten, as ' \
+                                         'thermal_operation_mode is False ' \
+                                         'and p_nominal has been given!'
+                warnings.warn(msg)
 
         assert eta_total > 0, ('CHP total efficiency should not be equal to ' +
                                ' or below zero. Check your inputs.')
