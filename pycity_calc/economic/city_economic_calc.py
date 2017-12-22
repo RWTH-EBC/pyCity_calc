@@ -929,12 +929,12 @@ class CityAnnuityCalc(object):
         b_chp_sub_used = self.annuity_obj.price_dyn_chp_self
 
         # Get specific price
-        sub_chp_sold = self.energy_balance.city.environment.\
+        sub_chp_self = self.energy_balance.city.environment.\
             prices.get_sub_chp_self(
             p_nom=pnominal)
 
         # Calculate specific income [Euro/kWh]
-        sub_payment_chp_used = b_chp_sub_used * sub_chp_sold * en_chp_used
+        sub_payment_chp_used = b_chp_sub_used * sub_chp_self * en_chp_used
 
         return sub_payment_chp_used * self.annuity_obj.ann_factor
 
