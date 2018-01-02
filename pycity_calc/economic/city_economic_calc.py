@@ -7,6 +7,7 @@ from __future__ import division
 
 import os
 import pickle
+import warnings
 
 import pycity_calc.environments.germanmarket as gmarket
 import pycity_calc.simulation.energy_balance.city_eb_calc as citeb
@@ -525,10 +526,18 @@ class CityAnnuityCalc(object):
         #  TODO: Extract year for annuity calculation
         year = self.energy_balance.city.environment.timer.year
 
-        if build.build_type == 0:
+        if build.build_type is None:
+            msg = 'build.build_type is None. Assume, that this building is' \
+                  ' residential building to estimate specific energy cost.'
+            warnings.warn(msg)
             type = 'res'
-        else:
+        elif build.build_type == 0:
+            type = 'res'
+        elif build.build_type > 0:
             type = 'ind'
+        else:
+            msg = 'Wrong input for build.build_type!'
+            raise AssertionError(msg)
 
         # Calculate specific cost values for energy demands
         spec_cost_gas = \
@@ -709,11 +718,15 @@ class CityAnnuityCalc(object):
 
                 assert p_el_nom >= 0
 
+                #  Get maximum subsidies CHP total runtime
+                #  (e.g. 30000 or 60000 hours)
                 chp_runtime = self.energy_balance.city.environment.\
                     prices.get_max_total_runtime_chp_sub(p_el_nom=p_el_nom)
 
+                #  Calculate average subsidies runtime per year
                 chp_runtime_per_year = chp_runtime / self.annuity_obj.time
 
+                #  TODO: Part load?
                 chp_runtime_used_per_year = (chp_self + chp_feed) \
                                             * 1000 / p_el_nom
 
@@ -727,6 +740,7 @@ class CityAnnuityCalc(object):
                     chp_runtime_sub = chp_runtime_per_year + 0.0
 
                 assert chp_runtime_sub >= 0
+                assert chp_runtime_sub <= 60000 / self.annuity_obj.time
 
                 #  Split runtime to shares of chp sold and chp self energy
                 if chp_self != 0 or chp_feed != 0:
@@ -753,11 +767,15 @@ class CityAnnuityCalc(object):
                 #  Calc. EEX and grid avoidance payment for chp fed-in
                 annuity_chp_eex_sold = self.calc_chp_sold(en_chp_sold=chp_feed)
 
+                assert annuity_chp_eex_sold >= 0
+
                 #  Calculate CHP sold subsidies, depending on size and
                 #  maximum runtime
                 annuity_chp_sub_sold = self.\
                     calc_sub_chp_el_sold(en_chp_sold=chp_en_feed,
                                          pnominal=p_el_nom)
+
+                assert annuity_chp_sub_sold >= 0
 
                 #  Calculate CHP self subsidies, depending on size and
                 #  maximum runtime
@@ -765,9 +783,13 @@ class CityAnnuityCalc(object):
                     calc_sub_chp_el_used(en_chp_used=chp_en_self,
                                          pnominal=p_el_nom)
 
+                assert annuity_chp_sub_self >= 0
+
                 #  Calc CHP tax return
                 annuity_chp_tax_return = self.\
                     calc_sub_chp_gas_used(gas_chp_used=fuel_chp)
+
+                assert annuity_chp_tax_return >= 0
 
         #  Sum up proceeding related annuities
         annuity_proceeds = annuity_pv + annuity_chp_eex_sold \
@@ -929,12 +951,12 @@ class CityAnnuityCalc(object):
         b_chp_sub_used = self.annuity_obj.price_dyn_chp_self
 
         # Get specific price
-        sub_chp_sold = self.energy_balance.city.environment.\
+        sub_chp_self = self.energy_balance.city.environment.\
             prices.get_sub_chp_self(
             p_nom=pnominal)
 
         # Calculate specific income [Euro/kWh]
-        sub_payment_chp_used = b_chp_sub_used * sub_chp_sold * en_chp_used
+        sub_payment_chp_used = b_chp_sub_used * sub_chp_self * en_chp_used
 
         return sub_payment_chp_used * self.annuity_obj.ann_factor
 

@@ -30,6 +30,8 @@ def run_example():
 
     #  Generate market object
     market = mark.Market()
+    #  You can also use GermanMarket to have specific German tariffs and
+    #  subsidies
 
     #  Generate co2 emissions object
     co2em = co2.Emissions(year=year)
