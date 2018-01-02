@@ -546,14 +546,15 @@ class TestCityAnnuityCalc():
 
         tax_exception = tax_exep_chp * chp_energy_gas
 
+        print('Tax exception in Euro: ', tax_exception)
+
         # Get specific price
         sub_chp_self = city_eco_calc.energy_balance.city.environment. \
             prices.get_sub_chp_self(
             p_nom=chp_el_pow)
 
         #  Estimate max. CHP payments per year
-        chp_runtime_used_per_year = (el_energy_self) \
-                                    * 1000 / chp_el_pow
+        chp_runtime_used_per_year = 8760
         print('chp_runtime_used_per_year: ', chp_runtime_used_per_year)
 
         if chp_runtime_used_per_year <= 6000:
@@ -588,6 +589,17 @@ class TestCityAnnuityCalc():
 
         eex_payment = sub_eex * el_energy_export
         grid_av_pay = sub_avoid_grid_use * el_energy_export
+
+        print('EEX payment: ', eex_payment)
+        print('Avoided grid usage fee: ', grid_av_pay)
+
+        # print('Delta abs: ')
+        # delta_abs = abs(proc_rel_annuity - (tax_exception + chp_subsidy_self +
+        #                                chp_subsidy_sold + eex_payment
+        #                                + grid_av_pay))
+        # print(delta_abs)
+        # delta_rel = delta_abs / proc_rel_annuity
+        # print('Delta rel: ', delta_rel)
 
         #  Assert proceedings
         assert abs(proc_rel_annuity - (tax_exception + chp_subsidy_self +

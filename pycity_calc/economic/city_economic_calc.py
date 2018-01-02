@@ -718,11 +718,15 @@ class CityAnnuityCalc(object):
 
                 assert p_el_nom >= 0
 
+                #  Get maximum subsidies CHP total runtime
+                #  (e.g. 30000 or 60000 hours)
                 chp_runtime = self.energy_balance.city.environment.\
                     prices.get_max_total_runtime_chp_sub(p_el_nom=p_el_nom)
 
+                #  Calculate average subsidies runtime per year
                 chp_runtime_per_year = chp_runtime / self.annuity_obj.time
 
+                #  TODO: Part load?
                 chp_runtime_used_per_year = (chp_self + chp_feed) \
                                             * 1000 / p_el_nom
 
@@ -736,6 +740,7 @@ class CityAnnuityCalc(object):
                     chp_runtime_sub = chp_runtime_per_year + 0.0
 
                 assert chp_runtime_sub >= 0
+                assert chp_runtime_sub <= 60000 / self.annuity_obj.time
 
                 #  Split runtime to shares of chp sold and chp self energy
                 if chp_self != 0 or chp_feed != 0:
@@ -762,11 +767,15 @@ class CityAnnuityCalc(object):
                 #  Calc. EEX and grid avoidance payment for chp fed-in
                 annuity_chp_eex_sold = self.calc_chp_sold(en_chp_sold=chp_feed)
 
+                assert annuity_chp_eex_sold >= 0
+
                 #  Calculate CHP sold subsidies, depending on size and
                 #  maximum runtime
                 annuity_chp_sub_sold = self.\
                     calc_sub_chp_el_sold(en_chp_sold=chp_en_feed,
                                          pnominal=p_el_nom)
+
+                assert annuity_chp_sub_sold >= 0
 
                 #  Calculate CHP self subsidies, depending on size and
                 #  maximum runtime
@@ -774,9 +783,13 @@ class CityAnnuityCalc(object):
                     calc_sub_chp_el_used(en_chp_used=chp_en_self,
                                          pnominal=p_el_nom)
 
+                assert annuity_chp_sub_self >= 0
+
                 #  Calc CHP tax return
                 annuity_chp_tax_return = self.\
                     calc_sub_chp_gas_used(gas_chp_used=fuel_chp)
+
+                assert annuity_chp_tax_return >= 0
 
         #  Sum up proceeding related annuities
         annuity_proceeds = annuity_pv + annuity_chp_eex_sold \
