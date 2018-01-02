@@ -33,7 +33,7 @@ if __name__ == '__main__':
 
     nb_red = 100
 
-    design = pyDOE.lhs(n=2, samples=nb_red, criterion='center')
+    design = pyDOE.lhs(n=3, samples=nb_red, criterion='center')
 
     #  Check if normal distribution is valid
 
