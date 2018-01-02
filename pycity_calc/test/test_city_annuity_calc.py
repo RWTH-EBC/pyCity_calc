@@ -5,6 +5,7 @@
 """
 from __future__ import division
 
+import copy
 import numpy as np
 import shapely.geometry.point as point
 
@@ -606,3 +607,277 @@ class TestCityAnnuityCalc():
                                        chp_subsidy_sold + eex_payment
                                        + grid_av_pay)) <= \
                0.01 * proc_rel_annuity
+
+    def test_city_annuity_with_pv_only(self):
+        """
+        Compares CO2 values for city with single building, PV and electrical
+        demand, only.
+        """
+
+        #  Create extended environment of pycity_calc
+        year = 2017
+        timestep = 900  # Timestep in seconds
+        location = (51.529086, 6.944689)  # (latitude, longitute) of Bottrop
+        altitude = 55  # Altitude of Bottrop
+
+        #  Generate environment
+        #  Generate timer object
+        timer = time.TimerExtended(timestep=timestep, year=year)
+
+        nb_timesteps = timer.timestepsTotal
+
+        #  Generate weather object
+        weather = Weather.Weather(timer, useTRY=True, location=location,
+                                  altitude=altitude)
+
+        #  Generate market object
+        gmarket = germanmarket.GermanMarket()
+
+        #  Generate co2 emissions object
+        co2emissions = co2em.Emissions(year=year)
+
+        #  Generate environment
+        environment = env.EnvironmentExtended(timer, weather,
+                                              prices=gmarket,
+                                              location=location,
+                                              co2em=co2emissions)
+
+        #  City
+        city = cit.City(environment=environment)
+
+        #  One building
+        building = build.BuildingExtended(environment=environment,
+                                          build_type=0)
+
+        #  One apartment
+        apartment = apart.Apartment(environment=environment)
+
+        p_nom = 100000  # in W
+
+        array_el = np.ones(environment.timer.timestepsTotal) * p_nom
+        el_demand = elecdemand.ElectricalDemand(
+            environment=environment,
+            method=0,
+            loadcurve=array_el)
+
+        #  Add energy demands to apartment
+        apartment.addEntity(el_demand)
+
+        #  Add apartment to extended building
+        building.addEntity(entity=apartment)
+
+        #  Add building to city
+        pos = point.Point(0, 0)
+        city.add_extended_building(extended_building=building, position=pos)
+
+        #  BES
+        bes = BES.BES(environment=environment)
+
+        #  PV
+        pv_simple = PV.PV(environment=environment, area=10, eta=0.15)
+
+        boiler = boil.BoilerExtended(environment=environment,
+                                     q_nominal=1, # Dummy value
+                                     eta=1)
+
+        #  Add devices to BES
+        bes.addMultipleDevices([pv_simple, boiler])
+
+        #  Add BES to building
+        building.addEntity(bes)
+
+        city2 = copy.deepcopy(city)
+
+        #  Generate energy balance object
+        energy_balance = cityeb.CityEBCalculator(city=city)
+
+        #  Generate annuity object instance
+        annuity_obj = annu.EconomicCalculation(interest=0.000000001,
+                                               #  Zero interest undefined,
+                                               #  thus, using small value
+                                               price_ch_cap=1,
+                                               price_ch_dem_gas=1,
+                                               price_ch_dem_el=1,
+                                               price_ch_dem_cool=1,
+                                               price_ch_op=1,
+                                               price_ch_proc_chp=1.0,
+                                               price_ch_proc_pv=1.0,
+                                               price_ch_eeg_chp=1.0,
+                                               price_ch_eeg_pv=1,
+                                               price_ch_eex=1,
+                                               price_ch_grid_use=1,
+                                               price_ch_chp_sub=1,
+                                               price_ch_chp_self=1,
+                                               price_ch_chp_tax_return=1,
+                                               price_ch_pv_sub=1,
+                                               price_ch_dem_el_hp=1)
+
+        #  Generate city economic calculator
+        city_eco_calc = citecon.CityAnnuityCalc(annuity_obj=annuity_obj,
+                                                energy_balance=energy_balance)
+
+        #  ##################################################################
+        #  Run energy balance
+        #  ##################################################################
+
+        #  Calc. city energy balance
+        city_eco_calc.energy_balance.calc_city_energy_balance()
+
+        #  Perform final energy anaylsis
+        city_eco_calc.energy_balance.calc_final_energy_balance_city()
+
+        #  Perform emissions calculation
+        co2 = city_eco_calc.energy_balance.calc_co2_emissions(
+            el_mix_for_chp=True)
+
+        #  ##################################################################
+        #  Perform economic calculations
+        #  ##################################################################
+
+        #  Calculate capital and operation related annuity
+        (cap_rel_ann, op_rel_ann) = \
+            city_eco_calc.calc_cap_and_op_rel_annuity_city()
+
+        #  Calculate demand related annuity
+        dem_rel_annuity = city_eco_calc.calc_dem_rel_annuity_city()
+
+        #  Calculate proceedings
+        proc_rel_annuity = city_eco_calc.calc_proceeds_annuity_city()
+
+        #  Calculate total annuity
+        annuity = city_eco_calc.annuity_obj. \
+            calc_total_annuity(ann_capital=cap_rel_ann,
+                               ann_demand=dem_rel_annuity,
+                               ann_op=op_rel_ann,
+                               ann_proc=proc_rel_annuity)
+
+        #  Total el. demand
+        el_energy = building.get_annual_el_demand()
+
+        print('El. demand in kWh: ', el_energy)
+
+        #  Get el. power array of PV
+        pv_power_array = pv_simple.getPower()
+
+        #  El. energy PV
+        pv_el_energy = sum(pv_power_array) * timestep / (1000 * 3600)
+
+        print('PV el. energy in kWh: ', pv_el_energy)
+
+        #  Estimate amount of bought electricity from the grid
+        #  Based on: PV peak power << el. power
+        el_energy_import = el_energy - pv_el_energy
+        assert el_energy_import >= 0
+
+        #  Payment el. grid (el. price)
+        spec_cost_el = city_eco_calc.energy_balance.city.environment.prices. \
+            get_spec_el_cost(type='res',
+                             year=year,
+                             annual_demand=el_energy_import)
+
+        payment_electr = spec_cost_el * el_energy_import
+
+        delta_pay_1 = abs(dem_rel_annuity - payment_electr)
+
+        assert delta_pay_1 <= 0.001 * dem_rel_annuity
+
+        #  ##################################################################
+        #  ##################################################################
+
+        #  Double area size
+        city2.nodes[1001]['entity'].bes.pv.area *= 2
+
+        #  Generate energy balance object
+        energy_balance = cityeb.CityEBCalculator(city=city2)
+
+        #  Generate annuity object instance
+        annuity_obj = annu.EconomicCalculation(interest=0.000000001,
+                                               #  Zero interest undefined,
+                                               #  thus, using small value
+                                               price_ch_cap=1,
+                                               price_ch_dem_gas=1,
+                                               price_ch_dem_el=1,
+                                               price_ch_dem_cool=1,
+                                               price_ch_op=1,
+                                               price_ch_proc_chp=1.0,
+                                               price_ch_proc_pv=1.0,
+                                               price_ch_eeg_chp=1.0,
+                                               price_ch_eeg_pv=1,
+                                               price_ch_eex=1,
+                                               price_ch_grid_use=1,
+                                               price_ch_chp_sub=1,
+                                               price_ch_chp_self=1,
+                                               price_ch_chp_tax_return=1,
+                                               price_ch_pv_sub=1,
+                                               price_ch_dem_el_hp=1)
+
+        #  Generate city economic calculator
+        city_eco_calc = citecon.CityAnnuityCalc(annuity_obj=annuity_obj,
+                                                energy_balance=energy_balance)
+
+        #  ##################################################################
+        #  Run energy balance
+        #  ##################################################################
+
+        #  Calc. city energy balance
+        city_eco_calc.energy_balance.calc_city_energy_balance()
+
+        #  Perform final energy anaylsis
+        city_eco_calc.energy_balance.calc_final_energy_balance_city()
+
+        #  Perform emissions calculation
+        co2 = city_eco_calc.energy_balance.calc_co2_emissions(
+            el_mix_for_chp=True)
+
+        #  ##################################################################
+        #  Perform economic calculations
+        #  ##################################################################
+
+        #  Calculate capital and operation related annuity
+        (cap_rel_ann, op_rel_ann) = \
+            city_eco_calc.calc_cap_and_op_rel_annuity_city()
+
+        #  Calculate demand related annuity
+        dem_rel_annuity2 = city_eco_calc.calc_dem_rel_annuity_city()
+
+        #  Calculate proceedings
+        proc_rel_annuity = city_eco_calc.calc_proceeds_annuity_city()
+
+        #  Calculate total annuity
+        annuity = city_eco_calc.annuity_obj. \
+            calc_total_annuity(ann_capital=cap_rel_ann,
+                               ann_demand=dem_rel_annuity2,
+                               ann_op=op_rel_ann,
+                               ann_proc=proc_rel_annuity)
+
+        #  Total el. demand
+        el_energy = city2.nodes[1001]['entity'].get_annual_el_demand()
+
+        print('El. demand in kWh: ', el_energy)
+
+        #  Get el. power array of PV
+        pv_power_array = city2.nodes[1001]['entity'].bes.pv.getPower()
+
+        #  El. energy PV
+        pv_el_energy = sum(pv_power_array) * timestep / (1000 * 3600)
+
+        print('PV el. energy in kWh: ', pv_el_energy)
+
+        #  Estimate amount of bought electricity from the grid
+        #  Based on: PV peak power << el. power
+        el_energy_import = el_energy - pv_el_energy
+        assert el_energy_import >= 0
+
+        #  Payment el. grid (el. price)
+        spec_cost_el = city_eco_calc.energy_balance.city.environment.prices. \
+            get_spec_el_cost(type='res',
+                             year=year,
+                             annual_demand=el_energy_import)
+
+        payment_electr = spec_cost_el * el_energy_import
+
+        delta_pay_2 = abs(dem_rel_annuity2 - payment_electr)
+
+        assert delta_pay_2 <= 0.001 * dem_rel_annuity2
+
+        assert dem_rel_annuity2 < dem_rel_annuity
