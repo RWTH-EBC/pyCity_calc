@@ -34,12 +34,14 @@ import pycity_calc.toolbox.mc_helpers.user.user_unc_sampling as usunc
 try:
     import teaser.logic.simulation.VDI_6007.weather as vdiweather
 except:  # pragma: no cover
-    msg = 'Could not import TEASER package. If you need to use it, install ' \
+    msg = 'Could not import teaser.logic.simulation.VDI_6007.weather. ' \
+          'If you need to use it, install ' \
           'it via pip "pip install TEASER". Alternatively, you might have ' \
           'run into trouble with XML bindings in TEASER. This can happen ' \
           'if you try to re-import TEASER within an active Python console.' \
           'Please close the active Python console and open another one. Then' \
-          ' try again.'
+          ' try again. You might also be on the wrong TEASER branch ' \
+          '(without VDI 6007 core).'
     warnings.warn(msg)
 
 
@@ -102,6 +104,11 @@ def convert_th_slp_int_and_str(th_slp_int):
     - `GPD` : Paper and printing
     - `GWA` : Laundries
     """
+    if th_slp_int is None:
+        msg = 'th_slp_int is None. Going to return None.'
+        warnings.warn(msg)
+        return None
+
     slp_th_profile_dict_tag = {0: 'HEF',
                                1: 'HMF',
                                2: 'GMF',
@@ -149,6 +156,11 @@ def convert_el_slp_int_and_str(el_slp_int):
     #     9:  L1 : Farm, mainly cattle and milk
     #     10:  L2 : Other farming
     """
+    if el_slp_int is None:
+        msg = 'el_slp_int is None. Going to return None.'
+        warnings.warn(msg)
+        return None
+
     slp_el_profile_dict_tag = {0: 'H0',
                                1: 'G0',
                                2: 'G1',
@@ -179,6 +191,10 @@ def convert_method_3_nb_into_str(method_3_nb):
     method_3_str : str
         String of method 3
     """
+    if method_3_nb is None:
+        msg = 'method_3_nb is None. Going to return None.'
+        warnings.warn(msg)
+        return None
 
     dict_method_3 = {0: 'food_pro',
                      1: 'metal',
@@ -205,6 +221,10 @@ def convert_method_4_nb_into_str(method_4_nb):
     method_4_str : str
         String of method 4
     """
+    if method_4_nb is None:
+        msg = 'method_4_nb is None. Going to return None.'
+        warnings.warn(msg)
+        return None
 
     dict_method_4 = {0: 'metal_1', 1: 'metal_2', 2: 'warehouse'}
 
@@ -227,6 +247,10 @@ def conv_build_type_nb_to_name(build_type):
     build_name : str
         Building name / explanation
     """
+    if build_type is None:
+        msg = 'build_type is None. Going to return None for build_name.'
+        warnings.warn(msg)
+        return None
 
     dict_b_name = {
         0: 'Residential',
