@@ -6,6 +6,7 @@ Script to analyze pickle city file
 from __future__ import division
 import os
 import pickle
+import copy
 import warnings
 import numpy as np
 import matplotlib.pyplot as plt
@@ -38,6 +39,23 @@ if __name__ == '__main__':
     for n in [1001, 1002, 1003, 1004, 1011, 1013, 1008, 1016, 1015, 1005]:
         city.remove_building(n)
 
-    pickle.dump(city, open(out_path, mode='wb'))
+    #  Create empty city object (without buildings, but with identical
+    #  environment and streets
+    #  ###############################################
+    city_new = copy.deepcopy(city)
 
-    citvis.plot_city_district(city=city)
+    for n in [1009, 1014, 1007, 1006, 1012, 1010]:
+        city_new.remove_building(n)
+
+    city_new.next_node_number = 1001
+    #  ###############################################
+
+    for n in [1009, 1014, 1007, 1010, 1012, 1006]:
+        build = city.nodes[n]['entity']
+        pos = city.nodes[n]['position']
+
+        city_new.addEntity(entity=build, position=pos)
+
+    pickle.dump(city_new, open(out_path, mode='wb'))
+
+    citvis.plot_city_district(city=city_new)
