@@ -5,6 +5,7 @@ Script to generate city district with streets, energy networks and energy
 systems (executing city_generator, street_generator, energy_networks_generator
 and energy_sys_generator in a row).
 """
+from __future__ import division
 
 import os
 import pickle
