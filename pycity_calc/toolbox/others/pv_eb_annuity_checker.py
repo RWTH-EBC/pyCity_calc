@@ -17,8 +17,13 @@ import pycity_calc.environments.germanmarket as gmarket
 import pycity_calc.simulation.energy_balance.city_eb_calc as citeb
 import pycity_calc.economic.annuity_calculation as annu
 import pycity_calc.economic.city_economic_calc as citecon
+import pycity_calc.toolbox.modifiers.mod_city_sh_dem as modsh
+import pycity_calc.toolbox.modifiers.mod_city_dhw_dem as moddhw
+import pycity_calc.toolbox.modifiers.mod_city_el_dem as model
 
-def perform_pv_eb_annuity_check(city, dhw_scale=True):
+
+def perform_pv_eb_annuity_check(city, dhw_scale=True, zero_sh_dhw=False,
+                                zero_el=False):
     """
 
     Parameters
@@ -73,13 +78,13 @@ def perform_pv_eb_annuity_check(city, dhw_scale=True):
                  (1005, 0, 1),
                  (1006, 0, 1),
                  (1007, 0, 1),
-                 (1001, 3, 40),
-                 (1002, 3, 40),
-                 (1003, 3, 40),
-                 (1004, 3, 40),
-                 (1005, 3, 40),
-                 (1006, 3, 40),
-                 (1007, 3, 40)
+                 (1001, 3, 20),
+                 (1002, 3, 20),
+                 (1003, 3, 20),
+                 (1004, 3, 20),
+                 (1005, 3, 20),
+                 (1006, 3, 20),
+                 (1007, 3, 20)
                  ]
 
     #  Generate energy systems
@@ -100,13 +105,13 @@ def perform_pv_eb_annuity_check(city, dhw_scale=True):
                  (1005, 0, 1),
                  (1006, 0, 1),
                  (1007, 0, 1),
-                 (1001, 3, 80),
-                 (1002, 3, 80),
-                 (1003, 3, 80),
-                 (1004, 3, 80),
-                 (1005, 3, 80),
-                 (1006, 3, 80),
-                 (1007, 3, 80)
+                 (1001, 3, 90),
+                 (1002, 3, 90),
+                 (1003, 3, 90),
+                 (1004, 3, 90),
+                 (1005, 3, 90),
+                 (1006, 3, 90),
+                 (1007, 3, 90)
                  ]
 
     #  Generate energy systems
@@ -114,7 +119,15 @@ def perform_pv_eb_annuity_check(city, dhw_scale=True):
                               list_data=list_esys,
                               dhw_scale=dhw_scale)
 
-    #  #####################################################################
+    if zero_sh_dhw:
+        for city_ind in [city_scen_1, city_scen_2, city_scen_3]:
+            modsh.mod_sh_city_dem(city=city_ind, sh_dem=0)
+            moddhw.mod_dhw_city_dem(city=city_ind, dhw_dem=0)
+    if zero_el:
+        for city_ind in [city_scen_1, city_scen_2, city_scen_3]:
+            model.mod_el_city_dem(city=city_ind, el_dem=0)
+
+    # #####################################################################
     #  Generate object instances
     #  #####################################################################
 
@@ -139,27 +152,36 @@ def perform_pv_eb_annuity_check(city, dhw_scale=True):
     list_ann = []
     list_co2 = []
 
+    print()
+    print('Small PV')
+    print('#################################################################')
     #  Perform energy balance and annuity calculations for all scenarios
     (total_annuity_1, co2_1) = city_eco_calc1. \
-        perform_overall_energy_balance_and_economic_calc()
+        perform_overall_energy_balance_and_economic_calc(eeg_pv_limit=False)
     list_ann.append(total_annuity_1)
     list_co2.append(co2_1)
 
+    print()
+    print('Medium PV')
+    print('#################################################################')
     (total_annuity_2, co2_2) = city_eco_calc2. \
-        perform_overall_energy_balance_and_economic_calc()
+        perform_overall_energy_balance_and_economic_calc(eeg_pv_limit=False)
     list_ann.append(total_annuity_2)
     list_co2.append(co2_2)
 
+    print()
+    print('Large PV')
+    print('#################################################################')
     (total_annuity_3, co2_3) = city_eco_calc3. \
-        perform_overall_energy_balance_and_economic_calc()
+        perform_overall_energy_balance_and_economic_calc(eeg_pv_limit=False)
     list_ann.append(total_annuity_3)
     list_co2.append(co2_3)
 
-    plt.plot([total_annuity_1], [co2_1], label='Scen. 7 (BOI/small PV)',
+    plt.plot([total_annuity_1], [co2_1], label='Scen. 1 (BOI/small PV)',
              marker='o')
-    plt.plot([total_annuity_2], [co2_2], label='Scen. 8 (BOI/medium PV)',
+    plt.plot([total_annuity_2], [co2_2], label='Scen. 2 (BOI/medium PV)',
              marker='o')
-    plt.plot([total_annuity_3], [co2_3], label='Scen. 9 (BOI/large PV)',
+    plt.plot([total_annuity_3], [co2_3], label='Scen. 3 (BOI/large PV)',
              marker='o')
     plt.xlabel('Total annualized cost in Euro/a')
     plt.ylabel('Total CO2 emissions in kg/a')
@@ -182,25 +204,25 @@ def perform_pv_eb_annuity_check(city, dhw_scale=True):
     pv_medium_gen = build_pv_medium.bes.pv.totalPower
     pv_large_gen = build_pv_large.bes.pv.totalPower
 
-    demand_el = build_pv_small.get_electric_power_curve()
+    el_power = build_pv_small.get_electric_power_curve()
 
     fig = plt.figure()
 
     shift = 4008
 
     ax = fig.add_subplot(3, 1, 1)
-    ax.plot(pv_small_gen[0+shift:24+shift], label='Small PV')
-    ax.plot(demand_el[0:24], label='El. demand')
+    ax.plot(pv_small_gen[0 + shift:24 + shift], label='Small PV')
+    ax.plot(el_power[0:24], label='El. demand')
     plt.legend()
 
     ax = fig.add_subplot(3, 1, 2)
-    ax.plot(pv_medium_gen[0+shift:24+shift], label='Medium PV')
-    ax.plot(demand_el[0:24], label='El. demand')
+    ax.plot(pv_medium_gen[0 + shift:24 + shift], label='Medium PV')
+    ax.plot(el_power[0:24], label='El. demand')
     plt.legend()
 
     ax = fig.add_subplot(3, 1, 3)
-    ax.plot(pv_large_gen[0+shift:24+shift], label='Large PV')
-    ax.plot(demand_el[0:24], label='El. demand')
+    ax.plot(pv_large_gen[0 + shift:24 + shift], label='Large PV')
+    ax.plot(el_power[0:24], label='El. demand')
     plt.legend()
 
     plt.tight_layout()
@@ -209,6 +231,8 @@ def perform_pv_eb_annuity_check(city, dhw_scale=True):
 
 
 if __name__ == '__main__':
+    zero_sh_dhw = True
+    zero_el = False
 
     this_path = os.path.dirname(os.path.abspath(__file__))
 
@@ -220,4 +244,5 @@ if __name__ == '__main__':
 
     city = pickle.load(open(path_city, mode='rb'))
 
-    perform_pv_eb_annuity_check(city=city)
+    perform_pv_eb_annuity_check(city=city, zero_sh_dhw=zero_sh_dhw,
+                                zero_el=zero_el)

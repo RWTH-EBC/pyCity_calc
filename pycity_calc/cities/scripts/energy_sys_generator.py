@@ -60,7 +60,7 @@ def load_enersys_input_data(esys_path):
 
 
 def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
-                      buffer_factor=2, lhn_buffer=1.2):
+                      buffer_factor=2, lhn_buffer=1.2, eta_pv=0.09525):
     """
     Generate and dimensions energy systems within city district, based on
     user defined energy system types and method within txt input file.
@@ -84,7 +84,11 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
     lhn_buffer : float, optional
         Factor for LHN connection oversizing (default: 1.2). Relevant to
         account for LHN losses in Boiler/CHP sytem dimensioning
+    eta_pv : float, optional
+        Efficiency of PV system (default: 0.12)
     """
+    assert eta_pv > 0
+    assert eta_pv <= 1
 
     #  Check if all node ids exist within city object
     for tup in list_data:
@@ -497,7 +501,7 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
             # method --> Defines area of PV as float value
 
             pv = PV.PV(environment=city.environment, area=method,
-                       eta=0.15)
+                       eta=eta_pv, beta=30)
 
             print('Add PV system with area in m2: ', method)
 
