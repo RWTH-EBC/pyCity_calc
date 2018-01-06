@@ -60,7 +60,7 @@ def load_enersys_input_data(esys_path):
 
 
 def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
-                      buffer_factor=2, lhn_buffer=1.2, eta_pv=0.09525):
+                      buffer_factor=2, lhn_buffer=1.2, eta_pv=0.12):
     """
     Generate and dimensions energy systems within city district, based on
     user defined energy system types and method within txt input file.

@@ -679,8 +679,6 @@ class CityAnnuityCalc(object):
         #  PV energy
         pv_feed = sum(dict_el_eb['pv_feed']) * timestep / (1000 * 3600)
 
-        print('Del pv_feed: ', pv_feed)
-
         #  CHP electric energy
         chp_self = sum(dict_el_eb['chp_self']) * timestep / (1000 * 3600)
         chp_feed = sum(dict_el_eb['chp_feed']) * timestep / (1000 * 3600)
@@ -706,8 +704,6 @@ class CityAnnuityCalc(object):
             if build.bes.hasPv:
                 #  Estimate PV peak load
                 pv_peak_load = pv_peak_per_area * build.bes.pv.area
-
-                print('Del pv_peak_load: ', pv_peak_load)
 
                 annuity_pv = self.calc_sub_pv_sold(en_pv_sold=pv_feed,
                                                    pv_peak_load=pv_peak_load,
@@ -1037,8 +1033,6 @@ class CityAnnuityCalc(object):
         # Calculate specific income [Euro/kWh]
         sub_pv_sold = b_pv_sub_sold * pv_sub_sold * en_pv_sold
 
-        print('Del pv_sub_sold in Euro/kWh: ', pv_sub_sold)
-
         return sub_pv_sold * self.annuity_obj.ann_factor
 
     def perform_overall_energy_balance_and_economic_calc(self, run_mc=False,
@@ -1133,21 +1127,12 @@ class CityAnnuityCalc(object):
         #  Calculate proceedings
         proc_rel_annuity = self.calc_proceeds_annuity_city()
 
-        print('Capital rel. annuity: ', cap_rel_ann)
-        print('Demand rel. annuity: ', dem_rel_annuity)
-        print('Op. rel. annuity: ', op_rel_ann)
-        print('Proceedings rel. annuity: ', proc_rel_annuity)
-
         #  Calculate total annuity
         annuity = self.annuity_obj. \
             calc_total_annuity(ann_capital=cap_rel_ann,
                                ann_demand=dem_rel_annuity,
                                ann_op=op_rel_ann,
                                ann_proc=proc_rel_annuity)
-
-        print('Total annuity: ', annuity)
-        print('CO2: ', co2)
-        print()
 
         return (annuity, co2)
 

@@ -89,11 +89,11 @@ class heatPumpSimple(heat.HeatingDevice):
 
         #  TODO: Add reference for quality grades (Guetegrade)
         if hp_type == 'aw':
-            # self.quality_grade = 0.36  # Estimation of quality grade (Guetegrad)
-            self.quality_grade = 0.34  # Estimation of quality grade (Guetegrad)
+            self.quality_grade = 0.36  # Estimation of quality grade (Guetegrad)
+            # self.quality_grade = 0.34  # Estimation of quality grade (Guetegrad)
         elif hp_type == 'ww':
-            # self.quality_grade = 0.5  # Estimation of quality grade (Guetegrad)
-            self.quality_grade = 0.43  # Estimation of quality grade (Guetegrad)
+            self.quality_grade = 0.5  # Estimation of quality grade (Guetegrad)
+            # self.quality_grade = 0.43  # Estimation of quality grade (Guetegrad)
         else:
             warnings.warn(
                 'Unkown type of heat pump. Cannot define quality grade.')

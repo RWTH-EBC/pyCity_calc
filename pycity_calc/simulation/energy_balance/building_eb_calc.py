@@ -2562,16 +2562,6 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False,
     dict_el_eb_res['pv_off'] = pv_off  # "lost" PV energy due to EEG fed in
     #  limitation
 
-
-    timestep = build.environment.timer.timeDiscretization
-    print('Del pv_self: ', sum(pv_self) * timestep / (1000 * 3600))
-    print('Del pv_feed: ', sum(pv_feed) * timestep / (1000 * 3600))
-    print('Del pv_self_dem: ', sum(pv_self_dem) * timestep / (1000 * 3600))
-    print('Del pv_self_hp: ', sum(pv_self_hp) * timestep / (1000 * 3600))
-    print('Del pv_self_eh: ', sum(pv_self_eh) * timestep / (1000 * 3600))
-    print('Del pv_self_bat: ', sum(pv_self_bat) * timestep / (1000 * 3600))
-    print('Del pv_off: ', sum(pv_off) * timestep / (1000 * 3600))
-
     dict_el_eb_res['chp_self'] = chp_self
     dict_el_eb_res['chp_feed'] = chp_feed
 

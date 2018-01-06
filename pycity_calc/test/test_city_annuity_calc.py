@@ -1030,12 +1030,6 @@ class TestCityAnnuityCalc():
 
         pv_sub = pv_spec_sub * pv_el_energy
 
-        print()
-        print('Del pv_el_energy: ', pv_el_energy)
-        print('Del pv_sub: ', pv_sub)
-        print('Del Annuity: ', annuity)
-        print('Del cap_rel_ann: ', cap_rel_ann)
-
         assert pv_sub > 0
 
         assert abs(proc_rel_annuity - pv_sub) <= 0.001 * proc_rel_annuity
