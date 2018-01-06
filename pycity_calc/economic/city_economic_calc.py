@@ -687,7 +687,12 @@ class CityAnnuityCalc(object):
         assert chp_feed >= 0, 'chp_feed: ' + str(chp_feed)
 
         #  Calculate PV fed-in proceedings
-        if build.build_type == 0:  # Residential
+        if build.build_type is None:
+            msg = 'build.build_type is None. Assume, that this building is' \
+                  ' residential building to estimate specific energy cost.'
+            warnings.warn(msg)
+            is_res = 'res'
+        elif build.build_type == 0:  # Residential
             is_res = True
         else:
             is_res = False
@@ -1033,7 +1038,8 @@ class CityAnnuityCalc(object):
     def perform_overall_energy_balance_and_economic_calc(self, run_mc=False,
                                                          dict_samples_const=None,
                                                          dict_samples_esys=None,
-                                                         run_idx=None):
+                                                         run_idx=None,
+                                                         eeg_pv_limit=False):
         """
         Script runs energy balance and annuity calculation for city in
         energy_balance object
@@ -1058,6 +1064,11 @@ class CityAnnuityCalc(object):
             (of building with id <building_id>)
         run_idx : int, optional
             Index / number of run for Monte-Carlo analysis (default: None)
+        eeg_pv_limit : bool, optional
+            Defines, if EEG PV feed-in limitation of 70 % of peak load is
+            active (default: False). If limitation is active, maximal 70 %
+            of PV peak load are fed into the grid.
+            However, self-consumption is used, first.
 
         Returns
         -------
@@ -1087,7 +1098,8 @@ class CityAnnuityCalc(object):
         self.energy_balance.calc_city_energy_balance(run_mc=run_mc,
                                                      dict_samples_const=
                                                      dict_samples_const,
-                                                     run_idx=run_idx)
+                                                     run_idx=run_idx,
+                                                     eeg_pv_limit=eeg_pv_limit)
 
         #  Perform final energy anaylsis
         self.energy_balance.calc_final_energy_balance_city()
@@ -1134,6 +1146,8 @@ if __name__ == '__main__':
 
     #  Check requirements for pycity_deap
     pycity_deap = False
+
+    eeg_pv_limit = False
 
     try:
         #  Try loading city pickle file
@@ -1397,7 +1411,8 @@ if __name__ == '__main__':
     #  #####################################################################
 
     #  Calc. city energy balance
-    city_eco_calc.energy_balance.calc_city_energy_balance()
+    city_eco_calc.energy_balance.\
+        calc_city_energy_balance(eeg_pv_limit=eeg_pv_limit)
 
     #  Perform final energy anaylsis
     dict_fe_city = \
