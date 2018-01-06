@@ -133,6 +133,11 @@ class ChpExtended(chp.CHP):
                                                        thermal_operation_mode,
                                                        chp_type=chp_type)
 
+        if p_nominal is not None and thermal_operation_mode:
+            print('New CHP nominal el. power in kW: ', el_power/1000)
+        if q_nominal is not None and thermal_operation_mode is False:
+            print('New CHP nominal th. power in kW: ', th_power / 1000)
+
         super(ChpExtended, self).__init__(environment,
                                           qNominal=th_power,
                                           tMax=t_max,

@@ -915,7 +915,8 @@ class McRunner(object):
                     run_mc=True,
                     dict_samples_const=self._dict_samples_const,
                     dict_samples_esys=self._dict_samples_esys,
-                    run_idx=i)
+                    run_idx=i,
+                    eeg_pv_limit=False)
 
                 #  Extract further results
                 sh_dem = c_eco_copy.energy_balance. \
@@ -1122,7 +1123,8 @@ class McRunner(object):
         c_eco_copy = copy.deepcopy(self._city_eco_calc)
 
         (total_annuity, co2) = c_eco_copy. \
-            perform_overall_energy_balance_and_economic_calc(run_mc=False)
+            perform_overall_energy_balance_and_economic_calc(run_mc=False,
+                                                             eeg_pv_limit=False)
 
         #  Extract further results
         sh_dem = c_eco_copy.energy_balance. \

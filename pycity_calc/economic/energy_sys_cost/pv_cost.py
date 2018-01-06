@@ -5,7 +5,7 @@ Calculate investment cost for photovoltaic systems
 """
 from __future__ import division
 
-def calc_pv_invest(area, kw_to_area=0.1, method='sap'):
+def calc_pv_invest(area, kw_to_area=0.125, method='sap'):
     """
     Calculate PV investment cost in Euro
 
