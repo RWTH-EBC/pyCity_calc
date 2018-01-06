@@ -603,7 +603,7 @@ class McRunner(object):
         return (dict_samples_const, dict_samples_esys)
 
     def perform_mc_runs(self, nb_runs, failure_tolerance=0.05,
-                        heating_off=True):
+                        heating_off=True, eeg_pv_limit=False):
         """
         Perform mc runs.
         - Extract sample values
@@ -622,6 +622,11 @@ class McRunner(object):
         heating_off : bool, optional
             Defines, if sampling to deactivate heating during summer should
             be used (default: True)
+        eeg_pv_limit : bool, optional
+            Defines, if EEG PV feed-in limitation of 70 % of peak load is
+            active (default: False). If limitation is active, maximal 70 %
+            of PV peak load are fed into the grid.
+            However, self-consumption is used, first.
 
         Returns
         -------
@@ -916,7 +921,7 @@ class McRunner(object):
                     dict_samples_const=self._dict_samples_const,
                     dict_samples_esys=self._dict_samples_esys,
                     run_idx=i,
-                    eeg_pv_limit=False)
+                    eeg_pv_limit=eeg_pv_limit)
 
                 #  Extract further results
                 sh_dem = c_eco_copy.energy_balance. \
@@ -1092,7 +1097,7 @@ class McRunner(object):
         return (dict_samples_const, dict_samples_esys, dict_mc_res,
                 dict_mc_setup)
 
-    def perform_ref_run(self, save_res=True):
+    def perform_ref_run(self, save_res=True, eeg_pv_limit=False):
         """
         Perform reference energy balance and annuity run with default values
         given by city object, environment etc.
@@ -1102,6 +1107,11 @@ class McRunner(object):
         save_res : bool, optional
             Defines, if results should be saved on McRunner object
             (default: True)
+        eeg_pv_limit : bool, optional
+            Defines, if EEG PV feed-in limitation of 70 % of peak load is
+            active (default: False). If limitation is active, maximal 70 %
+            of PV peak load are fed into the grid.
+            However, self-consumption is used, first.
 
         Returns
         -------
@@ -1124,7 +1134,8 @@ class McRunner(object):
 
         (total_annuity, co2) = c_eco_copy. \
             perform_overall_energy_balance_and_economic_calc(run_mc=False,
-                                                             eeg_pv_limit=False)
+                                                             eeg_pv_limit=
+                                                             eeg_pv_limit)
 
         #  Extract further results
         sh_dem = c_eco_copy.energy_balance. \

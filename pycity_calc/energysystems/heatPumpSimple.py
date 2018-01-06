@@ -1,7 +1,7 @@
 # coding=utf-8
 """
 Simple heat Pump class, based on heating device of pycity
-(not on heat pump class of pycity!)
+(not based on heat pump class of pycity!)
 
 """
 from __future__ import division
@@ -15,12 +15,15 @@ import pycity_calc.toolbox.unit_conversion as unitcon
 class heatPumpSimple(heat.HeatingDevice):
     """
     Implementation of simple heat pump. COP is estimated via quality grade
-    (Guetegrad) and Carnot COP.
+    (Guetegrad) and Carnot COP. Nominal thermal / maximal output power is
+    constant and not dependend on temperature levels! However, COP can
+    vary for air/water heat pumps, depending on source temperature (e.g.
+    environment.weather.tAmbient)
     """
 
     def __init__(self, environment, q_nominal, t_max=55.0,
                  lower_activation_limit=0.5, hp_type='aw',
-                 t_sink=45.0):
+                 t_sink=45.0, qual_grade_aw=0.34, qual_grade_ww=0.43):
         """
         Parameters
         ----------
@@ -50,16 +53,23 @@ class heatPumpSimple(heat.HeatingDevice):
             (default : 'aw')
         t_sink : float, optional
             Temperature of heat sink in °C
-            (default : 45 °C)
-
+            (default : 45 °C). Default temperature of 45 °C enables usage of
+            heat pump with regular radiators. Value should be reduced when
+            using floor heating system.
+        qual_grade_aw : float, optional
+            Quality grade of air water heat pump (default: 0.34). Only used,
+            if hp_type == 'aw'
+        qual_grade_ww : float, optional
+            Quality grade of air water heat pump (default: 0.43). Only used,
+            if hp_type == 'ww'
 
         Attributes
         ----------
         quality_grade : float
             Estimation for quality grad of different hp Types
             Options:
-            0.36: for air water hp
-            0.5. for water water hp
+            0.34: for air water hp
+            0.43. for water water hp
 
         Annotations
         -----------
@@ -73,6 +83,24 @@ class heatPumpSimple(heat.HeatingDevice):
         function call.
         """
 
+        assert q_nominal > 0
+        assert lower_activation_limit >= 0
+        assert lower_activation_limit <= 1
+
+        if hp_type not in ['aw', 'ww']:
+            msg = 'Unkown heat pump type ' + str(hp_type)
+            raise AssertionError(msg)
+
+        if hp_type == 'aw':
+            assert qual_grade_aw > 0
+            assert qual_grade_aw <= 1
+        if hp_type == 'ww':
+            assert qual_grade_ww > 0
+            assert qual_grade_ww <= 1
+
+        assert t_sink <= t_max, ('Temperature of heat sink cannot be ' +
+                                 ' higher than max. output temperature.')
+
         # super Class
         super(heatPumpSimple, self).__init__(environment=environment,
                                              qNominal=q_nominal,
@@ -82,22 +110,13 @@ class heatPumpSimple(heat.HeatingDevice):
         # further attributes
         self._kind = "heatpump"
         self.hp_type = hp_type
-
-        assert t_sink <= t_max, ('Temperature of heat sink cannot be ' +
-                                 ' higher than max. output temperature.')
         self.t_sink = t_sink
 
         #  TODO: Add reference for quality grades (Guetegrade)
         if hp_type == 'aw':
-            self.quality_grade = 0.36  # Estimation of quality grade (Guetegrad)
-            # self.quality_grade = 0.34  # Estimation of quality grade (Guetegrad)
+            self.quality_grade = qual_grade_aw
         elif hp_type == 'ww':
-            self.quality_grade = 0.5  # Estimation of quality grade (Guetegrad)
-            # self.quality_grade = 0.43  # Estimation of quality grade (Guetegrad)
-        else:
-            warnings.warn(
-                'Unkown type of heat pump. Cannot define quality grade.')
-            self.quality_grade = None
+            self.quality_grade = qual_grade_ww
 
         timesteps_total = environment.timer.timestepsTotal
         self.array_el_power_in = np.zeros(timesteps_total)
