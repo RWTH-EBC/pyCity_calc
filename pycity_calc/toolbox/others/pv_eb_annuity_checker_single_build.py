@@ -36,64 +36,128 @@ import pycity_calc.toolbox.modifiers.mod_city_el_dem as model
 
 
 def perform_pv_eb_annuity_check(city, dhw_scale=True, zero_sh_dhw=False,
-                                zero_el=False):
+                                zero_el=False, eeg_pv_limit=True):
     """
 
     Parameters
     ----------
     city
     dhw_scale
+    zero_sh_dhw
+    zero_el
+    eeg_pv_limit
+
+    Returns
+    -------
+
     """
 
-    #  Scenario 1: Boilers with small PV
-    #  #####################################################################
+    dict_res = {}
 
-    city_scen_1 = copy.deepcopy(city)
+    for i in range(30):
+        city_scen = copy.deepcopy(city)
 
-    list_esys = [#(1001, 0, 1),
-                 (1001, 3, 30),
-                 ]
+        list_esys = [  # (1001, 0, 1),
+            (1001, 3, 1 / 0.125 * (i + 1)),
+        ]
 
-    #  Generate energy systems
-    esysgen.gen_esys_for_city(city=city_scen_1,
-                              list_data=list_esys,
-                              dhw_scale=dhw_scale)
+        #  Generate energy systems
+        esysgen.gen_esys_for_city(city=city_scen,
+                                  list_data=list_esys,
+                                  dhw_scale=dhw_scale)
 
-    #  Scenario 2: Boilers with medium PV
-    #  #####################################################################
+        if zero_sh_dhw:
+            modsh.mod_sh_city_dem(city=city_scen, sh_dem=0)
+            moddhw.mod_dhw_city_dem(city=city_scen, dhw_dem=0)
+        if zero_el:
+            model.mod_el_city_dem(city=city_scen, el_dem=0)
 
-    city_scen_2 = copy.deepcopy(city)
+        # Generate annuity object instance
+        annuity_obj = annu.EconomicCalculation()
 
-    list_esys = [#(1001, 0, 1),
-                 (1001, 3, 60),
-                 ]
+        #  Generate energy balance object for city
+        energy_balance = citeb.CityEBCalculator(city=city_scen)
 
-    #  Generate energy systems
-    esysgen.gen_esys_for_city(city=city_scen_2,
-                              list_data=list_esys,
-                              dhw_scale=dhw_scale)
+        #  Generate city economic calculator instances
+        city_eco_calc = citecon.CityAnnuityCalc(annuity_obj=annuity_obj,
+                                                energy_balance=energy_balance)
 
-    #  Scenario 3: Boilers with large PV
-    #  #####################################################################
+        (total_annuity, co2) = city_eco_calc. \
+            perform_overall_energy_balance_and_economic_calc(
+            eeg_pv_limit=eeg_pv_limit)
 
-    city_scen_3 = copy.deepcopy(city)
+        label = 'Area ' + str(1 / 0.125 * (i + 1))
 
-    list_esys = [#(1001, 0, 1),
-                 (1001, 3, 90),
-                 ]
+        if i < 10:
+            marker = 'o'
+        elif i < 20:
+            marker = '+'
+        else:
+            marker = '*'
 
-    #  Generate energy systems
-    esysgen.gen_esys_for_city(city=city_scen_3,
-                              list_data=list_esys,
-                              dhw_scale=dhw_scale)
+        plt.plot([total_annuity], [co2], label=label,
+                 marker=marker)
 
-    if zero_sh_dhw:
-        for city_ind in [city_scen_1, city_scen_2, city_scen_3]:
-            modsh.mod_sh_city_dem(city=city_ind, sh_dem=0)
-            moddhw.mod_dhw_city_dem(city=city_ind, dhw_dem=0)
-    if zero_el:
-        for city_ind in [city_scen_1, city_scen_2, city_scen_3]:
-            model.mod_el_city_dem(city=city_ind, el_dem=0)
+        dict_res[i] = city_scen
+
+    plt.xlabel('Total annualized cost in Euro/a')
+    plt.ylabel('Total CO2 emissions in kg/a')
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+    plt.close()
+
+
+
+    # #  Scenario 1: Boilers with small PV
+    # #  #####################################################################
+    #
+    # city_scen_1 = copy.deepcopy(city)
+    #
+    # list_esys = [#(1001, 0, 1),
+    #              (1001, 3, 10),
+    #              ]
+    #
+    # #  Generate energy systems
+    # esysgen.gen_esys_for_city(city=city_scen_1,
+    #                           list_data=list_esys,
+    #                           dhw_scale=dhw_scale)
+    #
+    # #  Scenario 2: Boilers with medium PV
+    # #  #####################################################################
+    #
+    # city_scen_2 = copy.deepcopy(city)
+    #
+    # list_esys = [#(1001, 0, 1),
+    #              (1001, 3, 20),
+    #              ]
+    #
+    # #  Generate energy systems
+    # esysgen.gen_esys_for_city(city=city_scen_2,
+    #                           list_data=list_esys,
+    #                           dhw_scale=dhw_scale)
+    #
+    # #  Scenario 3: Boilers with large PV
+    # #  #####################################################################
+    #
+    # city_scen_3 = copy.deepcopy(city)
+    #
+    # list_esys = [#(1001, 0, 1),
+    #              (1001, 3, 30),
+    #              ]
+
+    # #  Generate energy systems
+    # esysgen.gen_esys_for_city(city=city_scen_3,
+    #                           list_data=list_esys,
+    #                           dhw_scale=dhw_scale)
+    #
+    # if zero_sh_dhw:
+    #     for city_ind in [city_scen_1, city_scen_2, city_scen_3]:
+    #         modsh.mod_sh_city_dem(city=city_ind, sh_dem=0)
+    #         moddhw.mod_dhw_city_dem(city=city_ind, dhw_dem=0)
+    # if zero_el:
+    #     for city_ind in [city_scen_1, city_scen_2, city_scen_3]:
+    #         model.mod_el_city_dem(city=city_ind, el_dem=0)
 
     # #####################################################################
     #  Generate object instances
@@ -157,64 +221,65 @@ def perform_pv_eb_annuity_check(city, dhw_scale=True, zero_sh_dhw=False,
     #                                            price_ch_chp_tax_return=1,
     #                                            price_ch_pv_sub=1,
     #                                            price_ch_dem_el_hp=1)
-    #  Generate annuity object instance
-    annuity_obj1 = annu.EconomicCalculation()
-    annuity_obj2 = annu.EconomicCalculation()
-    annuity_obj3 = annu.EconomicCalculation()
 
-    #  Generate energy balance object for city
-    energy_balance1 = citeb.CityEBCalculator(city=city_scen_1)
-    energy_balance2 = citeb.CityEBCalculator(city=city_scen_2)
-    energy_balance3 = citeb.CityEBCalculator(city=city_scen_3)
+    # #  Generate annuity object instance
+    # annuity_obj1 = annu.EconomicCalculation()
+    # annuity_obj2 = annu.EconomicCalculation()
+    # annuity_obj3 = annu.EconomicCalculation()
+    #
+    # #  Generate energy balance object for city
+    # energy_balance1 = citeb.CityEBCalculator(city=city_scen_1)
+    # energy_balance2 = citeb.CityEBCalculator(city=city_scen_2)
+    # energy_balance3 = citeb.CityEBCalculator(city=city_scen_3)
+    #
+    # #  Generate city economic calculator instances
+    # city_eco_calc1 = citecon.CityAnnuityCalc(annuity_obj=annuity_obj1,
+    #                                          energy_balance=energy_balance1)
+    # city_eco_calc2 = citecon.CityAnnuityCalc(annuity_obj=annuity_obj2,
+    #                                          energy_balance=energy_balance2)
+    # city_eco_calc3 = citecon.CityAnnuityCalc(annuity_obj=annuity_obj3,
+    #                                          energy_balance=energy_balance3)
 
-    #  Generate city economic calculator instances
-    city_eco_calc1 = citecon.CityAnnuityCalc(annuity_obj=annuity_obj1,
-                                             energy_balance=energy_balance1)
-    city_eco_calc2 = citecon.CityAnnuityCalc(annuity_obj=annuity_obj2,
-                                             energy_balance=energy_balance2)
-    city_eco_calc3 = citecon.CityAnnuityCalc(annuity_obj=annuity_obj3,
-                                             energy_balance=energy_balance3)
+    # list_ann = []
+    # list_co2 = []
+    #
+    # print()
+    # print('Small PV')
+    # print('#################################################################')
+    # #  Perform energy balance and annuity calculations for all scenarios
+    # (total_annuity_1, co2_1) = city_eco_calc1. \
+    #     perform_overall_energy_balance_and_economic_calc(eeg_pv_limit=False)
+    # list_ann.append(total_annuity_1)
+    # list_co2.append(co2_1)
+    #
+    # print()
+    # print('Medium PV')
+    # print('#################################################################')
+    # (total_annuity_2, co2_2) = city_eco_calc2. \
+    #     perform_overall_energy_balance_and_economic_calc(eeg_pv_limit=False)
+    # list_ann.append(total_annuity_2)
+    # list_co2.append(co2_2)
+    #
+    # print()
+    # print('Large PV')
+    # print('#################################################################')
+    # (total_annuity_3, co2_3) = city_eco_calc3. \
+    #     perform_overall_energy_balance_and_economic_calc(eeg_pv_limit=False)
+    # list_ann.append(total_annuity_3)
+    # list_co2.append(co2_3)
 
-    list_ann = []
-    list_co2 = []
-
-    print()
-    print('Small PV')
-    print('#################################################################')
-    #  Perform energy balance and annuity calculations for all scenarios
-    (total_annuity_1, co2_1) = city_eco_calc1. \
-        perform_overall_energy_balance_and_economic_calc(eeg_pv_limit=False)
-    list_ann.append(total_annuity_1)
-    list_co2.append(co2_1)
-
-    print()
-    print('Medium PV')
-    print('#################################################################')
-    (total_annuity_2, co2_2) = city_eco_calc2. \
-        perform_overall_energy_balance_and_economic_calc(eeg_pv_limit=False)
-    list_ann.append(total_annuity_2)
-    list_co2.append(co2_2)
-
-    print()
-    print('Large PV')
-    print('#################################################################')
-    (total_annuity_3, co2_3) = city_eco_calc3. \
-        perform_overall_energy_balance_and_economic_calc(eeg_pv_limit=False)
-    list_ann.append(total_annuity_3)
-    list_co2.append(co2_3)
-
-    plt.plot([total_annuity_1], [co2_1], label='Scen. 1 (BOI/small PV)',
-             marker='o')
-    plt.plot([total_annuity_2], [co2_2], label='Scen. 2 (BOI/medium PV)',
-             marker='o')
-    plt.plot([total_annuity_3], [co2_3], label='Scen. 3 (BOI/large PV)',
-             marker='o')
-    plt.xlabel('Total annualized cost in Euro/a')
-    plt.ylabel('Total CO2 emissions in kg/a')
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
-    plt.close()
+    # plt.plot([total_annuity_1], [co2_1], label='Scen. 1 (BOI/small PV)',
+    #          marker='o')
+    # plt.plot([total_annuity_2], [co2_2], label='Scen. 2 (BOI/medium PV)',
+    #          marker='o')
+    # plt.plot([total_annuity_3], [co2_3], label='Scen. 3 (BOI/large PV)',
+    #          marker='o')
+    # plt.xlabel('Total annualized cost in Euro/a')
+    # plt.ylabel('Total CO2 emissions in kg/a')
+    # plt.legend()
+    # plt.tight_layout()
+    # plt.show()
+    # plt.close()
 
     #  Compare PV production vs. el. demands for single building
     #  ###################################################################
@@ -222,9 +287,9 @@ def perform_pv_eb_annuity_check(city, dhw_scale=True, zero_sh_dhw=False,
     n_id = 1001
 
     #  Pointers to ref. buildings
-    build_pv_small = city_scen_1.nodes[n_id]['entity']
-    build_pv_medium = city_scen_2.nodes[n_id]['entity']
-    build_pv_large = city_scen_3.nodes[n_id]['entity']
+    build_pv_small = dict_res[6].nodes[n_id]['entity']
+    build_pv_medium = dict_res[8].nodes[n_id]['entity']
+    build_pv_large = dict_res[10].nodes[n_id]['entity']
 
     pv_small_gen = build_pv_small.bes.pv.totalPower
     pv_medium_gen = build_pv_medium.bes.pv.totalPower
@@ -315,9 +380,6 @@ if __name__ == '__main__':
 
     #  BES
     bes = BES.BES(environment=environment)
-
-    # #  PV
-    # pv_simple = PV.PV(environment=environment, area=10, eta=0.15)
 
     boiler = boil.BoilerExtended(environment=environment,
                                  q_nominal=0.00000000000001,  # Dummy value
