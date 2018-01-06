@@ -2206,7 +2206,7 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False,
                 pv_ideal.gamma = 0
                 pv_ideal.tau_alpha = 0.9
 
-                pv_peak = max (pv_ideal.getPower(currentValues=False,
+                pv_peak = max(pv_ideal.getPower(currentValues=False,
                                                  updatePower=True))
 
                 #  Logiccheck if weather file radiation is low
@@ -2275,6 +2275,7 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False,
             p_el_chp = build.bes.chp.totalPOutput[i]
             p_el_chp_remain = p_el_chp + 0.0
 
+        assert p_pv_remain >= 0
         assert p_el_remain >= 0
         assert p_el_chp_remain >= 0
 
@@ -2327,6 +2328,7 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False,
                     pv_self_eh[i] += p_pv_remain
                     p_pv_remain = 0
 
+        assert p_pv_remain >= 0
         assert p_el_remain >= 0
         assert p_el_chp_remain >= 0
 
@@ -2513,6 +2515,7 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False,
                                                save_res=True,
                                                time_index=i)
 
+        assert p_pv_remain >= 0
         assert p_el_remain >= 0
         assert p_el_chp_remain >= 0
 
@@ -2540,8 +2543,10 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False,
                     pv_off[i] += p_pv_remain - pv_p_limit
                     p_pv_remain = pv_p_limit + 0.0
 
+            assert p_pv_remain >= 0
             pv_feed[i] += p_pv_remain
             p_pv_remain = 0
+
         if has_chp:
             chp_feed[i] += p_el_chp_remain
             p_el_chp_remain = 0

@@ -291,7 +291,7 @@ def run_example_city_energy_balance_and_annuity_calc():
                                             energy_balance=energy_balance)
 
     (total_annuity, co2) = city_eco_calc.\
-        perform_overall_energy_balance_and_economic_calc()
+        perform_overall_energy_balance_and_economic_calc(eeg_pv_limit=False)
 
     print('##########################################')
     print()

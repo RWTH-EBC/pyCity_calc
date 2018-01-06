@@ -475,7 +475,7 @@ class CityEBCalculator(object):
         return list_pump_energy
 
     def calc_city_energy_balance(self, run_mc=False, dict_samples_const=None,
-                                 run_idx=None):
+                                 run_idx=None, eeg_pv_limit=False):
         """
         Calculate energy balance of whole city. Save results on city object
 
@@ -494,6 +494,11 @@ class CityEBCalculator(object):
             (of building with id <building_id>
         run_idx : int, optional
             Index / number of run for Monte-Carlo analysis (default: None)
+        eeg_pv_limit : bool, optional
+            Defines, if EEG PV feed-in limitation of 70 % of peak load is
+            active (default: False). If limitation is active, maximal 70 %
+            of PV peak load are fed into the grid.
+            However, self-consumption is used, first.
         """
 
         if run_mc:
@@ -524,7 +529,7 @@ class CityEBCalculator(object):
             self.list_th_done.append(n)
 
             #  Calculate single building electrical energy balance
-            beb.calc_build_el_eb(build=building)
+            beb.calc_build_el_eb(build=building, eeg_pv_limit=eeg_pv_limit)
 
             self.list_el_done.append(n)
 
@@ -553,7 +558,7 @@ class CityEBCalculator(object):
             if n not in list_deg_all_b:
                 build = self.city.nodes[n]['entity']
 
-                beb.calc_build_el_eb(build=build)
+                beb.calc_build_el_eb(build=build, eeg_pv_limit=eeg_pv_limit)
 
                 self.list_el_done.append(n)
 
