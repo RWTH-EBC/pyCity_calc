@@ -204,7 +204,7 @@ class ChpExtended(chp.CHP):
                       'be None. You have to define a valid input value!'
                 raise AssertionError(msg)
 
-            th_power = q_nominal
+            th_power = q_nominal + 0.0
             if chp_type == 'ASUE_2015':
                 el_power = asue.calc_el_power_with_th_power(th_power, eta_total)
             else:
@@ -219,7 +219,7 @@ class ChpExtended(chp.CHP):
                       'be None. You have to define a valid input value!'
                 raise AssertionError(msg)
 
-            el_power = p_nominal
+            el_power = p_nominal + 0.0
             if chp_type == 'ASUE_2015':
                 th_power = asue.calc_th_output_with_p_el(el_power, eta_total)
             else:
