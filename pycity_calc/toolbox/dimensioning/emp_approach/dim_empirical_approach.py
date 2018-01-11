@@ -54,7 +54,7 @@ def run_approach(city,scenarios):
     slp_city = deepcopy(city)
 
     for n in slp_city.nodelist_building:
-        b = slp_city.node[n]['entity']
+        b = slp_city.nodes[n]['entity']
         spec_th_dem = b.get_annual_space_heat_demand() / b.get_net_floor_area_of_building()
 
         for ap in b.apartments:
@@ -140,8 +140,8 @@ def get_building_age(city):
     for building_node in city.nodelist_building:
 
         # check year of renovation and construction
-        mod = city.node[building_node]['entity'].mod_year
-        built = city.node[building_node]['entity'].build_year
+        mod = city.nodes[building_node]['entity'].mod_year
+        built = city.nodes[building_node]['entity'].build_year
 
         if mod is not None:
             if mod >= 2009:
@@ -169,7 +169,7 @@ def get_net_len(city):
     b_graph = nx.Graph()
 
     for bn in city.nodelist_building:
-        b_graph.add_node(bn, position=city.node[bn]['position'])
+        b_graph.add_node(bn, position=city.nodes[bn]['position'])
 
     # get minimum spanning tree
     min_st = net_ops.get_min_span_tree(graph=b_graph, node_id_list=city.nodelist_building)
@@ -205,7 +205,7 @@ def get_district_type(city, net_len=None):
 
     # get total number of apartments
     for building_node in city.nodelist_building:
-        num_apartments += len(city.node[building_node]['entity'].apartments)
+        num_apartments += len(city.nodes[building_node]['entity'].apartments)
 
     # calculate specific length
     spec_len = net_len / num_apartments
@@ -273,16 +273,14 @@ def get_eligibility_dhn(city, method=1):
     elif method == 1:
 
         area_total = 0
-        edge_count = 0
+
+        list_lhn_edges = net_ops.search_lhn_all_edges(city=city)
+        edge_count = len(list_lhn_edges)
 
         for n in city.nodelist_building:
 
             # Calculate aggregated floor area of all buildings
-            area_total += city.node[n]['entity'].get_net_floor_area_of_building()  # sum area of buildings
-
-            # Check if lhn already existent
-            if city.edge[n] != {}:
-                edge_count += 1
+            area_total += city.nodes[n]['entity'].get_net_floor_area_of_building()  # sum area of buildings
 
         # Calculate energy coefficient ("Energiekennwert")
         ekw = th_total_elig / area_total  # in kWh/(m2*a)
@@ -443,7 +441,7 @@ def dim_centralized(city, slp_city, scenario, district_type):
     # Calculate total area and total number of inhabitants
     for b_node in city.nodelist_building:
 
-        building = city.node[b_node]['entity']
+        building = city.nodes[b_node]['entity']
         area_total += building.net_floor_area
 
         for ap in building.apartments:
@@ -590,8 +588,8 @@ def dim_centralized(city, slp_city, scenario, district_type):
         q_gas.append((q_total_orig/boiler.eta) / 1000) # gas demand for supply in kWh/yr
 
     # Add BES
-    assert not city.node[city.nodelist_building[0]]['entity'].hasBes, 'Building 0 has already BES. Mistakes may occur!'
-    city.node[city.nodelist_building[0]]['entity'].addEntity(bes)
+    assert not city.nodes[city.nodelist_building[0]]['entity'].hasBes, 'Building 0 has already BES. Mistakes may occur!'
+    city.nodes[city.nodelist_building[0]]['entity'].addEntity(bes)
 
     # Get total electricity demand in kWh/yr
     w_el.append(city.get_annual_el_demand()/1000)
@@ -628,8 +626,8 @@ def dim_decentralized(city, slp_city, scenario):
         print('')
         print('-'*5 + ' Building ' + str(b_node) + ' ' + 5*'-')
 
-        building = city.node[b_node]['entity']
-        building_slp = slp_city.node[b_node]['entity']
+        building = city.nodes[b_node]['entity']
+        building_slp = slp_city.nodes[b_node]['entity']
 
         # Get power curves
         sh_curve_slp = building_slp.get_space_heating_power_curve()
@@ -957,8 +955,8 @@ def dim_decentralized(city, slp_city, scenario):
                     raise Warning('Energysystem with CHP not according to EEWaermeG!')
 
         # --------------- Add BES ---------------
-        assert not city.node[b_node]['entity'].hasBes, ('Building ', b_node, ' has already BES. Mistakes may occur!')
-        city.node[b_node]['entity'].addEntity(bes)
+        assert not city.nodes[b_node]['entity'].hasBes, ('Building ', b_node, ' has already BES. Mistakes may occur!')
+        city.nodes[b_node]['entity'].addEntity(bes)
 
         # Get total electricity demand in kWh/yr
         w_el.append(city.get_annual_el_demand() / 1000)
@@ -1226,8 +1224,8 @@ def calc_costs(city, q_gas, w_el_in, w_el_out, i=0.08, price_gas=0.0661, price_e
 
     for bn in city.nodelist_building:
 
-        if city.node[bn]['entity'].hasBes:
-            bes = city.node[bn]['entity'].bes
+        if city.nodes[bn]['entity'].hasBes:
+            bes = city.nodes[bn]['entity'].bes
 
             p_chp_nom = 0
 
@@ -1245,7 +1243,7 @@ def calc_costs(city, q_gas, w_el_in, w_el_out, i=0.08, price_gas=0.0661, price_e
                     # Calculate seasonal performance factor
                     spf = calc_hp_spf(heatPump=bes.heatpump,
                                       environment=city.environment,
-                                      sh_curve=city.node[bn]['entity'].get_space_heating_power_curve())
+                                      sh_curve=city.nodes[bn]['entity'].get_space_heating_power_curve())
 
                     # Calculate invest costs for hp
                     hp_invest = hp_cost.calc_spec_cost_hp(q_hp_nom, method='wolf', hp_type='aw') * q_hp_nom
@@ -1260,7 +1258,7 @@ def calc_costs(city, q_gas, w_el_in, w_el_out, i=0.08, price_gas=0.0661, price_e
                     # Calculate seasonal performance factor
                     spf = calc_hp_spf(heatPump=bes.heatpump,
                                       environment=city.environment,
-                                      sh_curve=city.node[bn]['entity'].get_space_heating_power_curve(),
+                                      sh_curve=city.nodes[bn]['entity'].get_space_heating_power_curve(),
                                       cop=[4.8])
 
                     hp_invest = hp_cost.calc_spec_cost_hp(q_hp_nom, method='wolf', hp_type='ww') * q_hp_nom
@@ -1373,68 +1371,70 @@ def calc_costs(city, q_gas, w_el_in, w_el_out, i=0.08, price_gas=0.0661, price_e
     #   Economic data for LHN
     #########################
 
-    for v in city.edge.values():
+    list_lhn_edges = net_ops.search_lhn_all_edges(city=city)
+    edge_count = len(list_lhn_edges)
 
-        if bool(v):
+    if edge_count > 0:
 
-            lhn_station_invest = []
+        lhn_station_invest = []
 
-            # LHN station for every building
-            for b in city.nodelist_building:
-                building = city.node[b]['entity']
-                q_max = max(building.get_space_heating_power_curve()/1000 + building.get_dhw_power_curve()/1000)
-                lhn_station_invest.append(lhn_cost.calc_invest_single_lhn_station(q_max))
+        # LHN station for every building
+        for b in city.nodelist_building:
+            building = city.nodes[b]['entity']
+            q_max = max(
+                building.get_space_heating_power_curve() / 1000 + building.get_dhw_power_curve() / 1000)
+            lhn_station_invest.append(
+                lhn_cost.calc_invest_single_lhn_station(q_max))
 
-            t = 20  # VDI 2067 (indirect connection)
-            a_station = i * (1 + i) ** t / ((1 + i) ** t - 1)
+        # TODO: move to input params
+        t = 20  # VDI 2067 (indirect connection)
+        a_station = i * (1 + i) ** t / ((1 + i) ** t - 1)
 
-            cost_invest.append(sum(lhn_station_invest))
-            cost_cap.append(sum(lhn_station_invest) * a_station)
-            cost_insp.append(sum(lhn_station_invest) * (sum(insp_vdi2067['lhn_station'][0:2])) +
-                             insp_vdi2067['lhn_station'][2] * service_fee)
+        cost_invest.append(sum(lhn_station_invest))
+        cost_cap.append(sum(lhn_station_invest) * a_station)
+        cost_insp.append(
+            sum(lhn_station_invest) * (sum(insp_vdi2067['lhn_station'][0:2])) +
+            insp_vdi2067['lhn_station'][2] * service_fee)
 
-            # Pipe costs
-            lhn_length = round(net_ops.sum_up_weights_of_edges(city),2)
+        # Pipe costs
+        lhn_length = round(net_ops.sum_up_weights_of_edges(city),2)
 
-            for d in city.edge[city.nodelist_building[0]].values():
-                pipe_dm = d['d_i']  # get pipe_diameter
+        #  Extract pipe diameter at first building lhn edge
+        pipe_dm = city.edges[list_lhn_edges[0][0], list_lhn_edges[0][1]]['d_i']
+
+        for dm in cost_pipes_dm.keys():
+            if pipe_dm < dm:
+                t = 40  # approx. (source: nahwaerme.at)
+                a_pipes = i * (1 + i) ** t / ((1 + i) ** t - 1)
+                pipes_invest = cost_pipes_dm[dm]*lhn_length
+                print('Pipe costs:', pipes_invest)
+                cost_invest.append(pipes_invest)
+                cost_cap.append(pipes_invest*a_pipes)
+                cost_insp.append(pipes_invest*(sum(insp_vdi2067['lhn_pipes'][0:2])) + insp_vdi2067['lhn_pipes'][2] * service_fee)
                 break
-            else:
-                raise Exception('No pipe diameter found!')
+        else:
+            raise Exception('Pipe diameter too big!')
 
-            for dm in cost_pipes_dm.keys():
-                if pipe_dm < dm:
-                    t = 40  # approx. (source: nahwaerme.at)
-                    a_pipes = i * (1 + i) ** t / ((1 + i) ** t - 1)
-                    pipes_invest = cost_pipes_dm[dm]*lhn_length
-                    print('Pipe costs:', pipes_invest)
-                    cost_invest.append(pipes_invest)
-                    cost_cap.append(pipes_invest*a_pipes)
-                    cost_insp.append(pipes_invest*(sum(insp_vdi2067['lhn_pipes'][0:2])) + insp_vdi2067['lhn_pipes'][2] * service_fee)
-                    break
-            else:
-                raise Exception('Pipe diameter too big!')
-
-            # BAFA subsidy for LHN
-            if bafa_lhn:
-                if dm <= 0.1:
-                    lhn_subs_pre = 100 * lhn_length  # 100 Euro/m if dn <= 100
-                    if lhn_subs_pre > 0.4 * sum(cost_invest):  # subsidy must not be higher than 40% of total invest
-                        lhn_subs = 0.4 * sum(cost_invest)
-                    else:
-                        lhn_subs = lhn_subs_pre
+        # BAFA subsidy for LHN
+        if bafa_lhn:
+            if dm <= 0.1:
+                lhn_subs_pre = 100 * lhn_length  # 100 Euro/m if dn <= 100
+                if lhn_subs_pre > 0.4 * sum(cost_invest):  # subsidy must not be higher than 40% of total invest
+                    lhn_subs = 0.4 * sum(cost_invest)
                 else:
-                    lhn_subs = 0.3 * sum(cost_invest)   # 30% of invest if dn > 100
-                if lhn_subs > 20000000:  # max. subsidy is 20.000.000
-                    lhn_subs = 20000000
-                lhn_subs_fee = 0.002 * lhn_subs  # fee is 0.2% of subsidy
-                if lhn_subs_fee < 100:  # min. fee is 100 Euro
-                    lhn_subs_fee = 100
-                lhn_subs = lhn_subs - lhn_subs_fee
-                cost_invest.append(-lhn_subs)
-                cost_cap.append(-lhn_subs*a_pipes)
-                print('BAFA LHN subsidy applies: ' + str(lhn_subs) + 'Euro off of total invest')
-            break
+                    lhn_subs = lhn_subs_pre
+            else:
+                lhn_subs = 0.3 * sum(cost_invest)   # 30% of invest if dn > 100
+            if lhn_subs > 20000000:  # max. subsidy is 20.000.000
+                lhn_subs = 20000000
+            lhn_subs_fee = 0.002 * lhn_subs  # fee is 0.2% of subsidy
+            if lhn_subs_fee < 100:  # min. fee is 100 Euro
+                lhn_subs_fee = 100
+            lhn_subs = lhn_subs - lhn_subs_fee
+            cost_invest.append(-lhn_subs)
+            cost_cap.append(-lhn_subs*a_pipes)
+            print('BAFA LHN subsidy applies: ' + str(lhn_subs) + 'Euro off of total invest')
+
 
     # Calculate demand related costs
     cost_dem = sum(q_gas) * price_gas + sum(w_el_in) * price_el
@@ -1473,7 +1473,7 @@ if __name__ == '__main__':
 
     this_path = os.path.dirname(os.path.abspath(__file__))
 
-    city_f_name = 'city_2_buildings_w_street.pkl'
+    city_f_name = 'wm_res_east_7_w_street_sh_resc_wm.pkl'
 
     city_path = os.path.join(this_path, 'input', city_f_name)
     city = pickle.load(open(city_path, mode='rb'))
