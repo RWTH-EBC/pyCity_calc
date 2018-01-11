@@ -495,7 +495,7 @@ def dim_centralized(city, slp_city, scenario, district_type):
                               eta_total=eta_el + eta_th)
         bes.addDevice(chp)
 
-        print('CHP: Q_nom = ' + str(q_nom / 1000) + ' kW (' + str(round(q_nom * 100 / max(th_curve_slp), 2)) +
+        print('CHP: Q_nom (th.)= ' + str(q_nom / 1000) + ' kW (' + str(round(q_nom * 100 / max(th_curve_slp), 2)) +
               '% of Q_max, ' + str(np.round(q_nom * t_ann_op * 100 / q_total_slp,2)) + '% of ann. production) ->',
               t_x, 'full-load hours.')
 
@@ -682,7 +682,7 @@ def dim_decentralized(city, slp_city, scenario):
                                       eta_total=eta_el + eta_th)
                 bes.addDevice(chp)
 
-                print('CHP: Q_nom = ' + str(q_nom / 1000) + ' kW (' + str(round(q_nom * 100 / max(th_LDC_slp), 2)) +
+                print('CHP: Q_nom (th.) = ' + str(q_nom / 1000) + ' kW (' + str(round(q_nom * 100 / max(th_LDC_slp), 2)) +
                       '% of Q_max) ->', t_x, 'full-load hours.')
 
                 # Check if CHP is according to EEWärmeG
