@@ -212,15 +212,15 @@ def estimate_city_retrofit(city, overwrite_sh=False, print_output=False,
     #  Loop over buildings
     for n in city_new.nodes():
         #  If node holds attribute 'node_type'
-        if 'node_type' in city_new.node[n]:
+        if 'node_type' in city_new.nodes[n]:
             #  If node_type is building
-            if city_new.node[n]['node_type'] == 'building':
+            if city_new.nodes[n]['node_type'] == 'building':
                 #  If entity is kind building
-                if city_new.node[n]['entity']._kind == 'building':
-                    if (city_new.node[n]['entity'].build_type == 0 or
-                        city_new.node[n]['entity'].build_type == 1):
+                if city_new.nodes[n]['entity']._kind == 'building':
+                    if (city_new.nodes[n]['entity'].build_type == 0 or
+                        city_new.nodes[n]['entity'].build_type == 1):
                         if skip_non_res and \
-                            city_new.node[n]['entity'].build_type != 0:
+                            city_new.nodes[n]['entity'].build_type != 0:
                             pass
                         else:
                             print('Processing building ', n)
@@ -228,8 +228,8 @@ def estimate_city_retrofit(city, overwrite_sh=False, print_output=False,
 
                             #  Check if apartments within building have
                             #  occupancy objects with profiles
-                            if city_new.node[n]['entity'].hasApartments:
-                                for app in city_new.node[n]['entity'].apartments:
+                            if city_new.nodes[n]['entity'].hasApartments:
+                                for app in city_new.nodes[n]['entity'].apartments:
                                     if app.occupancy is None or app.occupancy.occupancy is None:
 
                                         msg = 'Building ' + str(n) + ' has' \
@@ -244,7 +244,7 @@ def estimate_city_retrofit(city, overwrite_sh=False, print_output=False,
                                         #  Add occupancy to apartment
                                         app.addEntity(occ_obj)
 
-                            sh_dem = city_new.node[n]['entity']. \
+                            sh_dem = city_new.nodes[n]['entity']. \
                                 get_annual_space_heat_demand()
 
                             #  TODO: Add comparison based on net floor area
@@ -259,7 +259,7 @@ def estimate_city_retrofit(city, overwrite_sh=False, print_output=False,
                                 warnings.warn(msg)
 
                             #  Estimate and set new retrofit years on building
-                            estimate_build_retrofit(building=city_new.node[n]['entity'],
+                            estimate_build_retrofit(building=city_new.nodes[n]['entity'],
                                                     sh_ann_demand=sh_dem,
                                                     overwrite_sh=overwrite_sh,
                                                     print_output=print_output,
@@ -324,12 +324,12 @@ if __name__ == '__main__':
     #  Loop over buildings
     for n in city_retro.nodes():
         #  If node holds attribute 'node_type'
-        if 'node_type' in city_retro.node[n]:
+        if 'node_type' in city_retro.nodes[n]:
             #  If node_type is building
-            if city_retro.node[n]['node_type'] == 'building':
+            if city_retro.nodes[n]['node_type'] == 'building':
                 #  If entity is kind building
-                if city_retro.node[n]['entity']._kind == 'building':
+                if city_retro.nodes[n]['entity']._kind == 'building':
 
-                    building = city_retro.node[n]['entity']
+                    building = city_retro.nodes[n]['entity']
                     print('Mod year of building ' + str(n) + ':')
                     print(building.mod_year)

@@ -284,19 +284,19 @@ def create_teaser_typecity(project, city, generate_Output=False,
     city : Pycity City Object
         return the edited city object which now owns the created typeBuildings
          as attributes at
-        city.node[i]['type_building']
+        city.nodes[i]['type_building']
     """
 
     #  Use buildings only
     list_build = []
     for n in city.nodes():
-        if 'node_type' in city.node[n]:
+        if 'node_type' in city.nodes[n]:
             #  If node_type is building
-            if city.node[n]['node_type'] == 'building':
-                if 'entity' in city.node[n]:
+            if city.nodes[n]['node_type'] == 'building':
+                if 'entity' in city.nodes[n]:
                     #  If entity is of type building (not PV or wind farm)
-                    if city.node[n]['entity']._kind == 'building':
-                        if city.node[n]['entity'].build_type in [0, 1]:
+                    if city.nodes[n]['entity']._kind == 'building':
+                        if city.nodes[n]['entity'].build_type in [0, 1]:
                             list_build.append(n)
 
     for n in list_build:
@@ -304,20 +304,20 @@ def create_teaser_typecity(project, city, generate_Output=False,
         #  create Typebuildings
         type_building = \
             create_teaser_typebld(project=project,
-                                  BuildingExtended=city.node[n]['entity'],
+                                  BuildingExtended=city.nodes[n]['entity'],
                                   name=str(n),
                                   generate_Output=generate_Output)[1]
 
         if addToCity:
 
             if use_exist_tbuild is False:
-                city.node[n]['type_building'] = type_building
+                city.nodes[n]['type_building'] = type_building
             else:
-                if 'type_building' not in city.node[n]:
-                    city.node[n]['type_building'] = type_building
+                if 'type_building' not in city.nodes[n]:
+                    city.nodes[n]['type_building'] = type_building
                 else:
                     #  Add found type_building to TEASER project
-                    project.buildings.append(city.node[n]['type_building'])
+                    project.buildings.append(city.nodes[n]['type_building'])
 
     return city
 
@@ -982,13 +982,13 @@ def calc_and_add_vdi_6007_loads_to_city(city,
     #  Search for buildings (res. and office), only
     list_build = []
     for n in city.nodes():
-        if 'node_type' in city.node[n]:
+        if 'node_type' in city.nodes[n]:
             #  If node_type is building
-            if city.node[n]['node_type'] == 'building':
-                if 'entity' in city.node[n]:
+            if city.nodes[n]['node_type'] == 'building':
+                if 'entity' in city.nodes[n]:
                     #  If entity is of type building (not PV or wind farm)
-                    if city.node[n]['entity']._kind == 'building':
-                        if city.node[n]['entity'].build_type in [0, 1]:
+                    if city.nodes[n]['entity']._kind == 'building':
+                        if city.nodes[n]['entity'].build_type in [0, 1]:
                             list_build.append(n)
 
     # #  Create TEASER weather
@@ -1057,10 +1057,10 @@ def calc_and_add_vdi_6007_loads_to_city(city,
         print('###########################################################')
 
         #  Check that building type is residential or office
-        assert city.node[n]['entity'].build_type in [0, 1]
+        assert city.nodes[n]['entity'].build_type in [0, 1]
 
-        curr_build = city.node[n]['entity']
-        curr_type_b = city.node[n]['type_building']
+        curr_build = city.nodes[n]['entity']
+        curr_type_b = city.nodes[n]['type_building']
 
         # #  Generate ventilation rate (window opening etc.)
         #  ##################################################################
@@ -1282,17 +1282,17 @@ def add_kfw_retrofit_to_city(city, material=None, thickness=None):
 
     for n in city.nodes():
 
-        if 'node_type' in city.node[n]:
-            if city.node[n]['node_type'] == 'building':
+        if 'node_type' in city.nodes[n]:
+            if city.nodes[n]['node_type'] == 'building':
 
-                if 'entity' in city.node[n]:
+                if 'entity' in city.nodes[n]:
 
-                    if city.node[n]['entity']._kind == 'building':
+                    if city.nodes[n]['entity']._kind == 'building':
 
                         #  Only residential or office (for TEASER typebuild)
-                        if city.node[n]['entity'].build_type in [0, 1]:
+                        if city.nodes[n]['entity'].build_type in [0, 1]:
 
-                            curr_typeb = city.node[n]['type_building']
+                            curr_typeb = city.nodes[n]['type_building']
 
                             for zone in curr_typeb.thermal_zones:
 

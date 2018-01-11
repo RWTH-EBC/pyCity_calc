@@ -5,7 +5,7 @@ Calculate investment cost for photovoltaic systems
 """
 from __future__ import division
 
-def calc_pv_invest(area, kw_to_area=0.1, method='sap'):
+def calc_pv_invest(area, kw_to_area=0.125, method='EuPD'):
     """
     Calculate PV investment cost in Euro
 
@@ -14,11 +14,11 @@ def calc_pv_invest(area, kw_to_area=0.1, method='sap'):
     area : float
         Photovoltaic area
     kw_to_area : float , optional
-        Ratio of peak power to area (default: 0.1)
-        For instance, 0.1 means 0.1 kWp / m2 area
+        Ratio of peak power to area (default: 0.125)
+        For instance, 0.125 means 0.125 kWp / m2 area
         (http://www.solaranlagen-portal.com/photovoltaik/leistung)
     method : str, optional
-        Method to calculate cost (default: 'sap')
+        Method to calculate cost (default: 'EuPD')
         Options:
         - 'sap':
         Based on: Solaranlagenportal
@@ -49,7 +49,7 @@ def calc_pv_invest(area, kw_to_area=0.1, method='sap'):
         kw_peak = area * kw_to_area  # kW peak load
 
         #  kw_peak * (spec_cost) + inverter cost
-        pv_invest = kw_peak * (1400) + 2000
+        pv_invest = kw_peak * 1400 + 2000
 
     return pv_invest
 

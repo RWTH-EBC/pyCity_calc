@@ -60,10 +60,11 @@ def check_eb_build_requ(build):
             status_okay = True
             if build.bes.hasTes is False:  # pragma: no cover
                 tes_okay = False
-            if build.bes.hasElectricalHeater is False:  # pragma: no cover
+            if (build.bes.hasElectricalHeater is False
+                and build.bes.hasBoiler is False):  # pragma: no cover
                 msg = 'Building does have heatpump, but no electric heater' \
-                      ' for hot water supply! If your building has hot' \
-                      ' water demand, the energy balance is going to ' \
+                      ' or boiler for hot water supply! If your building ' \
+                      'has hot water demand, the energy balance is going to ' \
                       'crash!'
                 warnings.warn(msg)
 
@@ -96,12 +97,14 @@ def check_eb_requirements(city, pycity_deap=False):
         Check pycity_deap requirements (all buildings need to hold bes!)
     """
 
+    has_lhn = False  # Dummy value (assumes, that no LHN exists)
+
     #  Get list of all building ids
     list_build_ids = city.get_list_build_entity_node_ids()
 
-    #  Loop over all buildings
+    #  Loop over all buildings and check, if energy supply is present
     for id in list_build_ids:
-        build = city.node[id]['entity']
+        build = city.nodes[id]['entity']
 
         #  Dummy value for status (assumes missing thermal supply, until
         #  thermal supply or lhn is found)
@@ -135,63 +138,94 @@ def check_eb_requirements(city, pycity_deap=False):
         #  Get neighbour nodes, if existent
         list_neigh = city.neighbors(id)
 
-        #  Dummy value (assumes no LHN existence)
-        found_lhn = False
-
         #  Check, if at least one edge is of type
         for i in list_neigh:
-            if 'network_type' in city.edge[i][id]:
-                if (city.edge[i][id]['network_type'] == 'heating' or
-                    city.edge[id][i]['network_type'] == 'heating' or
-                    city.edge[i][id]['network_type'] == 'heating_and_deg' or
-                    city.edge[id][i]['network_type'] == 'heating_and_deg'):
+            if 'network_type' in city.edges[i, id]:
+                if (city.edges[i, id]['network_type'] == 'heating' or
+                    city.edges[id, i]['network_type'] == 'heating' or
+                    city.edges[i, id]['network_type'] == 'heating_and_deg' or
+                    city.edges[id, i]['network_type'] == 'heating_and_deg'):
                     status_okay = True
-                    found_lhn = True
+                    has_lhn = True
                     break
 
         if status_okay is False:  # pragma: no cover
-            msg = 'Building with id ' + str(id) + ' has no thermal energy' \
-                                                  ' supply! Cannot run' \
-                                                  ' energy balance!'
+            msg = 'Building with id ' \
+                  + str(id) + ' has no thermal energy supply (no th. energy' \
+                              ' system and no LHN connection)! ' \
+                              'Cannot run energy balance!'
             raise EnergySupplyException(msg)
 
-        if found_lhn:
-            #  Check, if each LHN network has, at least, one feeder node
+    if has_lhn:
+        #  Check, if each LHN network has, at least, one feeder node
 
+        #  Get list of lists of lhn connected buildings
+        list_lists_lhn = \
+            netop.get_list_with_energy_net_con_node_ids(city=city,
+                                                        build_node_only=True)
+
+        for list_sub_lhn in list_lists_lhn:
+            assert len(list_sub_lhn) > 1
+
+        list_stati = []
+        list_lhn_no_sup =[]
+
+        for list_lhn in list_lists_lhn:
             #  Dummy value (assumes, that no feeder exists in LHN)
             lhn_status = False
 
-            #  Get list of lists of lhn connected buildings
-            list_lists_lhn = \
-                netop.get_list_with_energy_net_con_node_ids(city=city,
-                                                            build_node_only=True)
+            for n in list_lhn:
+                build = city.nodes[n]['entity']
 
-            for list_lhn in list_lists_lhn:
-                for n in list_lhn:
-                    build = city.node[n]['entity']
+                #  Check if building has bes
+                if build.hasBes is True:
 
-                    #  Check if building has bes
-                    if build.hasBes is True:
+                    #  Check, if at least one thermal energy supply system
+                    #  exists
+                    if build.bes.hasBoiler is True:
+                        lhn_status = True
+                        list_stati.append(lhn_status)
+                        break
+                    if build.bes.hasChp is True:
+                        lhn_status = True
+                        list_stati.append(lhn_status)
+                        break
+                    if build.bes.hasElectricalHeater is True:
+                        lhn_status = True
+                        list_stati.append(lhn_status)
+                        break
+            list_stati.append(lhn_status)
+            list_lhn_no_sup.append(list_lhn)
 
-                        #  Check, if at least one thermal energy supply system
-                        #  exists
-                        if build.bes.hasBoiler is True:
-                            lhn_status = True
-                            break
-                        if build.bes.hasChp is True:
-                            lhn_status = True
-                            break
-                        if build.bes.hasHeatpump is True:
-                            lhn_status = True
-                            break
-                        if build.bes.hasElectricalHeater is True:
-                            lhn_status = True
-                            break
+        for status in list_stati:
+            msg = ''
+            if status is False:  # pragma: no cover
+                for list_lhn in list_lhn_no_sup:
+                    for n in list_lhn:
+                        print('n', n)
+                        msg += 'n ' + str(n) + ' \n'
+                        build = city.nodes[n]['entity']
+                        if build.hasBes:
+                            bes = build.bes
+                            if bes.hasBoiler:
+                                print('Has boiler')
+                                msg += 'has boiler' + ' \n'
+                            if bes.hasChp:
+                                print('Has CHP')
+                                msg += 'has CHP' + ' \n'
+                            if bes.hasElectricalHeater:
+                                print('Has EH')
+                                msg += 'has EH' + ' \n'
+                            if bes.hasHeatpump:
+                                print('Has HP')
+                                msg += 'has HP' + ' \n'
+                            if bes.hasTes:
+                                print('Has TES')
+                                msg += 'has TES' + ' \n'
 
-                if lhn_status is False:  # pragma: no cover
-                    msg = 'LHN network has no feeder node (LHN network ' \
-                          'with node ids ' + str(list_lhn) + '.'
-                    raise EnergySupplyException(msg)
+                msg += 'LHN network has no feeder node (LHN network ' \
+                      'with node ids ' + str(list_lhn_no_sup) + '.'
+                raise EnergySupplyException(msg)
 
     print('Energy balance input check has been sucessful')
 

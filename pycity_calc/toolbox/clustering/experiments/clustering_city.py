@@ -73,7 +73,7 @@ def cluster():
 
     for i in range(length):
         curr_id = city_object.nodelist_building[i]
-        curr_position = city_object.node[curr_id]['position']
+        curr_position = city_object.nodes[curr_id]['position']
         pos_array[i][0] = curr_position.x
         pos_array[i][1] = curr_position.y
 

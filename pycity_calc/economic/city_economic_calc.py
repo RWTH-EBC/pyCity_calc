@@ -7,6 +7,7 @@ from __future__ import division
 
 import os
 import pickle
+import warnings
 
 import pycity_calc.environments.germanmarket as gmarket
 import pycity_calc.simulation.energy_balance.city_eb_calc as citeb
@@ -113,7 +114,7 @@ class CityAnnuityCalc(object):
         #  Get capital-related annuities per energy system unit
         #  ###################################################################
         for n in self._list_buildings:
-            build = self.energy_balance.city.node[n]['entity']
+            build = self.energy_balance.city.nodes[n]['entity']
             if build.hasBes:
 
                 #  BES pointer
@@ -285,14 +286,14 @@ class CityAnnuityCalc(object):
                     invest_lhn_trans += inv_unc * 5000
                 else:
                     for n in self.energy_balance.city.nodes():
-                        if 'node_type' in self.energy_balance.city.node[n]:
+                        if 'node_type' in self.energy_balance.city.nodes[n]:
                             #  If node_type is building
-                            if self.energy_balance.city.node[n][
+                            if self.energy_balance.city.nodes[n][
                                 'node_type'] == 'building':
                                 #  If entity is kind building
-                                if self.energy_balance.city.node[n][
+                                if self.energy_balance.city.nodes[n][
                                     'entity']._kind == 'building':
-                                    build = self.energy_balance.city.node[n][
+                                    build = self.energy_balance.city.nodes[n][
                                         'entity']
                                     th_pow = \
                                         dimfunc.get_max_power_of_building(build,
@@ -313,15 +314,14 @@ class CityAnnuityCalc(object):
                     for v in sublist:
                         if self.energy_balance.city.has_edge(u, v):
                             if 'network_type' in \
-                                    self.energy_balance.city.edge[u][
-                                        v]:
-                                if (self.energy_balance.city.edge[u][v][
+                                    self.energy_balance.city.edges[u, v]:
+                                if (self.energy_balance.city.edges[u, v][
                                         'network_type'] == 'heating' or
-                                            self.energy_balance.city.edge[u][
+                                            self.energy_balance.city.edges[u,
                                                 v][
                                                 'network_type'] == 'heating_and_deg'):
                                     #  Pointer to pipe (edge)
-                                    pipe = self.energy_balance.city.edge[u][v]
+                                    pipe = self.energy_balance.city.edges[u, v]
                                     d_i = pipe['d_i']
                                     length = pipe['weight']
 
@@ -371,12 +371,12 @@ class CityAnnuityCalc(object):
                 #  Get number of buildings within district
                 #  Defines the number of meters
                 for n in self.energy_balance.city.nodes():
-                    if 'node_type' in self.energy_balance.city.node[n]:
+                    if 'node_type' in self.energy_balance.city.nodes[n]:
                         #  If node_type is building
-                        if self.energy_balance.city.node[n][
+                        if self.energy_balance.city.nodes[n][
                             'node_type'] == 'building':
                             #  If entity is kind building
-                            if self.energy_balance.city.node[n][
+                            if self.energy_balance.city.nodes[n][
                                 'entity']._kind == 'building':
                                 nb_build += 1
 
@@ -388,17 +388,17 @@ class CityAnnuityCalc(object):
                     for v in sublist:
                         if self.energy_balance.city.has_edge(u, v):
                             if 'network_type' in \
-                                    self.energy_balance.city.edge[u][
+                                    self.energy_balance.city.edges[u,
                                         v]:
-                                if self.energy_balance.city.edge[u][v][
+                                if self.energy_balance.city.edges[u, v][
                                     'network_type'] == 'electricity':
                                     deg_len += \
-                                        self.energy_balance.city.edge[u][v][
+                                        self.energy_balance.city.edges[u, v][
                                             'weight']
-                                elif self.energy_balance.city.edge[u][v][
+                                elif self.energy_balance.city.edges[u, v][
                                     'network_type'] == 'heating_and_deg':
                                     deg_len_w_lhn += \
-                                        self.energy_balance.city.edge[u][v][
+                                        self.energy_balance.city.edges[u, v][
                                             'weight']
 
                 # Calculate deg investment cost for (sub-)deg
@@ -501,7 +501,7 @@ class CityAnnuityCalc(object):
         """
 
         #  Building pointer
-        build = self.energy_balance.city.node[id]['entity']
+        build = self.energy_balance.city.nodes[id]['entity']
 
         timestep = build.environment.timer.timeDiscretization
 
@@ -526,10 +526,18 @@ class CityAnnuityCalc(object):
         #  TODO: Extract year for annuity calculation
         year = self.energy_balance.city.environment.timer.year
 
-        if build.build_type == 0:
+        if build.build_type is None:
+            msg = 'build.build_type is None. Assume, that this building is' \
+                  ' residential building to estimate specific energy cost.'
+            warnings.warn(msg)
             type = 'res'
-        else:
+        elif build.build_type == 0:
+            type = 'res'
+        elif build.build_type > 0:
             type = 'ind'
+        else:
+            msg = 'Wrong input for build.build_type!'
+            raise AssertionError(msg)
 
         # Calculate specific cost values for energy demands
         spec_cost_gas = \
@@ -655,7 +663,7 @@ class CityAnnuityCalc(object):
         """
 
         #  Building pointer
-        build = self.energy_balance.city.node[id]['entity']
+        build = self.energy_balance.city.nodes[id]['entity']
 
         timestep = build.environment.timer.timeDiscretization
 
@@ -679,7 +687,12 @@ class CityAnnuityCalc(object):
         assert chp_feed >= 0, 'chp_feed: ' + str(chp_feed)
 
         #  Calculate PV fed-in proceedings
-        if build.build_type == 0:  # Residential
+        if build.build_type is None:
+            msg = 'build.build_type is None. Assume, that this building is' \
+                  ' residential building to estimate specific energy cost.'
+            warnings.warn(msg)
+            is_res = 'res'
+        elif build.build_type == 0:  # Residential
             is_res = True
         else:
             is_res = False
@@ -710,11 +723,15 @@ class CityAnnuityCalc(object):
 
                 assert p_el_nom >= 0
 
+                #  Get maximum subsidies CHP total runtime
+                #  (e.g. 30000 or 60000 hours)
                 chp_runtime = self.energy_balance.city.environment.\
                     prices.get_max_total_runtime_chp_sub(p_el_nom=p_el_nom)
 
+                #  Calculate average subsidies runtime per year
                 chp_runtime_per_year = chp_runtime / self.annuity_obj.time
 
+                #  TODO: Part load?
                 chp_runtime_used_per_year = (chp_self + chp_feed) \
                                             * 1000 / p_el_nom
 
@@ -728,6 +745,7 @@ class CityAnnuityCalc(object):
                     chp_runtime_sub = chp_runtime_per_year + 0.0
 
                 assert chp_runtime_sub >= 0
+                assert chp_runtime_sub <= 60000 / self.annuity_obj.time
 
                 #  Split runtime to shares of chp sold and chp self energy
                 if chp_self != 0 or chp_feed != 0:
@@ -754,11 +772,15 @@ class CityAnnuityCalc(object):
                 #  Calc. EEX and grid avoidance payment for chp fed-in
                 annuity_chp_eex_sold = self.calc_chp_sold(en_chp_sold=chp_feed)
 
+                assert annuity_chp_eex_sold >= 0
+
                 #  Calculate CHP sold subsidies, depending on size and
                 #  maximum runtime
                 annuity_chp_sub_sold = self.\
                     calc_sub_chp_el_sold(en_chp_sold=chp_en_feed,
                                          pnominal=p_el_nom)
+
+                assert annuity_chp_sub_sold >= 0
 
                 #  Calculate CHP self subsidies, depending on size and
                 #  maximum runtime
@@ -766,9 +788,13 @@ class CityAnnuityCalc(object):
                     calc_sub_chp_el_used(en_chp_used=chp_en_self,
                                          pnominal=p_el_nom)
 
+                assert annuity_chp_sub_self >= 0
+
                 #  Calc CHP tax return
                 annuity_chp_tax_return = self.\
                     calc_sub_chp_gas_used(gas_chp_used=fuel_chp)
+
+                assert annuity_chp_tax_return >= 0
 
         #  Sum up proceeding related annuities
         annuity_proceeds = annuity_pv + annuity_chp_eex_sold \
@@ -930,12 +956,12 @@ class CityAnnuityCalc(object):
         b_chp_sub_used = self.annuity_obj.price_dyn_chp_self
 
         # Get specific price
-        sub_chp_sold = self.energy_balance.city.environment.\
+        sub_chp_self = self.energy_balance.city.environment.\
             prices.get_sub_chp_self(
             p_nom=pnominal)
 
         # Calculate specific income [Euro/kWh]
-        sub_payment_chp_used = b_chp_sub_used * sub_chp_sold * en_chp_used
+        sub_payment_chp_used = b_chp_sub_used * sub_chp_self * en_chp_used
 
         return sub_payment_chp_used * self.annuity_obj.ann_factor
 
@@ -1012,7 +1038,8 @@ class CityAnnuityCalc(object):
     def perform_overall_energy_balance_and_economic_calc(self, run_mc=False,
                                                          dict_samples_const=None,
                                                          dict_samples_esys=None,
-                                                         run_idx=None):
+                                                         run_idx=None,
+                                                         eeg_pv_limit=False):
         """
         Script runs energy balance and annuity calculation for city in
         energy_balance object
@@ -1037,6 +1064,11 @@ class CityAnnuityCalc(object):
             (of building with id <building_id>)
         run_idx : int, optional
             Index / number of run for Monte-Carlo analysis (default: None)
+        eeg_pv_limit : bool, optional
+            Defines, if EEG PV feed-in limitation of 70 % of peak load is
+            active (default: False). If limitation is active, maximal 70 %
+            of PV peak load are fed into the grid.
+            However, self-consumption is used, first.
 
         Returns
         -------
@@ -1066,7 +1098,8 @@ class CityAnnuityCalc(object):
         self.energy_balance.calc_city_energy_balance(run_mc=run_mc,
                                                      dict_samples_const=
                                                      dict_samples_const,
-                                                     run_idx=run_idx)
+                                                     run_idx=run_idx,
+                                                     eeg_pv_limit=eeg_pv_limit)
 
         #  Perform final energy anaylsis
         self.energy_balance.calc_final_energy_balance_city()
@@ -1113,6 +1146,8 @@ if __name__ == '__main__':
 
     #  Check requirements for pycity_deap
     pycity_deap = False
+
+    eeg_pv_limit = False
 
     try:
         #  Try loading city pickle file
@@ -1376,7 +1411,8 @@ if __name__ == '__main__':
     #  #####################################################################
 
     #  Calc. city energy balance
-    city_eco_calc.energy_balance.calc_city_energy_balance()
+    city_eco_calc.energy_balance.\
+        calc_city_energy_balance(eeg_pv_limit=eeg_pv_limit)
 
     #  Perform final energy anaylsis
     dict_fe_city = \

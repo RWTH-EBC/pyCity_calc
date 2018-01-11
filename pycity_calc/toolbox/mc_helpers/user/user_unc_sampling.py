@@ -3,6 +3,7 @@
 """
 Script to sample uncertain user parameters
 """
+from __future__ import division
 
 import random as rd
 import numpy as np

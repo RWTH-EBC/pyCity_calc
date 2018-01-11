@@ -187,7 +187,7 @@ def mod_sh_city_dem(city, sh_dem, list_nodes=None, makecopy=False):
     con_factor = sh_dem / curr_city_el_dem
 
     for n in list_nodes:
-        curr_b = city.node[n]['entity']
+        curr_b = city.nodes[n]['entity']
 
         sh_resc = con_factor * curr_b.get_annual_space_heat_demand()
 
@@ -230,7 +230,7 @@ if __name__ == '__main__':
 
     # #  Uncomment, if you want to test summer heating off modification
     # #  ###################################################################
-    # ref_build = city.node[1001]['entity']
+    # ref_build = city.nodes[1001]['entity']
     # array_sh_before = copy.deepcopy(ref_build.get_space_heating_power_curve())
     # sh_dem_before = copy.copy(ref_build.get_annual_space_heat_demand())
     #

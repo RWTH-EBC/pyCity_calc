@@ -323,7 +323,7 @@ def get_ann_load_dur_curve(city_object, get_thermal=True, with_dhw=False,
         aggr_load_curve = np.zeros(city_object.environment.timer.timestepsTotal)
         #  for all ids in nodelist
         for n in nodelist:
-            th_power_curve = city_object.node[n]['entity']. \
+            th_power_curve = city_object.nodes[n]['entity']. \
                                 get_space_heating_power_curve\
                                     (current_values=False)
             aggr_load_curve += th_power_curve
@@ -331,7 +331,7 @@ def get_ann_load_dur_curve(city_object, get_thermal=True, with_dhw=False,
         if with_dhw:
             #  for all ids in nodelist
             for n in nodelist:
-                dhw_power_curve = city_object.node[n]['entity']. \
+                dhw_power_curve = city_object.nodes[n]['entity']. \
                                     get_dhw_power_curve\
                                         (current_values=False)
                 aggr_load_curve += dhw_power_curve
@@ -340,7 +340,7 @@ def get_ann_load_dur_curve(city_object, get_thermal=True, with_dhw=False,
         aggr_load_curve = np.zeros(city_object.environment.timer.timestepsTotal)
         #  for all ids in nodelist
         for n in nodelist:
-            el_power_curve = city_object.node[n]['entity']. \
+            el_power_curve = city_object.nodes[n]['entity']. \
                                 get_aggr_el_power_curve\
                                     (current_values=False)
             aggr_load_curve += el_power_curve
@@ -436,20 +436,20 @@ def get_id_max_th_power(city, with_dhw=False, current_values=False,
     #  Loop over all nodes
     for n in city:
         #  If node holds attribute 'node_type'
-        if 'node_type' in city.node[n]:
+        if 'node_type' in city.nodes[n]:
             #  If node_type is building
-            if city.node[n]['node_type'] == 'building':
+            if city.nodes[n]['node_type'] == 'building':
                 #  If entity is kind building
-                if city.node[n]['entity']._kind == 'building':
+                if city.nodes[n]['entity']._kind == 'building':
 
                     #  Get thermal power curve
-                    th_power_curve = city.node[n]['entity']. \
+                    th_power_curve = city.nodes[n]['entity']. \
                         get_space_heating_power_curve(
                         current_values=current_values)
 
                     #  Add dhw power, if necessary
                     if with_dhw:
-                        dhw_power_curve = city.node[n]['entity']. \
+                        dhw_power_curve = city.nodes[n]['entity']. \
                             get_dhw_power_curve(
                             current_values=current_values)
                         th_power_curve += dhw_power_curve
@@ -481,7 +481,8 @@ def get_id_max_th_power(city, with_dhw=False, current_values=False,
 #  #-----------------------------------------------------------------------
 
 def calc_chp_nom_th_power(th_power_curve, method=1, min_runtime=6000,
-                          force_min_runtime=False, timestep=None):
+                          force_min_runtime=False, timestep=None,
+                          share_max_th=1/5):
     """
     Calculate nominal thermal power of CHP system (for given thermal power
     curve)
@@ -495,8 +496,10 @@ def calc_chp_nom_th_power(th_power_curve, method=1, min_runtime=6000,
         (default: 1)
         Options:
         1 - Maximum rectangular
-        2 - Minimum runtime per year
+        2 - Minimum runtime per year (might fail, if min. runtime cannot be
+        reached!)
         3 - Maximum power
+        4 - Share of maximum thermal power (default: 1/5)
     min_runtime : float, optional
         Minimum runtime CHP should have per year (in hours!).
         Only relevant, if method == 2
@@ -510,6 +513,9 @@ def calc_chp_nom_th_power(th_power_curve, method=1, min_runtime=6000,
     timestep : int, optional
         Timestep in seconds. Only relevant for methods 2
         (default: None)
+    share_max_th : float, optional
+        Defines share of chp nominalt thermal power on max. th. power of given
+        th_power_curve (default: 1/5). Only relevant for method == 4
 
     Returns
     -------
@@ -517,7 +523,7 @@ def calc_chp_nom_th_power(th_power_curve, method=1, min_runtime=6000,
         CHP nominal thermal power
     """
 
-    list_method = [1, 2, 3]
+    list_method = [1, 2, 3, 4]
     assert method in list_method, 'Unknown chp sizing method.'
 
     if method == 1:  # Max. rectangle method
@@ -540,6 +546,10 @@ def calc_chp_nom_th_power(th_power_curve, method=1, min_runtime=6000,
     elif method == 3:  # Max. th. power
 
         chp_nom_power = np.amax(th_power_curve)
+
+    elif method == 4:  # share_max_th * max. th. power
+
+        chp_nom_power = share_max_th * np.amax(th_power_curve)
 
     return chp_nom_power
 
@@ -733,11 +743,11 @@ def calc_chp_el_sizes_for_opt(city, nb_sizes, mode, with_dhw=False):
 
     #  Get max. th. power of building with largest thermal power
     q_dot_b_peak_max = \
-        get_max_power_of_building(building=city.node[id_max]['entity'],
+        get_max_power_of_building(building=city.nodes[id_max]['entity'],
                                   with_dhw=with_dhw)
     #  Get max. th. power of building with smallest, max. power demand
     q_dot_b_peak_min = \
-        get_max_power_of_building(building=city.node[id_min]['entity'],
+        get_max_power_of_building(building=city.nodes[id_min]['entity'],
                                   with_dhw=with_dhw)
 
     #  Get max. thermal power of city

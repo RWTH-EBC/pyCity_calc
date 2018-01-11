@@ -78,13 +78,13 @@ def run_example():
         #  Add apartment to extended building
         extended_building.addEntity(entity=apartment)
 
-        position = point.Point(i*10, 0)
+        position = point.Point(i * 10, 0)
 
         #  Add 3 extended buildings to city object
         city_object.add_extended_building(extended_building=extended_building,
                                           position=position)
 
-    #  Add street network
+    # Add street network
     #  Add str nodes
     node_1 = city_object.add_street_node(position=point.Point(0, -1))
     node_2 = city_object.add_street_node(position=point.Point(10, -1))
@@ -96,8 +96,8 @@ def run_example():
 
     street = netop.get_street_subgraph(city_object)
 
-    assert street.nodes() == [node_1, node_2, node_3]
-    assert street.edges() == [(node_1, node_2), (node_2, node_3)]
+    assert sorted(list(street.nodes())) == [node_1, node_2, node_3]
+    assert sorted(list(street.edges())) == [(node_1, node_2), (node_2, node_3)]
 
     print('Street nodes ', street.nodes())
     print('Street edges ', street.edges())
@@ -109,13 +109,15 @@ def run_example():
     print('Subcity nodes with data: ', subcity.nodes(data=True))
     print('Subcity edges ', subcity.edges())
 
-    assert subcity.nodes() == [1001, node_1, node_2, node_3]
-    assert subcity.edges() == [(node_1, node_2), (node_2, node_3)]
+    assert sorted(list(subcity.nodes())) == [1001, node_1, node_2, node_3]
+    assert sorted(list(subcity.edges())) == [(node_1, node_2),
+                                             (node_2, node_3)]
 
     print('Nodelist street:')
     print(subcity.nodelist_street)
     print('Nodelist buildings:')
     print(subcity.nodelist_building)
+
 
 if __name__ == '__main__':
     #  Execute example

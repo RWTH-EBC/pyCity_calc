@@ -72,7 +72,7 @@ def randomize_city_params(city, mod_year=False, inf=False, temp_set=False,
 
     for n in list_b_ids:
 
-        curr_b = city_new.node[n]['entity']
+        curr_b = city_new.nodes[n]['entity']
 
         if curr_b.build_type == 0:  # Residential buildings, only
             print('Process building: ', n)

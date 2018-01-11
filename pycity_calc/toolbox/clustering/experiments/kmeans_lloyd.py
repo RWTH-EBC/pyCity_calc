@@ -62,6 +62,10 @@ def find_centers(X, K):
     mu = random.sample(list(X), K)#
     # clusters = cluster_points(X, mu)
     nb_iterations = 0
+
+    #  Init clusters
+    clusters = None
+
     while not has_converged(mu, oldmu):
         oldmu = mu
         # Assign all points in X to clusters
@@ -69,6 +73,7 @@ def find_centers(X, K):
         # Reevaluate centers
         mu = reevaluate_centers(oldmu, clusters)
         nb_iterations += 1
+
     print('nb_iterations: ', nb_iterations)
     return (mu, clusters)
 

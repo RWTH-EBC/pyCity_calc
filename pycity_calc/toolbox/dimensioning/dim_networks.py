@@ -231,9 +231,9 @@ def add_lhn_to_city(city, list_build_node_nb=None, temp_vl=90,
     for u in list_build_node_nb:
         for v in city.nodes():
             if city.has_edge(u, v):
-                if 'network_type' in city.edge[u][v]:
-                    if (city.edge[u][v]['network_type'] == 'heating' or
-                                city.edge[u][v][
+                if 'network_type' in city.edges[u, v]:
+                    if (city.edges[u, v]['network_type'] == 'heating' or
+                                city.edges[u, v][
                                     'network_type'] == 'heating_and_deg'):
                         print('u', u)
                         print('v', v)
@@ -320,7 +320,7 @@ def add_lhn_to_city(city, list_build_node_nb=None, temp_vl=90,
                 if u not in list_lhn_node[0]:
                     # u was not set already as a LHN node
                     #  Get current position
-                    pos_curr = min_span_graph.node[u]['position']
+                    pos_curr = min_span_graph.nodes[u]['position']
 
                     #  Generate new id
                     id1 = city.new_node_number()
@@ -349,7 +349,7 @@ def add_lhn_to_city(city, list_build_node_nb=None, temp_vl=90,
                 if v not in list_lhn_node[0]:
                     # v was not set already as a LHN node
                     #  Get current position
-                    pos_curr = min_span_graph.node[v]['position']
+                    pos_curr = min_span_graph.nodes[v]['position']
 
                     #  Generate new id
                     id2 = city.new_node_number()
@@ -388,8 +388,8 @@ def add_lhn_to_city(city, list_build_node_nb=None, temp_vl=90,
 
             #  If deg network already exists, replace it with heating_and_deg
             if city.has_edge(u, v):
-                if 'network_type' in city.edge[u][v]:
-                    if city.edge[u][v]['network_type'] == 'electricity':
+                if 'network_type' in city.edges[u, v]:
+                    if city.edges[u, v]['network_type'] == 'electricity':
                         print('Found existing el. network between node ' +
                               str(u) + ' and node ' + str(v) + '. Going '
                                                                'to replace is with type heating_and_deg.')
@@ -509,7 +509,7 @@ def add_deg_to_city(city, list_build_node_nb=None, use_street_network=False):
                 if u not in list_deg_node[0]:
                     # u was not set already as a deg node
                     #  Get current position
-                    pos_curr = min_span_graph.node[u]['position']
+                    pos_curr = min_span_graph.nodes[u]['position']
 
                     #  Generate new id
                     id1 = city.new_node_number()
@@ -537,7 +537,7 @@ def add_deg_to_city(city, list_build_node_nb=None, use_street_network=False):
                 if v not in list_deg_node[0]:
                     # v was not set already as a deg node
                     #  Get current position
-                    pos_curr = min_span_graph.node[v]['position']
+                    pos_curr = min_span_graph.nodes[v]['position']
 
                     #  Generate new id
                     id2 = city.new_node_number()
@@ -572,9 +572,9 @@ def add_deg_to_city(city, list_build_node_nb=None, use_street_network=False):
 
             if city.has_edge(u, v):
 
-                if 'network_type' in city.edge[u][v]:
+                if 'network_type' in city.edges[u, v]:
 
-                    if city.edge[u][v]['network_type'] == 'heating':
+                    if city.edges[u, v]['network_type'] == 'heating':
                         print('Found existing heating network between node ' +
                               str(u) + ' and node ' + str(v) + '. Going '
                                                                'to replace is with type heating_and_deg.')
@@ -582,7 +582,7 @@ def add_deg_to_city(city, list_build_node_nb=None, use_street_network=False):
                         city.add_edge(u, v, network_type='heating_and_deg')
                         found_network = True
 
-                    elif city.edge[u][v]['network_type'] == 'heating_and_deg':
+                    elif city.edges[u, v]['network_type'] == 'heating_and_deg':
                         print(
                             'Found existing heating_and_deg network between node'
                             + str(u) + ' and node ' + str(v) + '. Do nothing.')
@@ -668,9 +668,9 @@ if __name__ == '__main__':
 
     list_heat_nodes = []
     for n in city.nodes():
-        if 'node_type' in city.node[n]:
-            if (city.node[n]['node_type'] == 'heating' or
-                city.node[n]['node_type'] == 'heating_and_deg'):
+        if 'node_type' in city.nodes[n]:
+            if (city.nodes[n]['node_type'] == 'heating' or
+                city.nodes[n]['node_type'] == 'heating_and_deg'):
                 list_heat_nodes.append(n)
 
     print()

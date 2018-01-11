@@ -16,28 +16,41 @@ class ChpExtended(chp.CHP):
     """
     ChpExtended class (inheritance from pycity CHP class)
 
-    self.totalQOutput
-    self.totalPOutput
-    self.array_fuel_power
+    Attributes
+    ----------
+    chp_type : str
+        Defines chp type (with efficiency and specific cost curves)
+        (default: 'ASUE_2015')
+    thermal_operation_mode : boolean
+        Defines if the chp modul is in thermal or electrical operation mode
+        True = thermal operation mode
+        False = electrical operation mode
+    array_fuel_power : array-like
+        Array holding entries to save fuel power results (e.g. gas input power
+        of CHP in Watt)
     """
 
     def __init__(self, environment,
                  q_nominal,
-                 p_nominal,
+                 p_nominal=None,
                  t_max=90,
                  lower_activation_limit=0.5,
                  eta_total=0.9,
                  chp_type='ASUE_2015',
                  thermal_operation_mode=True):
         """
+        Constructor of ChpExtended object instance.
+
         Parameters
         ---------
         environment : Extended environment object
             Common to all other objects. Includes time and weather instances
         p_nominal : float
-            nominal electricity output in Watt
-        q_nominal : float
-            nominal heat output in Watt
+            nominal electricity output in Watt. If thermal_operation_mode is
+            True, p_nominal has to be set and q_nominal is calculated.
+        q_nominal : float, optional
+            nominal heat output in Watt. If thermal_operation_mode is False,
+            p_nominal cannot be None / value hat to be set (default: None)
         t_max : integer, optional
             maximum provided temperature in °C
             (default : 90 °C)
@@ -68,25 +81,40 @@ class ChpExtended(chp.CHP):
             (default : True) -->
             True = thermal operation mode
             False = electrical operation mode
-
-        Attributes
-        ----------
-        chp_type : str
-            Defines chp type (with efficiency and specific cost curves)
-            (default: 'ASUE_2015')
-        thermal_operation_mode : boolean
-            Defines if the chp modul is in thermal or electrical operation mode
-            True = thermal operation mode
-            False = electrical operation mode
-        qNominal_thOpM : float
-            the nominal thermal power if used in thermal operation mode
-        pNominal_elOpM : float
-            the nominal electrical power if used in electrical operatoin mode
         """
 
         #  Assert functions
-        assert q_nominal >= 0, 'Thermal Power cannot be below zero.'
-        assert p_nominal >= 0, 'Electrical Power cannot be below zero.'
+        if thermal_operation_mode:
+            if q_nominal < 0:
+                msg = 'CHP thermal power cannot be below zero!'
+                raise AssertionError(msg)
+            elif q_nominal == 0:
+                msg = 'CHP thermal power is set to zero!'
+                warnings.warn(msg)
+
+            if p_nominal is not None:
+                msg = 'Nominal el. CHP power is set to ' \
+                      + str(p_nominal) + ' Watt. However, this value is ' \
+                                         'going to be overwritten, as ' \
+                                         'thermal_operation_mode is True and' \
+                                         ' q_nominal has been given!'
+                warnings.warn(msg)
+        else:  # Electrical driven mode
+            if p_nominal < 0:
+                msg = 'CHP electrical power cannot be below zero!'
+                raise AssertionError(msg)
+            elif p_nominal == 0:
+                msg = 'CHP electrical power is set to zero!'
+                warnings.warn(msg)
+
+            if q_nominal is not None:
+                msg = 'Nominal th. CHP power is set to ' \
+                      + str(p_nominal) + ' Watt. However, this value is ' \
+                                         'going to be overwritten, as ' \
+                                         'thermal_operation_mode is False ' \
+                                         'and p_nominal has been given!'
+                warnings.warn(msg)
+
         assert eta_total > 0, ('CHP total efficiency should not be equal to ' +
                                ' or below zero. Check your inputs.')
         assert eta_total <= 1, ('CHP total efficiency should not go above 1.' +
@@ -95,18 +123,23 @@ class ChpExtended(chp.CHP):
         assert lower_activation_limit <= 1, 'Part Load can not be above 100 %.'
         assert lower_activation_limit >= 0, 'Part Load can not be below 0.'
 
-        assert eta_total >= 0, ('The total efficiency of the CHP Unit ' +
-                                'cannot be negativ.')
-        assert eta_total <= 1, (
-            'The total efficiency of the CHP Unit cannot be larger'
-            'than one.')
+        assert chp_type in ['ASUE_2015'], 'Unknown chp_type!'
 
-        #  Run precalculation
+        #  Run precalculation (calculate
         (th_power, el_power) = self.run_precalculation(q_nominal=q_nominal,
                                                        p_nominal=p_nominal,
                                                        eta_total=eta_total,
                                                        thermal_operation_mode=
-                                                       thermal_operation_mode)
+                                                       thermal_operation_mode,
+                                                       chp_type=chp_type,
+                                                       save_res=False)
+        #  save_res == False --> Returning values to use them for super()
+        #  class call
+
+        if p_nominal is not None and thermal_operation_mode:
+            print('New CHP nominal el. power in kW: ', el_power/1000)
+        if q_nominal is not None and thermal_operation_mode is False:
+            print('New CHP nominal th. power in kW: ', th_power / 1000)
 
         super(ChpExtended, self).__init__(environment,
                                           qNominal=th_power,
@@ -120,13 +153,12 @@ class ChpExtended(chp.CHP):
 
         # further attributes
         self.chp_type = chp_type
-        self.array_fuel_power = np.zeros(timesteps_total)
         self.thermal_operation_mode = thermal_operation_mode
-        self.qNominal_thOpM = q_nominal
-        self.pNominal_elOpM = p_nominal
+        self.array_fuel_power = np.zeros(timesteps_total)
 
     def run_precalculation(self, q_nominal=None, p_nominal=None,
-                           eta_total=0.9, thermal_operation_mode=True):
+                           eta_total=0.9, thermal_operation_mode=True,
+                           chp_type='ASUE_2015', save_res=True):
         """
         Performs precalculation. Has to be called when attributes are changed
         on existing chp object instance.
@@ -147,6 +179,17 @@ class ChpExtended(chp.CHP):
             (default : True) -->
             True = thermal operation mode
             False = electrical operation mode
+        chp_type : str, optional
+            Defines chp type (with efficiency and specific cost curves)
+            (default : 'ASUE_2015')
+            chp_type='ASUE_2015' (for datasets of Arbeitsgemeinschaft für
+            sparsamen und umweltfreundlichen
+            Energieverbrauch e.V., BHKW-Kenndaten 2014/15, Essen, 2015.)
+            Options:
+            - 'ASUE_2015'
+        save_res : bool, optional
+            Defines, if results of pre-calculation should be saved to
+            chp object instance (default: True). If False, only returns results
 
         Returns
         -------
@@ -161,27 +204,13 @@ class ChpExtended(chp.CHP):
                       'be None. You have to define a valid input value!'
                 raise AssertionError(msg)
 
-            th_power = q_nominal
-            el_power = asue.calc_el_power_with_th_power(q_nominal, eta_total)
-
-            # try:
-            #     assert el_power < p_nominal * 1.2
-            # except AssertionError:
-            #     warnings.warn(
-            #         "Electrical nominal power is too large for thermal"
-            #         "operation mode. Electrical power should be between " +
-            #         str(round(el_power / 1.2, 2)) + " and " +
-            #         str(round(el_power * 1.2, 2)) + " W."
-            #         " Check your System!")
-            # try:
-            #     assert el_power > p_nominal / 1.2
-            # except AssertionError:
-            #     warnings.warn(
-            #         "Electrical nominal power is too large for thermal"
-            #         "operation mode. Electrical power should be between " +
-            #         str(round(el_power / 1.2, 2)) + " and " +
-            #         str(round(el_power * 1.2, 2)) + " W."
-            #         " Check your System!")
+            th_power = q_nominal + 0.0
+            if chp_type == 'ASUE_2015':
+                el_power = asue.calc_el_power_with_th_power(th_power, eta_total)
+            else:
+                msg = 'Unknown chp_type. Currently, only ASUE_2015 has been ' \
+                      'implemented!'
+                raise NotImplementedError(msg)
 
         else:  # electrical operation mode
 
@@ -190,27 +219,17 @@ class ChpExtended(chp.CHP):
                       'be None. You have to define a valid input value!'
                 raise AssertionError(msg)
 
-            el_power = p_nominal
-            th_power = asue.calc_th_output_with_p_el(el_power, eta_total)
+            el_power = p_nominal + 0.0
+            if chp_type == 'ASUE_2015':
+                th_power = asue.calc_th_output_with_p_el(el_power, eta_total)
+            else:
+                msg = 'Unknown chp_type. Currently, only ASUE_2015 has been ' \
+                      'implemented!'
+                raise NotImplementedError(msg)
 
-            # try:
-            #     assert th_power < q_nominal * 1.2
-            # except AssertionError:
-            #     warnings.warn(
-            #         "Thermal nominal power is too little for electrical"
-            #         "operation mode. Thermal power should be between " +
-            #         str(round(th_power / 1.2, 2)) + " and " +
-            #         str(round(th_power * 1.2, 2)) + " W."
-            #         " Check your system!")
-            # try:
-            #     assert th_power > q_nominal / 1.2
-            # except AssertionError:
-            #     warnings.warn(
-            #         "Thermal nominal power is too little for electrical"
-            #         "operation mode. Thermal power should be between " +
-            #         str(round(th_power / 1.2, 2)) + " and " +
-            #         str(round(th_power * 1.2, 2)) + " W."
-            #         " Check your system!")
+        if save_res:
+            self.qNominal = th_power
+            self.pNominal = el_power
 
         return (th_power, el_power)
 
@@ -226,39 +245,17 @@ class ChpExtended(chp.CHP):
 
         if self.thermal_operation_mode:  # thermal operation mode --> change the electrical operation mode
             self.thermal_operation_mode = False
-            el_power = self.pNominal_elOpM
+            el_power = self.pNominal
             th_power = asue.calc_th_output_with_p_el(el_power, self.omega)
 
-            assert th_power < self.qNominal_thOpM * 1.2, "Thermal nominal power is too large for electrical operation mode." \
-                                                         " Thermal power should be between " + str(
-                round(th_power / 1.2, 2)) + " and " + str(
-                round(th_power * 1.2, 2)) + " W." \
-                                            " Check your system!"
-            assert th_power > self.qNominal_thOpM / 1.2, "Thermal nominal power is too large for electrical operation mode." \
-                                                         " Thermal power should be between " + str(
-                round(th_power / 1.2, 2)) + " and " + str(
-                round(th_power * 1.2, 2)) + " W." \
-                                            " Check your system!"
-            self.pNominal = el_power
             self.qNominal = th_power
 
         else:  # electrical operation mode --> change to thermal operation mode
             self.thermal_operation_mode = True
-            th_power = self.qNominal_thOpM
+            th_power = self.qNominal
             el_power = asue.calc_el_power_with_th_power(th_power, self.omega)
 
-            assert el_power < self.pNominal_elOpM * 1.2, "Electrical nominal power is too little for thermal operation mode. " \
-                                                         " Electrical power should be between " + str(
-                round(el_power / 1.2, 2)) + " W and " + str(
-                round(el_power * 1.2, 2)) + " W." \
-                                            " Check your system!"
-            assert el_power > self.pNominal_elOpM / 1.2, "Electrical nominal power is too little for thermal operation mode. " \
-                                                         " Electrical power should be between " + str(
-                round(el_power / 1.2, 2)) + " W and " + str(
-                round(el_power * 1.2, 2)) + " W." \
-                                            " Check your system!"
             self.pNominal = el_power
-            self.qNominal = th_power
 
     def thOperation_calc_chp_th_power_output(self, control_signal):
         """
@@ -285,7 +282,8 @@ class ChpExtended(chp.CHP):
 
         # If control signal is below minimal part load performance,
         #  output is defined as zero
-        elif control_signal < self.lowerActivationLimit * self.qNominal:
+        elif (control_signal < self.lowerActivationLimit * self.qNominal
+              and control_signal != 0):
             warnings.warn('Thermal control signal for CHP' + str(self) +
                           'is below minimum part load performance. '
                           'Therefore, output is defined as zero.')
@@ -582,7 +580,6 @@ class ChpExtended(chp.CHP):
 
         return (th_power, el_power, fuel_power_in)
 
-
     ##########################################################################
     ########################## electrical operation ##########################
     ##########################################################################
@@ -612,7 +609,8 @@ class ChpExtended(chp.CHP):
 
         # If control signal is below minimal part load performance,
         #  output is defined as zero
-        elif control_signal < self.lowerActivationLimit * self.pNominal:
+        elif (control_signal < self.lowerActivationLimit * self.pNominal
+              and control_signal != 0):
             warnings.warn('Electrical control signal for CHP' + str(self) +
                           'is below minimum part load performance. '
                           'Therefore, output is defined as zero.')

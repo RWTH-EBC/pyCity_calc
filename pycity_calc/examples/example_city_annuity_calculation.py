@@ -122,7 +122,7 @@ def run_example_city_energy_balance_and_annuity_calc():
     #  as profile stays the same and only changes scaling.
     #  Stochastic profiles require defined nb of occupants per residential
     #  building
-    dhw_method = 2  # Only relevant for residential buildings
+    dhw_method = 1  # Only relevant for residential buildings
 
     #  Define dhw volume per person and day (use_dhw=True)
     dhw_volumen = None  # Only relevant for residential buildings
@@ -132,7 +132,7 @@ def run_example_city_energy_balance_and_annuity_calc():
     dhw_random = False
 
     #  Use dhw profiles for esys dimensioning
-    dhw_dim_esys = True
+    dhw_dim_esys = False
 
     #  Plot city district with pycity_calc visualisation
     plot_pycity_calc = False
@@ -260,11 +260,11 @@ def run_example_city_energy_balance_and_annuity_calc():
                                            merge_windows=merge_windows,
                                            new_try=new_try)
 
-    city.node[1005]['entity'].bes.boiler.qNominal *= 10
-    city.node[1005]['entity'].bes.tes.capacity *= 10
-    city.node[1012]['entity'].bes.boiler.qNominal *= 10
-    city.node[1012]['entity'].bes.tes.capacity *= 10
-    city.node[1009]['entity'].bes.electricalHeater.qNominal *= 10
+    city.nodes[1005]['entity'].bes.boiler.qNominal *= 10
+    city.nodes[1005]['entity'].bes.tes.capacity *= 10
+    city.nodes[1012]['entity'].bes.boiler.qNominal *= 10
+    city.nodes[1012]['entity'].bes.tes.capacity *= 10
+    city.nodes[1009]['entity'].bes.electricalHeater.qNominal *= 10
 
     # # Save new pickle file
     # filename = 'city_clust_simple_with_esys.pkl'
@@ -291,7 +291,7 @@ def run_example_city_energy_balance_and_annuity_calc():
                                             energy_balance=energy_balance)
 
     (total_annuity, co2) = city_eco_calc.\
-        perform_overall_energy_balance_and_economic_calc()
+        perform_overall_energy_balance_and_economic_calc(eeg_pv_limit=False)
 
     print('##########################################')
     print()

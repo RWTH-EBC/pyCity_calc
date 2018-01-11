@@ -5,6 +5,7 @@ Script to generate city district with streets, energy networks and energy
 systems (executing city_generator, street_generator, energy_networks_generator
 and energy_sys_generator in a row).
 """
+from __future__ import division
 
 import os
 import pickle
@@ -366,7 +367,7 @@ if __name__ == '__main__':
     do_normalization = True
 
     #  Randomize electrical demand value (residential buildings, only)
-    el_random = True
+    el_random = False
 
     #  Prevent usage of electrical heating and hot water devices in
     #  electrical load generation
@@ -400,7 +401,7 @@ if __name__ == '__main__':
 
     #  Randomize choosen dhw_volume reference value by selecting new value
     #  from gaussian distribution with 20 % standard deviation
-    dhw_random = True
+    dhw_random = False
 
     #  Use dhw profiles for esys dimensioning
     dhw_dim_esys = True
@@ -427,7 +428,7 @@ if __name__ == '__main__':
     t_set_cool = 70  # Cooling set temperature in degree Celsius
 
     #  Air exchange rate (required for th_gen_method = 3 (VDI 6007 sim.))
-    air_vent_mode = 1
+    air_vent_mode = 2
     #  int; Define mode for air ventilation rate generation
     #  0 : Use constant value (vent_factor in 1/h)
     #  1 : Use deterministic, temperature-dependent profile

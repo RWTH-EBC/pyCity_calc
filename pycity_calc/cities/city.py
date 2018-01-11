@@ -102,12 +102,12 @@ class City(citydist.CityDistrict):
         #  Loop over all nodes
         for n in use_nodes:
             #  If node holds attribute 'node_type'
-            if 'node_type' in self.node[n]:
+            if 'node_type' in self.nodes[n]:
                 #  If node_type is building
-                if self.node[n]['node_type'] == 'building':
+                if self.nodes[n]['node_type'] == 'building':
                     #  If entity is kind building
-                    if self.node[n]['entity']._kind == 'building':
-                        ann_heat_demand += self.node[n]['entity'].\
+                    if self.nodes[n]['entity']._kind == 'building':
+                        ann_heat_demand += self.nodes[n]['entity'].\
                             get_annual_space_heat_demand()
 
         return ann_heat_demand
@@ -143,12 +143,12 @@ class City(citydist.CityDistrict):
         #  Loop over all nodes
         for n in use_nodes:
             #  If node holds attribute 'node_type'
-            if 'node_type' in self.node[n]:
+            if 'node_type' in self.nodes[n]:
                 #  If node_type is building
-                if self.node[n]['node_type'] == 'building':
+                if self.nodes[n]['node_type'] == 'building':
                     #  If entity is kind building
-                    if self.node[n]['entity']._kind == 'building':
-                        ann_el_demand += self.node[n]['entity'].\
+                    if self.nodes[n]['entity']._kind == 'building':
+                        ann_el_demand += self.nodes[n]['entity'].\
                             get_annual_el_demand()
 
         return ann_el_demand
@@ -184,12 +184,12 @@ class City(citydist.CityDistrict):
         #  Loop over all nodes
         for n in use_nodes:
             #  If node holds attribute 'node_type'
-            if 'node_type' in self.node[n]:
+            if 'node_type' in self.nodes[n]:
                 #  If node_type is building
-                if self.node[n]['node_type'] == 'building':
+                if self.nodes[n]['node_type'] == 'building':
                     #  If entity is kind building
-                    if self.node[n]['entity']._kind == 'building':
-                        ann_dhw_demand += self.node[n]['entity'].\
+                    if self.nodes[n]['entity']._kind == 'building':
+                        ann_dhw_demand += self.nodes[n]['entity'].\
                             get_annual_dhw_demand()
 
         return ann_dhw_demand

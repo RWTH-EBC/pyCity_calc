@@ -405,14 +405,14 @@ def get_lists(city, min_house_area, nodelist_buildings):
     """
 
     #buildings
-    addr_building_not_found = [i for i in nodelist_buildings if not 'addr_street' in city.node[i]]      #-->a
-    addr_building_found = [i for i in nodelist_buildings if 'addr_street' in city.node[i]]              #-->b
-    house_nb_building_found = [i for i in nodelist_buildings if 'addr_housenumber' in city.node[i]]
-    area_building_not_found = [i for i in nodelist_buildings if not 'area' in city.node[i]]             #-->c
+    addr_building_not_found = [i for i in nodelist_buildings if not 'addr_street' in city.nodes[i]]      #-->a
+    addr_building_found = [i for i in nodelist_buildings if 'addr_street' in city.nodes[i]]              #-->b
+    house_nb_building_found = [i for i in nodelist_buildings if 'addr_housenumber' in city.nodes[i]]
+    area_building_not_found = [i for i in nodelist_buildings if not 'area' in city.nodes[i]]             #-->c
 
     coordinates_from_buildings_without_adress = {}                                                          #-->d
     for i in addr_building_not_found:
-        coordinates_from_buildings_without_adress[i] = [city.node[i]["position"].x, city.node[i]["position"].y]
+        coordinates_from_buildings_without_adress[i] = [city.nodes[i]["position"].x, city.nodes[i]["position"].y]
 
     buildings_not_found = set(range(nodelist_buildings[0], nodelist_buildings[len(nodelist_buildings) - 1] + 1)) - set(nodelist_buildings)
                                                                                                             #-->e
@@ -420,8 +420,8 @@ def get_lists(city, min_house_area, nodelist_buildings):
     #streets
 
     street_names_of_all_buildings = []                                                                      #-->f
-    street_names_of_all_buildings = [city.node[i]['addr_street'] for i in nodelist_buildings if
-                                     'addr_street' in city.node[i] and not city.node[i][
+    street_names_of_all_buildings = [city.nodes[i]['addr_street'] for i in nodelist_buildings if
+                                     'addr_street' in city.nodes[i] and not city.nodes[i][
                                                                                'addr_street'] in street_names_of_all_buildings]
     street_names = []
     for i in street_names_of_all_buildings:
@@ -432,18 +432,18 @@ def get_lists(city, min_house_area, nodelist_buildings):
     # buildings_with_housenumber = []                                                                         #--> h
     # house_nb_on_street = {key: [] for key in street_names}                                                  #--> i
     # for i in nodelist_buildings:
-    #     if "addr_housenumber" in city.node[i]:
+    #     if "addr_housenumber" in city.nodes[i]:
     #         buildings_with_housenumber.append(i)
     #         a=buildings_with_housenumber
-    #         b=city.node[i]["addr_street"]
-    #         c=city.node[i]["addr_housenumber"]
+    #         b=city.nodes[i]["addr_street"]
+    #         c=city.nodes[i]["addr_housenumber"]
     #         d=house_nb_on_street
-    #         house_nb_on_street[city.node[i]["addr_street"]].append(city.node[i]["addr_housenumber"])
+    #         house_nb_on_street[city.nodes[i]["addr_street"]].append(city.nodes[i]["addr_housenumber"])
 
             # alphabet = ["a","b","c","d","e","f","g","h","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"]
-            # for city.node[i]["addr_housenumber"] in house_nb_on_street:
+            # for city.nodes[i]["addr_housenumber"] in house_nb_on_street:
             #     for letter in alphabet:
-            #         city.node[i]["addr_housenumber"][-1].discard(letter)
+            #         city.nodes[i]["addr_housenumber"][-1].discard(letter)
             #
 
     ## NOT WORKING SO FAR; BECAUSE IT IS A STRING !
@@ -491,7 +491,7 @@ def print_statements(city, zone_number, nodelist_buildings, deleted_buildings, o
     buildings_without_adress_and_ground_area_smaller_50 = []
     for i in addr_building_not_found:
 
-        if city.node[i]["area"] < 50:
+        if city.nodes[i]["area"] < 50:
             buildings_without_adress_and_ground_area_smaller_50.append(i)
 
     # # lists the names of the streets
@@ -641,19 +641,19 @@ def print_statements(city, zone_number, nodelist_buildings, deleted_buildings, o
     # print()
 
     # for i in three_neigbours:
-    #     print("Building with three neighbours", i, city.node[i]["position"])
+    #     print("Building with three neighbours", i, city.nodes[i]["position"])
     # print()
     # for i in four_neigbours:
-    #     print("Building with four neighbours", i, city.node[i]["position"])
+    #     print("Building with four neighbours", i, city.nodes[i]["position"])
     # print()
     # for i in five_neigbours:
-    #     print("Building with four neighbours", i, city.node[i]["position"])
+    #     print("Building with four neighbours", i, city.nodes[i]["position"])
     # print()
     # for i in six_neigbours:
-    #     print("Building with four neighbours", i, city.node[i]["position"])
+    #     print("Building with four neighbours", i, city.nodes[i]["position"])
     # print()
     # for i in more_than_six_neigbours:
-    #     print("Building with more than four neighbours", i, city.node[i]["position"])
+    #     print("Building with more than four neighbours", i, city.nodes[i]["position"])
     #
     # print("Shared walls coordinates", coordinates_of_shared_walls)
 
@@ -708,14 +708,14 @@ def conv_outlines_of_buildings_long_lat_to_utm(city, min_house_area, nodelist_bu
     #  Loop over every node in city
     for n in nodelist_buildings_from_osm:
         #  Current node
-        cur_pos = city.node[n]['outlines']
+        cur_pos = city.nodes[n]['outlines']
 
 
-        # for i in range(1, (len(city.node[n]['outlines'].keys())+1)):
-        for i in range(len(city.node[n]['outlines'])):
+        # for i in range(1, (len(city.nodes[n]['outlines'].keys())+1)):
+        for i in range(len(city.nodes[n]['outlines'])):
         #  Current x/y coordinates
-            x_cor = city.node[n]['outlines'][i][1]  # Longitude
-            y_cor= city.node[n]['outlines'][i][0]  # Latitude
+            x_cor = city.nodes[n]['outlines'][i][1]  # Longitude
+            y_cor= city.nodes[n]['outlines'][i][0]  # Latitude
 
         #  Convert lat, long to utm
             (x_new, y_new, zone_nb, zone_str) = utm.from_latlon(y_cor, x_cor,
@@ -725,7 +725,7 @@ def conv_outlines_of_buildings_long_lat_to_utm(city, min_house_area, nodelist_bu
             cur_point = ((x_new, y_new))
 
         #  Overwrite positional attributes
-            city.node[n]['outlines'][i] = cur_point
+            city.nodes[n]['outlines'][i] = cur_point
 
     return city
 
@@ -748,16 +748,16 @@ def get_buildings_within_spezified_square(city, zone_number, considered_area, mi
         #create area
         side_length = math.sqrt(considered_area)
         displacement_of_corrdinates = side_length / 2
-        possible_x_high = city.node[building_a]["position"].x + displacement_of_corrdinates
-        possible_x_low = city.node[building_a]["position"].x  - displacement_of_corrdinates
-        possible_y_high = city.node[building_a]["position"].y + displacement_of_corrdinates
-        possible_y_low = city.node[building_a]["position"].y - displacement_of_corrdinates
+        possible_x_high = city.nodes[building_a]["position"].x + displacement_of_corrdinates
+        possible_x_low = city.nodes[building_a]["position"].x  - displacement_of_corrdinates
+        possible_y_high = city.nodes[building_a]["position"].y + displacement_of_corrdinates
+        possible_y_low = city.nodes[building_a]["position"].y - displacement_of_corrdinates
         for building_b in nodelist_buildings:
             if building_a != building_b:
-                for edge in range(1, len(city.node[building_b]["outlines"])): #--> it is fine, because the last edge is just the same as the first one
+                for edge in range(1, len(city.nodes[building_b]["outlines"])): #--> it is fine, because the last edge is just the same as the first one
 
-                    if possible_x_low < city.node[building_b]["outlines"][edge][0] < possible_x_high:
-                        if possible_y_low < city.node[building_b]["outlines"][edge][1] < possible_y_high:
+                    if possible_x_low < city.nodes[building_b]["outlines"][edge][0] < possible_x_high:
+                        if possible_y_low < city.nodes[building_b]["outlines"][edge][1] < possible_y_high:
                             if building_b not in building_list_within_spezified_square[building_a]:
                                 building_list_within_spezified_square[building_a].append(building_b)
 
@@ -778,8 +778,8 @@ def get_distance_between_2_buildings(city, start_building, end_building):
     :return:
     """
 
-    dist = math.hypot((city.node[start_building]["position"].x - city.node[end_building]["position"].x),\
-                      (city.node[start_building]["position"].y - city.node[end_building]["position"].y))
+    dist = math.hypot((city.nodes[start_building]["position"].x - city.nodes[end_building]["position"].x),\
+                      (city.nodes[start_building]["position"].y - city.nodes[end_building]["position"].y))
     return dist
 
 
@@ -813,13 +813,13 @@ def get_distances(city, zone_number, considered_area_around_buildings, min_house
         for building_b in building_list_within_spezified_square[building_a]:
             dists = []
             if building_a != building_b:
-                for edge_a in range(len(city.node[building_a]["outlines"])):
+                for edge_a in range(len(city.nodes[building_a]["outlines"])):
 
-                    for edge_b in range(len(city.node[building_b]["outlines"])):
-                        a =city.node[building_a]["outlines"][edge_a][1]
-                        b =city.node[building_b]["outlines"][edge_b][1]
-                        c=city.node[building_a]["outlines"][edge_a][0]
-                        d= city.node[building_b]["outlines"][edge_b][0]
+                    for edge_b in range(len(city.nodes[building_b]["outlines"])):
+                        a =city.nodes[building_a]["outlines"][edge_a][1]
+                        b =city.nodes[building_b]["outlines"][edge_b][1]
+                        c=city.nodes[building_a]["outlines"][edge_a][0]
+                        d= city.nodes[building_b]["outlines"][edge_b][0]
                         dists.append(math.hypot((a - b),(c - d)))
                 buildings_distances[building_b] = dists
             distance_buildings_within_square[building_a]  = buildings_distances
@@ -912,101 +912,101 @@ def get_buildings_parameters(city, min_house_area, nodelist_buildings, generate_
 
 
     for i in nodelist_buildings_from_osm:
-        if city.node[i]["comment"] not in comments:
-            comments.append(city.node[i]["comment"])
-        elif city.node[i]["comment"] != "yes":
-            buildings_with_comment[i] = [city.node[i]["comment"]]
-        elif city.node[i]["comment"] == "apartments":
+        if city.nodes[i]["comment"] not in comments:
+            comments.append(city.nodes[i]["comment"])
+        elif city.nodes[i]["comment"] != "yes":
+            buildings_with_comment[i] = [city.nodes[i]["comment"]]
+        elif city.nodes[i]["comment"] == "apartments":
             apartment_buildings.append(i)
             residential.append(i)
-        elif city.node[i]["comment"] == "house":
+        elif city.nodes[i]["comment"] == "house":
             house_buildings.append(i)
             residential.append(i)
-        elif city.node[i]["comment"] == "residential":
+        elif city.nodes[i]["comment"] == "residential":
             residential_buildings.append(i)
             residential.append(i)
-        elif city.node[i]["comment"] == "terrace":
+        elif city.nodes[i]["comment"] == "terrace":
             terrace_buildings.append(i)
             residential.append(i)
-        elif city.node[i]["comment"] == "detached":
+        elif city.nodes[i]["comment"] == "detached":
             detached_buildings.append(i)
             residential.append(i)
-        elif city.node[i]["comment"] == "bungalow":
+        elif city.nodes[i]["comment"] == "bungalow":
             bungalow_buildings.append(i)
             residential.append(i)
-        elif city.node[i]["comment"] == "dormitory":
+        elif city.nodes[i]["comment"] == "dormitory":
             dormitory_buildings.append(i)
             residential.append(i)
 
         # Non residential
-        elif city.node[i]["comment"] == "garages" or city.node[i]["comment"] == "garage" or city.node[i][
+        elif city.nodes[i]["comment"] == "garages" or city.nodes[i]["comment"] == "garage" or city.nodes[i][
             "comment"] == "roof":
             garages_and_roofs.append(i)
-        elif city.node[i]["comment"] == "school":
+        elif city.nodes[i]["comment"] == "school":
             schools.append(i)
             special_building_types.append(i)
-        elif city.node[i]["comment"] == "university":
+        elif city.nodes[i]["comment"] == "university":
             universities.append(i)
             special_building_types.append(i)
-        elif city.node[i]["comment"] == "cathedral" or city.node[i]["comment"] == "church" or city.node[i][
+        elif city.nodes[i]["comment"] == "cathedral" or city.nodes[i]["comment"] == "church" or city.nodes[i][
             "comment"] == "chapel" \
-                or city.node[i]["comment"] == "monastery" or city.node[i]["comment"] == "mosque" or city.node[i][
+                or city.nodes[i]["comment"] == "monastery" or city.nodes[i]["comment"] == "mosque" or city.nodes[i][
             "comment"] == "temple" \
-                or city.node[i]["comment"] == "synagogue" or city.node[i]["comment"] == "shrine":
+                or city.nodes[i]["comment"] == "synagogue" or city.nodes[i]["comment"] == "shrine":
             houses_of_prayer.append(i)
             special_building_types.append(i)
-        elif city.node[i]["comment"] == "hospital":
+        elif city.nodes[i]["comment"] == "hospital":
             hospitals.append(i)
             special_building_types.append(i)
-        elif city.node[i]["comment"] == "civic":
+        elif city.nodes[i]["comment"] == "civic":
             civic.append(i)
             special_building_types.append(i)
-        elif city.node[i]["comment"] == "public":
+        elif city.nodes[i]["comment"] == "public":
             public.append(i)
             special_building_types.append(i)
 
-        elif city.node[i]["comment"] == "commercial":
+        elif city.nodes[i]["comment"] == "commercial":
             commercial_buildings.append(i)
             non_residential.append(i)
-        elif city.node[i]["comment"] == "industrial":
+        elif city.nodes[i]["comment"] == "industrial":
             industrial_buildings.append(i)
             non_residential.append(i)
-        elif city.node[i]["comment"] == "office":
+        elif city.nodes[i]["comment"] == "office":
             office_buildings.append(i)
             non_residential.append(i)
-        elif city.node[i]["comment"] == "retail":
+        elif city.nodes[i]["comment"] == "retail":
             retail_buildings.append(i)
             non_residential.append(i)
-        elif city.node[i]["comment"] == "warehouse":
+        elif city.nodes[i]["comment"] == "warehouse":
             warehouse_buildings.append(i)
             non_residential.append(i)
 
-        if "shop" in city.node[i]:
-            buildings_with_shop[i] = [city.node[i]["shop"]]
+        if "shop" in city.nodes[i]:
+            buildings_with_shop[i] = [city.nodes[i]["shop"]]
 
-        if "amenity" in city.node[i]:
-            buildings_with_amenity[i] = [city.node[i]["amenity"]]
+        if "amenity" in city.nodes[i]:
+            buildings_with_amenity[i] = [city.nodes[i]["amenity"]]
 
-        if "leisure" in city.node[i]:
-            buildings_with_leisure[i] = [city.node[i]["leisure"]]
+        if "leisure" in city.nodes[i]:
+            buildings_with_leisure[i] = [city.nodes[i]["leisure"]]
 
-        if "name" in city.node[i] and city.node[i]["name"] != i:
-            buildings_with_name[i] = [city.node[i]["name"]]
+        if "name" in city.nodes[i] and city.nodes[i]["name"] != i:
+            buildings_with_name[i] = [city.nodes[i]["name"]]
 
-        if "building_levels" in city.node[i] and city.node[i]["building_levels"] != i:
-            buildings_with_levels[i] = [city.node[i]["building_levels"]]
+        if "building_levels" in city.nodes[i] and city.nodes[i]["building_levels"] != i:
+            buildings_with_levels[i] = [city.nodes[i]["building_levels"]]
 
-        if "building_roof_shape" in city.node[i] and city.node[i]["building_roof_shape"] != i:
-            buildings_with_roof_shape[i] = [city.node[i]["building_roof_shape"]]
+        if "building_roof_shape" in city.nodes[i] and city.nodes[i]["building_roof_shape"] != i:
+            buildings_with_roof_shape[i] = [city.nodes[i]["building_roof_shape"]]
 
-        if "building_buildyear" in city.node[i] and city.node[i]["building_buildyear"] != i:
-            buildings_buildyear[i] = [city.node[i]["building_buildyear"]]
+        if "building_buildyear" in city.nodes[i] and city.nodes[i]["building_buildyear"] != i:
+            buildings_buildyear[i] = [city.nodes[i]["building_buildyear"]]
 
-        if "building_condition" in city.node[i] and city.node[i]["building_condition"] != i:
-            buildings_condition[i] = [city.node[i]["building_condition"]]
+        if "building_condition" in city.nodes[i] and city.nodes[i]["building_condition"] != i:
+            buildings_condition[i] = [city.nodes[i]["building_condition"]]
 
-        if "building_height" in city.node[i] and city.node[i]["building_height"] != i:
-            buildings_height[i] = [city.node[i]["building_height"]]
+        if "building_height" in city.nodes[i] and city.nodes[i]["building_height"] != i:
+            buildings_height[i] = [city.nodes[i]["building_height"]]
 
         else:
             buildings_without_parameters.append(i)
@@ -1086,26 +1086,26 @@ def delete_not_relevant_buildings(city, min_house_area, generate_nodelist_from_f
     deleted_buildings = []
 
     for i in nodelist_buildings_from_osm:
-        if city.node[i]["comment"] == "garages" \
-            or city.node[i]["comment"] == "garage" \
-            or city.node[i]["comment"] == "roof"\
-            or city.node[i]["comment"] == "construction" \
-            or city.node[i]["comment"] == "hanger" \
-            or city.node[i]["comment"] == "shed" \
-            or city.node[i]["comment"] == "stable" \
-            or city.node[i]["comment"] == "sty" \
-            or city.node[i]["comment"] == "transformer_tower" \
-            or city.node[i]["comment"] == "ruins" \
-            or city.node[i]["comment"] == "bridge" \
-            or city.node[i]["comment"] == "bunker" \
-            or city.node[i]["comment"] == "cabin" \
-            or city.node[i]["comment"] == "cowshed" \
-            or city.node[i]["comment"] == "digester" \
-            or city.node[i]["comment"] == "greenhouse" \
-            or city.node[i]["comment"] == "barn" \
-            or city.node[i]["comment"] == "hut" \
-            or city.node[i]["comment"] == "farm auxiliary"\
-            or city.node[i]["area"] <= min_house_area:
+        if city.nodes[i]["comment"] == "garages" \
+            or city.nodes[i]["comment"] == "garage" \
+            or city.nodes[i]["comment"] == "roof"\
+            or city.nodes[i]["comment"] == "construction" \
+            or city.nodes[i]["comment"] == "hanger" \
+            or city.nodes[i]["comment"] == "shed" \
+            or city.nodes[i]["comment"] == "stable" \
+            or city.nodes[i]["comment"] == "sty" \
+            or city.nodes[i]["comment"] == "transformer_tower" \
+            or city.nodes[i]["comment"] == "ruins" \
+            or city.nodes[i]["comment"] == "bridge" \
+            or city.nodes[i]["comment"] == "bunker" \
+            or city.nodes[i]["comment"] == "cabin" \
+            or city.nodes[i]["comment"] == "cowshed" \
+            or city.nodes[i]["comment"] == "digester" \
+            or city.nodes[i]["comment"] == "greenhouse" \
+            or city.nodes[i]["comment"] == "barn" \
+            or city.nodes[i]["comment"] == "hut" \
+            or city.nodes[i]["comment"] == "farm auxiliary"\
+            or city.nodes[i]["area"] <= min_house_area:
 
             deleted_buildings.append(i)
             #NEW NODELIST !
@@ -1133,14 +1133,14 @@ def get_buildings_with_garages(city, zone_number, min_house_area, deleted_buildi
         for building_id in nodelist_buildings:
             counter = 0
             if garage_id != building_id:
-                # for i in range(1, (len(city.node[garage_id]['outlines'].keys()) + 1)):
-                for i in range(len(city.node[garage_id]['outlines'])):
-                    x_a = city.node[garage_id]['outlines'][i][1]
-                    y_a = city.node[garage_id]['outlines'][i][0]
-                    # for j in range(1, (len(city.node[building_id]['outlines'].keys()) + 1)):
-                    for j in range(len(city.node[building_id]['outlines'])):
-                        x_b = city.node[building_id]['outlines'][j][1]
-                        y_b = city.node[building_id]['outlines'][j][0]
+                # for i in range(1, (len(city.nodes[garage_id]['outlines'].keys()) + 1)):
+                for i in range(len(city.nodes[garage_id]['outlines'])):
+                    x_a = city.nodes[garage_id]['outlines'][i][1]
+                    y_a = city.nodes[garage_id]['outlines'][i][0]
+                    # for j in range(1, (len(city.nodes[building_id]['outlines'].keys()) + 1)):
+                    for j in range(len(city.nodes[building_id]['outlines'])):
+                        x_b = city.nodes[building_id]['outlines'][j][1]
+                        y_b = city.nodes[building_id]['outlines'][j][0]
                         if x_a == x_b and y_a == y_b:
                             counter += 1  # --> avoiding, that same cornered edges are going to be count as neighbour buildings
                             # if x_a and y_a not in shared_wall:
@@ -1167,7 +1167,7 @@ def get_ground_area_of_building(city, min_house_area, nodelist_buildings):
 
     building_areas = {}
     for i in nodelist_buildings:
-        building_areas[i] = city.node[i]['area']
+        building_areas[i] = city.nodes[i]['area']
 
     return building_areas
 
@@ -1186,13 +1186,13 @@ def is_ground_area_almost_the_same(city, min_house_area, nodelist_buildings, var
 
     area = []
     for i in nodelist_buildings:
-        x = round(city.node[i]["area"], 0)
+        x = round(city.nodes[i]["area"], 0)
         if i not in area:
             area.append(x)
     same_ground_areas = {key: [] for key in area}
     for i in nodelist_buildings:
         for areas in area:
-            if (areas - variance ) < city.node[i]["area"] < (areas+variance):
+            if (areas - variance ) < city.nodes[i]["area"] < (areas+variance):
                 if i not in same_ground_areas[areas]:
                     same_ground_areas[areas].append(i)
 
@@ -1231,14 +1231,14 @@ def get_neighbour_building(city, zone_number, considered_area_around_buildings, 
             building_counter += 1
             shared_wall_coord = []
             if building_a != building_b:
-                # for i in range(1, (len(city.node[building_a]['outlines'].keys()) + 1)):
-                for i in range(len(city.node[building_a]['outlines'])):
-                    x_a = city.node[building_a]['outlines'][i][1]
-                    y_a = city.node[building_a]['outlines'][i][0]
-                    # for j in range(1, (len(city.node[building_b]['outlines'].keys()) + 1)):
-                    for j in range(len(city.node[building_b]['outlines'])):
-                        x_b = city.node[building_b]['outlines'][j][1]
-                        y_b = city.node[building_b]['outlines'][j][0]
+                # for i in range(1, (len(city.nodes[building_a]['outlines'].keys()) + 1)):
+                for i in range(len(city.nodes[building_a]['outlines'])):
+                    x_a = city.nodes[building_a]['outlines'][i][1]
+                    y_a = city.nodes[building_a]['outlines'][i][0]
+                    # for j in range(1, (len(city.nodes[building_b]['outlines'].keys()) + 1)):
+                    for j in range(len(city.nodes[building_b]['outlines'])):
+                        x_b = city.nodes[building_b]['outlines'][j][1]
+                        y_b = city.nodes[building_b]['outlines'][j][0]
                         if x_a==x_b and y_a==y_b:
                             counter +=1               # --> avoiding, that same cornered edges are going to be count as neighbour buildings
                             # if x_a and y_a not in shared_wall:
@@ -1337,8 +1337,8 @@ def get_buildings_on_street(city, min_house_area, nodelist_buildings):
     a, b, c, d, e, f, streets = get_lists(city, min_house_area=min_house_area, nodelist_buildings=nodelist_buildings)
     streets = {key: 0 for key in streets}
     for i in nodelist_buildings:
-        if "addr_street" in city.node[i]:
-            streets[city.node[i]["addr_street"]] += 1
+        if "addr_street" in city.nodes[i]:
+            streets[city.nodes[i]["addr_street"]] += 1
 
     return streets
 
@@ -1523,39 +1523,39 @@ def get_residential_layout(city, zone_number, min_house_area, nodelist_buildings
     building_geometry = {key: {} for key in nodelist_buildings}
     for i in nodelist_buildings:
 
-        if len(city.node[i]["outlines"]) == 5:
-            nb_5_nodes.append(city.node[i])
-        if len(city.node[i]["outlines"]) == 6:
-            nb_6_nodes.append(city.node[i])
-        if len(city.node[i]["outlines"]) == 7:
-            nb_7_nodes.append(city.node[i])
-        if len(city.node[i]["outlines"]) == 8:
-            nb_8_nodes.append(city.node[i])
-        if len(city.node[i]["outlines"]) == 9:
-            nb_9_nodes.append(city.node[i])
-        if len(city.node[i]["outlines"]) == 10:
-            nb_10_nodes.append(city.node[i])
-        if len(city.node[i]["outlines"]) == 11:
-            nb_11_nodes.append(city.node[i])
-        if len(city.node[i]["outlines"]) == 12:
-            nb_12_nodes.append(city.node[i])
-        if len(city.node[i]["outlines"]) == 13:
-            nb_13_nodes.append(city.node[i])
-        if len(city.node[i]["outlines"]) == 14:
-            nb_14_nodes.append(city.node[i])
-        if len(city.node[i]["outlines"]) == 15:
-            nb_15_nodes.append(city.node[i])
+        if len(city.nodes[i]["outlines"]) == 5:
+            nb_5_nodes.append(city.nodes[i])
+        if len(city.nodes[i]["outlines"]) == 6:
+            nb_6_nodes.append(city.nodes[i])
+        if len(city.nodes[i]["outlines"]) == 7:
+            nb_7_nodes.append(city.nodes[i])
+        if len(city.nodes[i]["outlines"]) == 8:
+            nb_8_nodes.append(city.nodes[i])
+        if len(city.nodes[i]["outlines"]) == 9:
+            nb_9_nodes.append(city.nodes[i])
+        if len(city.nodes[i]["outlines"]) == 10:
+            nb_10_nodes.append(city.nodes[i])
+        if len(city.nodes[i]["outlines"]) == 11:
+            nb_11_nodes.append(city.nodes[i])
+        if len(city.nodes[i]["outlines"]) == 12:
+            nb_12_nodes.append(city.nodes[i])
+        if len(city.nodes[i]["outlines"]) == 13:
+            nb_13_nodes.append(city.nodes[i])
+        if len(city.nodes[i]["outlines"]) == 14:
+            nb_14_nodes.append(city.nodes[i])
+        if len(city.nodes[i]["outlines"]) == 15:
+            nb_15_nodes.append(city.nodes[i])
 
         # TODO: Längste Seite eines Gebäudes erkennen, Struktur des Gebäudes / Geometrie --> Kompakte oder Komplexe Bauweise
 
         # get the distance from edge to edge of the building
-        for j in range(1, (len(city.node[i]["outlines"]))-1):
-            dist_from_edge_to_edge[i].append(math.hypot((city.node[i]["outlines"][j][1] - city.node[i]["outlines"][j+1][1]), \
-                                      (city.node[i]["outlines"][j][0] - city.node[i]["outlines"][j+1][0])))
+        for j in range(1, (len(city.nodes[i]["outlines"]))-1):
+            dist_from_edge_to_edge[i].append(math.hypot((city.nodes[i]["outlines"][j][1] - city.nodes[i]["outlines"][j+1][1]), \
+                                      (city.nodes[i]["outlines"][j][0] - city.nodes[i]["outlines"][j+1][0])))
 
         # get the distance from the last edge to the first edge of the building
-        dist_from_edge_to_edge[i].append(math.hypot((city.node[i]["outlines"][len(city.node[i]["outlines"])-1][1] - city.node[i]["outlines"][1][1]), \
-                                      (city.node[i]["outlines"][len(city.node[i]["outlines"])-1][0] - city.node[i]["outlines"][1][0])))
+        dist_from_edge_to_edge[i].append(math.hypot((city.nodes[i]["outlines"][len(city.nodes[i]["outlines"])-1][1] - city.nodes[i]["outlines"][1][1]), \
+                                      (city.nodes[i]["outlines"][len(city.nodes[i]["outlines"])-1][0] - city.nodes[i]["outlines"][1][0])))
 
 
         #building with 5 edges
@@ -1638,7 +1638,7 @@ def get_district_type(city, zone_number, considered_area_around_building, min_ho
         cropped_area = 0
         building_neighbours = 0
         for building_in_square in building_list_within_spezified_square[building_id]:
-            cropped_area += city.node[building_in_square]["area"]
+            cropped_area += city.nodes[building_in_square]["area"]
             building_neighbours += number_neighbour_buildings[building_in_square]
 
         cropped_area_within_square[building_id] = cropped_area
@@ -3099,7 +3099,7 @@ def get_nb_of_occupants(city, building_id, list_nb_of_floors, list_nb_of_apartme
     :return: enriched dict_nb_of_apartments_with_occupants
     """
 
-    medium_net_area_of_apartment = 0.812 * city.node[building_id]["area"] * list_nb_of_floors[building_id] / list_nb_of_apartments[building_id]
+    medium_net_area_of_apartment = 0.812 * city.nodes[building_id]["area"] * list_nb_of_floors[building_id] / list_nb_of_apartments[building_id]
 
     for i in range(0, list_nb_of_apartments[building_id]):
         if list_nb_of_apartments[building_id] != 0:
@@ -3435,7 +3435,7 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
                 if building_id in buildings_with_name:
                     dict_schools = {"Grundschule": 16, "Gesamtschule": 16, "Behindertenschule": 17, "Realschule": 18, "Gymnasium": 18, "Berufsschule": 19}
                     for school in dict_schools.keys():
-                        if school in city.node[building_id]["name"]:
+                        if school in city.nodes[building_id]["name"]:
                             individual_buildings.append(building_id)
                             build_type_buildings[building_id] = dict_schools[school]
                             continue
@@ -3574,16 +3574,16 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
             elif building_id in industrial_buildings:
                 individual_buildings.append(building_id)
                 if building_id in buildings_with_name:
-                    if "Metall" in city.node[building_id]["name"]:
+                    if "Metall" in city.nodes[building_id]["name"]:
                         build_type_buildings[building_id] = 8
                         continue
-                    elif "KFZ" in city.node[building_id]["name"]:
+                    elif "KFZ" in city.nodes[building_id]["name"]:
                         build_type_buildings[building_id] = 9
                         continue
-                    elif "Wood" in city.node[building_id]["name"] or "Holz" in city.node[building_id]["name"]:
+                    elif "Wood" in city.nodes[building_id]["name"] or "Holz" in city.nodes[building_id]["name"]:
                         build_type_buildings[building_id] = 10
                         continue
-                    elif "Papier" in city.node[building_id]["name"] or "Paper" in city.node[building_id]["name"]:
+                    elif "Papier" in city.nodes[building_id]["name"] or "Paper" in city.nodes[building_id]["name"]:
                         build_type_buildings[building_id] = 11
                         continue
                 else:
@@ -3606,7 +3606,7 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
             elif building_id in buildings_with_leisure:
                 dict_leisure = {"fitness_centre": 42, "sports_centre": 38, "water_park": 40, "swimming_pool": 40}
                 for leisure in dict_leisure.keys():
-                    if leisure in city.node[building_id]["leisure"]:
+                    if leisure in city.nodes[building_id]["leisure"]:
                         individual_buildings.append(building_id)
                         build_type_buildings[building_id] = dict_leisure[leisure]
                         continue
@@ -3621,7 +3621,7 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
                 dict_amenity = {"college": 20, "university": 20, "library": 33, "school": 16, "bank":3, "clinic":32, "hospital": 32, "cinema": 35, "community_centre": 37, "social_center": 37, "theatre": 36, "courthouse": 4, "fire_station": 4, "police": 4, "embassy": 4, "prison": 34, "post_office": 7}
                 dict_amenity_food = {"bar": 22, "cafe": 22, "fast_food": 22, "food_court": 22, "pub": 22, "restaurant" : 22}
                 for amenity in list_amenity:
-                    if amenity in city.node[building_id]['amenity']:
+                    if amenity in city.nodes[building_id]['amenity']:
                         individual_buildings.append(building_id)
                         build_type_buildings[building_id] = dict_amenity[amenity]
                         continue
@@ -3629,7 +3629,7 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
                         pass
 
                 for amenity in list_amenity_food:
-                    if amenity in city.node[building_id]['amenity']:
+                    if amenity in city.nodes[building_id]['amenity']:
                         individual_buildings.append(building_id)
                         build_type_buildings[building_id] = dict_amenity_food[amenity]
                     else:
@@ -3643,7 +3643,7 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
                         "medical_supply": 7, "nutrition_supplement": 7, "optican": 7, "perfumery": 7, "tattoo": 7, "alcohol": 12, "beverages": 12, "brewing_supplies": 12, "cheese": 12, "chocolate": 12, "coffee": 12, "convenience": 12, "deli": 12, "diary": 12,
                         "farm": 12, "greengrocer": 12, "ice_cream": 12, "pasta": 12, "seafood": 12, "spices": 12, "tea": 12}
                 for shop in list_shops:
-                    if shop in city.node[building_id]["shop"]:
+                    if shop in city.nodes[building_id]["shop"]:
                         individual_buildings.append(building_id)
                         build_type_buildings[building_id] = dict_shops[shop]
                         pass
@@ -3654,9 +3654,9 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
                         "tailor", "watches", "charity", "second_hand", "variety_store", "agrarian", "bathroom_furnishing", "doityourself", "electrical", "energy", "florist", "garden_centre", "garden_furniture", "gas", "glaziery", "hardware", "houseware", "looksmith", "paint", "security", "trade", "antiques", "bed", "candles", "carpet", "curtain", "furniture", "interior_decoration", "kitchen", "lamps", "tiles", "window_blind", "computer", "electronics", " hifi", " mobile_phone", "radiotechnics", " vacuum_cleaner", "bicycle", "car", " car_repair", "car_parts", "fuel", "fishing", "free_flying", "hunting", "motorcycle", "outdoor", "scuba_diving", "sports", "swimming_pool", "tyres", "art", "collector", "craft", "frame", "games", "model", "music", "musicial_instruments", "photo", "camera", "trophy", "video", "video_games", "anime", "books", "gift", "lottery", "newsagent", "stationery", "ticket", "bookmaker", "copyshop", "e_cigarette", "funeral_directors", "money_lender", "pawnbroker", "pet", "pyrotechnics", "tabacco", "toys", "travel_agency", "vacant", "weapons"]
 
                 for non_food in range(0, len(non_foods)):
-                    if non_foods[non_food] in city.node[building_id]["shop"]:
+                    if non_foods[non_food] in city.nodes[building_id]["shop"]:
                         individual_buildings.append(building_id)
-                        if city.node[building_id]["area"] <= 100:
+                        if city.nodes[building_id]["area"] <= 100:
                             # Spec_demand_non_res.xlsx --> found in PyCity_Calc/pycity_calc/data/BaseData/Specific_Demand_Data
                             # build_type = small shop with no food
                             build_type_buildings[building_id] = 13
@@ -3928,7 +3928,7 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
                         dict_schools = {"Grundschule": 16, "Gesamtschule": 16, "Behindertenschule": 17,
                                         "Realschule": 18, "Gymnasium": 18, "Berufsschule": 19}
                         for school in dict_schools.keys():
-                            if school in city.node[building_id]["name"]:
+                            if school in city.nodes[building_id]["name"]:
                                 individual_buildings.append(building_id)
                                 build_type_buildings[building_id] = dict_schools[school]
                                 continue
@@ -4065,13 +4065,13 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
                 elif building_id in industrial_buildings:
                     individual_buildings.append(building_id)
                     if building_id in buildings_with_name:
-                        if "Metall" in city.node[building_id]["name"]:
+                        if "Metall" in city.nodes[building_id]["name"]:
                             build_type_buildings[building_id] = 8
-                        elif "KFZ" in city.node[building_id]["name"]:
+                        elif "KFZ" in city.nodes[building_id]["name"]:
                             build_type_buildings[building_id] = 9
-                        elif "Wood" in city.node[building_id]["name"] or "Holz" in city.node[building_id]["name"]:
+                        elif "Wood" in city.nodes[building_id]["name"] or "Holz" in city.nodes[building_id]["name"]:
                             build_type_buildings[building_id] = 10
-                        elif "Papier" in city.node[building_id]["name"] or "Paper" in city.node[building_id]["name"]:
+                        elif "Papier" in city.nodes[building_id]["name"] or "Paper" in city.nodes[building_id]["name"]:
                             build_type_buildings[building_id] = 11
                     else:
                         build_type_buildings[building_id] = 7
@@ -4093,7 +4093,7 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
                 elif building_id in buildings_with_leisure:
                     dict_leisure = {"fitness_centre": 42, "sports_centre": 38, "water_park": 40, "swimming_pool": 40}
                     for leisure in dict_leisure.keys():
-                        if leisure in city.node[building_id]["leisure"]:
+                        if leisure in city.nodes[building_id]["leisure"]:
                             individual_buildings.append(building_id)
                             build_type_buildings[building_id] = dict_leisure[leisure]
                         else:
@@ -4106,7 +4106,7 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
                                     "embassy": 4, "prison": 34, "post_office": 7, "bar": 22, "cafe": 22,
                                     "fast_food": 22, "food_court": 22, "pub": 22, "restaurant": 22}
                     for amenity in dict_amenity.keys():
-                        if amenity in city.node[building_id]["amenity"]:
+                        if amenity in city.nodes[building_id]["amenity"]:
                             individual_buildings.append(building_id)
                             build_type_buildings[building_id] = dict_amenity[amenity]
                         else:
@@ -4123,7 +4123,7 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
                                   "farm": 12, "greengrocer": 12, "ice_cream": 12, "pasta": 12, "seafood": 12,
                                   "spices": 12, "tea": 12}
                     for shop in dict_shops.keys():
-                        if shop in city.node[building_id]["shop"]:
+                        if shop in city.nodes[building_id]["shop"]:
                             individual_buildings.append(building_id)
                             build_type_buildings[building_id] = dict_shops[shop]
                         else:
@@ -4146,10 +4146,10 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
                                  "pyrotechnics", "tabacco", "toys", "travel_agency", "vacant", "weapons"]
 
                     for non_food in range(0, len(non_foods)):
-                        if non_foods[non_food] in city.node[building_id]["shop"]:
+                        if non_foods[non_food] in city.nodes[building_id]["shop"]:
                             individual_buildings.append(building_id)
 
-                            if city.node[building_id]["area"] <= 100:
+                            if city.nodes[building_id]["area"] <= 100:
                                 # Spec_demand_non_res.xlsx --> found in PyCity_Calc/pycity_calc/data/BaseData/Specific_Demand_Data
                                 # build_type = small shop with no food
                                 build_type_buildings[building_id] = 13
@@ -4332,7 +4332,7 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
                     for building_with_build_year_from_osm in buildings_with_buildyear_from_osm[0]:
                         buildings_with_buildyear_from_osm.remove(building_with_build_year_from_osm)
                         build_year_buildings[building_with_build_year_from_osm] = int(
-                            city.node[building_with_build_year_from_osm]['building_buildyear'])
+                            city.nodes[building_with_build_year_from_osm]['building_buildyear'])
 
                         specified_build_year_beginning = build_year_buildings[building_with_build_year_from_osm]
                         specified_build_year_end = build_year_buildings[building_with_build_year_from_osm]
@@ -4498,10 +4498,10 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
                         list_nb_of_floors[building_id] = list_nb_of_floors[buildings_neighbours[building_id][i]]
 
             if building_id in buildings_with_levels:
-                if "." in city.node[building_id]["building_levels"]:
-                    list_nb_of_floors[building_id] = float(city.node[building_id]["building_levels"])
+                if "." in city.nodes[building_id]["building_levels"]:
+                    list_nb_of_floors[building_id] = float(city.nodes[building_id]["building_levels"])
                 else:
-                    list_nb_of_floors[building_id] = int(city.node[building_id]["building_levels"])
+                    list_nb_of_floors[building_id] = int(city.nodes[building_id]["building_levels"])
 
             elif building_id in bungalow_buildings:
                 list_nb_of_floors[building_id] = 1
@@ -4527,10 +4527,10 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
                                 buildings_neighbours[building_id][i]])
 
             if building_id in buildings_with_levels:
-                if "." in city.node[building_id]["building_levels"]:
-                    list_nb_of_floors[building_id] = float(city.node[building_id]["building_levels"])
+                if "." in city.nodes[building_id]["building_levels"]:
+                    list_nb_of_floors[building_id] = float(city.nodes[building_id]["building_levels"])
                 else:
-                    list_nb_of_floors[building_id] = int(city.node[building_id]["building_levels"])
+                    list_nb_of_floors[building_id] = int(city.nodes[building_id]["building_levels"])
                 if city_district[building_id] == "residential":
                     nb_of_apartments = numpy.random.choice(numpy.arange
                                                            (6, 9), p=[0.25, 0.5,
@@ -4565,7 +4565,7 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
                 elif nb_of_floors == 7:
                     list_nb_of_floors[building_id] = random.randint(8, 11)
                     max_nb_of_apartments = round(
-                        0.812 * list_nb_of_floors[building_id] * city.node[building_id]["area"] / 25)
+                        0.812 * list_nb_of_floors[building_id] * city.nodes[building_id]["area"] / 25)
                     if max_nb_of_apartments <= 35:
                         list_nb_of_apartments[building_id] = max_nb_of_apartments
                     elif max_nb_of_apartments >= 55:
@@ -4575,7 +4575,7 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
                 else:
                     list_nb_of_floors[building_id] = random.randint(11, 19)
                     max_nb_of_apartments = round(
-                        0.812 * list_nb_of_floors[building_id] * city.node[building_id]["area"] / 25)
+                        0.812 * list_nb_of_floors[building_id] * city.nodes[building_id]["area"] / 25)
                     if max_nb_of_apartments <= 56:
                         list_nb_of_apartments[building_id] = max_nb_of_apartments
                     elif max_nb_of_apartments >= 110:
@@ -4725,8 +4725,8 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
 
             if save_city_CSV == True:
                 building_parameters_for_analysis[building_id]["id"] = (building_id)
-                building_parameters_for_analysis[building_id]["X"] = (city.node[building_id]["position"].x)
-                building_parameters_for_analysis[building_id]["Y"] = (city.node[building_id]["position"].y)
+                building_parameters_for_analysis[building_id]["X"] = (city.nodes[building_id]["position"].x)
+                building_parameters_for_analysis[building_id]["Y"] = (city.nodes[building_id]["position"].y)
                 if build_type_buildings[building_id] == []:
                     building_parameters_for_analysis[building_id]["building_type"] = 0
                 else:
@@ -4734,7 +4734,7 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
 
                 # Netto floor area has the factor 0.812 of the total floor area of the building  (Udo Blecken in "Grundflächen und Planungskennwerte von Wohngebäuden" in Abb. 1)
                 building_parameters_for_analysis[building_id]["net_floor_area"] = (
-                    int(city.node[building_id]["area"]) * 0.812 * list_nb_of_floors[building_id])
+                    int(city.nodes[building_id]["area"]) * 0.812 * list_nb_of_floors[building_id])
                 building_parameters_for_analysis[building_id]["build_year"] = build_year_buildings[building_id]
                 building_parameters_for_analysis[building_id]["mod_year"] = mod_year
                 building_parameters_for_analysis[building_id][
@@ -4751,7 +4751,7 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
                 elif number_neighbour_buildings[building_id] == 2:
                     building_parameters_for_analysis[building_id][
                         "building"] = "Terrace_building"
-                building_parameters_for_analysis[building_id]["Usable_pv_roof_area_in_m2"] = 0.5 * city.node[building_id]["area"]
+                building_parameters_for_analysis[building_id]["Usable_pv_roof_area_in_m2"] = 0.5 * city.nodes[building_id]["area"]
                 building_parameters_for_analysis[building_id]["Number_of_apartments"] = list_nb_of_apartments[building_id]
                 counter_occ = 0
                 for i in range(0, list_nb_of_apartments[building_id]):
@@ -4771,11 +4771,11 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
                 building_parameters_for_analysis[building_id]["dormer"] = dormer_buildings[building_id]
                 building_parameters_for_analysis[building_id]["construction_type"]
                 if building_id in addr_building_found:
-                    building_parameters_for_analysis[building_id]["method_3_type"] = city.node[building_id]["addr_street"]
+                    building_parameters_for_analysis[building_id]["method_3_type"] = city.nodes[building_id]["addr_street"]
                 else:
                     building_parameters_for_analysis[building_id]["method_3_type"]
                 if building_id in house_nb_building_found:
-                    building_parameters_for_analysis[building_id]["method_4_type"] = city.node[building_id]["addr_housenumber"]
+                    building_parameters_for_analysis[building_id]["method_4_type"] = city.nodes[building_id]["addr_housenumber"]
                 else:
                     building_parameters_for_analysis[building_id]["method_4_type"]
 
@@ -4785,14 +4785,14 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
                 build_type = 0
             else:
                 build_type =  build_type_buildings[building_id]
-            ground_area = city.node[building_id]["area"]
+            ground_area = city.nodes[building_id]["area"]
 
             # Usable roof area equates to half of the ground area
             # "Abschätzung des Photovoltaik-Potentials auf Dachflächen in Deutschland" of Lödl at al.
             # https: // mediatum.ub.tum.de / doc / 969497 / 969497.pdf
-            pv_use_area = city.node[building_id]["area"] * 0.5
+            pv_use_area = city.nodes[building_id]["area"] * 0.5
 
-            net_floor_area = city.node[building_id]["area"] * 0.812 * list_nb_of_floors[building_id]
+            net_floor_area = city.nodes[building_id]["area"] * 0.812 * list_nb_of_floors[building_id]
             height_of_floors = floor_height_buildings[building_id]
             if number_neighbour_buildings[building_id] <= 2:
                 neighbour_buildings = number_neighbour_buildings[building_id]
@@ -4838,7 +4838,7 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
                 extended_building.addEntity(entity=apartment)
 
             # Add extended building to city
-            city.node[building_id]["entity"] = extended_building
+            city.nodes[building_id]["entity"] = extended_building
 
             continue
 
@@ -4859,8 +4859,8 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
             # just for the CSV file
             if save_city_CSV == True:
                 building_parameters_for_analysis[building_id]["id"] = (building_id)
-                building_parameters_for_analysis[building_id]["X"] = (city.node[building_id]["position"].x)
-                building_parameters_for_analysis[building_id]["Y"] = (city.node[building_id]["position"].y)
+                building_parameters_for_analysis[building_id]["X"] = (city.nodes[building_id]["position"].x)
+                building_parameters_for_analysis[building_id]["Y"] = (city.nodes[building_id]["position"].y)
 
 
                 if build_type_buildings[building_id] ==[]:
@@ -4868,7 +4868,7 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
                 else:
                     building_parameters_for_analysis[building_id]["building_type"] = build_type_buildings[building_id]
                 building_parameters_for_analysis[building_id]["net_floor_area"] = (
-                    int(city.node[building_id]["area"]) * 0.812 * list_nb_of_floors[building_id])
+                    int(city.nodes[building_id]["area"]) * 0.812 * list_nb_of_floors[building_id])
                 building_parameters_for_analysis[building_id]["build_year"] = build_year_buildings[building_id]
                 building_parameters_for_analysis[building_id]["mod_year"] = mod_year
                 building_parameters_for_analysis[building_id][
@@ -4878,7 +4878,7 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
                     building_parameters_for_analysis[building_id]["building"] = "High_rise"
                 else:
                     building_parameters_for_analysis[building_id]["building"] = "MFH"
-                building_parameters_for_analysis[building_id]["Usable_pv_roof_area_in_m2"] = 0.5 * city.node[building_id]["area"]
+                building_parameters_for_analysis[building_id]["Usable_pv_roof_area_in_m2"] = 0.5 * city.nodes[building_id]["area"]
                 building_parameters_for_analysis[building_id]["Number_of_apartments"] = list_nb_of_apartments[building_id]
                 counter_occ = 0
                 for i in range(0, list_nb_of_apartments[building_id]):
@@ -4898,11 +4898,11 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
                 building_parameters_for_analysis[building_id]["dormer"] = dormer_buildings[building_id]
                 building_parameters_for_analysis[building_id]["construction_type"]
                 if building_id in addr_building_found:
-                    building_parameters_for_analysis[building_id]["method_3_type"] = city.node[building_id]["addr_street"]
+                    building_parameters_for_analysis[building_id]["method_3_type"] = city.nodes[building_id]["addr_street"]
                 else:
                     building_parameters_for_analysis[building_id]["method_3_type"]
                 if building_id in house_nb_building_found:
-                    building_parameters_for_analysis[building_id]["method_4_type"] = city.node[building_id]["addr_housenumber"]
+                    building_parameters_for_analysis[building_id]["method_4_type"] = city.nodes[building_id]["addr_housenumber"]
                 else:
                     building_parameters_for_analysis[building_id]["method_4_type"]
 
@@ -4918,8 +4918,8 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
             # Usable roof area equates to half of the ground area
             # "Abschätzung des Photovoltaik-Potentials auf Dachflächen in Deutschland" of Lödl at al.
             # https: // mediatum.ub.tum.de / doc / 969497 / 969497.pdf
-            pv_use_area = city.node[building_id]["area"] * 0.5
-            net_floor_area = city.node[building_id]["area"] * 0.812 * list_nb_of_floors[building_id]
+            pv_use_area = city.nodes[building_id]["area"] * 0.5
+            net_floor_area = city.nodes[building_id]["area"] * 0.812 * list_nb_of_floors[building_id]
 
             if number_neighbour_buildings[building_id] <= 2:
                 neighbour_buildings = number_neighbour_buildings[building_id]
@@ -4975,7 +4975,7 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
                 extended_building.addEntity(entity=apartment)
 
             # Add extended building to city
-            city.node[building_id]["entity"] = extended_building
+            city.nodes[building_id]["entity"] = extended_building
 
             continue
 
@@ -5020,10 +5020,10 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
                 list_nb_of_floors[building_id] = random.randint(1,7)  # --> Nb of floors for Non_res of Manfred Heggers
 
             if building_id in buildings_with_levels:
-                if "." in city.node[building_id]["building_levels"]:
-                    list_nb_of_floors[building_id] = float(city.node[building_id]["building_levels"])
+                if "." in city.nodes[building_id]["building_levels"]:
+                    list_nb_of_floors[building_id] = float(city.nodes[building_id]["building_levels"])
                 else:
-                    list_nb_of_floors[building_id] = int(city.node[building_id]["building_levels"])
+                    list_nb_of_floors[building_id] = int(city.nodes[building_id]["building_levels"])
 
             # MOD YEAR and RETROFIT STATE
             # based on the data of MFH
@@ -5037,17 +5037,17 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
             # just for the CSV file
             if save_city_CSV == True:
                 building_parameters_for_analysis[building_id]["id"] = (building_id)
-                building_parameters_for_analysis[building_id]["X"] = (city.node[building_id]["position"].x)
-                building_parameters_for_analysis[building_id]["Y"] = (city.node[building_id]["position"].y)
+                building_parameters_for_analysis[building_id]["X"] = (city.nodes[building_id]["position"].x)
+                building_parameters_for_analysis[building_id]["Y"] = (city.nodes[building_id]["position"].y)
                 building_parameters_for_analysis[building_id]["building_type"] = build_type
                 building_parameters_for_analysis[building_id]["net_floor_area"] = (
-                    int(city.node[building_id]["area"]) * 0.812 * list_nb_of_floors[building_id])
+                    int(city.nodes[building_id]["area"]) * 0.812 * list_nb_of_floors[building_id])
                 building_parameters_for_analysis[building_id]["build_year"] = build_year_buildings[building_id]
                 building_parameters_for_analysis[building_id]["mod_year"] = mod_year
                 building_parameters_for_analysis[building_id][
                     "retrofit_state"] = retrofit_state
                 building_parameters_for_analysis[building_id]["building"] = "Non_residential"
-                building_parameters_for_analysis[building_id]["Usable_pv_roof_area_in_m2"] = 0.5 * city.node[building_id]["area"]
+                building_parameters_for_analysis[building_id]["Usable_pv_roof_area_in_m2"] = 0.5 * city.nodes[building_id]["area"]
                 building_parameters_for_analysis[building_id]["Number_of_apartments"] = 0
                 building_parameters_for_analysis[building_id]["Total_number_of_occupants"] = 0
                 building_parameters_for_analysis[building_id]["Number_of_floors"] = list_nb_of_floors[building_id]
@@ -5064,11 +5064,11 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
                 building_parameters_for_analysis[building_id]["dormer"]
                 building_parameters_for_analysis[building_id]["construction_type"]
                 if building_id in addr_building_found:
-                    building_parameters_for_analysis[building_id]["method_3_type"] = city.node[building_id]["addr_street"]
+                    building_parameters_for_analysis[building_id]["method_3_type"] = city.nodes[building_id]["addr_street"]
                 else:
                     building_parameters_for_analysis[building_id]["method_3_type"]
                 if building_id in house_nb_building_found:
-                    building_parameters_for_analysis[building_id]["method_4_type"] = city.node[building_id]["addr_housenumber"]
+                    building_parameters_for_analysis[building_id]["method_4_type"] = city.nodes[building_id]["addr_housenumber"]
                 else:
                     building_parameters_for_analysis[building_id]["method_4_type"]
 
@@ -5080,8 +5080,8 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
             # Usable roof area equates to half of the ground area
             # "Abschätzung des Photovoltaik-Potentials auf Dachflächen in Deutschland" of Lödl at al.
             # https: // mediatum.ub.tum.de / doc / 969497 / 969497.pdf
-            pv_use_area = city.node[building_id]["area"] * 0.5
-            net_floor_area = city.node[building_id]["area"] * 0.812 * list_nb_of_floors[building_id]
+            pv_use_area = city.nodes[building_id]["area"] * 0.5
+            net_floor_area = city.nodes[building_id]["area"] * 0.812 * list_nb_of_floors[building_id]
             if number_neighbour_buildings[building_id] <= 2:
                 neighbour_buildings = number_neighbour_buildings[building_id]
             else:
@@ -5126,7 +5126,7 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
                 extended_building.addEntity(entity=apartment)
 
             # Add extended building to city
-            city.node[building_id]["entity"] = extended_building
+            city.nodes[building_id]["entity"] = extended_building
 
             continue
 
@@ -5175,11 +5175,11 @@ def data_enrichment(city, osm_path, zone_number, min_house_area,  considered_are
     print("Number of High rise building: ", len(high_rise_houses), "and percentage regarding all buildings: ", (len(high_rise_houses)/len(nodelist_buildings)*100), " %")
 
     for i in multi_family_houses:
-        if city.node[i]["area"] <= 110:
+        if city.nodes[i]["area"] <= 110:
             mfh_very_small.append(i)
-        elif 110 < city.node[i]["area"] < 140:
+        elif 110 < city.nodes[i]["area"] < 140:
             mfh_small.append(i)
-        elif 140 < city.node[i]["area"] < 437:
+        elif 140 < city.nodes[i]["area"] < 437:
             mfh_medium.append(i)
         else:
             mfh_large.append(i)

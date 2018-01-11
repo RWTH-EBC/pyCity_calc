@@ -83,7 +83,7 @@ def incr_esys_size_city(city, base_factor=3, w_tes=True, tes_factor=2):
     list_build_ids = city.get_list_build_entity_node_ids()
 
     for n in list_build_ids:
-        build = city.node[n]['entity']
+        build = city.nodes[n]['entity']
 
         incr_esys_size_build(building=build, base_factor=base_factor,
                              w_tes=w_tes, tes_factor=tes_factor, id=n)
@@ -107,12 +107,12 @@ if __name__ == '__main__':
 
     esysgen.gen_esys_for_city(city=city, list_data=list_data, dhw_scale=True)
 
-    q_nom = city.node[1001]['entity'].bes.boiler.qNominal
+    q_nom = city.nodes[1001]['entity'].bes.boiler.qNominal
     print('Nominal thermal power of boiler before rescaling in kW:')
     print(round(q_nom / 1000, 3))
 
     incr_esys_size_city(city=city)
 
-    q_nom = city.node[1001]['entity'].bes.boiler.qNominal
+    q_nom = city.nodes[1001]['entity'].bes.boiler.qNominal
     print('Nominal thermal power of boiler after rescaling in kW:')
     print(round(q_nom / 1000, 3))

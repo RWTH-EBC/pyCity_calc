@@ -130,8 +130,8 @@ def run_example(printcitydata=False):
     buildingnodes = []
     list_exclude = [1029, 1030, 1031, 1032]
     for i in city_object.node:
-        if 'entity' in city_object.node[i]:
-            if city_object.node[i]['entity']._kind == 'building':
+        if 'entity' in city_object.nodes[i]:
+            if city_object.nodes[i]['entity']._kind == 'building':
                 if i not in list_exclude:
                     buildingnodes.append(i)
     print('Buildnode for LHN:', buildingnodes)

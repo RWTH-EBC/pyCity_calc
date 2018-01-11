@@ -430,18 +430,18 @@ def do_uncertainty_analysis(Nsamples=10 , time=10, Is_k_esys_parameters = True, 
     el_dem_ref = 0
     gas_dem_ref = 0
     for n in City.nodes():
-        if 'node_type' in City.node[n]:
+        if 'node_type' in City.nodes[n]:
             #  If node_type is building
-            if City.node[n]['node_type'] == 'building':
+            if City.nodes[n]['node_type'] == 'building':
                 #  If entity is kind building
-                if City.node[n]['entity']._kind == 'building':
+                if City.nodes[n]['entity']._kind == 'building':
 
-                    if 'electrical demand' in City.node[n]:
-                        el_dem_ref += sum(City.node[n]['electrical demand']) * \
+                    if 'electrical demand' in City.nodes[n]:
+                        el_dem_ref += sum(City.nodes[n]['electrical demand']) * \
                                           City.environment.timer.timeDiscretization / 1000 / 3600
 
-                    if 'fuel demand' in City.node[n]:
-                        gas_dem_ref += sum(City.node[n]['fuel demand']) * \
+                    if 'fuel demand' in City.nodes[n]:
+                        gas_dem_ref += sum(City.nodes[n]['fuel demand']) * \
                                           City.environment.timer.timeDiscretization / 1000 / 3600
 
     # #----------------------------------------------------------------------
