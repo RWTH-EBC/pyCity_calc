@@ -9,12 +9,7 @@ import os
 import pickle
 import numpy as np
 from copy import deepcopy
-
-import matplotlib.pyplot as plt
 import networkx as nx
-
-# TODO: Integration von Skript?
-import dim_devices
 
 import pycity_base.classes.supply.BES as BES
 import pycity_calc.energysystems.boiler as Boiler
@@ -34,8 +29,9 @@ import pycity_calc.economic.energy_sys_cost.eh_cost as eh_cost
 import pycity_calc.economic.energy_sys_cost.hp_cost as hp_cost
 import pycity_calc.economic.energy_sys_cost.lhn_cost as lhn_cost
 import pycity_calc.economic.energy_sys_cost.tes_cost as tes_cost
-
 import pycity_calc.environments.co2emissions as co2
+import pycity_calc.toolbox.dimensioning.emp_approach.dim_devices as dim_devices
+
 
 
 def run_approach(city,scenarios):
@@ -1477,9 +1473,9 @@ if __name__ == '__main__':
 
     this_path = os.path.dirname(os.path.abspath(__file__))
 
-    city_f_name = 'aachen_kronenberg_3_mfh_ref_1.pkl'
+    city_f_name = 'city_2_buildings_w_street.pkl'
 
-    city_path = os.path.join(this_path, 'input', 'city_objects', city_f_name)
+    city_path = os.path.join(this_path, 'input', city_f_name)
     city = pickle.load(open(city_path, mode='rb'))
 
     print('District ' + city_f_name[:-4] + ' loaded')
