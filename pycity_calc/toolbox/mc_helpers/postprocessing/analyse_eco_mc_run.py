@@ -884,7 +884,7 @@ class EcoMCRunAnalyze(object):
         if obj == 'max':
             risk_av_factor = mean / (std ** (10 / 25))
         elif obj == 'min':
-            risk_av_factor = mean + std ** 1.5
+            risk_av_factor = mean + 10 * std ** 2 / mean
         return risk_av_factor
 
     def calc_risk_averse_parameters(self, type):
