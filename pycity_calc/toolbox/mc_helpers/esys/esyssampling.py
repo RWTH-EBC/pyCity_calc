@@ -172,7 +172,7 @@ def sample_chp_omega(nb_samples, mean=0.9, std=0.02):
     return array_chp_eff
 
 
-def sample_quality_grade_hp_bw(nb_samples, minv=0.45, maxv=0.55):
+def sample_quality_grade_hp_bw(nb_samples, minv=0.38, maxv=0.48):
     """
     Returns samples for brine/water (or water/water) heat pump quality
     grades.
@@ -182,9 +182,9 @@ def sample_quality_grade_hp_bw(nb_samples, minv=0.45, maxv=0.55):
     nb_samples : int
         Number of samples
     minv : float
-        Minimum value (default: 0.45)
+        Minimum value (default: 0.38)
     maxv : float
-        Maximum value (default: 0.55)
+        Maximum value (default: 0.48)
 
     Returns
     -------
@@ -202,7 +202,7 @@ def sample_quality_grade_hp_bw(nb_samples, minv=0.45, maxv=0.55):
     return array_hp_bw_qual
 
 
-def sample_quality_grade_hp_aw(nb_samples, minv=0.32, maxv=0.4):
+def sample_quality_grade_hp_aw(nb_samples, minv=0.29, maxv=0.39):
     """
     Returns samples for air/water heat pump quality grades
 
@@ -211,9 +211,9 @@ def sample_quality_grade_hp_aw(nb_samples, minv=0.32, maxv=0.4):
     nb_samples : int
         Number of samples
     minv : float
-        Minimum value (default: 0.32)
+        Minimum value (default: 0.29)
     maxv : float
-        Maximum value (default: 0.4)
+        Maximum value (default: 0.39)
 
     Returns
     -------
@@ -229,6 +229,9 @@ def sample_quality_grade_hp_aw(nb_samples, minv=0.32, maxv=0.4):
         np.random.uniform(low=minv, high=maxv, size=nb_samples)
 
     return array_hp_aw_qual
+
+
+#  TODO: Sampling for t_sink
 
 
 def sample_pv_eta(nb_samples, mean=0.12, std=0.02):
@@ -294,7 +297,7 @@ def sample_pv_beta(nb_samples, minv=0, maxv=60):
     return array_pv_beta
 
 
-def sample_pv_gamma(nb_samples, minv=0, maxv=60):
+def sample_pv_gamma(nb_samples, minv=-180, maxv=180):
     """
     Returns samples for gamma angle of PV system
 
