@@ -5,6 +5,8 @@
 """
 from __future__ import division
 
+import os
+import pickle
 import numpy as np
 import pyDOE
 import matplotlib.pylab as plt
@@ -17,8 +19,30 @@ from scipy import stats
 #  TODO: Generate pool of el. load profiles per apartment
 #  TODO: Radiation uncertainty
 
-def do_lhn_sampling(city, nb_samples=100):
-    #  Get list building ids
+def gen_empty_res_dicts(city, nb_samples):
+    """
+    Generate empty result dicts (holding arrays with zeros) for mc run
+
+    Parameters
+    ----------
+    city : object
+        City object of pyCity_calc
+    nb_samples : int
+        Number of samples
+
+    Returns
+    -------
+    tup_res : tuple (of dicts)
+        Tuple holding 2 dicts (dict_city_sample, dict_build_samples)
+        dict_city_sample : dict
+            Dict holding city parameter names as keys and numpy arrays with
+            samples as dict values
+        dict_build_samples : dict
+            Dict. holding building ids as keys and dict of samples as values.
+            These dicts hold paramter names as keys and numpy arrays with
+            samples as dict values
+    """
+
     list_build_ids = city.get_list_build_entity_node_ids()
 
     #  Generate results sample dicts with arrays with zeros
@@ -121,12 +145,127 @@ def do_lhn_sampling(city, nb_samples=100):
         #  Save parameter dict to main building dict
         dict_build_samples[n] = dict_samples
 
-        #  #######################################################################
-
-        #  Sampling on city district level
+    return (dict_city_sample, dict_build_samples)
 
 
+def calc_nb_unc_par(city, nb_city_unc_par=14,
+                    nb_build_unc_par=34, nb_app_unc_par=3):
+    """
+    Calculate total number of uncertain parameters required for LHC design
 
-        #  Loop over buildings
+    Parameters
+    ----------
+    city : object
+        City object of pyCity_calc
+    nb_city_unc_par : int, optional
+        Number of uncertain parameters on city level (default: 14)
+    nb_build_unc_par : int, optional
+        Number of uncertain parameters on building level (default: 34)
+    nb_app_unc_par : int, optional
+        Number of uncertain parameters on apartment level (default: 3)
 
-        #  Loop over apartments
+    Returns
+    -------
+    nb_par : int
+        Number of parameters (input for latin hypercube design)
+    """
+
+    nb_app = 0
+
+    list_build_ids = city.get_list_build_entity_node_ids()
+    nb_build = len(list_build_ids)
+
+    for n in list_build_ids:
+        build = city.nodes[n]['entity']
+        nb_app += len(build.apartments)
+
+    nb_par = nb_city_unc_par + nb_city_unc_par * nb_build \
+             + nb_app_unc_par * nb_app
+
+    return nb_par
+
+
+def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
+                         dict_build_samples):
+    """
+
+    Parameters
+    ----------
+    city : object
+        City object of pyCity_calc
+    nb_par : int
+        Number of uncertain parameters
+    nb_samples : int
+        Number of desired samples per uncertain parameter
+    dict_city_sample : dict
+        Dict holding city parameter names as keys and numpy arrays with
+        samples as dict values
+    dict_build_samples : dict
+        Dict. holding building ids as keys and dict of samples as values.
+        These dicts hold paramter names as keys and numpy arrays with
+        samples as dict values
+
+    Returns
+    -------
+
+    """
+
+    #  Perform lhc design call
+    design = pyDOE.lhs(n=nb_par, samples=nb_samples, criterion='center')
+
+    # print(design)
+
+
+def run_overall_lhc_sampling(city, nb_samples, nb_city_unc_par=14,
+                             nb_build_unc_par=34, nb_app_unc_par=3):
+    """
+
+    Parameters
+    ----------
+    city : object
+        City object of pyCity_calc
+    nb_samples : int
+        Number of samples
+    nb_city_unc_par : int, optional
+        Number of uncertain parameters on city level (default: 14)
+    nb_build_unc_par : int, optional
+        Number of uncertain parameters on building level (default: 34)
+    nb_app_unc_par : int, optional
+        Number of uncertain parameters on apartment level (default: 3)
+
+    Returns
+    -------
+
+    """
+    #  Get empty result dicts
+    (dict_city_sample, dict_build_samples) = \
+        gen_empty_res_dicts(city=city,
+                            nb_samples=nb_samples)
+
+    #  Calc. number of uncertain parameters
+    nb_par = calc_nb_unc_par(city=city, nb_city_unc_par=nb_city_unc_par,
+                             nb_build_unc_par=nb_build_unc_par,
+                             nb_app_unc_par=nb_app_unc_par)
+
+    #  Sampling on city district level
+    do_lhc_city_sampling(city=city, nb_samples=nb_samples, nb_par=nb_par,
+                         dict_city_sample=dict_city_sample,
+                         dict_build_samples=dict_build_samples)
+
+    #  Loop over buildings
+
+    #  Loop over apartments
+
+
+if __name__ == '__main__':
+    city_name = 'wm_res_east_7_w_street_sh_resc_wm.pkl'
+
+    nb_samples = 100
+
+    path_this = os.path.dirname(os.path.abspath(__file__))
+    path_mc = os.path.dirname(path_this)
+    path_city = os.path.join(path_mc, 'input', city_name)
+
+    city = pickle.load(open(path_city, mode='rb'))
+
+    run_overall_lhc_sampling(city=city, nb_samples=nb_samples)
