@@ -313,13 +313,32 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
     #  ####################################################################
     #  Loop over building ids
     for key in dict_build_samples.keys():
-        if key in ['self_discharge', 'qual_grade_ww', 'qual_grade_aw',
-                   'k_loss', 'beta', 'gamma']:
-            pass  # Equal distribution
-        elif key in ['eta_charge', 'eta_discharge', 'eta_boi', 'omega_chp',
-                     'eta_pv']:
-            pass  # Gaussian distribution
+        #  Loop over parameters
+        for parkey in dict_ref_val_build.keys():
+            if parkey in ['self_discharge', 'qual_grade_ww', 'qual_grade_aw',
+                          'k_loss', 'beta', 'gamma']:
+                #  Equal distribution
+                #  Loop over parameters
 
+                for i in range(len(design[:, design_count])):
+                    val_lhc = design[i, design_count]
+
+                    min_val = dict_ref_val_build[parkey][0]
+                    max_val = dict_ref_val_build[parkey][1]
+
+                    val_conv = val_lhc * (max_val - min_val) + min_val
+
+                    dict_build_samples[key][parkey][i] = val_conv
+
+                design_count += 1
+
+            elif parkey in ['eta_charge', 'eta_discharge', 'eta_boi',
+                            'omega_chp', 'eta_pv']:
+                pass  # Gaussian distribution
+
+    # plt.plot(sorted(dict_build_samples[1001]['gamma']))
+    # plt.show()
+    # plt.close()
 
 def run_overall_lhc_sampling(city, nb_samples):
     """
