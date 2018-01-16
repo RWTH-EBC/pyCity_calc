@@ -14,10 +14,15 @@ import scipy.stats.distributions as distr
 from scipy.stats import nakagami
 from scipy import stats
 
+import pycity_calc.toolbox.mc_helpers.city.city_sampling as citysample
+import pycity_calc.toolbox.mc_helpers.building.build_unc_set_gen as buildsample
+import pycity_calc.toolbox.mc_helpers.esys.esyssampling as esyssample
+
 
 #  TODO: Load sh res. values per building of sh mc uncertainty run
 #  TODO: Generate pool of el. load profiles per apartment
 #  TODO: Radiation uncertainty
+#  TODO: sample_grid_av_fee? (currently missing)
 
 def gen_empty_res_dicts(city, nb_samples):
     """
@@ -69,8 +74,6 @@ def gen_empty_res_dicts(city, nb_samples):
     dict_city_sample['price_ch_eeg_pv'] = np.zeros(nb_samples)
     #  Uncertain price change EEX baseload price
     dict_city_sample['price_ch_eex'] = np.zeros(nb_samples)
-    #  Uncertain price change grid usage fee
-    dict_city_sample['price_ch_grid_use'] = np.zeros(nb_samples)
     #  Uncertain price change grid usage fee
     dict_city_sample['price_ch_grid_use'] = np.zeros(nb_samples)
     #  Uncertain ground temperature
@@ -149,7 +152,7 @@ def gen_empty_res_dicts(city, nb_samples):
 
 
 def calc_nb_unc_par(city, nb_city_unc_par=14,
-                    nb_build_unc_par=34, nb_app_unc_par=3):
+                    nb_build_unc_par=33, nb_app_unc_par=3):
     """
     Calculate total number of uncertain parameters required for LHC design
 
@@ -160,7 +163,7 @@ def calc_nb_unc_par(city, nb_city_unc_par=14,
     nb_city_unc_par : int, optional
         Number of uncertain parameters on city level (default: 14)
     nb_build_unc_par : int, optional
-        Number of uncertain parameters on building level (default: 34)
+        Number of uncertain parameters on building level (default: 33)
     nb_app_unc_par : int, optional
         Number of uncertain parameters on apartment level (default: 3)
 
@@ -179,7 +182,7 @@ def calc_nb_unc_par(city, nb_city_unc_par=14,
         build = city.nodes[n]['entity']
         nb_app += len(build.apartments)
 
-    nb_par = nb_city_unc_par + nb_city_unc_par * nb_build \
+    nb_par = nb_city_unc_par + nb_build_unc_par * nb_build \
              + nb_app_unc_par * nb_app
 
     return nb_par
@@ -214,10 +217,48 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
     design = pyDOE.lhs(n=nb_par, samples=nb_samples, criterion='center')
 
     # print(design)
+    # plt.plot(sorted(design[0]))
+    # plt.show()
+    # plt.close()
+
+    #  Assumes equal distributions for given parameters
+    dict_ref_val = {'interest': [1.01, 1.0675],
+                    'price_ch_cap': [1.0, 1.0575],
+                    'price_ch_dem_gas': [0.96, 1.06],
+                    'price_ch_dem_el': [0.98, 1.1],
+                    'price_ch_op': [1, 1.0575],
+                    'price_ch_eeg_chp': [0.98, 1.02],
+                    'price_ch_eeg_pv': [0.98, 1.02],
+                    'price_ch_eex': [0.94, 1.02],
+                    'price_ch_grid_use': [0.98, 1.04],
+                    'temp_ground': [8, 12],
+                    'list_sum_on': [0, 1],
+                    'lhn_loss': [0.75, 1.25]
+                    }
+    #  LHN investment uncertainty?
 
 
-def run_overall_lhc_sampling(city, nb_samples, nb_city_unc_par=14,
-                             nb_build_unc_par=34, nb_app_unc_par=3):
+
+
+    # array_summer_heat_on = citysample. \
+    #     sample_quota_summer_heat_on(nb_samples=nb_runs)
+    #
+    # list_s_heat_on_id_arrays = citysample. \
+    #     sample_list_sum_heat_on_arrays(nb_samples=nb_runs,
+    #                                    array_ratio_on=array_summer_heat_on,
+    #                                    list_b_ids=self._list_build_ids)
+    #
+    # #  Only used, if LHN exists, but required to prevent ref.
+    # #  before assignment error #289
+    # #  If LHN exists, sample for LHN with ref. investment cost of 1
+    # array_lhn_inv = esyssample.sample_invest_unc(nb_samples=nb_runs,
+    #                                              ref_inv=1)
+    # #  If LHN exists, sample losses for LHN (ref loss 1)
+    # array_lhn_loss = esyssample.sample_lhn_loss_unc(nb_samples=nb_runs,
+    #                                                 ref_loss=1)
+
+
+def run_overall_lhc_sampling(city, nb_samples):
     """
 
     Parameters
@@ -226,12 +267,6 @@ def run_overall_lhc_sampling(city, nb_samples, nb_city_unc_par=14,
         City object of pyCity_calc
     nb_samples : int
         Number of samples
-    nb_city_unc_par : int, optional
-        Number of uncertain parameters on city level (default: 14)
-    nb_build_unc_par : int, optional
-        Number of uncertain parameters on building level (default: 34)
-    nb_app_unc_par : int, optional
-        Number of uncertain parameters on apartment level (default: 3)
 
     Returns
     -------
@@ -243,9 +278,7 @@ def run_overall_lhc_sampling(city, nb_samples, nb_city_unc_par=14,
                             nb_samples=nb_samples)
 
     #  Calc. number of uncertain parameters
-    nb_par = calc_nb_unc_par(city=city, nb_city_unc_par=nb_city_unc_par,
-                             nb_build_unc_par=nb_build_unc_par,
-                             nb_app_unc_par=nb_app_unc_par)
+    nb_par = calc_nb_unc_par(city=city)
 
     #  Sampling on city district level
     do_lhc_city_sampling(city=city, nb_samples=nb_samples, nb_par=nb_par,
