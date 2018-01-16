@@ -129,7 +129,8 @@ def gen_empty_res_dicts(city, nb_samples):
         dict_samples['tes_maintain'] = np.zeros(nb_samples)
         dict_samples['tes_inv'] = np.zeros(nb_samples)
         #  Uncertain PV params
-        dict_samples['eta_pv'] = np.zeros(nb_samples)  # Also including inv. loss
+        dict_samples['eta_pv'] = np.zeros(
+            nb_samples)  # Also including inv. loss
         dict_samples['beta'] = np.zeros(nb_samples)
         dict_samples['gamma'] = np.zeros(nb_samples)
         dict_samples['pv_lifetime'] = np.zeros(nb_samples)
@@ -276,7 +277,7 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
     dict_ref_val_build = {'self_discharge': [0.00001, 0.001],
                           'eta_charge': [0.95, 0.005],  # mean, std
                           'eta_discharge': [0.9, 0.005],  # mean, std
-                          #'bat_lifetime': [0.9, 0.005],  # curr. const.
+                          # 'bat_lifetime': [0.9, 0.005],  # curr. const.
                           # 'bat_maintain': [0.9, 0.005],  # curr. const.
                           #  TODO: 'bat_inv': [0.9, 0.005],  # log mean, std
                           'eta_boi': [0.92, 0.01],  # mean, std
@@ -318,8 +319,7 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
             if parkey in ['self_discharge', 'qual_grade_ww', 'qual_grade_aw',
                           'k_loss', 'beta', 'gamma']:
                 #  Equal distribution
-                #  Loop over parameters
-
+                #  Loop over single parameter values
                 for i in range(len(design[:, design_count])):
                     val_lhc = design[i, design_count]
 
@@ -334,11 +334,23 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
 
             elif parkey in ['eta_charge', 'eta_discharge', 'eta_boi',
                             'omega_chp', 'eta_pv']:
-                pass  # Gaussian distribution
+                # Gaussian distribution
 
-    # plt.plot(sorted(dict_build_samples[1001]['gamma']))
-    # plt.show()
-    # plt.close()
+                mean_val = dict_ref_val_build[parkey][0]
+                std_val = dict_ref_val_build[parkey][1]
+
+                array_conv = stats.norm(loc=mean_val,
+                                        scale=std_val).ppf(
+                    design[:, design_count])
+
+                dict_build_samples[key][parkey] = array_conv
+
+                design_count += 1
+
+    plt.plot(sorted(dict_build_samples[1001]['eta_pv']))
+    plt.show()
+    plt.close()
+
 
 def run_overall_lhc_sampling(city, nb_samples):
     """
