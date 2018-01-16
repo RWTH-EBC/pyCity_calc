@@ -131,7 +131,10 @@ class ChpExtended(chp.CHP):
                                                        eta_total=eta_total,
                                                        thermal_operation_mode=
                                                        thermal_operation_mode,
-                                                       chp_type=chp_type)
+                                                       chp_type=chp_type,
+                                                       save_res=False)
+        #  save_res == False --> Returning values to use them for super()
+        #  class call
 
         if p_nominal is not None and thermal_operation_mode:
             print('New CHP nominal el. power in kW: ', el_power/1000)
@@ -155,7 +158,7 @@ class ChpExtended(chp.CHP):
 
     def run_precalculation(self, q_nominal=None, p_nominal=None,
                            eta_total=0.9, thermal_operation_mode=True,
-                           chp_type='ASUE_2015'):
+                           chp_type='ASUE_2015', save_res=True):
         """
         Performs precalculation. Has to be called when attributes are changed
         on existing chp object instance.
@@ -184,6 +187,9 @@ class ChpExtended(chp.CHP):
             Energieverbrauch e.V., BHKW-Kenndaten 2014/15, Essen, 2015.)
             Options:
             - 'ASUE_2015'
+        save_res : bool, optional
+            Defines, if results of pre-calculation should be saved to
+            chp object instance (default: True). If False, only returns results
 
         Returns
         -------
@@ -198,7 +204,7 @@ class ChpExtended(chp.CHP):
                       'be None. You have to define a valid input value!'
                 raise AssertionError(msg)
 
-            th_power = q_nominal
+            th_power = q_nominal + 0.0
             if chp_type == 'ASUE_2015':
                 el_power = asue.calc_el_power_with_th_power(th_power, eta_total)
             else:
@@ -213,13 +219,17 @@ class ChpExtended(chp.CHP):
                       'be None. You have to define a valid input value!'
                 raise AssertionError(msg)
 
-            el_power = p_nominal
+            el_power = p_nominal + 0.0
             if chp_type == 'ASUE_2015':
                 th_power = asue.calc_th_output_with_p_el(el_power, eta_total)
             else:
                 msg = 'Unknown chp_type. Currently, only ASUE_2015 has been ' \
                       'implemented!'
                 raise NotImplementedError(msg)
+
+        if save_res:
+            self.qNominal = th_power
+            self.pNominal = el_power
 
         return (th_power, el_power)
 

@@ -154,7 +154,7 @@ class ElectricalHeaterExtended(EHeat.ElectricalHeater):
 
         if save_res:
             #  Save results
-            self.totalPConsumption[time_index] = th_power
-            self.totalQOutput[time_index] = el_power_in
+            self.totalPConsumption[time_index] = el_power_in
+            self.totalQOutput[time_index] = th_power
 
         return (th_power, el_power_in)

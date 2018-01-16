@@ -481,7 +481,8 @@ def get_id_max_th_power(city, with_dhw=False, current_values=False,
 #  #-----------------------------------------------------------------------
 
 def calc_chp_nom_th_power(th_power_curve, method=1, min_runtime=6000,
-                          force_min_runtime=False, timestep=None):
+                          force_min_runtime=False, timestep=None,
+                          share_max_th=1/5):
     """
     Calculate nominal thermal power of CHP system (for given thermal power
     curve)
@@ -495,8 +496,10 @@ def calc_chp_nom_th_power(th_power_curve, method=1, min_runtime=6000,
         (default: 1)
         Options:
         1 - Maximum rectangular
-        2 - Minimum runtime per year
+        2 - Minimum runtime per year (might fail, if min. runtime cannot be
+        reached!)
         3 - Maximum power
+        4 - Share of maximum thermal power (default: 1/5)
     min_runtime : float, optional
         Minimum runtime CHP should have per year (in hours!).
         Only relevant, if method == 2
@@ -510,6 +513,9 @@ def calc_chp_nom_th_power(th_power_curve, method=1, min_runtime=6000,
     timestep : int, optional
         Timestep in seconds. Only relevant for methods 2
         (default: None)
+    share_max_th : float, optional
+        Defines share of chp nominalt thermal power on max. th. power of given
+        th_power_curve (default: 1/5). Only relevant for method == 4
 
     Returns
     -------
@@ -517,7 +523,7 @@ def calc_chp_nom_th_power(th_power_curve, method=1, min_runtime=6000,
         CHP nominal thermal power
     """
 
-    list_method = [1, 2, 3]
+    list_method = [1, 2, 3, 4]
     assert method in list_method, 'Unknown chp sizing method.'
 
     if method == 1:  # Max. rectangle method
@@ -540,6 +546,10 @@ def calc_chp_nom_th_power(th_power_curve, method=1, min_runtime=6000,
     elif method == 3:  # Max. th. power
 
         chp_nom_power = np.amax(th_power_curve)
+
+    elif method == 4:  # share_max_th * max. th. power
+
+        chp_nom_power = share_max_th * np.amax(th_power_curve)
 
     return chp_nom_power
 
