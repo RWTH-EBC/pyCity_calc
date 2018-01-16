@@ -213,6 +213,8 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
 
     """
 
+    design_count = 0
+
     #  Perform lhc design call
     design = pyDOE.lhs(n=nb_par, samples=nb_samples, criterion='center')
 
@@ -235,10 +237,24 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
                     'list_sum_on': [0, 1],
                     'lhn_loss': [0.75, 1.25]
                     }
-    #  LHN investment uncertainty?
+    #  TODO: LHN investment uncertainty?
 
+    for key in dict_ref_val.keys():
+        for i in range(len(design[:, design_count])):
+            val_lhc = design[i, design_count]
 
+            min_val = dict_ref_val[key][0]
+            max_val = dict_ref_val[key][1]
 
+            val_conv = val_lhc * (max_val - min_val) + min_val
+
+            dict_city_sample[key][i] = val_conv
+
+        design_count += 1
+
+    # plt.plot(sorted(dict_city_sample['lhn_loss']))
+    # plt.show()
+    # plt.close()
 
     # array_summer_heat_on = citysample. \
     #     sample_quota_summer_heat_on(nb_samples=nb_runs)
