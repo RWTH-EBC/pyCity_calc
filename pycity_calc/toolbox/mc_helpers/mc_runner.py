@@ -388,10 +388,10 @@ class McRunner(object):
                 dict_pv['gamma'] = esyssample.sample_pv_gamma(nb_samples=
                                                               nb_runs)
 
-                dict_pv['hp_lifetime'] = \
+                dict_pv['pv_lifetime'] = \
                     esyssample.sample_lifetime(nb_samples=nb_runs)
 
-                dict_pv['hp_maintain'] = \
+                dict_pv['pv_maintain'] = \
                     esyssample.sample_maintain(nb_samples=nb_runs)
 
                 #  Sample investment uncertainty (normalized to investment
@@ -408,10 +408,10 @@ class McRunner(object):
                 dict_tes['k_loss'] = esyssample.sample_tes_k_loss(nb_samples=
                                                                   nb_runs)
 
-                dict_tes['hp_lifetime'] = \
+                dict_tes['tes_lifetime'] = \
                     esyssample.sample_lifetime(nb_samples=nb_runs)
 
-                dict_tes['hp_maintain'] = \
+                dict_tes['tes_maintain'] = \
                     esyssample.sample_maintain(nb_samples=nb_runs)
 
                 #  Sample investment uncertainty (normalized to investment
