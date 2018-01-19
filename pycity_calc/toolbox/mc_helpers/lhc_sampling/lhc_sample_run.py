@@ -17,6 +17,7 @@ from scipy import stats
 import pycity_calc.toolbox.mc_helpers.city.city_sampling as citysample
 import pycity_calc.toolbox.mc_helpers.building.build_unc_set_gen as buildsample
 import pycity_calc.toolbox.mc_helpers.esys.esyssampling as esyssample
+import pycity_calc.toolbox.mc_helpers.user.user_unc_sampling as useunc
 
 
 #  TODO: Load sh res. values per building of sh mc uncertainty run
@@ -347,9 +348,54 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
 
                 design_count += 1
 
-    plt.plot(sorted(dict_build_samples[1001]['eta_pv']))
-    plt.show()
-    plt.close()
+        #  Sample for each apartment
+        #  ###################################################################
+
+        nb_app = len(city.nodes[key]['entity'].apartments)
+        #  Get building type (sfh/mfh)
+        if nb_app == 1:
+            res_type = 'sfh'
+        elif nb_app > 1:
+            res_type = 'mfh'
+
+        #  Loop over nb of apartments
+        for i in range(nb_app):
+
+            #  Sample nb. of occupants
+            array_nb_occ = useunc.calc_sampling_occ_per_app(nb_samples=
+                                                            nb_samples)
+
+            #  Save array to results dict
+            dict_build_samples[key]['app_nb_occ'][i, :] = array_nb_occ
+
+            for k in range(len(array_nb_occ)):
+                #  Sample el. demand value per apartment
+                el_dem_per_app = useunc. \
+                    calc_sampling_el_demand_per_apartment(
+                    nb_samples=1,
+                    nb_persons=array_nb_occ[k], type=res_type)[0]
+                #  Sample dhw demand value per apartment
+                dhw_dem_per_app = useunc. \
+                    calc_sampling_dhw_per_apartment(nb_samples=1,
+                                                    nb_persons=array_nb_occ[k],
+                                                    b_type=res_type)
+
+                #  Save el. demand
+                dict_build_samples[key]['app_el_dem_person'][i, k] = \
+                    el_dem_per_app
+                #  Save dhw demand
+                dict_build_samples[key]['app_dhw_dem_person'][i, k] = \
+                    dhw_dem_per_app
+
+        # #  Generate apartment uncertain parameters
+        # #  Rows (parameter array per apartment)
+        # dict_samples['app_nb_occ'] = np.zeros((nb_app, nb_samples))
+        # dict_samples['app_el_dem_person'] = np.zeros((nb_app, nb_samples))
+        # dict_samples['app_dhw_dem_person'] = np.zeros((nb_app, nb_samples))
+
+    # plt.plot(sorted(dict_build_samples[1001]['eta_pv']))
+    # plt.show()
+    # plt.close()
 
 
 def run_overall_lhc_sampling(city, nb_samples):
