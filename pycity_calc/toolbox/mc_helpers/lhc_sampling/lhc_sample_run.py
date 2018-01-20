@@ -410,13 +410,19 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
                 dict_build_samples[key]['app_dhw_dem_person'][i, k] = \
                     dhw_dem_per_app
 
-        # #  Generate apartment uncertain parameters
-        # #  Rows (parameter array per apartment)
-        # dict_samples['app_nb_occ'] = np.zeros((nb_app, nb_samples))
-        # dict_samples['app_el_dem_person'] = np.zeros((nb_app, nb_samples))
-        # dict_samples['app_dhw_dem_person'] = np.zeros((nb_app, nb_samples))
-
     # plt.plot(sorted(dict_build_samples[1001]['eta_pv']))
+    # plt.show()
+    # plt.close()
+
+    # plt.plot(sorted(dict_build_samples[1001]['app_nb_occ'][0]))
+    # plt.show()
+    # plt.close()
+    #
+    # plt.plot(sorted(dict_build_samples[1001]['app_el_dem_person'][0]))
+    # plt.show()
+    # plt.close()
+    #
+    # plt.plot(sorted(dict_build_samples[1001]['app_dhw_dem_person'][0]))
     # plt.show()
     # plt.close()
 
