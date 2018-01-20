@@ -194,6 +194,8 @@ def calc_nb_unc_par(city, nb_city_unc_par=14,
 def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
                          dict_build_samples):
     """
+    Performs latin hypercube sampling and adds samples to empty
+    dict_city_sample, dict_build_samples
 
     Parameters
     ----------
@@ -210,10 +212,6 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
         Dict. holding building ids as keys and dict of samples as values.
         These dicts hold paramter names as keys and numpy arrays with
         samples as dict values
-
-    Returns
-    -------
-
     """
 
     design_count = 0
@@ -429,6 +427,8 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
 
 def run_overall_lhc_sampling(city, nb_samples):
     """
+    Generates empty sample dicts and performs latin hypercube sampling.
+    Adds samples to dict_city_sample, dict_build_samples
 
     Parameters
     ----------
@@ -439,7 +439,15 @@ def run_overall_lhc_sampling(city, nb_samples):
 
     Returns
     -------
-
+    tup_res : tuple (of dicts)
+        Tuple holding 2 dicts (dict_city_sample, dict_build_samples)
+        dict_city_sample : dict
+            Dict holding city parameter names as keys and numpy arrays with
+            samples as dict values
+        dict_build_samples : dict
+            Dict. holding building ids as keys and dict of samples as values.
+            These dicts hold paramter names as keys and numpy arrays with
+            samples as dict values
     """
     #  Get empty result dicts
     (dict_city_sample, dict_build_samples) = \
@@ -449,14 +457,13 @@ def run_overall_lhc_sampling(city, nb_samples):
     #  Calc. number of uncertain parameters
     nb_par = calc_nb_unc_par(city=city)
 
-    #  Sampling on city district level
+    #  Sampling on city district level (add to dict_city_sample and
+    #  dict_build_samples
     do_lhc_city_sampling(city=city, nb_samples=nb_samples, nb_par=nb_par,
                          dict_city_sample=dict_city_sample,
                          dict_build_samples=dict_build_samples)
 
-    #  Loop over buildings
-
-    #  Loop over apartments
+    return (dict_city_sample, dict_build_samples)
 
 
 if __name__ == '__main__':
@@ -470,4 +477,20 @@ if __name__ == '__main__':
 
     city = pickle.load(open(path_city, mode='rb'))
 
-    run_overall_lhc_sampling(city=city, nb_samples=nb_samples)
+    (dict_city_sample, dict_build_samples) = \
+        run_overall_lhc_sampling(city=city, nb_samples=nb_samples)
+
+    plt.plot(sorted(dict_build_samples[1001]['chp_inv']))
+    plt.title('Sorted samples for chp investment factor')
+    plt.xlabel('Number of values')
+    plt.ylabel('Change factor relative to default investment')
+    plt.tight_layout()
+    plt.show()
+    plt.close()
+
+    plt.hist(dict_build_samples[1001]['chp_inv'])
+    plt.xlabel('Change factor relative to default investment')
+    plt.ylabel('Number of values')
+    plt.tight_layout()
+    plt.show()
+    plt.close()
