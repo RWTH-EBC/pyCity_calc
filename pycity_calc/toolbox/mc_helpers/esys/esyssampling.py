@@ -415,7 +415,7 @@ def sample_maintain(nb_samples, minv=0.5, maxv=1.5):
     return array_maintain
 
 
-def sample_invest_unc(nb_samples, ref_inv, logmean=0, logstd=0.4):
+def sample_invest_unc(nb_samples, ref_inv, logmean=0, logstd=0.3):
     """
     Sample investment cost uncertainty, based on reference investment cost
     input. Assumes log-normal distribution
@@ -426,9 +426,9 @@ def sample_invest_unc(nb_samples, ref_inv, logmean=0, logstd=0.4):
         Number of samples
     ref_inv : float
         Reference investment cost in Euro
-    logmean : float
+    logmean : float, optional (default: 0)
         mean of log-normal distribution
-    logstd : float
+    logstd : float, optional (default: 0.3)
         Standard deviation of log-normal distribution
 
     Returns
@@ -488,6 +488,14 @@ if __name__ == '__main__':
 
     plt.hist(array_ch_eff)
     plt.xlabel('Battery charging efficiency')
+    plt.ylabel('Number of values')
+    plt.show()
+    plt.close()
+
+    array_inv = sample_invest_unc(nb_samples=nb_samples, ref_inv=10000)
+
+    plt.hist(array_inv)
+    plt.xlabel('Capital cost in Euro/a')
     plt.ylabel('Number of values')
     plt.show()
     plt.close()

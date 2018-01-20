@@ -237,7 +237,8 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
                          'price_ch_grid_use': [0.98, 1.04],
                          'temp_ground': [8, 12],
                          'list_sum_on': [0, 1],
-                         'lhn_loss': [0.75, 1.25]
+                         'lhn_loss': [0.75, 1.25],
+                         'lhn_inv': [0, 0.5]  # log mean, std
                          }
     #  TODO: LHN investment uncertainty?
 
@@ -280,34 +281,34 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
                           'eta_discharge': [0.9, 0.005],  # mean, std
                           # 'bat_lifetime': [0.9, 0.005],  # curr. const.
                           # 'bat_maintain': [0.9, 0.005],  # curr. const.
-                          #  TODO: 'bat_inv': [0.9, 0.005],  # log mean, std
+                          #  TODO: 'bat_inv': [0, 0.3],  # log mean, std
                           'eta_boi': [0.92, 0.01],  # mean, std
                           # 'boi_lifetime': [0.9, 0.005],  # curr. const.
                           # 'boi_maintain': [0.9, 0.005],  # curr. const.
-                          #  TODO: 'boi_inv': [0.9, 0.005],  # log mean, std
+                          #  TODO: 'boi_inv': [0, 0.2],  # log mean, std
                           'omega_chp': [0.9, 0.02],  # mean, std
                           # 'chp_lifetime': [0.9, 0.005],  # curr. const.
                           # 'chp_maintain': [0.9, 0.005],  # curr. const.
-                          #  TODO: 'chp_inv': [0.9, 0.005],  # log mean, std
+                          #  TODO: 'chp_inv': [0, 0.3],  # log mean, std
                           'qual_grade_ww': [0.38, 0.48],
                           'qual_grade_aw': [0.29, 0.39],
                           #  TODO: t_sink
                           # 'hp_lifetime': [0.9, 0.005],  # curr. const.
                           # 'hp_maintain': [0.9, 0.005],  # curr. const.
-                          #  TODO: 'hp_inv': [0.9, 0.005],  # log mean, std
+                          #  TODO: 'hp_inv': [0, 0.2],  # log mean, std
                           # 'eh_lifetime': [0.9, 0.005],  # curr. const.
                           # 'eh_maintain': [0.9, 0.005],  # curr. const.
-                          #  TODO: 'eh_inv': [0.9, 0.005],  # log mean, std
+                          #  TODO: 'eh_inv': [0, 0.2],  # log mean, std
                           'k_loss': [0.1, 0.5],
                           # 'tes_lifetime': [0.9, 0.005],  # curr. const.
                           # 'tes_maintain': [0.9, 0.005],  # curr. const.
-                          #  TODO: 'tes_inv': [0.9, 0.005],  # log mean, std
+                          #  TODO: 'tes_inv': [0, 0.2],  # log mean, std
                           'eta_pv': [0.12, 0.02],  # mean, std
                           'beta': [0, 60],
                           'gamma': [-180, 180],
                           # 'pv_lifetime': [0.9, 0.005],  # curr. const.
                           # 'pv_maintain': [0.9, 0.005],  # curr. const.
-                          #  TODO: 'pv_inv': [0.9, 0.005],  # log mean, std
+                          #  TODO: 'pv_inv': [0, 0.3],  # log mean, std
                           }
     #  TODO: Ref values for SH per building (based on demand sh mc run)
 
