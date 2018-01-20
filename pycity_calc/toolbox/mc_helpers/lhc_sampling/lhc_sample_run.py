@@ -7,7 +7,7 @@ from __future__ import division
 
 import os
 import pickle
-import math
+import random as rd
 import numpy as np
 import warnings
 import pyDOE
@@ -15,6 +15,10 @@ import matplotlib.pylab as plt
 import scipy.stats.distributions as distr
 from scipy import stats
 from scipy.stats import lognorm
+
+import pycity_base.classes.demand.Occupancy as occu
+import pycity_base.classes.demand.ElectricalDemand as eldem
+import pycity_base.classes.demand.DomesticHotWater as dhwdem
 
 import pycity_calc.toolbox.mc_helpers.user.user_unc_sampling as useunc
 
@@ -165,8 +169,8 @@ def gen_empty_res_dicts(city, nb_samples):
         #  Generate apartment uncertain parameters
         #  Rows (parameter array per apartment)
         dict_samples['app_nb_occ'] = np.zeros((nb_app, nb_samples))
-        dict_samples['app_el_dem_person'] = np.zeros((nb_app, nb_samples))
-        dict_samples['app_dhw_dem_person'] = np.zeros((nb_app, nb_samples))
+        dict_samples['app_el_dem'] = np.zeros((nb_app, nb_samples))
+        dict_samples['app_dhw_dem'] = np.zeros((nb_app, nb_samples))
 
         #  Save parameter dict to main building dict
         dict_build_samples[n] = dict_samples
@@ -510,10 +514,10 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
                                                     b_type=res_type)
 
                 #  Save el. demand
-                dict_build_samples[key]['app_el_dem_person'][i, k] = \
+                dict_build_samples[key]['app_el_dem'][i, k] = \
                     el_dem_per_app
                 #  Save dhw demand
-                dict_build_samples[key]['app_dhw_dem_person'][i, k] = \
+                dict_build_samples[key]['app_dhw_dem'][i, k] = \
                     dhw_dem_per_app
 
                 # plt.plot(sorted(dict_build_samples[1001]['eta_pv']))
@@ -524,17 +528,106 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
                 # plt.show()
                 # plt.close()
                 #
-                # plt.plot(sorted(dict_build_samples[1001]['app_el_dem_person'][0]))
+                # plt.plot(sorted(dict_build_samples[1001]['app_el_dem'][0]))
                 # plt.show()
                 # plt.close()
                 #
-                # plt.plot(sorted(dict_build_samples[1001]['app_dhw_dem_person'][0]))
+                # plt.plot(sorted(dict_build_samples[1001]['app_dhw_dem'][0]))
                 # plt.show()
                 # plt.close()
 
 
+def gen_profile_pool(city, nb_samples, dict_build_samples):
+    """
+    Generate profile pool of user, el. load and dhw profiles for each building
+
+    Parameters
+    ----------
+    city : object
+        City object of pyCity_calc
+    nb_samples : int
+        Nb. of samples
+    dict_build_samples : dict
+        Dict. holding building ids as keys and dict of samples as values.
+        These dicts hold paramter names as keys and numpy arrays with
+        samples as dict values
+
+    Returns
+    -------
+    dict_profiles : dict
+        Dict holding building ids as keys and numpy.arrays
+    """
+    assert nb_samples > 0
+
+    print()
+    print('Start generation of profile pool')
+
+    dict_profiles = {}
+
+    profile_length = len(city.environment.weather.tAmbient)
+
+    #  Estimate nb. of different profiles per building
+    nb_profiles = int(nb_samples / 10)
+
+    #  Loop over buildings
+    for key in dict_build_samples.keys():
+
+        print('Generate profiles for building ', key)
+
+        dict_profiles_build = {}
+
+        #  Generate results arrays with zeros
+        el_profiles = np.zeros((nb_profiles, profile_length))
+        dhw_profiles = np.zeros((nb_profiles, profile_length))
+
+        #  Access building sample dict
+        dict_samples = dict_build_samples[key]
+
+        #  Access occupants per apartment
+        occ_array = dict_samples['app_nb_occ']
+
+        #  Loop over nb. of profiles
+        for i in range(nb_profiles):
+            for a in range(len(city.nodes[key]['entity'].apartments)):
+                occupancy = occu.Occupancy(environment=city.environment,
+                                           number_occupants=int(occ_array[a,
+                                                                          i]))
+
+                el_dem_obj = eldem. \
+                    ElectricalDemand(environment=city.environment,
+                                     method=2,
+                                     total_nb_occupants=int(occ_array[a, i]),
+                                     randomizeAppliances=True,
+                                     lightConfiguration=rd.randint(0, 10),
+                                     occupancy=occupancy.occupancy,
+                                     prev_heat_dev=True)
+
+                dhw_dem_obj = dhwdem. \
+                    DomesticHotWater(city.environment,
+                                     tFlow=60,
+                                     thermal=True,
+                                     method=2,
+                                     supplyTemperature=20,
+                                     occupancy=occupancy.occupancy)
+
+                el_profiles[i, :] += el_dem_obj.loadcurve
+                dhw_profiles[i, :] += dhw_dem_obj.loadcurve
+
+        dict_profiles_build['el_profiles'] = el_profiles
+        dict_profiles_build['dhw_profiles'] = dhw_profiles
+
+        dict_profiles[key] = dict_profiles_build
+
+    print()
+    print('Finished profile pool generation')
+    print()
+
+    return dict_profiles
+
+
 def run_overall_lhc_sampling(city, nb_samples, load_sh_mc_res=False,
-                             path_mc_res_folder=None):
+                             path_mc_res_folder=None,
+                             gen_user_prof_pool=False):
     """
     Generates empty sample dicts and performs latin hypercube sampling.
     Adds samples to dict_city_sample, dict_build_samples
@@ -553,11 +646,15 @@ def run_overall_lhc_sampling(city, nb_samples, load_sh_mc_res=False,
     path_mc_res_folder : str, optional
         Path to folder, where sh mc run results are stored (default: None).
         Only necessary if load_sh_mc_res is True
+    gen_user_prof_pool : bool, optional
+        Defines, if user/el. load/dhw profile pool should be generated
+        (default: False). If True, generates profile pool.
 
     Returns
     -------
     tup_res : tuple (of dicts)
-        Tuple holding 2 dicts (dict_city_sample, dict_build_samples)
+        Tuple holding 3 dicts
+        (dict_city_sample, dict_build_samples, dict_profiles)
         dict_city_sample : dict
             Dict holding city parameter names as keys and numpy arrays with
             samples as dict values
@@ -565,6 +662,12 @@ def run_overall_lhc_sampling(city, nb_samples, load_sh_mc_res=False,
             Dict. holding building ids as keys and dict of samples as values.
             These dicts hold paramter names as keys and numpy arrays with
             samples as dict values
+        dict_profiles : dict
+            Dict. holding building ids as keys and dict with numpy arrays
+            with different el. and dhw profiles for each building as value
+            fict_profiles_build['el_profiles'] = el_profiles
+            dict_profiles_build['dhw_profiles'] = dhw_profiles
+            When gen_user_prof_pool is False, dict_profiles is None
     """
     assert nb_samples > 0
 
@@ -585,7 +688,14 @@ def run_overall_lhc_sampling(city, nb_samples, load_sh_mc_res=False,
                          path_mc_res_folder=path_mc_res_folder
                          )
 
-    return (dict_city_sample, dict_build_samples)
+    if gen_user_prof_pool:
+        #  If profile pool should be generated:
+        dict_profiles = gen_profile_pool(city=city, nb_samples=nb_samples,
+                                         dict_build_samples=dict_build_samples)
+    else:
+        dict_profiles = None
+
+    return (dict_city_sample, dict_build_samples, dict_profiles)
 
 
 if __name__ == '__main__':
@@ -604,6 +714,8 @@ if __name__ == '__main__':
 
     save_dicts = True
 
+    gen_user_prof_pool = True
+
     path_this = os.path.dirname(os.path.abspath(__file__))
     path_mc = os.path.dirname(path_this)
     path_city = os.path.join(path_mc, 'input', city_name)
@@ -613,14 +725,16 @@ if __name__ == '__main__':
     path_save_res = os.path.join(path_mc, 'output')
     city_pkl_name = 'dict_city_samples.pkl'
     building_pkl_name = 'dict_build_samples.pkl'
+    profiles_pkl_name = 'dict_profile_samples.pkl'
     #  ###################################################################
 
     city = pickle.load(open(path_city, mode='rb'))
 
-    (dict_city_sample, dict_build_samples) = \
+    (dict_city_sample, dict_build_samples, dict_profiles) = \
         run_overall_lhc_sampling(city=city, nb_samples=nb_samples,
                                  load_sh_mc_res=load_sh_mc_res,
-                                 path_mc_res_folder=path_mc_res_folder)
+                                 path_mc_res_folder=path_mc_res_folder,
+                                 gen_user_prof_pool=gen_user_prof_pool)
 
     #  Save sample dicts
     if save_dicts:
@@ -630,6 +744,8 @@ if __name__ == '__main__':
                                              city_pkl_name)
         path_save_build_sample = os.path.join(path_save_res,
                                               building_pkl_name)
+        path_save_build_profiles = os.path.join(path_save_res,
+                                                profiles_pkl_name)
 
         pickle.dump(dict_city_sample, open(path_save_city_sample, mode='wb'))
         pickle.dump(dict_build_samples,
@@ -637,6 +753,12 @@ if __name__ == '__main__':
 
         print('Saved dict_city_sample to ' + str(path_save_city_sample))
         print('Saved dict_build_samples to ' + str(path_save_build_sample))
+
+        if dict_profiles is not None:
+            pickle.dump(dict_profiles,
+                        open(path_save_build_profiles, mode='wb'))
+            print('Saved dict_profiles to ' + str(path_save_build_profiles))
+
     # ###################################################################
 
     plt.plot(sorted(dict_build_samples[1001]['chp_inv']))
@@ -671,8 +793,8 @@ if __name__ == '__main__':
     for id in dict_build_samples.keys():
         sample_dict = dict_build_samples[id]
         for key in sample_dict.keys():
-            if key not in ['app_nb_occ', 'app_el_dem_person',
-                           'app_dhw_dem_person']:
+            if key not in ['app_nb_occ', 'app_el_dem',
+                           'app_dhw_dem']:
                 if sum(sample_dict[key]) == 0:
                     msg = str('sample_dict in building '
                               + str(id) + ' with value '
