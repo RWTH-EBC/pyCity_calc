@@ -13,6 +13,7 @@ import matplotlib.pylab as plt
 import scipy.stats.distributions as distr
 from scipy.stats import nakagami
 from scipy import stats
+from scipy.stats import lognorm
 
 import pycity_calc.toolbox.mc_helpers.city.city_sampling as citysample
 import pycity_calc.toolbox.mc_helpers.building.build_unc_set_gen as buildsample
@@ -23,7 +24,7 @@ import pycity_calc.toolbox.mc_helpers.user.user_unc_sampling as useunc
 #  TODO: Load sh res. values per building of sh mc uncertainty run
 #  TODO: Generate pool of el. load profiles per apartment
 #  TODO: Radiation uncertainty
-#  TODO: sample_grid_av_fee? (currently missing)
+#  TODO: Use summer mode sampling to define buildngs with summer heating mode
 
 def gen_empty_res_dicts(city, nb_samples):
     """
@@ -225,7 +226,7 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
     # plt.show()
     # plt.close()
 
-    #  Assumes equal distributions for given parameters
+    #  Assumes equal distributions for given parameters (except lhn_inv!)
     dict_ref_val_city = {'interest': [1.01, 1.0675],
                          'price_ch_cap': [1.0, 1.0575],
                          'price_ch_dem_gas': [0.96, 1.06],
@@ -240,22 +241,34 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
                          'lhn_loss': [0.75, 1.25],
                          'lhn_inv': [0, 0.5]  # log mean, std
                          }
-    #  TODO: LHN investment uncertainty?
 
     for key in dict_ref_val_city.keys():
-        for i in range(len(design[:, design_count])):
-            val_lhc = design[i, design_count]
+        if key != 'lhn_inv':
+            for i in range(len(design[:, design_count])):
+                val_lhc = design[i, design_count]
 
-            min_val = dict_ref_val_city[key][0]
-            max_val = dict_ref_val_city[key][1]
+                min_val = dict_ref_val_city[key][0]
+                max_val = dict_ref_val_city[key][1]
 
-            val_conv = val_lhc * (max_val - min_val) + min_val
+                val_conv = val_lhc * (max_val - min_val) + min_val
 
-            dict_city_sample[key][i] = val_conv
+                dict_city_sample[key][i] = val_conv
+        elif key == 'lhn_inv':
+
+            # log_mean = dict_ref_val_city[key][0]
+            log_scale = dict_ref_val_city[key][1]
+
+            array_conv = lognorm(s=log_scale).ppf(design[:, design_count])
+
+            dict_city_sample[key] = array_conv
 
         design_count += 1
 
     # plt.plot(sorted(dict_city_sample['lhn_loss']))
+    # plt.show()
+    # plt.close()
+    #
+    # plt.plot(sorted(dict_city_sample['lhn_inv']))
     # plt.show()
     # plt.close()
 
@@ -281,34 +294,34 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
                           'eta_discharge': [0.9, 0.005],  # mean, std
                           # 'bat_lifetime': [0.9, 0.005],  # curr. const.
                           # 'bat_maintain': [0.9, 0.005],  # curr. const.
-                          #  TODO: 'bat_inv': [0, 0.3],  # log mean, std
+                          'bat_inv': [0, 0.3],  # log mean, std
                           'eta_boi': [0.92, 0.01],  # mean, std
                           # 'boi_lifetime': [0.9, 0.005],  # curr. const.
                           # 'boi_maintain': [0.9, 0.005],  # curr. const.
-                          #  TODO: 'boi_inv': [0, 0.2],  # log mean, std
+                          'boi_inv': [0, 0.2],  # log mean, std
                           'omega_chp': [0.9, 0.02],  # mean, std
                           # 'chp_lifetime': [0.9, 0.005],  # curr. const.
                           # 'chp_maintain': [0.9, 0.005],  # curr. const.
-                          #  TODO: 'chp_inv': [0, 0.3],  # log mean, std
+                          'chp_inv': [0, 0.3],  # log mean, std
                           'qual_grade_ww': [0.38, 0.48],
                           'qual_grade_aw': [0.29, 0.39],
                           #  TODO: t_sink
                           # 'hp_lifetime': [0.9, 0.005],  # curr. const.
                           # 'hp_maintain': [0.9, 0.005],  # curr. const.
-                          #  TODO: 'hp_inv': [0, 0.2],  # log mean, std
+                          'hp_inv': [0, 0.2],  # log mean, std
                           # 'eh_lifetime': [0.9, 0.005],  # curr. const.
                           # 'eh_maintain': [0.9, 0.005],  # curr. const.
-                          #  TODO: 'eh_inv': [0, 0.2],  # log mean, std
+                          'eh_inv': [0, 0.2],  # log mean, std
                           'k_loss': [0.1, 0.5],
                           # 'tes_lifetime': [0.9, 0.005],  # curr. const.
                           # 'tes_maintain': [0.9, 0.005],  # curr. const.
-                          #  TODO: 'tes_inv': [0, 0.2],  # log mean, std
+                          'tes_inv': [0, 0.2],  # log mean, std
                           'eta_pv': [0.12, 0.02],  # mean, std
                           'beta': [0, 60],
                           'gamma': [-180, 180],
                           # 'pv_lifetime': [0.9, 0.005],  # curr. const.
                           # 'pv_maintain': [0.9, 0.005],  # curr. const.
-                          #  TODO: 'pv_inv': [0, 0.3],  # log mean, std
+                          'pv_inv': [0, 0.3],  # log mean, std
                           }
     #  TODO: Ref values for SH per building (based on demand sh mc run)
 
@@ -332,8 +345,6 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
 
                     dict_build_samples[key][parkey][i] = val_conv
 
-                design_count += 1
-
             elif parkey in ['eta_charge', 'eta_discharge', 'eta_boi',
                             'omega_chp', 'eta_pv']:
                 # Gaussian distribution
@@ -347,7 +358,18 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
 
                 dict_build_samples[key][parkey] = array_conv
 
-                design_count += 1
+            elif parkey in ['bat_inv', 'boi_inv', 'chp_inv', 'hp_inv',
+                            'eh_inv', 'tes_inv', 'pv_inv']:
+                # Log normal distribution
+
+                # log_mean = dict_ref_val_build[parkey][0]
+                log_scale = dict_ref_val_build[parkey][1]
+
+                array_conv = lognorm(s=log_scale).ppf(design[:, design_count])
+
+                dict_build_samples[key][parkey] = array_conv
+
+            design_count += 1
 
         #  Sample for each apartment
         #  ###################################################################
