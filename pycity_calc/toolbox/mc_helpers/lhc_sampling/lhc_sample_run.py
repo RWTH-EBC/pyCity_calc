@@ -10,14 +10,9 @@ import pickle
 import numpy as np
 import pyDOE
 import matplotlib.pylab as plt
-import scipy.stats.distributions as distr
-from scipy.stats import nakagami
 from scipy import stats
 from scipy.stats import lognorm
 
-import pycity_calc.toolbox.mc_helpers.city.city_sampling as citysample
-import pycity_calc.toolbox.mc_helpers.building.build_unc_set_gen as buildsample
-import pycity_calc.toolbox.mc_helpers.esys.esyssampling as esyssample
 import pycity_calc.toolbox.mc_helpers.user.user_unc_sampling as useunc
 
 
@@ -101,42 +96,42 @@ def gen_empty_res_dicts(city, nb_samples):
         dict_samples['self_discharge'] = np.zeros(nb_samples)
         dict_samples['eta_charge'] = np.zeros(nb_samples)
         dict_samples['eta_discharge'] = np.zeros(nb_samples)
-        dict_samples['bat_lifetime'] = np.zeros(nb_samples)
-        dict_samples['bat_maintain'] = np.zeros(nb_samples)
+        # dict_samples['bat_lifetime'] = np.zeros(nb_samples)
+        # dict_samples['bat_maintain'] = np.zeros(nb_samples)
         dict_samples['bat_inv'] = np.zeros(nb_samples)
         #  Uncertain boiler params
         dict_samples['eta_boi'] = np.zeros(nb_samples)
-        dict_samples['boi_lifetime'] = np.zeros(nb_samples)
-        dict_samples['boi_maintain'] = np.zeros(nb_samples)
+        # dict_samples['boi_lifetime'] = np.zeros(nb_samples)
+        # dict_samples['boi_maintain'] = np.zeros(nb_samples)
         dict_samples['boi_inv'] = np.zeros(nb_samples)
         #  Uncertain chp params
         dict_samples['omega_chp'] = np.zeros(nb_samples)
-        dict_samples['chp_lifetime'] = np.zeros(nb_samples)
-        dict_samples['chp_maintain'] = np.zeros(nb_samples)
+        # dict_samples['chp_lifetime'] = np.zeros(nb_samples)
+        # dict_samples['chp_maintain'] = np.zeros(nb_samples)
         dict_samples['chp_inv'] = np.zeros(nb_samples)
         #  Uncertain HP params
         dict_samples['qual_grade_aw'] = np.zeros(nb_samples)
         dict_samples['qual_grade_ww'] = np.zeros(nb_samples)
         dict_samples['t_sink'] = np.zeros(nb_samples)
-        dict_samples['hp_lifetime'] = np.zeros(nb_samples)
-        dict_samples['hp_maintain'] = np.zeros(nb_samples)
+        # dict_samples['hp_lifetime'] = np.zeros(nb_samples)
+        # dict_samples['hp_maintain'] = np.zeros(nb_samples)
         dict_samples['hp_inv'] = np.zeros(nb_samples)
         #  Uncertain EH params
-        dict_samples['eh_lifetime'] = np.zeros(nb_samples)
-        dict_samples['eh_maintain'] = np.zeros(nb_samples)
+        # dict_samples['eh_lifetime'] = np.zeros(nb_samples)
+        # dict_samples['eh_maintain'] = np.zeros(nb_samples)
         dict_samples['eh_inv'] = np.zeros(nb_samples)
         #  Uncertain tes params
         dict_samples['k_loss'] = np.zeros(nb_samples)
-        dict_samples['tes_lifetime'] = np.zeros(nb_samples)
-        dict_samples['tes_maintain'] = np.zeros(nb_samples)
+        # dict_samples['tes_lifetime'] = np.zeros(nb_samples)
+        # dict_samples['tes_maintain'] = np.zeros(nb_samples)
         dict_samples['tes_inv'] = np.zeros(nb_samples)
         #  Uncertain PV params
         dict_samples['eta_pv'] = np.zeros(
             nb_samples)  # Also including inv. loss
         dict_samples['beta'] = np.zeros(nb_samples)
         dict_samples['gamma'] = np.zeros(nb_samples)
-        dict_samples['pv_lifetime'] = np.zeros(nb_samples)
-        dict_samples['pv_maintain'] = np.zeros(nb_samples)
+        # dict_samples['pv_lifetime'] = np.zeros(nb_samples)
+        # dict_samples['pv_maintain'] = np.zeros(nb_samples)
         dict_samples['pv_inv'] = np.zeros(nb_samples)
 
         #  Get nb of apartments
@@ -369,7 +364,7 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
 
             design_count += 1
 
-        #  Sample for each apartment
+        # Sample for each apartment
         #  ###################################################################
 
         nb_app = len(city.nodes[key]['entity'].apartments)
@@ -379,7 +374,7 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
         elif nb_app > 1:
             res_type = 'mfh'
 
-        #  Loop over nb of apartments
+        # Loop over nb of apartments
         for i in range(nb_app):
 
             #  Sample nb. of occupants
@@ -408,24 +403,24 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
                 dict_build_samples[key]['app_dhw_dem_person'][i, k] = \
                     dhw_dem_per_app
 
-    # plt.plot(sorted(dict_build_samples[1001]['eta_pv']))
-    # plt.show()
-    # plt.close()
+                # plt.plot(sorted(dict_build_samples[1001]['eta_pv']))
+                # plt.show()
+                # plt.close()
 
-    # plt.plot(sorted(dict_build_samples[1001]['app_nb_occ'][0]))
-    # plt.show()
-    # plt.close()
-    #
-    # plt.plot(sorted(dict_build_samples[1001]['app_el_dem_person'][0]))
-    # plt.show()
-    # plt.close()
-    #
-    # plt.plot(sorted(dict_build_samples[1001]['app_dhw_dem_person'][0]))
-    # plt.show()
-    # plt.close()
+                # plt.plot(sorted(dict_build_samples[1001]['app_nb_occ'][0]))
+                # plt.show()
+                # plt.close()
+                #
+                # plt.plot(sorted(dict_build_samples[1001]['app_el_dem_person'][0]))
+                # plt.show()
+                # plt.close()
+                #
+                # plt.plot(sorted(dict_build_samples[1001]['app_dhw_dem_person'][0]))
+                # plt.show()
+                # plt.close()
 
 
-def run_overall_lhc_sampling(city, nb_samples):
+def run_overall_lhc_sampling(city, nb_samples, load_sh_mc_res=False):
     """
     Generates empty sample dicts and performs latin hypercube sampling.
     Adds samples to dict_city_sample, dict_build_samples
@@ -436,6 +431,11 @@ def run_overall_lhc_sampling(city, nb_samples):
         City object of pyCity_calc
     nb_samples : int
         Number of samples
+    load_sh_mc_res : bool, optional
+        If True, tries to load space heating monte-carlo uncertainty run
+        results for each building and uses result to sample space heating
+        values. If False, uses default distribution to sample space heating
+        values (default: False)
 
     Returns
     -------
@@ -449,6 +449,8 @@ def run_overall_lhc_sampling(city, nb_samples):
             These dicts hold paramter names as keys and numpy arrays with
             samples as dict values
     """
+    assert nb_samples > 0
+
     #  Get empty result dicts
     (dict_city_sample, dict_build_samples) = \
         gen_empty_res_dicts(city=city,
@@ -467,18 +469,29 @@ def run_overall_lhc_sampling(city, nb_samples):
 
 
 if __name__ == '__main__':
+
+    #  User inputs
+    #  ###################################################################
     city_name = 'wm_res_east_7_w_street_sh_resc_wm.pkl'
 
     nb_samples = 100
 
+    load_sh_mc_res = False
+    #  If load_sh_mc_res is True, tries to load monte-carlo space heating
+    #  uncertainty run results for each building from given folder
+    #  If load_sh_mc_res is False, uses default value to sample sh demand
+    #  uncertainty per building
+
     path_this = os.path.dirname(os.path.abspath(__file__))
     path_mc = os.path.dirname(path_this)
     path_city = os.path.join(path_mc, 'input', city_name)
+    #  ###################################################################
 
     city = pickle.load(open(path_city, mode='rb'))
 
     (dict_city_sample, dict_build_samples) = \
-        run_overall_lhc_sampling(city=city, nb_samples=nb_samples)
+        run_overall_lhc_sampling(city=city, nb_samples=nb_samples,
+                                 load_sh_mc_res=load_sh_mc_res)
 
     plt.plot(sorted(dict_build_samples[1001]['chp_inv']))
     plt.title('Sorted samples for chp investment factor')
@@ -494,3 +507,26 @@ if __name__ == '__main__':
     plt.tight_layout()
     plt.show()
     plt.close()
+
+    #  Loop over keys in dict_city_sample and identify zero arrays
+    for key in dict_city_sample.keys():
+        if sum(dict_city_sample[key]) == 0:
+            print('dict_city_sample value ' + str(key) + ' holds zero array!')
+
+    # Loop over keys in dict_build_samples and identify zero arrays
+    for id in dict_build_samples.keys():
+        sample_dict = dict_build_samples[id]
+        for key in sample_dict.keys():
+            if key not in ['app_nb_occ', 'app_el_dem_person',
+                           'app_dhw_dem_person']:
+                if sum(sample_dict[key]) == 0:
+                    print('sample_dict in building '
+                          + str(id) + ' with value '
+                          + str(key) + ' holds zero array!')
+            else:
+                for i in range(len(city.nodes[id]['entity'].apartments)):
+                    if sum(sample_dict[key][i, :]) == 0:
+                        print('sample_dict in building '
+                              + str(id) + ', apartment'
+                              + str(i) + ' with value '
+                              + str(key) + ' holds zero array!')
