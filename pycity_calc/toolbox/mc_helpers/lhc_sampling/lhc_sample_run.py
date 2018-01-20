@@ -22,6 +22,29 @@ import pycity_calc.toolbox.mc_helpers.user.user_unc_sampling as useunc
 #  TODO: Radiation uncertainty
 #  TODO: Use summer mode sampling to define buildngs with summer heating mode
 
+def search_for_pkl_files_in_dir(dir, fileending='.pkl'):
+    """
+    Search for pkl files in dir and returns list with file names
+
+    Parameters
+    ----------
+    dir : str
+        Path to folder, where search is performed
+    fileending : str, optional
+        Defines fileending (default: '.pkl')
+
+    Returns
+    -------
+    list_pkl_files : list (of str)
+        List holding names of pkl files found in dir
+    """
+    list_pkl_files = []
+    for file in os.listdir(dir):
+        if file.endswith(fileending):
+            list_pkl_files.append(file)
+    return list_pkl_files
+
+
 def gen_empty_res_dicts(city, nb_samples):
     """
     Generate empty result dicts (holding arrays with zeros) for mc run
@@ -188,7 +211,8 @@ def calc_nb_unc_par(city, nb_city_unc_par=14,
 
 
 def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
-                         dict_build_samples):
+                         dict_build_samples, load_sh_mc_res=False,
+                         path_mc_res_folder=None):
     """
     Performs latin hypercube sampling and adds samples to empty
     dict_city_sample, dict_build_samples
@@ -208,6 +232,14 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
         Dict. holding building ids as keys and dict of samples as values.
         These dicts hold paramter names as keys and numpy arrays with
         samples as dict values
+    load_sh_mc_res : bool, optional
+        If True, tries to load space heating monte-carlo uncertainty run
+        results for each building and uses result to sample space heating
+        values. If False, uses default distribution to sample space heating
+        values (default: False)
+    path_mc_res_folder : str, optional
+        Path to folder, where sh mc run results are stored (default: None).
+        Only necessary if load_sh_mc_res is True
     """
 
     design_count = 0
@@ -283,7 +315,8 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
     # array_lhn_loss = esyssample.sample_lhn_loss_unc(nb_samples=nb_runs,
     #                                                 ref_loss=1)
 
-    dict_ref_val_build = {'self_discharge': [0.00001, 0.001],
+    dict_ref_val_build = {'sh_dem': [1, 0.5791],  # mean, std
+                          'self_discharge': [0.00001, 0.001],
                           'eta_charge': [0.95, 0.005],  # mean, std
                           'eta_discharge': [0.9, 0.005],  # mean, std
                           # 'bat_lifetime': [0.9, 0.005],  # curr. const.
@@ -317,7 +350,45 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
                           # 'pv_maintain': [0.9, 0.005],  # curr. const.
                           'pv_inv': [0, 0.3],  # log mean, std
                           }
-    #  TODO: Ref values for SH per building (based on demand sh mc run)
+
+    #  Try to load space heating uncertainty run results for sampling
+    #  ##################################################################
+    if load_sh_mc_res:
+        if path_mc_res_folder is None:
+            msg = 'path_mc_res_folder cannot be None, when space heating mc' \
+                  ' results should be loaded!'
+            raise AssertionError(msg)
+
+        #  Try to load results
+        list_pkl_files = search_for_pkl_files_in_dir(dir=path_mc_res_folder)
+
+        if len(list_pkl_files) > 0:
+            print('Found mc sh run pkl. result files:')
+            for entry in list_pkl_files:
+                print(entry)
+        else:
+            msg = 'Could not find any .pkl result files in ' \
+                  + str(path_mc_res_folder)
+            raise AssertionError(msg)
+
+        dict_build_mc_res = {}
+        #  Add results to dict_build_mc_res
+        for key in dict_build_samples.keys():
+            for entry in list_pkl_files:
+                if entry.find(str(key)) != -1:  # If key is substring of entry
+
+                    path_load = os.path.join(path_mc_res_folder, entry)
+
+                    list_mc_res = pickle.load(open(path_load, mode='rb'))
+
+                    dict_build_mc_res[key] = list_mc_res
+
+        print(dict_build_mc_res[1001])
+
+        plt.plot(sorted(dict_build_mc_res[1001]))
+        plt.show()
+        plt.close()
+    #  ##################################################################
 
     #  Sampling for each building
     #  ####################################################################
@@ -360,6 +431,37 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
                 log_scale = dict_ref_val_build[parkey][1]
 
                 array_conv = lognorm(s=log_scale).ppf(design[:, design_count])
+
+                dict_build_samples[key][parkey] = array_conv
+
+            elif parkey in ['sh_dem']:
+                #  Space heating (gaussian distribution)
+                if load_sh_mc_res:
+                    #  Use loaded results
+
+                    #  Sample from dict_build_mc_res
+                    list_sh_res = dict_build_mc_res[key]
+
+                    #  Estimate params of gaussian distribution
+                    mean_val, std_val = stats.norm.fit(data=list_sh_res)
+
+                else:
+                    #  Get reference space heating demand
+                    sh_dem_ref = city.nodes[key]['entity']\
+                        .get_annual_space_heat_demand()
+                    assert sh_dem_ref > 0
+
+                    mean_val = sh_dem_ref * dict_ref_val_build[parkey][0]
+                    std_val = sh_dem_ref * dict_ref_val_build[parkey][1]
+
+                array_conv = stats.norm(loc=mean_val,
+                                        scale=std_val).ppf(
+                    design[:, design_count])
+
+                #  Eliminate negative values, if necessary
+                for j in range(len(array_conv)):
+                    if array_conv[j] < 0:
+                        array_conv[j] = 0
 
                 dict_build_samples[key][parkey] = array_conv
 
@@ -421,7 +523,8 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
                 # plt.close()
 
 
-def run_overall_lhc_sampling(city, nb_samples, load_sh_mc_res=False):
+def run_overall_lhc_sampling(city, nb_samples, load_sh_mc_res=False,
+                             path_mc_res_folder=None):
     """
     Generates empty sample dicts and performs latin hypercube sampling.
     Adds samples to dict_city_sample, dict_build_samples
@@ -437,6 +540,9 @@ def run_overall_lhc_sampling(city, nb_samples, load_sh_mc_res=False):
         results for each building and uses result to sample space heating
         values. If False, uses default distribution to sample space heating
         values (default: False)
+    path_mc_res_folder : str, optional
+        Path to folder, where sh mc run results are stored (default: None).
+        Only necessary if load_sh_mc_res is True
 
     Returns
     -------
@@ -464,7 +570,10 @@ def run_overall_lhc_sampling(city, nb_samples, load_sh_mc_res=False):
     #  dict_build_samples
     do_lhc_city_sampling(city=city, nb_samples=nb_samples, nb_par=nb_par,
                          dict_city_sample=dict_city_sample,
-                         dict_build_samples=dict_build_samples)
+                         dict_build_samples=dict_build_samples,
+                         load_sh_mc_res=load_sh_mc_res,
+                         path_mc_res_folder=path_mc_res_folder
+                         )
 
     return (dict_city_sample, dict_build_samples)
 
@@ -486,13 +595,16 @@ if __name__ == '__main__':
     path_this = os.path.dirname(os.path.abspath(__file__))
     path_mc = os.path.dirname(path_this)
     path_city = os.path.join(path_mc, 'input', city_name)
+
+    path_mc_res_folder = os.path.join(path_mc, 'input', 'sh_mc_run')
     #  ###################################################################
 
     city = pickle.load(open(path_city, mode='rb'))
 
     (dict_city_sample, dict_build_samples) = \
         run_overall_lhc_sampling(city=city, nb_samples=nb_samples,
-                                 load_sh_mc_res=load_sh_mc_res)
+                                 load_sh_mc_res=load_sh_mc_res,
+                                 path_mc_res_folder=path_mc_res_folder)
 
     plt.plot(sorted(dict_build_samples[1001]['chp_inv']))
     plt.title('Sorted samples for chp investment factor')
@@ -504,6 +616,13 @@ if __name__ == '__main__':
 
     plt.hist(dict_build_samples[1001]['chp_inv'])
     plt.xlabel('Change factor relative to default investment')
+    plt.ylabel('Number of values')
+    plt.tight_layout()
+    plt.show()
+    plt.close()
+
+    plt.hist(dict_build_samples[1001]['sh_dem'])
+    plt.xlabel('Space heating demand in kWh/a')
     plt.ylabel('Number of values')
     plt.tight_layout()
     plt.show()
