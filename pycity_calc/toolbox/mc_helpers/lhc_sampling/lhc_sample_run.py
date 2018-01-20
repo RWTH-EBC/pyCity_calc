@@ -7,12 +7,15 @@ from __future__ import division
 
 import os
 import pickle
+import math
 import numpy as np
 import warnings
 import pyDOE
 import matplotlib.pylab as plt
+import scipy.stats.distributions as distr
 from scipy import stats
 from scipy.stats import lognorm
+
 
 import pycity_calc.toolbox.mc_helpers.user.user_unc_sampling as useunc
 
@@ -381,13 +384,16 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
 
                     list_mc_res = pickle.load(open(path_load, mode='rb'))
 
-                    dict_build_mc_res[key] = list_mc_res
+                    #  Save first result list in list_mc_res --> sh demands
+                    dict_build_mc_res[key] = list_mc_res[0]
 
-        print(dict_build_mc_res[1001])
+        # plt.plot(sorted(dict_build_mc_res[1001]))
+        # plt.show()
+        # plt.close()
 
-        plt.plot(sorted(dict_build_mc_res[1001]))
-        plt.show()
-        plt.close()
+        # plt.hist(dict_build_mc_res[1001], bins='auto')
+        # plt.show()
+        # plt.close()
     #  ##################################################################
 
     #  Sampling for each building
@@ -436,32 +442,38 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
 
             elif parkey in ['sh_dem']:
                 #  Space heating (gaussian distribution)
+                #  Get reference space heating demand
+                sh_dem_ref = city.nodes[key]['entity'] \
+                    .get_annual_space_heat_demand()
+                assert sh_dem_ref > 0
+
                 if load_sh_mc_res:
                     #  Use loaded results
 
                     #  Sample from dict_build_mc_res
                     list_sh_res = dict_build_mc_res[key]
 
-                    #  Estimate params of gaussian distribution
-                    mean_val, std_val = stats.norm.fit(data=list_sh_res)
+                    # #  Estimate params of gaussian distribution
+                    # mean_val, std_val = stats.norm.fit(data=list_sh_res)
 
+                    shape, loc, scale = stats.lognorm.fit(data=list_sh_res,
+                                                          floc=0)
+
+                    array_conv = distr.lognorm(s=shape).ppf(design[:,
+                                                            design_count])
+                    array_conv *= sh_dem_ref
                 else:
-                    #  Get reference space heating demand
-                    sh_dem_ref = city.nodes[key]['entity']\
-                        .get_annual_space_heat_demand()
-                    assert sh_dem_ref > 0
-
                     mean_val = sh_dem_ref * dict_ref_val_build[parkey][0]
                     std_val = sh_dem_ref * dict_ref_val_build[parkey][1]
 
-                array_conv = stats.norm(loc=mean_val,
-                                        scale=std_val).ppf(
-                    design[:, design_count])
+                    array_conv = stats.norm(loc=mean_val,
+                                            scale=std_val).ppf(
+                        design[:, design_count])
 
-                #  Eliminate negative values, if necessary
-                for j in range(len(array_conv)):
-                    if array_conv[j] < 0:
-                        array_conv[j] = 0
+                    #  Eliminate negative values, if necessary
+                    for j in range(len(array_conv)):
+                        if array_conv[j] < 0:
+                            array_conv[j] = 0
 
                 dict_build_samples[key][parkey] = array_conv
 
@@ -586,7 +598,7 @@ if __name__ == '__main__':
 
     nb_samples = 100
 
-    load_sh_mc_res = False
+    load_sh_mc_res = True
     #  If load_sh_mc_res is True, tries to load monte-carlo space heating
     #  uncertainty run results for each building from given folder
     #  If load_sh_mc_res is False, uses default value to sample sh demand
