@@ -16,11 +16,9 @@ import scipy.stats.distributions as distr
 from scipy import stats
 from scipy.stats import lognorm
 
-
 import pycity_calc.toolbox.mc_helpers.user.user_unc_sampling as useunc
 
 
-#  TODO: Load sh res. values per building of sh mc uncertainty run
 #  TODO: Generate pool of el. load profiles per apartment
 #  TODO: Radiation uncertainty
 #  TODO: Use summer mode sampling to define buildngs with summer heating mode
@@ -362,7 +360,7 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
                   ' results should be loaded!'
             raise AssertionError(msg)
 
-        #  Try to load results
+        # Try to load results
         list_pkl_files = search_for_pkl_files_in_dir(dir=path_mc_res_folder)
 
         if len(list_pkl_files) > 0:
@@ -387,14 +385,14 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
                     #  Save first result list in list_mc_res --> sh demands
                     dict_build_mc_res[key] = list_mc_res[0]
 
-        # plt.plot(sorted(dict_build_mc_res[1001]))
-        # plt.show()
-        # plt.close()
+                    # plt.plot(sorted(dict_build_mc_res[1001]))
+                    # plt.show()
+                    # plt.close()
 
-        # plt.hist(dict_build_mc_res[1001], bins='auto')
-        # plt.show()
-        # plt.close()
-    #  ##################################################################
+                    # plt.hist(dict_build_mc_res[1001], bins='auto')
+                    # plt.show()
+                    # plt.close()
+    # ##################################################################
 
     #  Sampling for each building
     #  ####################################################################
@@ -604,11 +602,17 @@ if __name__ == '__main__':
     #  If load_sh_mc_res is False, uses default value to sample sh demand
     #  uncertainty per building
 
+    save_dicts = True
+
     path_this = os.path.dirname(os.path.abspath(__file__))
     path_mc = os.path.dirname(path_this)
     path_city = os.path.join(path_mc, 'input', city_name)
 
     path_mc_res_folder = os.path.join(path_mc, 'input', 'sh_mc_run')
+
+    path_save_res = os.path.join(path_mc, 'output')
+    city_pkl_name = 'dict_city_samples.pkl'
+    building_pkl_name = 'dict_build_samples.pkl'
     #  ###################################################################
 
     city = pickle.load(open(path_city, mode='rb'))
@@ -617,6 +621,23 @@ if __name__ == '__main__':
         run_overall_lhc_sampling(city=city, nb_samples=nb_samples,
                                  load_sh_mc_res=load_sh_mc_res,
                                  path_mc_res_folder=path_mc_res_folder)
+
+    #  Save sample dicts
+    if save_dicts:
+        if not os.path.exists(path_save_res):
+            os.mkdir(path_save_res)
+        path_save_city_sample = os.path.join(path_save_res,
+                                             city_pkl_name)
+        path_save_build_sample = os.path.join(path_save_res,
+                                              building_pkl_name)
+
+        pickle.dump(dict_city_sample, open(path_save_city_sample, mode='wb'))
+        pickle.dump(dict_build_samples,
+                    open(path_save_build_sample, mode='wb'))
+
+        print('Saved dict_city_sample to ' + str(path_save_city_sample))
+        print('Saved dict_build_samples to ' + str(path_save_build_sample))
+    # ###################################################################
 
     plt.plot(sorted(dict_build_samples[1001]['chp_inv']))
     plt.title('Sorted samples for chp investment factor')
