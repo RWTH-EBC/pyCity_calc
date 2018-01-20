@@ -231,7 +231,34 @@ def sample_quality_grade_hp_aw(nb_samples, minv=0.29, maxv=0.39):
     return array_hp_aw_qual
 
 
-#  TODO: Sampling for t_sink
+def sample_hp_t_sink(nb_samples, minv=28, maxv=52):
+    """
+    Returns samples for sink temperature in degree Celsius for given heat pump
+
+    Parameters
+    ----------
+    nb_samples : int
+        Number of samples
+    minv : float
+        Minimum sink temperature in degree Celsius (default: 28)
+    maxv : float
+        Maximum sink temperature in degree Celsius (default: 52)
+
+    Returns
+    -------
+    array_hp_t_sink : np.array (of float)
+        Numpy array with sink temperatures in degree Celsius for given heat
+        pump
+    """
+
+    assert nb_samples > 0
+    assert minv >= 0
+    assert maxv >= 0
+
+    array_hp_t_sink = \
+        np.random.uniform(low=minv, high=maxv, size=nb_samples)
+
+    return array_hp_t_sink
 
 
 def sample_pv_eta(nb_samples, mean=0.12, std=0.02):

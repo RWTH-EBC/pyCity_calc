@@ -303,7 +303,7 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
                           'chp_inv': [0, 0.3],  # log mean, std
                           'qual_grade_ww': [0.38, 0.48],
                           'qual_grade_aw': [0.29, 0.39],
-                          #  TODO: t_sink
+                          't_sink': [0.29, 0.39],
                           # 'hp_lifetime': [0.9, 0.005],  # curr. const.
                           # 'hp_maintain': [0.9, 0.005],  # curr. const.
                           'hp_inv': [0, 0.2],  # log mean, std
@@ -330,7 +330,7 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
         #  Loop over parameters
         for parkey in dict_ref_val_build.keys():
             if parkey in ['self_discharge', 'qual_grade_ww', 'qual_grade_aw',
-                          'k_loss', 'beta', 'gamma']:
+                          'k_loss', 'beta', 'gamma', 't_sink']:
                 #  Equal distribution
                 #  Loop over single parameter values
                 for i in range(len(design[:, design_count])):
