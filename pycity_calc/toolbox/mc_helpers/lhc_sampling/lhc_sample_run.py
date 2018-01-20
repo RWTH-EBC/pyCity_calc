@@ -8,6 +8,7 @@ from __future__ import division
 import os
 import pickle
 import numpy as np
+import warnings
 import pyDOE
 import matplotlib.pylab as plt
 from scipy import stats
@@ -511,7 +512,8 @@ if __name__ == '__main__':
     #  Loop over keys in dict_city_sample and identify zero arrays
     for key in dict_city_sample.keys():
         if sum(dict_city_sample[key]) == 0:
-            print('dict_city_sample value ' + str(key) + ' holds zero array!')
+            msg = 'dict_city_sample value ' + str(key) + ' holds zero array!'
+            warnings.warn(msg)
 
     # Loop over keys in dict_build_samples and identify zero arrays
     for id in dict_build_samples.keys():
@@ -520,13 +522,15 @@ if __name__ == '__main__':
             if key not in ['app_nb_occ', 'app_el_dem_person',
                            'app_dhw_dem_person']:
                 if sum(sample_dict[key]) == 0:
-                    print('sample_dict in building '
-                          + str(id) + ' with value '
-                          + str(key) + ' holds zero array!')
+                    msg = str('sample_dict in building '
+                              + str(id) + ' with value '
+                              + str(key) + ' holds zero array!')
+                    warnings.warn(msg)
             else:
                 for i in range(len(city.nodes[id]['entity'].apartments)):
                     if sum(sample_dict[key][i, :]) == 0:
-                        print('sample_dict in building '
-                              + str(id) + ', apartment'
-                              + str(i) + ' with value '
-                              + str(key) + ' holds zero array!')
+                        msg = str('sample_dict in building '
+                                  + str(id) + ', apartment'
+                                  + str(i) + ' with value '
+                                  + str(key) + ' holds zero array!')
+                        warnings.warn(msg)
