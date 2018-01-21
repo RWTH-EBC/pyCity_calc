@@ -112,6 +112,7 @@ def gen_empty_res_dicts(city, nb_samples):
     #  Holding list holding arrays with building node ids with heating during
     # summer
     dict_city_sample['list_sum_on'] = np.zeros(nb_samples)
+    #  Todo: Add sampling of grid_av_fee
 
     #  Loop over buildings
     #  ##################################
