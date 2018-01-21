@@ -555,7 +555,8 @@ def gen_profile_pool(city, nb_samples, dict_build_samples):
     Returns
     -------
     dict_profiles : dict
-        Dict holding building ids as keys and numpy.arrays
+        Dict holding building ids as keys and numpy.arrays with different
+        el. load profiles per building
     """
     assert nb_samples > 0
 
