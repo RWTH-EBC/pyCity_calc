@@ -112,7 +112,7 @@ def gen_empty_res_dicts(city, nb_samples):
     #  Holding list holding arrays with building node ids with heating during
     # summer
     dict_city_sample['list_sum_on'] = np.zeros(nb_samples)
-    #  Todo: Add sampling of grid_av_fee
+    dict_city_sample['grid_av_fee'] = np.zeros(nb_samples)
 
     #  Loop over buildings
     #  ##################################
@@ -179,7 +179,7 @@ def gen_empty_res_dicts(city, nb_samples):
     return (dict_city_sample, dict_build_samples)
 
 
-def calc_nb_unc_par(city, nb_city_unc_par=14,
+def calc_nb_unc_par(city, nb_city_unc_par=15,
                     nb_build_unc_par=33, nb_app_unc_par=3):
     """
     Calculate total number of uncertain parameters required for LHC design
@@ -189,7 +189,7 @@ def calc_nb_unc_par(city, nb_city_unc_par=14,
     city : object
         City object of pyCity_calc
     nb_city_unc_par : int, optional
-        Number of uncertain parameters on city level (default: 14)
+        Number of uncertain parameters on city level (default: 15)
     nb_build_unc_par : int, optional
         Number of uncertain parameters on building level (default: 33)
     nb_app_unc_par : int, optional
@@ -271,6 +271,7 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
                          'temp_ground': [8, 12],
                          'list_sum_on': [0, 1],
                          'lhn_loss': [0.75, 1.25],
+                         'grid_av_fee': [0.0001, 0.015],
                          'lhn_inv': [0, 0.5]  # log mean, std
                          }
 
