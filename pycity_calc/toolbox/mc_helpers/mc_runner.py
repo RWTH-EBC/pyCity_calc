@@ -343,15 +343,18 @@ class McRunner(object):
 
                 if building.bes.heatpump.hp_type == 'aw':
 
-                    dict_hp['quality_grade'] = \
+                    dict_hp['quality_grade_aw'] = \
                         esyssample.sample_quality_grade_hp_aw(nb_samples=
                                                               nb_runs)
 
                 elif building.bes.heatpump.hp_type == 'ww':
 
-                    dict_hp['quality_grade'] = \
+                    dict_hp['quality_grade_ww'] = \
                         esyssample.sample_quality_grade_hp_bw(nb_samples=
                                                               nb_runs)
+
+                dict_hp['t_sink'] = esyssample.sample_hp_t_sink(nb_samples=
+                                                                nb_runs)
 
                 dict_hp['hp_lifetime'] = \
                     esyssample.sample_lifetime(nb_samples=nb_runs)
@@ -493,8 +496,6 @@ class McRunner(object):
         """
 
         dict_city_samples = {}
-
-        #  Todo: Add options for sampling ranges and values
 
         array_interest = citysample.sample_interest(nb_samples=nb_runs)
         array_ch_cap = citysample.sample_price_ch_cap(nb_samples=nb_runs)
@@ -884,9 +885,10 @@ class McRunner(object):
 
                             hp = curr_build.bes.heatpump
 
-                            hp.quality_grade = dict_hp['quality_grade'][i]
-
-                            #  TODO: Add t_sink
+                            hp.quality_grade_aw = dict_hp['quality_grade_aw'][i]
+                            hp.quality_grade_ww = dict_hp['quality_grade_ww'][
+                                i]
+                            hp.t_sink = dict_hp['t_sink'][i]
 
                             # dict_hp['hp_lifetime'] = \
                             #     esyssample.sample_lifetime(nb_samples=nb_runs)
