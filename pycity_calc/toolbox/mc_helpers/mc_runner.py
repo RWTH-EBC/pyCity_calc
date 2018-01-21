@@ -1317,8 +1317,8 @@ class McRunner(object):
 
         return (dict_mc_res, dict_mc_setup)
 
-    def run_mc_analysis(self, nb_runs, do_sampling=True,
-                        sampling_method='lhc',
+    def run_mc_analysis(self, nb_runs, sampling_method,
+                        do_sampling=True,
                         failure_tolerance=0.05,
                         prevent_printing=False,
                         heating_off=True,
@@ -1336,14 +1336,14 @@ class McRunner(object):
         ----------
         nb_runs : int
             Number of Monte-Carlo loops
-        do_sampling : bool, optional
-            Defines, if sampling should be performed or existing samples
-            should be used (default: True)
-        sampling_method : str, optional
-            Defines method used for sampling (default: 'lhc').
+        sampling_method : str
+            Defines method used for sampling.
             Options:
             - 'lhc': latin hypercube sampling
             - 'random': randomized sampling
+        do_sampling : bool, optional
+            Defines, if sampling should be performed or existing samples
+            should be used (default: True)
         failure_tolerance : float, optional
             Allowed EnergyBalanceException failure tolerance (default: 0.05).
             E.g. 0.05 means, that 5% of runs are allowed to fail with
