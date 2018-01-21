@@ -23,7 +23,6 @@ import pycity_base.classes.demand.DomesticHotWater as dhwdem
 import pycity_calc.toolbox.mc_helpers.user.user_unc_sampling as useunc
 
 
-#  TODO: Generate pool of el. load profiles per apartment
 #  TODO: Radiation uncertainty
 #  TODO: Use summer mode sampling to define buildngs with summer heating mode
 
@@ -110,8 +109,10 @@ def gen_empty_res_dicts(city, nb_samples):
     dict_city_sample['lhn_inv'] = np.zeros(nb_samples)
     # Uncertain summer mode on / off
     #  Holding list holding arrays with building node ids with heating during
-    # summer
-    dict_city_sample['list_sum_on'] = np.zeros(nb_samples)
+    #  summer (each sample holds array for each building, if heating is on or
+    #  off
+    dict_city_sample['list_sum_on'] = np.zeros((nb_samples,
+                                                len(list_build_ids)))
     dict_city_sample['grid_av_fee'] = np.zeros(nb_samples)
 
     #  Loop over buildings
@@ -248,6 +249,8 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
         Only necessary if load_sh_mc_res is True
     """
 
+    list_build_ids = city.get_list_build_entity_node_ids()
+
     design_count = 0
 
     #  Perform lhc design call
@@ -276,7 +279,7 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
                          }
 
     for key in dict_ref_val_city.keys():
-        if key != 'lhn_inv':
+        if key != 'lhn_inv' and key != 'list_sum_on':
             for i in range(len(design[:, design_count])):
                 val_lhc = design[i, design_count]
 
@@ -294,6 +297,38 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
             array_conv = lognorm(s=log_scale).ppf(design[:, design_count])
 
             dict_city_sample[key] = array_conv
+
+        elif key == 'list_sum_on':
+            for i in range(len(design[:, design_count])):
+                val_lhc = design[i, design_count]
+
+                min_val = dict_ref_val_city[key][0]
+                max_val = dict_ref_val_city[key][1]
+
+                val_conv = val_lhc * (max_val - min_val) + min_val
+
+                #  val_conv defines share of buildings, which should have
+                #  heating on during summer --> Select buildings with
+                #  heating on
+                array_heat_on = np.zeros(len(list_build_ids))
+
+                #  Define number of buildings, which should have heating on
+                #  during summer
+                nb_heat_on = int(val_conv * len(array_heat_on))
+
+                #  Possible indexes for choice of buildings
+                list_idx = list(range(0, len(list_build_ids)))
+
+                #  Randomly select number of buildings, until share is correct
+                array_sample_idx = np.random.choice(a=list_idx,
+                                                    size=nb_heat_on,
+                                                   replace=False)
+
+                for idx in array_sample_idx:
+                    #  Activate heating at chosen indexes
+                    array_heat_on[idx] = 1
+
+                dict_city_sample[key][i] = array_heat_on
 
         design_count += 1
 
