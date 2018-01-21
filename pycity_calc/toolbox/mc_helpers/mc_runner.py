@@ -1229,8 +1229,11 @@ class McRunner(object):
                 (total_annuity, co2) = c_eco_copy. \
                     perform_overall_energy_balance_and_economic_calc(
                     run_mc=True,
+                    sampling_method=sampling_method,
                     dict_samples_const=self._dict_samples_const,
                     dict_samples_esys=self._dict_samples_esys,
+                    dict_city_sample_lhc=self._dict_city_sample_lhc,
+                    dict_build_samples_lhc=self._dict_build_samples_lhc,
                     run_idx=i,
                     eeg_pv_limit=eeg_pv_limit)
 
@@ -1818,7 +1821,7 @@ if __name__ == '__main__':
     nb_runs = 2  # Number of MC runs
     do_sampling = True  # Perform initial sampling or use existing samples
 
-    sampling_method = 'random'
+    sampling_method = 'lhc'
     #  Options: 'lhc' (latin hypercube) or 'random'
 
     failure_tolerance = 0.05
