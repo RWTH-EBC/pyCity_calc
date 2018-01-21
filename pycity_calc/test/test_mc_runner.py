@@ -268,4 +268,5 @@ class TestMcRunner():
         mc_run.run_mc_analysis(nb_runs=2,
                                failure_tolerance=1,
                                do_sampling=True,
-                               prevent_printing=False)
+                               prevent_printing=False,
+                               sampling_method='random')
