@@ -32,6 +32,7 @@ import pycity_calc.simulation.energy_balance.building_eb_calc as buildeb
 import pycity_calc.toolbox.modifiers.mod_city_esys_size as modesys
 import pycity_calc.energysystems.thermalEnergyStorage as tessys
 import pycity_calc.visualization.city_visual as citvis
+import pycity_calc.toolbox.mc_helpers.lhc_sampling.lhc_sample_run as lhcrun
 
 
 # Disable printing
@@ -106,6 +107,11 @@ class McRunner(object):
         #  electric demand, dhw demand)
         self._dict_fe_ref_run = None
         #  Final energy demand results dictionary of reference run
+
+        #  Attributes to store sampling results of latin hypercube sampling
+        self._dict_city_sample_lhc = None
+        self._dict_build_samples_lhc = None
+        self._dict_profiles_lhc = None
 
         if get_build_ids:
             #  Extract building node ids
@@ -602,6 +608,68 @@ class McRunner(object):
 
         return (dict_samples_const, dict_samples_esys)
 
+    def perform_lhc_sampling(self, nb_runs, load_sh_mc_res=False,
+                             path_mc_res_folder=None,
+                             gen_user_prof_pool=False,
+                             save_res=True):
+        """
+        Perform latin hypercube sampling
+
+        Parameters
+        ----------
+        nb_runs : int
+            Number of runs
+        load_sh_mc_res : bool, optional
+            If True, tries to load space heating monte-carlo uncertainty run
+            results for each building and uses result to sample space heating
+            values. If False, uses default distribution to sample space heating
+            values (default: False)
+        path_mc_res_folder : str, optional
+            Path to folder, where sh mc run results are stored (default: None).
+            Only necessary if load_sh_mc_res is True
+        gen_user_prof_pool : bool, optional
+            Defines, if user/el. load/dhw profile pool should be generated
+            (default: False). If True, generates profile pool.
+        save_res : bool, optional
+            Save results back to mc_runner object (default: True)
+
+        Returns
+        -------
+        tup_res : tuple (of dicts)
+            Tuple holding 3 dicts
+            (dict_city_sample_lhc, dict_build_samples_lhc, dict_profiles_lhc)
+            dict_city_sample_lhc : dict
+                Dict holding city parameter names as keys and numpy arrays with
+                samples as dict values
+            dict_build_samples_lhc : dict
+                Dict. holding building ids as keys and dict of samples as
+                values.
+                These dicts hold paramter names as keys and numpy arrays with
+                samples as dict values
+            dict_profiles_lhc : dict
+                Dict. holding building ids as keys and dict with numpy arrays
+                with different el. and dhw profiles for each building as value
+                fict_profiles_build['el_profiles'] = el_profiles
+                dict_profiles_build['dhw_profiles'] = dhw_profiles
+                When gen_user_prof_pool is False, dict_profiles is None
+        """
+        (dict_city_sample_lhc, dict_build_samples_lhc, dict_profiles_lhc) \
+            = lhcrun. \
+            run_overall_lhc_sampling(
+            city=self._city_eco_calc.energy_balance.city,
+            nb_samples=nb_runs,
+            load_sh_mc_res=load_sh_mc_res,
+            path_mc_res_folder=path_mc_res_folder,
+            gen_user_prof_pool=gen_user_prof_pool)
+
+        if save_res:
+            self._dict_city_sample_lhc = dict_city_sample_lhc
+            self._dict_build_samples_lhc = dict_build_samples_lhc
+            self._dict_profiles_lhc = dict_profiles_lhc
+
+        return (dict_city_sample_lhc, dict_build_samples_lhc,
+                dict_profiles_lhc)
+
     def perform_mc_runs(self, nb_runs, failure_tolerance=0.05,
                         heating_off=True, eeg_pv_limit=False):
         """
@@ -1007,8 +1075,13 @@ class McRunner(object):
         return (dict_mc_res, dict_mc_setup)
 
     def run_mc_analysis(self, nb_runs, do_sampling=True,
+                        sampling_method='lhc',
                         failure_tolerance=0.05,
-                        prevent_printing=False, heating_off=True):
+                        prevent_printing=False,
+                        heating_off=True,
+                        load_sh_mc_res=False,
+                        path_mc_res_folder=None,
+                        gen_user_prof_pool=False):
         """
         Perform monte-carlo run with:
         - sampling
@@ -1023,6 +1096,11 @@ class McRunner(object):
         do_sampling : bool, optional
             Defines, if sampling should be performed or existing samples
             should be used (default: True)
+        sampling_method : str, optional
+            Defines method used for sampling (default: 'lhc').
+            Options:
+            - 'lhc': latin hypercube sampling
+            - 'random': randomized sampling
         failure_tolerance : float, optional
             Allowed EnergyBalanceException failure tolerance (default: 0.05).
             E.g. 0.05 means, that 5% of runs are allowed to fail with
@@ -1032,12 +1110,25 @@ class McRunner(object):
         heating_off : bool, optional
             Defines, if sampling to deactivate heating during summer should
             be used (default: True)
+        load_sh_mc_res : bool, optional
+            If True, tries to load space heating monte-carlo uncertainty run
+            results for each building and uses result to sample space heating
+            values. If False, uses default distribution to sample space heating
+            values (default: False)
+        path_mc_res_folder : str, optional
+            Path to folder, where sh mc run results are stored (default: None).
+            Only necessary if load_sh_mc_res is True
+        gen_user_prof_pool : bool, optional
+            Defines, if user/el. load/dhw profile pool should be generated
+            (default: False). If True, generates profile pool.
 
         Returns
         -------
         tuple_res : tuple (of dicts)
-            Tuple holding four dictionaries
-            (dict_samples_const, dict_samples_esys, dict_mc_res, dict_mc_setup)
+            Tuple holding five dictionaries
+            For sampling_method == 'random':
+            (dict_samples_const, dict_samples_esys, dict_mc_res, dict_mc_setup,
+            None)
             dict_samples_const : dict (of dicts)
                 Dictionary holding dictionaries with constant
                 sample data for MC run
@@ -1070,17 +1161,74 @@ class McRunner(object):
                 dict_mc_setup['failure_tolerance'] = failure_tolerance
                 dict_mc_setup['heating_off'] = heating_off
                 dict_mc_setup['idx_failed_runs'] = self._list_failed_runs
+
+            For sampling_method == 'lhc':
+            (dict_city_sample_lhc, dict_build_samples_lhc, dict_mc_res,
+                    dict_mc_setup, dict_profiles_lhc)
+            dict_city_sample_lhc : dict
+                Dict holding city parameter names as keys and numpy arrays with
+                samples as dict values
+            dict_build_samples_lhc : dict
+                Dict. holding building ids as keys and dict of samples as
+                values.
+                These dicts hold paramter names as keys and numpy arrays with
+                samples as dict values
+            dict_mc_res : dict
+                Dictionary with result arrays for each run
+                dict_mc_res['annuity'] = array_annuity
+                dict_mc_res['co2'] = array_co2
+                dict_mc_res['sh_dem'] = array_net_sh
+                dict_mc_res['el_dem'] = array_net_el
+                dict_mc_res['dhw_dem'] = array_net_dhw
+                dict_mc_res['gas_boiler'] = array_gas_boiler
+                dict_mc_res['gas_chp'] = array_gas_chp
+                dict_mc_res['grid_imp_dem'] = array_grid_imp_dem
+                dict_mc_res['grid_imp_hp'] = array_grid_imp_hp
+                dict_mc_res['grid_imp_eh'] = array_grid_imp_eh
+                dict_mc_res['lhn_pump'] = array_lhn_pump
+                dict_mc_res['grid_exp_chp'] = array_grid_exp_chp
+                dict_mc_res['grid_exp_pv'] = array_grid_exp_pv
+            dict_mc_setup : dict
+                Dictionary holding mc run settings
+                dict_mc_setup['nb_runs'] = nb_runs
+                dict_mc_setup['failure_tolerance'] = failure_tolerance
+                dict_mc_setup['heating_off'] = heating_off
+                dict_mc_setup['idx_failed_runs'] = self._list_failed_runs
+            dict_profiles_lhc : dict
+                Dict. holding building ids as keys and dict with numpy arrays
+                with different el. and dhw profiles for each building as value
+                fict_profiles_build['el_profiles'] = el_profiles
+                dict_profiles_build['dhw_profiles'] = dhw_profiles
+                When gen_user_prof_pool is False, dict_profiles is None
         """
+
+        if sampling_method not in ['lhc', 'random']:
+            msg = 'Sampling method ' + str(sampling_method) + ' is unknown!'
+            raise AssertionError(msg)
 
         if nb_runs <= 0:
             msg = 'nb_runs has to be larger than zero!'
             raise AssertionError(msg)
 
         if do_sampling:
-            #  Call sampling and save sample data to _dict_samples_const and
-            #  _dict_samples_esys
-            (dict_samples_const, dict_samples_esys) = \
-                self.perform_sampling(nb_runs=nb_runs)
+            if sampling_method == 'random':
+                #  Call sampling and save sample data to _dict_samples_const
+                #  and _dict_samples_esys
+                (dict_samples_const, dict_samples_esys) = \
+                    self.perform_sampling(nb_runs=nb_runs)
+            elif sampling_method == 'lhc':
+                #  Perform latin hypercube sampling
+                (dict_city_sample_lhc, dict_build_samples_lhc,
+                 dict_profiles_lhc) = self.perform_lhc_sampling(nb_runs,
+                                          load_sh_mc_res=load_sh_mc_res,
+                                          path_mc_res_folder=path_mc_res_folder,
+                                          gen_user_prof_pool=gen_user_prof_pool)
+        else:
+            dict_samples_const = None
+            dict_samples_esys = None
+            dict_city_sample_lhc = None
+            dict_build_samples_lhc = None
+            dict_profiles_lhc = None
 
         if prevent_printing:
             block_print()
@@ -1094,8 +1242,15 @@ class McRunner(object):
         if prevent_printing:
             enable_print()
 
-        return (dict_samples_const, dict_samples_esys, dict_mc_res,
-                dict_mc_setup)
+        if do_sampling and sampling_method == 'random':
+            return (dict_samples_const, dict_samples_esys, dict_mc_res,
+                    dict_mc_setup, None)
+        elif do_sampling and sampling_method == 'lhc':
+            return (dict_city_sample_lhc, dict_build_samples_lhc, dict_mc_res,
+                    dict_mc_setup, dict_profiles_lhc)
+        else:
+            return (None, None, dict_mc_res, dict_mc_setup, None)
+
 
     def perform_ref_run(self, save_res=True, eeg_pv_limit=False):
         """
