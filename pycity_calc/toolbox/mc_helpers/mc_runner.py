@@ -341,17 +341,13 @@ class McRunner(object):
 
                 dict_hp = {}
 
-                if building.bes.heatpump.hp_type == 'aw':
+                dict_hp['quality_grade_aw'] = \
+                    esyssample.sample_quality_grade_hp_aw(nb_samples=
+                                                          nb_runs)
 
-                    dict_hp['quality_grade_aw'] = \
-                        esyssample.sample_quality_grade_hp_aw(nb_samples=
-                                                              nb_runs)
-
-                elif building.bes.heatpump.hp_type == 'ww':
-
-                    dict_hp['quality_grade_ww'] = \
-                        esyssample.sample_quality_grade_hp_bw(nb_samples=
-                                                              nb_runs)
+                dict_hp['quality_grade_ww'] = \
+                    esyssample.sample_quality_grade_hp_bw(nb_samples=
+                                                          nb_runs)
 
                 dict_hp['t_sink'] = esyssample.sample_hp_t_sink(nb_samples=
                                                                 nb_runs)
@@ -943,8 +939,11 @@ class McRunner(object):
                     curr_build = city.nodes[n]['entity']
 
                     dict_build_lhc = self._dict_build_samples_lhc[n]
-                    el_prof_pool = self._dict_profiles_lhc[n]['el_profiles']
-                    dhw_prof_pool = self._dict_profiles_lhc[n]['dhw_profiles']
+                    if self._dict_profiles_lhc is not None:
+                        el_prof_pool = \
+                            self._dict_profiles_lhc[n]['el_profiles']
+                        dhw_prof_pool = \
+                            self._dict_profiles_lhc[n]['dhw_profiles']
 
                     #  Add function to rescale sh, el, dhw demands
                     #  #######################################################
@@ -955,13 +954,13 @@ class McRunner(object):
 
                     el_dem = 0
                     for a in range(len(dict_build_lhc['app_el_dem'])):
-                        el_dem += sum(dict_build_lhc['app_el_dem'][a][i])
+                        el_dem += dict_build_lhc['app_el_dem'][a][i]
                     #  TODO: Select and save new el. profile
                     elmod.rescale_el_dem_build(building=curr_build,
                                                el_dem=el_dem)
                     dhw_dem = 0
                     for a in range(len(dict_build_lhc['app_dhw_dem'])):
-                        dhw_dem += sum(dict_build_lhc['app_dhw_dem'][a][i])
+                        dhw_dem += dict_build_lhc['app_dhw_dem'][a][i]
                     #  TODO: Select and save new dhw profile
                     dhwmod.rescale_dhw_build(building=curr_build,
                                              dhw_dem=dhw_dem)
@@ -1198,7 +1197,6 @@ class McRunner(object):
                 # Save inputs to city, market and environment
                 city.environment.temp_ground = \
                     dict_city_lhc['temp_ground'][i]
-                #  TODO: grid_av_fee has to be added to lhc_sample_run.py
                 city.environment.prices.grid_av_fee = \
                     dict_city_lhc['grid_av_fee'][i]
 
@@ -1820,6 +1818,9 @@ if __name__ == '__main__':
     nb_runs = 2  # Number of MC runs
     do_sampling = True  # Perform initial sampling or use existing samples
 
+    sampling_method = 'random'
+    #  Options: 'lhc' (latin hypercube) or 'random'
+
     failure_tolerance = 0.05
     #  Allowed share of runs, which fail with EnergyBalanceException.
     #  If failure_tolerance is exceeded, mc runner exception is raised.
@@ -1843,6 +1844,8 @@ if __name__ == '__main__':
     setup_name = 'mc_run_setup_dict.pkl'
     path_setup = os.path.join(this_path, 'output', setup_name)
 
+    profiles_name = 'mc_run_profile_pool_dict.pkl'
+    path_profiles = os.path.join(this_path, 'output', profiles_name)
     #  #####################################################################
     #  Generate object instances
     #  #####################################################################
@@ -1869,11 +1872,13 @@ if __name__ == '__main__':
 
     #  Perform Monte-Carlo uncertainty analysis
     #  #####################################################################
-    (dict_samples_const, dict_samples_esys, dict_res, dict_mc_setup) = \
+    (dict_samples_const, dict_samples_esys, dict_res, dict_mc_setup,
+     dict_profiles_lhc) = \
         mc_run.run_mc_analysis(nb_runs=nb_runs,
                                failure_tolerance=failure_tolerance,
                                do_sampling=do_sampling,
-                               prevent_printing=prevent_printing)
+                               prevent_printing=prevent_printing,
+                               sampling_method=sampling_method)
 
     #  Perform reference run:
     #  #####################################################################
@@ -1903,6 +1908,11 @@ if __name__ == '__main__':
     pickle.dump(dict_mc_setup, open(path_setup, mode='wb'))
     print('Saved mc settings dict to: ', path_setup)
     print()
+
+    if dict_profiles_lhc is not None:
+        pickle.dump(dict_profiles_lhc, open(path_profiles, mode='wb'))
+        print('Saved profiles dict to: ', path_profiles)
+        print()
 
     print('Nb. failed runs: ', str(len(dict_mc_setup['idx_failed_runs'])))
     print()
