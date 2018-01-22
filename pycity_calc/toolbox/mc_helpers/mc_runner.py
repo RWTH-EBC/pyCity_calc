@@ -11,6 +11,7 @@ import copy
 import warnings
 import pickle
 import time
+import random as rd
 import numpy as np
 import traceback
 
@@ -668,7 +669,8 @@ class McRunner(object):
                 dict_profiles_lhc)
 
     def perform_mc_runs(self, nb_runs, sampling_method, failure_tolerance=0.05,
-                        heating_off=True, eeg_pv_limit=False):
+                        heating_off=True, eeg_pv_limit=False,
+                        random_profile=False):
         """
         Perform mc runs.
         - Extract sample values
@@ -697,6 +699,11 @@ class McRunner(object):
             active (default: False). If limitation is active, maximal 70 %
             of PV peak load are fed into the grid.
             However, self-consumption is used, first.
+        random_profile : bool, optional
+            Defines, if random samples should be kused from profile pool
+            (default: False). Only relevant, if profile pool has been given,
+            sampling_method == 'lhc' and nb. of profiles is equal to nb.
+            of samples
 
         Returns
         -------
@@ -961,8 +968,15 @@ class McRunner(object):
 
                     if self._dict_profiles_lhc is not None:
                         #  Add new el. profile from profile pool, if available
-                        for app in city.nodes[n]['entity'].apartments:
-                            app.power_el = el_prof_pool[i] / nb_app
+                        if random_profile or len(el_prof_pool) < nb_runs:
+                            idx = rd.randint(0, len(el_prof_pool))
+                            el_profile = el_prof_pool[idx]
+                            for app in city.nodes[n]['entity'].apartments:
+                                app.power_el.loadcurve = el_profile / nb_app
+                        else:
+                            for app in city.nodes[n]['entity'].apartments:
+                                app.power_el.loadcurve = el_prof_pool[i] / \
+                                                         nb_app
 
                     #  Rescale profile to el_dem sample
                     elmod.rescale_el_dem_build(building=curr_build,
@@ -973,9 +987,17 @@ class McRunner(object):
 
                     if self._dict_profiles_lhc is not None:
                         #  Add new dhw. profile from profile pool, if available
-                        for app in city.nodes[n]['entity'].apartments:
-                            app.demandDomesticHotWater = \
-                                dhw_prof_pool[i] / nb_app
+                        if random_profile or len(dhw_prof_pool) < nb_runs:
+                            #  Add new dhw. profile from profile pool, if
+                            #  available
+                            idx = rd.randint(0, len(dhw_prof_pool))
+                            dhw_profile = dhw_prof_pool[idx]
+                            for app in city.nodes[n]['entity'].apartments:
+                                app.power_el.loadcurve = dhw_profile / nb_app
+                        else:
+                            for app in city.nodes[n]['entity'].apartments:
+                                app.demandDomesticHotWater.loadcurve = \
+                                    dhw_prof_pool[i] / nb_app
 
                     #  Rescale demand to dhw_dem sample
                     dhwmod.rescale_dhw_build(building=curr_build,
@@ -1232,8 +1254,6 @@ class McRunner(object):
                 annuity_obj.price_ch_grid_use = \
                 dict_city_lhc['price_ch_grid_use'][i]
 
-                #  Todo: Add lhn_loss and lhn_inv
-
             #  Rerun initial parameter calculation of annuity_obj
             annuity_obj.initial_calc()
             #  Necessary to recalculate values, that depend on sampling data
@@ -1342,7 +1362,8 @@ class McRunner(object):
                         heating_off=True,
                         load_sh_mc_res=False,
                         path_mc_res_folder=None,
-                        gen_user_prof_pool=False):
+                        gen_user_prof_pool=False,
+                        random_profile=False):
         """
         Perform monte-carlo run with:
         - sampling
@@ -1382,6 +1403,11 @@ class McRunner(object):
         gen_user_prof_pool : bool, optional
             Defines, if user/el. load/dhw profile pool should be generated
             (default: False). If True, generates profile pool.
+        random_profile : bool, optional
+            Defines, if random samples should be kused from profile pool
+            (default: False). Only relevant, if profile pool has been given,
+            sampling_method == 'lhc' and nb. of profiles is equal to nb.
+            of samples
 
         Returns
         -------
@@ -1499,7 +1525,8 @@ class McRunner(object):
             self.perform_mc_runs(nb_runs=nb_runs,
                                  sampling_method=sampling_method,
                                  failure_tolerance=failure_tolerance,
-                                 heating_off=heating_off)
+                                 heating_off=heating_off,
+                                 random_profile=random_profile)
 
         if prevent_printing:
             enable_print()
@@ -1852,6 +1879,9 @@ if __name__ == '__main__':
     #  Generate el. and dhw profile pool to sample from (time consuming)
     gen_user_prof_pool = True
     #  Only relevant, if sampling_method == 'lhc'
+    random_profile = False
+    #  Defines, if random samples should be used from profiles. If False,
+    #  loops over given profiles (if enough profiles exist).
 
     #  Suppress print and warnings statements during MC-run
     prevent_printing = False
@@ -1911,7 +1941,8 @@ if __name__ == '__main__':
                                sampling_method=sampling_method,
                                load_sh_mc_res=load_sh_mc_res,
                                path_mc_res_folder=path_mc_res_folder,
-                               gen_user_prof_pool=gen_user_prof_pool)
+                               gen_user_prof_pool=gen_user_prof_pool,
+                               random_profile=random_profile)
 
     #  Perform reference run:
     #  #####################################################################
