@@ -798,26 +798,32 @@ if __name__ == '__main__':
 
     # ###################################################################
 
-    plt.plot(sorted(dict_build_samples[1001]['chp_inv']))
-    plt.title('Sorted samples for chp investment factor')
+    build_id = 1001
+
+    plt.plot(sorted(dict_build_samples[build_id]['chp_inv']))
+    plt.title('Sorted samples for chp investment factor of building '
+              + str(build_id))
     plt.xlabel('Number of values')
     plt.ylabel('Change factor relative to default investment')
     plt.tight_layout()
     plt.show()
     plt.close()
 
-    plt.hist(dict_build_samples[1001]['chp_inv'], bins='auto')
+    plt.hist(dict_build_samples[build_id]['chp_inv'], bins='auto')
+    plt.title('Histogram of uncertainty in CHP captial cost of building '
+              + str(build_id))
     plt.xlabel('Change factor relative to default investment')
     plt.ylabel('Number of values')
     plt.tight_layout()
     plt.show()
     plt.close()
 
-    sh_dem_ref = city.nodes[1001]['entity'].get_annual_space_heat_demand()
-    plt.hist(dict_build_samples[1001]['sh_dem'], bins=nb_samples,
+    sh_dem_ref = city.nodes[build_id]['entity'].get_annual_space_heat_demand()
+    plt.hist(dict_build_samples[build_id]['sh_dem'], bins=nb_samples,
              label='Log. sh. dist.')
     plt.axvline(sh_dem_ref, label='Ref. sh. dem.', c='red', linestyle='--')
-
+    plt.title('Histogram of space heating samples of building '
+              + str(build_id))
     plt.xlabel('Space heating demand in kWh/a')
     plt.ylabel('Number of values')
     plt.legend()
