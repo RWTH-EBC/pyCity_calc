@@ -24,7 +24,6 @@ import pycity_calc.toolbox.mc_helpers.user.user_unc_sampling as useunc
 
 
 #  TODO: Radiation uncertainty
-#  TODO: Use summer mode sampling to define buildngs with summer heating mode
 
 def search_for_pkl_files_in_dir(dir, fileending='.pkl'):
     """
@@ -752,7 +751,7 @@ if __name__ == '__main__':
 
     save_dicts = True
 
-    gen_user_prof_pool = True
+    gen_user_prof_pool = False
 
     path_this = os.path.dirname(os.path.abspath(__file__))
     path_mc = os.path.dirname(path_this)
@@ -807,25 +806,38 @@ if __name__ == '__main__':
     plt.show()
     plt.close()
 
-    plt.hist(dict_build_samples[1001]['chp_inv'])
+    plt.hist(dict_build_samples[1001]['chp_inv'], bins='auto')
     plt.xlabel('Change factor relative to default investment')
     plt.ylabel('Number of values')
     plt.tight_layout()
     plt.show()
     plt.close()
 
-    plt.hist(dict_build_samples[1001]['sh_dem'])
+    sh_dem_ref = city.nodes[1001]['entity'].get_annual_space_heat_demand()
+    plt.hist(dict_build_samples[1001]['sh_dem'], bins=nb_samples,
+             label='Log. sh. dist.')
+    plt.axvline(sh_dem_ref, label='Ref. sh. dem.', c='red', linestyle='--')
+
     plt.xlabel('Space heating demand in kWh/a')
     plt.ylabel('Number of values')
+    plt.legend()
     plt.tight_layout()
     plt.show()
     plt.close()
 
     #  Loop over keys in dict_city_sample and identify zero arrays
     for key in dict_city_sample.keys():
-        if sum(dict_city_sample[key]) == 0:
-            msg = 'dict_city_sample value ' + str(key) + ' holds zero array!'
-            warnings.warn(msg)
+        if key != 'list_sum_on':
+            if sum(dict_city_sample[key]) == 0:
+                msg = 'dict_city_sample value ' + str(key) + ' holds zero ' \
+                                                             'array!'
+                warnings.warn(msg)
+        elif key == 'list_sum_on':
+            if np.sum(dict_city_sample[key]) == 0:
+                msg = 'list_sum_on (matrix) only contains zeros! Should' \
+                      ' also hold multiple ones to represent buildings with' \
+                      ' heating during summer!'
+                warnings.warn(msg)
 
     # Loop over keys in dict_build_samples and identify zero arrays
     for id in dict_build_samples.keys():
