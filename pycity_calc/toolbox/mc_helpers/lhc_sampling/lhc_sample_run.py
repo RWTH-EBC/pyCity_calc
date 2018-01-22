@@ -494,6 +494,11 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
                     # #  Estimate params of gaussian distribution
                     # mean_val, std_val = stats.norm.fit(data=list_sh_res)
 
+                    # plt.hist(list_sh_res, bins=int(len(list_sh_res)/10))
+                    # plt.show()
+                    # plt.close()
+
+                    #  Estimate parameters for log. normal distribution
                     shape, loc, scale = stats.lognorm.fit(data=list_sh_res,
                                                           floc=0)
 
