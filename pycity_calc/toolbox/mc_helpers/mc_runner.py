@@ -609,6 +609,8 @@ class McRunner(object):
     def perform_lhc_sampling(self, nb_runs, load_sh_mc_res=False,
                              path_mc_res_folder=None,
                              gen_user_prof_pool=False,
+                             gen_use_prof_method=0,
+                             path_profile_dict=None,
                              save_res=True):
         """
         Perform latin hypercube sampling
@@ -630,6 +632,13 @@ class McRunner(object):
             (default: False). If True, generates profile pool.
         save_res : bool, optional
             Save results back to mc_runner object (default: True)
+        gen_use_prof_method : int, optional
+            Defines method for el. profile pool usage (default: 0).
+            Options:
+            - 0: Generate new el. profile pool
+            - 1: Load profile pool from path_profile_dict
+        path_profile_dict : str, optional
+            Path to dict with el. profile pool (default: None).
 
         Returns
         -------
@@ -651,6 +660,12 @@ class McRunner(object):
                 dict_profiles_build['dhw_profiles'] = dhw_profiles
                 When gen_user_prof_pool is False, dict_profiles is None
         """
+        if gen_user_prof_pool and gen_use_prof_method == 1:
+            if path_profile_dict is None:
+                msg = 'path_profile_dict cannot be None, if ' \
+                      'gen_use_prof_method==1 (load el. profile pool)!'
+                raise AssertionError(msg)
+
         (dict_city_sample_lhc, dict_build_samples_lhc, dict_profiles_lhc) \
             = lhcrun. \
             run_overall_lhc_sampling(
@@ -658,7 +673,9 @@ class McRunner(object):
             nb_samples=nb_runs,
             load_sh_mc_res=load_sh_mc_res,
             path_mc_res_folder=path_mc_res_folder,
-            gen_user_prof_pool=gen_user_prof_pool)
+            gen_user_prof_pool=gen_user_prof_pool,
+            gen_use_prof_method=gen_use_prof_method,
+            path_profile_dict=path_profile_dict)
 
         if save_res:
             self._dict_city_sample_lhc = dict_city_sample_lhc
@@ -1876,12 +1893,27 @@ if __name__ == '__main__':
     #  If load_sh_mc_res is False, uses default value to sample sh demand
     #  uncertainty per building
 
+    #  Path to FOLDER with mc sh results (searches for corresponding building
+    #  ids)
+    path_mc_res_folder = os.path.join(this_path, 'input', 'sh_mc_run')
+
     #  Generate el. and dhw profile pool to sample from (time consuming)
     gen_user_prof_pool = True
     #  Only relevant, if sampling_method == 'lhc'
     random_profile = False
     #  Defines, if random samples should be used from profiles. If False,
     #  loops over given profiles (if enough profiles exist).
+
+    gen_use_prof_method = 0
+    #  Options:
+    #  0: Generate new profiles during runtime
+    #  1: Load pre-generated profile sample dictionary
+
+    el_profile_dict = 'dict_profile_samples.pkl'
+    path_profile_dict = os.path.join(this_path,
+                                     'input'
+                                     'mc_el_profile_pool',
+                                     el_profile_dict)
 
     #  Suppress print and warnings statements during MC-run
     prevent_printing = False
@@ -1904,8 +1936,6 @@ if __name__ == '__main__':
 
     profiles_name = 'mc_run_profile_pool_dict.pkl'
     path_profiles = os.path.join(this_path, 'output', profiles_name)
-
-    path_mc_res_folder = os.path.join(this_path, 'input', 'sh_mc_run')
     #  #####################################################################
     #  Generate object instances
     #  #####################################################################
