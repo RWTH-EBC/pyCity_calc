@@ -110,8 +110,7 @@ def gen_empty_res_dicts(city, nb_samples):
     #  Holding list holding arrays with building node ids with heating during
     #  summer (each sample holds array for each building, if heating is on or
     #  off
-    dict_city_sample['list_sum_on'] = np.zeros((nb_samples,
-                                                len(list_build_ids)))
+    dict_city_sample['list_sum_on'] = []
     dict_city_sample['grid_av_fee'] = np.zeros(nb_samples)
 
     #  Loop over buildings
@@ -305,29 +304,20 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
                 max_val = dict_ref_val_city[key][1]
 
                 val_conv = val_lhc * (max_val - min_val) + min_val
-
                 #  val_conv defines share of buildings, which should have
                 #  heating on during summer --> Select buildings with
                 #  heating on
-                array_heat_on = np.zeros(len(list_build_ids))
 
                 #  Define number of buildings, which should have heating on
                 #  during summer
-                nb_heat_on = int(val_conv * len(array_heat_on))
-
-                #  Possible indexes for choice of buildings
-                list_idx = list(range(0, len(list_build_ids)))
+                nb_heat_on = int(val_conv * len(list_build_ids))
 
                 #  Randomly select number of buildings, until share is correct
-                array_sample_idx = np.random.choice(a=list_idx,
-                                                    size=nb_heat_on,
-                                                   replace=False)
+                array_heat_on = np.random.choice(a=list_build_ids,
+                                                 size=nb_heat_on,
+                                                 replace=False)
 
-                for idx in array_sample_idx:
-                    #  Activate heating at chosen indexes
-                    array_heat_on[idx] = 1
-
-                dict_city_sample[key][i] = array_heat_on
+                dict_city_sample[key].append(array_heat_on)
 
         design_count += 1
 
@@ -842,12 +832,6 @@ if __name__ == '__main__':
             if sum(dict_city_sample[key]) == 0:
                 msg = 'dict_city_sample value ' + str(key) + ' holds zero ' \
                                                              'array!'
-                warnings.warn(msg)
-        elif key == 'list_sum_on':
-            if np.sum(dict_city_sample[key]) == 0:
-                msg = 'list_sum_on (matrix) only contains zeros! Should' \
-                      ' also hold multiple ones to represent buildings with' \
-                      ' heating during summer!'
                 warnings.warn(msg)
 
     # Loop over keys in dict_build_samples and identify zero arrays
