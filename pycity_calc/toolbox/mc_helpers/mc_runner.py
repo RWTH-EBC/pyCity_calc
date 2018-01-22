@@ -954,14 +954,30 @@ class McRunner(object):
 
                     el_dem = 0
                     for a in range(len(dict_build_lhc['app_el_dem'])):
+                        #  Sum up el. demand
                         el_dem += dict_build_lhc['app_el_dem'][a][i]
-                    #  TODO: Select and save new el. profile
+
+                    nb_app = len(city.nodes[n]['entity'].apartments)
+
+                    if self._dict_profiles_lhc is not None:
+                        #  Add new el. profile from profile pool, if available
+                        for app in city.nodes[n]['entity'].apartments:
+                            app.power_el = el_prof_pool[i] / nb_app
+
+                    #  Rescale profile to el_dem sample
                     elmod.rescale_el_dem_build(building=curr_build,
                                                el_dem=el_dem)
                     dhw_dem = 0
                     for a in range(len(dict_build_lhc['app_dhw_dem'])):
                         dhw_dem += dict_build_lhc['app_dhw_dem'][a][i]
-                    #  TODO: Select and save new dhw profile
+
+                    if self._dict_profiles_lhc is not None:
+                        #  Add new dhw. profile from profile pool, if available
+                        for app in city.nodes[n]['entity'].apartments:
+                            app.demandDomesticHotWater = \
+                                dhw_prof_pool[i] / nb_app
+
+                    #  Rescale demand to dhw_dem sample
                     dhwmod.rescale_dhw_build(building=curr_build,
                                              dhw_dem=dhw_dem)
 
@@ -1827,6 +1843,16 @@ if __name__ == '__main__':
     #  Allowed share of runs, which fail with EnergyBalanceException.
     #  If failure_tolerance is exceeded, mc runner exception is raised.
 
+    load_sh_mc_res = False
+    #  If load_sh_mc_res is True, tries to load monte-carlo space heating
+    #  uncertainty run results for each building from given folder
+    #  If load_sh_mc_res is False, uses default value to sample sh demand
+    #  uncertainty per building
+
+    #  Generate el. and dhw profile pool to sample from (time consuming)
+    gen_user_prof_pool = True
+    #  Only relevant, if sampling_method == 'lhc'
+
     #  Suppress print and warnings statements during MC-run
     prevent_printing = False
 
@@ -1848,6 +1874,8 @@ if __name__ == '__main__':
 
     profiles_name = 'mc_run_profile_pool_dict.pkl'
     path_profiles = os.path.join(this_path, 'output', profiles_name)
+
+    path_mc_res_folder = os.path.join(this_path, 'input', 'sh_mc_run')
     #  #####################################################################
     #  Generate object instances
     #  #####################################################################
@@ -1880,7 +1908,10 @@ if __name__ == '__main__':
                                failure_tolerance=failure_tolerance,
                                do_sampling=do_sampling,
                                prevent_printing=prevent_printing,
-                               sampling_method=sampling_method)
+                               sampling_method=sampling_method,
+                               load_sh_mc_res=load_sh_mc_res,
+                               path_mc_res_folder=path_mc_res_folder,
+                               gen_user_prof_pool=gen_user_prof_pool)
 
     #  Perform reference run:
     #  #####################################################################

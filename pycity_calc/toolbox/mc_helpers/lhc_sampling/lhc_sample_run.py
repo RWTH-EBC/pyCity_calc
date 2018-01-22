@@ -568,7 +568,7 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
                 # plt.close()
 
 
-def gen_profile_pool(city, nb_samples, dict_build_samples):
+def gen_profile_pool(city, nb_samples, dict_build_samples, share_profiles=1):
     """
     Generate profile pool of user, el. load and dhw profiles for each building
 
@@ -582,6 +582,10 @@ def gen_profile_pool(city, nb_samples, dict_build_samples):
         Dict. holding building ids as keys and dict of samples as values.
         These dicts hold paramter names as keys and numpy arrays with
         samples as dict values
+    share_profiles : float, optional
+        Defines share on nb_samples to define nb. of profiles (default: 1).
+        E.g. 0.5 with 20 nb_samples means, that 10 el. profiles are generated
+        for profile pool
 
     Returns
     -------
@@ -599,7 +603,7 @@ def gen_profile_pool(city, nb_samples, dict_build_samples):
     profile_length = len(city.environment.weather.tAmbient)
 
     #  Estimate nb. of different profiles per building
-    nb_profiles = int(nb_samples / 10)
+    nb_profiles = int(nb_samples * share_profiles)
 
     #  Loop over buildings
     for key in dict_build_samples.keys():
