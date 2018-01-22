@@ -1175,7 +1175,6 @@ class McRunner(object):
                 # # summer
                 # dict_city_sample['list_sum_on']
 
-                #  TODO: Modify heating off to match lhc
                 if heating_off:
                     #  Use sampling to switch demand of some heating systems off
                     #  during summer period
