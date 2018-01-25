@@ -38,6 +38,6 @@ setup(name='pycity_calc',
       license='MIT License',
       packages=['pycity_calc'],
       setup_requires=['numpy', 'matplotlib', 'networkx', 'shapely',
-                      'xlrd', 'pytest', 'pypower', 'utm'],
+                      'xlrd', 'pytest', 'pypower', 'utm', 'pyDOE'],
       install_requires=['numpy', 'matplotlib', 'networkx', 'shapely',
-                      'xlrd', 'pytest', 'pypower', 'utm'])
+                      'xlrd', 'pytest', 'pypower', 'utm', 'pyDOE'])

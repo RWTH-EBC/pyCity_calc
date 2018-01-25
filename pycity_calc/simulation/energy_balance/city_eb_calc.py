@@ -223,7 +223,8 @@ class CityEBCalculator(object):
             get_list_lhn_build_without_th_esys(city=self.city)
 
     def calc_lhn_energy_balance(self, run_mc=False, dict_samples_const=None,
-                                run_idx=None):
+                                run_idx=None, sampling_method=None,
+                                dict_city_sample_lhc=None):
         """
         Calculate thermal energy balance for LHN connected buildings
 
@@ -242,6 +243,16 @@ class CityEBCalculator(object):
             (of building with id <building_id>)
         run_idx : int, optional
             Index / number of run for Monte-Carlo analysis (default: None)
+        sampling_method : str, optional
+            Defines method used for sampling (default: None). Only
+            relevant if mc_run is True.
+            Options:
+            - 'lhc': latin hypercube sampling
+            - 'random': randomized sampling
+        dict_city_sample_lhc : dict, optional
+            Dict holding city parameter names as keys and numpy arrays with
+            samples as dict values (default: None). Only
+            relevant if mc_run is True and sampling_method == 'lhc'
 
         Returns
         -------
@@ -249,7 +260,7 @@ class CityEBCalculator(object):
             List with pump energy in kWh/a for each LHN
         """
 
-        if run_mc:
+        if run_mc and sampling_method is 'random':
             if dict_samples_const is None:
                 msg = 'Sample dictionary dict_samples cannnot be None, if' \
                       ' you want to perform Monte-Carlo analysis.'
@@ -258,6 +269,20 @@ class CityEBCalculator(object):
                 msg = 'Index value run_idx cannnot be None, if' \
                       ' you want to perform Monte-Carlo analysis.'
                 raise AssertionError(msg)
+
+        if run_mc and sampling_method is 'lhc':
+            if dict_city_sample_lhc is None is None:
+                msg = 'Sample dicts. cannnot be None, if' \
+                      ' you want to perform Monte-Carlo analysis.'
+                raise AssertionError(msg)
+            if run_idx is None:
+                msg = 'Index value run_idx cannnot be None, if' \
+                      ' you want to perform Monte-Carlo analysis.'
+                raise AssertionError(msg)
+
+        if run_mc and sampling_method is None:
+            msg = 'sampling_method cannot be None, if run_mc is True!'
+            raise AssertionError(msg)
 
         if self.loss_buff < 1:
             msg = 'loss_buff factor should always be larger or equal to 1!'
@@ -269,9 +294,12 @@ class CityEBCalculator(object):
             msg = 'Pressure loss cannot be negative!'
             raise AssertionError(msg)
 
-        if run_mc:
+        if run_mc and sampling_method == 'random':
             #  Get sampling uncertainty value for u-value (Monte-Carlo run)
             u_val_unc = dict_samples_const['city']['lhn_loss'][run_idx]
+        elif run_mc and sampling_method == 'lhc':
+            #  Get sampling uncertainty value for u-value (Monte-Carlo run)
+            u_val_unc = dict_city_sample_lhc['lhn_loss'][run_idx]
         else:
             u_val_unc = 1
 
@@ -474,8 +502,12 @@ class CityEBCalculator(object):
 
         return list_pump_energy
 
-    def calc_city_energy_balance(self, run_mc=False, dict_samples_const=None,
-                                 run_idx=None, eeg_pv_limit=False):
+    def calc_city_energy_balance(self, run_mc=False,
+                                 dict_samples_const=None,
+                                 run_idx=None, eeg_pv_limit=False,
+                                 sampling_method=None,
+                                 dict_city_sample_lhc=None
+                                 ):
         """
         Calculate energy balance of whole city. Save results on city object
 
@@ -499,17 +531,41 @@ class CityEBCalculator(object):
             active (default: False). If limitation is active, maximal 70 %
             of PV peak load are fed into the grid.
             However, self-consumption is used, first.
+        sampling_method : str, optional
+            Defines method used for sampling (default: None). Only
+            relevant if mc_run is True.
+            Options:
+            - 'lhc': latin hypercube sampling
+            - 'random': randomized sampling
+        dict_city_sample_lhc : dict, optional
+            Dict holding city parameter names as keys and numpy arrays with
+            samples as dict values (default: None). Only
+            relevant if mc_run is True and sampling_method == 'lhc'
         """
 
-        if run_mc:
+        if run_mc and sampling_method is 'random':
             if dict_samples_const is None:
-                msg = 'Sample dictionary dict_samples cannnot be None, if' \
+                msg = 'Sample dicts. cannnot be None, if' \
                       ' you want to perform Monte-Carlo analysis.'
                 raise AssertionError(msg)
             if run_idx is None:
                 msg = 'Index value run_idx cannnot be None, if' \
                       ' you want to perform Monte-Carlo analysis.'
                 raise AssertionError(msg)
+
+        if run_mc and sampling_method is 'lhc':
+            if dict_city_sample_lhc is None is None:
+                msg = 'Sample dicts. cannnot be None, if' \
+                      ' you want to perform Monte-Carlo analysis.'
+                raise AssertionError(msg)
+            if run_idx is None:
+                msg = 'Index value run_idx cannnot be None, if' \
+                      ' you want to perform Monte-Carlo analysis.'
+                raise AssertionError(msg)
+
+        if run_mc and sampling_method is None:
+            msg = 'sampling_method cannot be None, if run_mc is True!'
+            raise AssertionError(msg)
 
         # Dummy list for processed buildings
         self.list_th_done = []
@@ -538,7 +594,9 @@ class CityEBCalculator(object):
 
         self.calc_lhn_energy_balance(run_mc=run_mc,
                                      dict_samples_const=dict_samples_const,
-                                     run_idx=run_idx)
+                                     run_idx=run_idx,
+                                     sampling_method=sampling_method,
+                                     dict_city_sample_lhc=dict_city_sample_lhc)
 
         #  Make flat lists with all buildings in LHN and DEG networks
         list_lhn_all_b = []
