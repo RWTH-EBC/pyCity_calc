@@ -25,7 +25,7 @@ def gen_nakagami_dist(nb_samples=100000):
 
     return nakagami.rvs(0.6, scale=0.4, size=nb_samples)
 
-def gen_log_norm_dist(nb_samples=100000, mean=0, sigma=0.4):
+def gen_log_norm_dist(nb_samples=100000, mean=0, sigma=0.2):
 
     return np.random.lognormal(mean=mean, sigma=sigma, size=nb_samples)
 
@@ -55,7 +55,7 @@ if __name__ == '__main__':
 
     #  Check if log-normal distribution is valid
 
-    list_log_samples = distr.lognorm(s=1).ppf(design[:, 1])
+    list_log_samples = distr.lognorm(s=0.2).ppf(design[:, 1])
 
     list_log = gen_log_norm_dist()
     print('min/max of lat. hypercube samples:')

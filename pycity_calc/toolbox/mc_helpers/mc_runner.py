@@ -32,6 +32,7 @@ import pycity_calc.simulation.energy_balance.building_eb_calc as buildeb
 import pycity_calc.toolbox.modifiers.mod_city_esys_size as modesys
 import pycity_calc.energysystems.thermalEnergyStorage as tessys
 import pycity_calc.visualization.city_visual as citvis
+import pycity_calc.toolbox.mc_helpers.lhc_sampling.lhc_sample_run as lhcrun
 
 
 # Disable printing
@@ -106,6 +107,11 @@ class McRunner(object):
         #  electric demand, dhw demand)
         self._dict_fe_ref_run = None
         #  Final energy demand results dictionary of reference run
+
+        #  Attributes to store sampling results of latin hypercube sampling
+        self._dict_city_sample_lhc = None
+        self._dict_build_samples_lhc = None
+        self._dict_profiles_lhc = None
 
         if get_build_ids:
             #  Extract building node ids
@@ -335,17 +341,16 @@ class McRunner(object):
 
                 dict_hp = {}
 
-                if building.bes.heatpump.hp_type == 'aw':
+                dict_hp['quality_grade_aw'] = \
+                    esyssample.sample_quality_grade_hp_aw(nb_samples=
+                                                          nb_runs)
 
-                    dict_hp['quality_grade'] = \
-                        esyssample.sample_quality_grade_hp_aw(nb_samples=
-                                                              nb_runs)
+                dict_hp['quality_grade_ww'] = \
+                    esyssample.sample_quality_grade_hp_bw(nb_samples=
+                                                          nb_runs)
 
-                elif building.bes.heatpump.hp_type == 'ww':
-
-                    dict_hp['quality_grade'] = \
-                        esyssample.sample_quality_grade_hp_bw(nb_samples=
-                                                              nb_runs)
+                dict_hp['t_sink'] = esyssample.sample_hp_t_sink(nb_samples=
+                                                                nb_runs)
 
                 dict_hp['hp_lifetime'] = \
                     esyssample.sample_lifetime(nb_samples=nb_runs)
@@ -388,10 +393,10 @@ class McRunner(object):
                 dict_pv['gamma'] = esyssample.sample_pv_gamma(nb_samples=
                                                               nb_runs)
 
-                dict_pv['hp_lifetime'] = \
+                dict_pv['pv_lifetime'] = \
                     esyssample.sample_lifetime(nb_samples=nb_runs)
 
-                dict_pv['hp_maintain'] = \
+                dict_pv['pv_maintain'] = \
                     esyssample.sample_maintain(nb_samples=nb_runs)
 
                 #  Sample investment uncertainty (normalized to investment
@@ -408,10 +413,10 @@ class McRunner(object):
                 dict_tes['k_loss'] = esyssample.sample_tes_k_loss(nb_samples=
                                                                   nb_runs)
 
-                dict_tes['hp_lifetime'] = \
+                dict_tes['tes_lifetime'] = \
                     esyssample.sample_lifetime(nb_samples=nb_runs)
 
-                dict_tes['hp_maintain'] = \
+                dict_tes['tes_maintain'] = \
                     esyssample.sample_maintain(nb_samples=nb_runs)
 
                 #  Sample investment uncertainty (normalized to investment
@@ -487,8 +492,6 @@ class McRunner(object):
         """
 
         dict_city_samples = {}
-
-        #  Todo: Add options for sampling ranges and values
 
         array_interest = citysample.sample_interest(nb_samples=nb_runs)
         array_ch_cap = citysample.sample_price_ch_cap(nb_samples=nb_runs)
@@ -602,7 +605,69 @@ class McRunner(object):
 
         return (dict_samples_const, dict_samples_esys)
 
-    def perform_mc_runs(self, nb_runs, failure_tolerance=0.05,
+    def perform_lhc_sampling(self, nb_runs, load_sh_mc_res=False,
+                             path_mc_res_folder=None,
+                             gen_user_prof_pool=False,
+                             save_res=True):
+        """
+        Perform latin hypercube sampling
+
+        Parameters
+        ----------
+        nb_runs : int
+            Number of runs
+        load_sh_mc_res : bool, optional
+            If True, tries to load space heating monte-carlo uncertainty run
+            results for each building and uses result to sample space heating
+            values. If False, uses default distribution to sample space heating
+            values (default: False)
+        path_mc_res_folder : str, optional
+            Path to folder, where sh mc run results are stored (default: None).
+            Only necessary if load_sh_mc_res is True
+        gen_user_prof_pool : bool, optional
+            Defines, if user/el. load/dhw profile pool should be generated
+            (default: False). If True, generates profile pool.
+        save_res : bool, optional
+            Save results back to mc_runner object (default: True)
+
+        Returns
+        -------
+        tup_res : tuple (of dicts)
+            Tuple holding 3 dicts
+            (dict_city_sample_lhc, dict_build_samples_lhc, dict_profiles_lhc)
+            dict_city_sample_lhc : dict
+                Dict holding city parameter names as keys and numpy arrays with
+                samples as dict values
+            dict_build_samples_lhc : dict
+                Dict. holding building ids as keys and dict of samples as
+                values.
+                These dicts hold paramter names as keys and numpy arrays with
+                samples as dict values
+            dict_profiles_lhc : dict
+                Dict. holding building ids as keys and dict with numpy arrays
+                with different el. and dhw profiles for each building as value
+                fict_profiles_build['el_profiles'] = el_profiles
+                dict_profiles_build['dhw_profiles'] = dhw_profiles
+                When gen_user_prof_pool is False, dict_profiles is None
+        """
+        (dict_city_sample_lhc, dict_build_samples_lhc, dict_profiles_lhc) \
+            = lhcrun. \
+            run_overall_lhc_sampling(
+            city=self._city_eco_calc.energy_balance.city,
+            nb_samples=nb_runs,
+            load_sh_mc_res=load_sh_mc_res,
+            path_mc_res_folder=path_mc_res_folder,
+            gen_user_prof_pool=gen_user_prof_pool)
+
+        if save_res:
+            self._dict_city_sample_lhc = dict_city_sample_lhc
+            self._dict_build_samples_lhc = dict_build_samples_lhc
+            self._dict_profiles_lhc = dict_profiles_lhc
+
+        return (dict_city_sample_lhc, dict_build_samples_lhc,
+                dict_profiles_lhc)
+
+    def perform_mc_runs(self, nb_runs, sampling_method, failure_tolerance=0.05,
                         heating_off=True, eeg_pv_limit=False):
         """
         Perform mc runs.
@@ -615,6 +680,11 @@ class McRunner(object):
         ----------
         nb_runs : int
             Number of runs
+        sampling_method : str
+            Defines method used for sampling.
+            Options:
+            - 'lhc': latin hypercube sampling
+            - 'random': randomized sampling
         failure_tolerance : float, optional
             Allowed EnergyBalanceException failure tolerance (default: 0.05).
             E.g. 0.05 means, that 5% of runs are allowed to fail with
@@ -654,6 +724,14 @@ class McRunner(object):
                 dict_mc_setup['heating_off'] = heating_off
                 dict_mc_setup['idx_failed_runs'] = self._list_failed_runs
         """
+
+        if sampling_method not in ['lhc', 'random']:
+            msg = 'Sampling method ' + str(sampling_method) + ' is unknown!'
+            raise AssertionError(msg)
+
+        if nb_runs <= 0:
+            msg = 'nb_runs has to be larger than zero!'
+            raise AssertionError(msg)
 
         #  Initialize result dict an arrays
         #  #################################################################
@@ -712,201 +790,434 @@ class McRunner(object):
 
             #  Add building sample input data
             #  ###############################################################
-            for n in self._list_build_ids:
-                curr_build = city.nodes[n]['entity']
+            if sampling_method == 'random':
+                for n in self._list_build_ids:
+                    curr_build = city.nodes[n]['entity']
 
-                dict_build_dem = self._dict_samples_const[str(n)]
-                dict_esys = self._dict_samples_esys[str(n)]
+                    dict_build_dem = self._dict_samples_const[str(n)]
+                    dict_esys = self._dict_samples_esys[str(n)]
 
-                #  Add function to rescale sh, el, dhw demands
-                #  ##########################################################
+                    #  Add function to rescale sh, el, dhw demands
+                    #  #######################################################
 
-                sh_dem = dict_build_dem['sh_dem'][i]
-                shmod.rescale_sh_dem_build(building=curr_build, sh_dem=sh_dem)
+                    sh_dem = dict_build_dem['sh_dem'][i]
+                    shmod.rescale_sh_dem_build(building=curr_build,
+                                               sh_dem=sh_dem)
 
-                el_dem = dict_build_dem['el_dem'][i]
-                elmod.rescale_el_dem_build(building=curr_build, el_dem=el_dem)
+                    el_dem = dict_build_dem['el_dem'][i]
+                    elmod.rescale_el_dem_build(building=curr_build,
+                                               el_dem=el_dem)
 
-                dhw_dem = dict_build_dem['dhw_dem'][i]
-                dhwmod.rescale_dhw_build(building=curr_build, dhw_dem=dhw_dem)
+                    dhw_dem = dict_build_dem['dhw_dem'][i]
+                    dhwmod.rescale_dhw_build(building=curr_build,
+                                             dhw_dem=dhw_dem)
 
-                #  Add energy system data
-                #  ##########################################################
+                    #  Add energy system data
+                    #  #######################################################
 
-                if curr_build.hasBes:
+                    if curr_build.hasBes:
 
-                    #  Check which devices do exist on bes
-                    if curr_build.bes.hasBattery:
-                        dict_bat = dict_esys['bat']
+                        #  Check which devices do exist on bes
+                        if curr_build.bes.hasBattery:
+                            dict_bat = dict_esys['bat']
 
-                        bat = curr_build.bes.battery
+                            bat = curr_build.bes.battery
 
-                        #  Add new parameters to battery
-                        bat.selfDischarge = dict_bat['self_discharge'][i]
-                        bat.etaCharge = dict_bat['eta_charge'][i]
-                        bat.etaDischarge = dict_bat['eta_discharge'][i]
+                            #  Add new parameters to battery
+                            bat.selfDischarge = dict_bat['self_discharge'][i]
+                            bat.etaCharge = dict_bat['eta_charge'][i]
+                            bat.etaDischarge = dict_bat['eta_discharge'][i]
 
-                    # dict_bat['bat_lifetime'] = \
-                    #         esyssample.sample_lifetime(nb_samples=nb_runs)
-                    #
-                    #     dict_bat['bat_maintain'] = \
-                    #         esyssample.sample_maintain(nb_samples=nb_runs)
-                    # dict_bat['bat_inv'] = \
-                    #     esyssample.sample_invest_unc(nb_samples=nb_runs,
-                    #                                  ref_inv=1)
-
-                    if curr_build.bes.hasBoiler:
-                        dict_boi = dict_esys['boi']
-
-                        boi = curr_build.bes.boiler
-
-                        #  Add new boiler parameters
-                        boi.eta = dict_boi['eta_boi'][i]
-
-                        # dict_boi['boi_lifetime'] = \
-                        #     esyssample.sample_lifetime(nb_samples=nb_runs)
+                        # dict_bat['bat_lifetime'] = \
+                        #         esyssample.sample_lifetime(nb_samples=nb_runs)
                         #
-                        # dict_boi['boi_maintain'] = \
-                        #     esyssample.sample_maintain(nb_samples=nb_runs)
+                        #     dict_bat['bat_maintain'] = \
+                        #         esyssample.sample_maintain(nb_samples=nb_runs)
 
-                    if curr_build.bes.hasChp:
-                        dict_chp = dict_esys['chp']
+                        if curr_build.bes.hasBoiler:
+                            dict_boi = dict_esys['boi']
 
-                        chp = curr_build.bes.chp
+                            boi = curr_build.bes.boiler
 
-                        #  Get omega sample
-                        omega = dict_chp['omega_chp'][i]
-                        #  Get current nominal thermal power
-                        curr_th_eta = chp.qNominal
+                            #  Add new boiler parameters
+                            boi.eta = dict_boi['eta_boi'][i]
 
-                        #  Recalculate corresponding thermal and electrical
-                        #  nominal power values with new omega
-                        (th_power, el_power) = \
-                            chp.run_precalculation(q_nominal=curr_th_eta,
-                                                   p_nominal=None,
-                                                   eta_total=omega,
-                                                   thermal_operation_mode=True)
+                            # dict_boi['boi_lifetime'] = \
+                            #     esyssample.sample_lifetime(nb_samples=nb_runs)
+                            #
+                            # dict_boi['boi_maintain'] = \
+                            #     esyssample.sample_maintain(nb_samples=nb_runs)
 
-                        #  Overwrite existing values
-                        chp.qNominal = th_power
-                        chp.pNominal = el_power
+                        if curr_build.bes.hasChp:
+                            dict_chp = dict_esys['chp']
 
-                        # dict_chp['chp_lifetime'] = \
-                        #     esyssample.sample_lifetime(nb_samples=nb_runs)
+                            chp = curr_build.bes.chp
+
+                            #  Get omega sample
+                            omega = dict_chp['omega_chp'][i]
+                            #  Get current nominal thermal power
+                            curr_th_eta = chp.qNominal
+
+                            #  Recalculate corresponding thermal and electrical
+                            #  nominal power values with new omega
+                            (th_power, el_power) = \
+                                chp.run_precalculation(q_nominal=curr_th_eta,
+                                                       p_nominal=None,
+                                                       eta_total=omega,
+                                                       thermal_operation_mode=True)
+
+                            #  Overwrite existing values
+                            chp.qNominal = th_power
+                            chp.pNominal = el_power
+
+                            # dict_chp['chp_lifetime'] = \
+                            #     esyssample.sample_lifetime(nb_samples=nb_runs)
+                            #
+                            # dict_chp['chp_maintain'] = \
+                            #     esyssample.sample_maintain(nb_samples=nb_runs)
+
+                        if curr_build.bes.hasHeatpump:
+                            dict_hp = dict_esys['hp']
+
+                            hp = curr_build.bes.heatpump
+
+                            hp.quality_grade_aw = dict_hp['quality_grade_aw'][i]
+                            hp.quality_grade_ww = dict_hp['quality_grade_ww'][
+                                i]
+                            hp.t_sink = dict_hp['t_sink'][i]
+
+                            # dict_hp['hp_lifetime'] = \
+                            #     esyssample.sample_lifetime(nb_samples=nb_runs)
+                            #
+                            # dict_hp['hp_maintain'] = \
+                            #     esyssample.sample_maintain(nb_samples=nb_runs)
+
+                        if curr_build.bes.hasElectricalHeater:
+                            dict_eh = dict_esys['eh']
+
+                            eh = curr_build.bes.electricalHeater
+
+                            # dict_eh['eh_lifetime'] = \
+                            #     esyssample.sample_lifetime(nb_samples=nb_runs)
+                            #
+                            # dict_eh['eh_maintain'] = \
+                            #     esyssample.sample_maintain(nb_samples=nb_runs)
+
+                        if curr_build.bes.hasPv:
+                            dict_pv = dict_esys['PV']
+
+                            pv = curr_build.bes.pv
+
+                            pv.eta = dict_pv['eta_pv'][i]
+
+                            pv.beta = dict_pv['beta'][i]
+
+                            pv.gamma = dict_pv['gamma'][i]
+
+                            # dict_pv['hp_lifetime'] = \
+                            #     esyssample.sample_lifetime(nb_samples=nb_runs)
+                            #
+                            # dict_pv['hp_maintain'] = \
+                            #     esyssample.sample_maintain(nb_samples=nb_runs)
+
+                        if curr_build.bes.hasTes:
+                            dict_tes = dict_esys['tes']
+
+                            tes = curr_build.bes.tes
+
+                            tes.k_loss = dict_tes['k_loss'][i]
+
+                            # dict_tes['hp_lifetime'] = \
+                            #     esyssample.sample_lifetime(nb_samples=nb_runs)
+                            #
+                            # dict_tes['hp_maintain'] = \
+                            #     esyssample.sample_maintain(nb_samples=nb_runs)
+
+            elif sampling_method == 'lhc':
+                #  #########################################################
+                for n in self._list_build_ids:
+                    curr_build = city.nodes[n]['entity']
+
+                    dict_build_lhc = self._dict_build_samples_lhc[n]
+                    if self._dict_profiles_lhc is not None:
+                        el_prof_pool = \
+                            self._dict_profiles_lhc[n]['el_profiles']
+                        dhw_prof_pool = \
+                            self._dict_profiles_lhc[n]['dhw_profiles']
+
+                    #  Add function to rescale sh, el, dhw demands
+                    #  #######################################################
+
+                    sh_dem = dict_build_lhc['sh_dem'][i]
+                    shmod.rescale_sh_dem_build(building=curr_build,
+                                               sh_dem=sh_dem)
+
+                    el_dem = 0
+                    for a in range(len(dict_build_lhc['app_el_dem'])):
+                        el_dem += dict_build_lhc['app_el_dem'][a][i]
+                    #  TODO: Select and save new el. profile
+                    elmod.rescale_el_dem_build(building=curr_build,
+                                               el_dem=el_dem)
+                    dhw_dem = 0
+                    for a in range(len(dict_build_lhc['app_dhw_dem'])):
+                        dhw_dem += dict_build_lhc['app_dhw_dem'][a][i]
+                    #  TODO: Select and save new dhw profile
+                    dhwmod.rescale_dhw_build(building=curr_build,
+                                             dhw_dem=dhw_dem)
+
+                    #  Add energy system data
+                    #  #######################################################
+
+                    if curr_build.hasBes:
+
+                        #  Check which devices do exist on bes
+                        if curr_build.bes.hasBattery:
+
+                            bat = curr_build.bes.battery
+
+                            #  Add new parameters to battery
+                            bat.selfDischarge = \
+                                dict_build_lhc['self_discharge'][i]
+                            bat.etaCharge = \
+                                dict_build_lhc['eta_charge'][i]
+                            bat.etaDischarge = \
+                                dict_build_lhc['eta_discharge'][i]
+
+                        # dict_bat['bat_lifetime'] = \
+                        #         esyssample.sample_lifetime(nb_samples=nb_runs)
                         #
-                        # dict_chp['chp_maintain'] = \
-                        #     esyssample.sample_maintain(nb_samples=nb_runs)
+                        #     dict_bat['bat_maintain'] = \
+                        #         esyssample.sample_maintain(nb_samples=nb_runs)
 
-                    if curr_build.bes.hasHeatpump:
-                        dict_hp = dict_esys['hp']
+                        if curr_build.bes.hasBoiler:
 
-                        hp = curr_build.bes.heatpump
+                            boi = curr_build.bes.boiler
 
-                        hp.quality_grade = dict_hp['quality_grade'][i]
+                            #  Add new boiler parameters
+                            boi.eta = dict_build_lhc['eta_boi'][i]
 
-                        # dict_hp['hp_lifetime'] = \
-                        #     esyssample.sample_lifetime(nb_samples=nb_runs)
-                        #
-                        # dict_hp['hp_maintain'] = \
-                        #     esyssample.sample_maintain(nb_samples=nb_runs)
+                            # dict_boi['boi_lifetime'] = \
+                            #     esyssample.sample_lifetime(nb_samples=nb_runs)
+                            #
+                            # dict_boi['boi_maintain'] = \
+                            #     esyssample.sample_maintain(nb_samples=nb_runs)
 
-                    if curr_build.bes.hasElectricalHeater:
-                        dict_eh = dict_esys['eh']
+                        if curr_build.bes.hasChp:
 
-                        eh = curr_build.bes.electricalHeater
+                            chp = curr_build.bes.chp
 
-                        # dict_eh['eh_lifetime'] = \
-                        #     esyssample.sample_lifetime(nb_samples=nb_runs)
-                        #
-                        # dict_eh['eh_maintain'] = \
-                        #     esyssample.sample_maintain(nb_samples=nb_runs)
+                            #  Get omega sample
+                            omega = dict_build_lhc['omega_chp'][i]
+                            #  Get current nominal thermal power
+                            curr_th_eta = chp.qNominal
 
-                    if curr_build.bes.hasPv:
-                        dict_pv = dict_esys['PV']
+                            #  Recalculate corresponding thermal and electrical
+                            #  nominal power values with new omega
+                            (th_power, el_power) = \
+                                chp.run_precalculation(q_nominal=curr_th_eta,
+                                                       p_nominal=None,
+                                                       eta_total=omega,
+                                                       thermal_operation_mode=True)
 
-                        pv = curr_build.bes.pv
+                            #  Overwrite existing values
+                            chp.qNominal = th_power
+                            chp.pNominal = el_power
 
-                        pv.eta = dict_pv['eta_pv'][i]
+                            # dict_chp['chp_lifetime'] = \
+                            #     esyssample.sample_lifetime(nb_samples=nb_runs)
+                            #
+                            # dict_chp['chp_maintain'] = \
+                            #     esyssample.sample_maintain(nb_samples=nb_runs)
 
-                        pv.beta = dict_pv['beta'][i]
+                        if curr_build.bes.hasHeatpump:
 
-                        pv.gamma = dict_pv['gamma'][i]
+                            hp = curr_build.bes.heatpump
 
-                        # dict_pv['hp_lifetime'] = \
-                        #     esyssample.sample_lifetime(nb_samples=nb_runs)
-                        #
-                        # dict_pv['hp_maintain'] = \
-                        #     esyssample.sample_maintain(nb_samples=nb_runs)
+                            hp.quality_grade_aw = \
+                            dict_build_lhc['qual_grade_aw'][i]
+                            hp.quality_grade_ww = \
+                            dict_build_lhc['qual_grade_ww'][i]
+                            hp.t_sink = dict_build_lhc['t_sink'][i]
 
-                    if curr_build.bes.hasTes:
-                        dict_tes = dict_esys['tes']
+                            # dict_hp['hp_lifetime'] = \
+                            #     esyssample.sample_lifetime(nb_samples=nb_runs)
+                            #
+                            # dict_hp['hp_maintain'] = \
+                            #     esyssample.sample_maintain(nb_samples=nb_runs)
 
-                        tes = curr_build.bes.tes
+                        if curr_build.bes.hasElectricalHeater:
 
-                        tes.k_loss = dict_tes['k_loss'][i]
+                            eh = curr_build.bes.electricalHeater
 
-                        # dict_tes['hp_lifetime'] = \
-                        #     esyssample.sample_lifetime(nb_samples=nb_runs)
-                        #
-                        # dict_tes['hp_maintain'] = \
-                        #     esyssample.sample_maintain(nb_samples=nb_runs)
+                            # dict_eh['eh_lifetime'] = \
+                            #     esyssample.sample_lifetime(nb_samples=nb_runs)
+                            #
+                            # dict_eh['eh_maintain'] = \
+                            #     esyssample.sample_maintain(nb_samples=nb_runs)
 
-                        #  TODO: Add lifetime and maintenance factors to annuity
+                        if curr_build.bes.hasPv:
+
+                            pv = curr_build.bes.pv
+
+                            pv.eta = dict_build_lhc['eta_pv'][i]
+
+                            pv.beta = dict_build_lhc['beta'][i]
+
+                            pv.gamma = dict_build_lhc['gamma'][i]
+
+                            # dict_pv['hp_lifetime'] = \
+                            #     esyssample.sample_lifetime(nb_samples=nb_runs)
+                            #
+                            # dict_pv['hp_maintain'] = \
+                            #     esyssample.sample_maintain(nb_samples=nb_runs)
+
+                        if curr_build.bes.hasTes:
+
+                            tes = curr_build.bes.tes
+
+                            tes.k_loss = dict_build_lhc['k_loss'][i]
+
+                            # dict_tes['hp_lifetime'] = \
+                            #     esyssample.sample_lifetime(nb_samples=nb_runs)
+                            #
+                            # dict_tes['hp_maintain'] = \
+                            #     esyssample.sample_maintain(nb_samples=nb_runs)
 
             # Extract city sampling data
             #  #############################################################
-            dict_city_samples = self._dict_samples_const['city']
+            if sampling_method == 'random':
 
-            # dict_city_samples['interest'] = array_interest
-            # dict_city_samples['ch_cap'] = array_ch_cap
-            # dict_city_samples['ch_dem_gas'] = array_ch_dem_gas
-            # dict_city_samples['ch_dem_el'] = array_ch_dem_el
-            # dict_city_samples['ch_op'] = array_ch_op
-            # dict_city_samples['ch_eeg_chp'] = array_ch_eeg_chp
-            # dict_city_samples['ch_eeg_pv'] = array_ch_eeg_pv
-            # dict_city_samples['ch_eex'] = array_ch_eex
-            # dict_city_samples['ch_grid_use'] = array_ch_grid_use
-            # dict_city_samples['grid_av_fee'] = array_grid_av_fee
-            # dict_city_samples['temp_ground'] = array_temp_ground
-            # dict_city_samples['list_sum_on'] = list_s_heat_on_id_arrays
-            # dict_city_samples['lhn_inv'] = array_lhn_inv
-            # dict_city_samples['lhn_loss'] = array_lhn_loss
+                dict_city_samples = self._dict_samples_const['city']
 
-            if heating_off:
-                #  Use sampling to switch demand of some heating systems off
-                #  during summer period
+                # dict_city_samples['interest'] = array_interest
+                # dict_city_samples['ch_cap'] = array_ch_cap
+                # dict_city_samples['ch_dem_gas'] = array_ch_dem_gas
+                # dict_city_samples['ch_dem_el'] = array_ch_dem_el
+                # dict_city_samples['ch_op'] = array_ch_op
+                # dict_city_samples['ch_eeg_chp'] = array_ch_eeg_chp
+                # dict_city_samples['ch_eeg_pv'] = array_ch_eeg_pv
+                # dict_city_samples['ch_eex'] = array_ch_eex
+                # dict_city_samples['ch_grid_use'] = array_ch_grid_use
+                # dict_city_samples['grid_av_fee'] = array_grid_av_fee
+                # dict_city_samples['temp_ground'] = array_temp_ground
+                # dict_city_samples['list_sum_on'] = list_s_heat_on_id_arrays
+                # dict_city_samples['lhn_inv'] = array_lhn_inv
+                # dict_city_samples['lhn_loss'] = array_lhn_loss
 
-                #  Get array with building ids with summer heating mode on
-                array_heat_on = dict_city_samples['list_sum_on'][i]
+                if heating_off:
+                    #  Use sampling to switch demand of some heating systems off
+                    #  during summer period
 
-                #  Calculate list of building ids, where heating is off during
-                #  summer
-                list_heat_off = list(set(self._list_build_ids) -
-                                     set(array_heat_on))
+                    #  Get array with building ids with summer heating mode on
+                    array_heat_on = dict_city_samples['list_sum_on'][i]
 
-                for n in list_heat_off:
-                    curr_build = city.nodes[n]['entity']
+                    #  Calculate list of building ids, where heating is off during
+                    #  summer
+                    list_heat_off = list(set(self._list_build_ids) -
+                                         set(array_heat_on))
 
-                    #  Modify space heating (switch off during summer)
-                    shmod.sh_curve_summer_off_build(building=curr_build)
+                    for n in list_heat_off:
+                        curr_build = city.nodes[n]['entity']
 
-            # Save inputs to city, market and environment
-            city.environment.temp_ground = dict_city_samples['temp_ground'][i]
-            city.environment.prices.grid_av_fee = \
-                dict_city_samples['grid_av_fee'][i]
+                        #  Modify space heating (switch off during summer)
+                        shmod.sh_curve_summer_off_build(building=curr_build)
 
-            #  Save inputs to annuity_obj
-            annuity_obj.interest = dict_city_samples['interest'][i]
-            annuity_obj.price_ch_cap = dict_city_samples['ch_cap'][i]
-            annuity_obj.price_ch_dem_gas = dict_city_samples['ch_dem_gas'][i]
-            annuity_obj.price_ch_dem_el = dict_city_samples['ch_dem_el'][i]
-            # Reuse ch_dem_el for hp price change
-            annuity_obj.price_ch_dem_el_hp = dict_city_samples['ch_dem_el'][i]
-            annuity_obj.price_ch_op = dict_city_samples['ch_op'][i]
-            annuity_obj.price_ch_eeg_chp = dict_city_samples['ch_eeg_chp'][i]
-            annuity_obj.price_ch_eeg_pv = dict_city_samples['ch_eeg_pv'][i]
-            annuity_obj.price_ch_eex = dict_city_samples['ch_eex'][i]
-            annuity_obj.price_ch_grid_use = dict_city_samples['ch_grid_use'][i]
+                # Save inputs to city, market and environment
+                city.environment.temp_ground = dict_city_samples['temp_ground'][i]
+                city.environment.prices.grid_av_fee = \
+                    dict_city_samples['grid_av_fee'][i]
+
+                #  Save inputs to annuity_obj
+                annuity_obj.interest = dict_city_samples['interest'][i]
+                annuity_obj.price_ch_cap = dict_city_samples['ch_cap'][i]
+                annuity_obj.price_ch_dem_gas = dict_city_samples['ch_dem_gas'][i]
+                annuity_obj.price_ch_dem_el = dict_city_samples['ch_dem_el'][i]
+                # Reuse ch_dem_el for hp price change
+                annuity_obj.price_ch_dem_el_hp = dict_city_samples['ch_dem_el'][i]
+                annuity_obj.price_ch_op = dict_city_samples['ch_op'][i]
+                annuity_obj.price_ch_eeg_chp = dict_city_samples['ch_eeg_chp'][i]
+                annuity_obj.price_ch_eeg_pv = dict_city_samples['ch_eeg_pv'][i]
+                annuity_obj.price_ch_eex = dict_city_samples['ch_eex'][i]
+                annuity_obj.price_ch_grid_use = dict_city_samples['ch_grid_use'][i]
+
+            elif sampling_method == 'lhc':
+
+                dict_city_lhc = self._dict_city_sample_lhc
+
+                # #  City sample dict
+                # #  Uncertain interest
+                # dict_city_sample['interest']
+                # #  Uncertain price change capital
+                # dict_city_sample['price_ch_cap']
+                # #  Uncertain price change demand gas
+                # dict_city_sample['price_ch_dem_gas']
+                # #  Uncertain price change demand electricity
+                # dict_city_sample['price_ch_dem_el']
+                # #  Uncertain price change operation
+                # dict_city_sample['price_ch_op']
+                # #  Uncertain price change eeg payments for self-con. chp el.
+                # dict_city_sample['price_ch_eeg_chp']
+                # #  Uncertain price change eeg payments for self-con. PV el.
+                # dict_city_sample['price_ch_eeg_pv']
+                # #  Uncertain price change EEX baseload price
+                # dict_city_sample['price_ch_eex']
+                # #  Uncertain price change grid usage fee
+                # dict_city_sample['price_ch_grid_use']
+                # #  Uncertain ground temperature
+                # dict_city_sample['temp_ground']
+                # #  Uncertain LHN loss factor change
+                # dict_city_sample['lhn_loss']
+                # #  Uncertain LHN investment cost change
+                # dict_city_sample['lhn_inv']
+                # # Uncertain summer mode on / off
+                # #  Holding list holding arrays with building node ids with
+                #  heating during
+                # # summer
+                # dict_city_sample['list_sum_on']
+
+                #  TODO: Modify heating off to match lhc
+                if heating_off:
+                    #  Use sampling to switch demand of some heating systems off
+                    #  during summer period
+
+                    #  Get array with building ids with summer heating mode on
+                    array_heat_on = dict_city_lhc['list_sum_on'][i]
+
+                    #  Calculate list of building ids, where heating is off during
+                    #  summer
+                    list_heat_off = list(set(self._list_build_ids) -
+                                         set(array_heat_on))
+
+                    for n in list_heat_off:
+                        curr_build = city.nodes[n]['entity']
+
+                        #  Modify space heating (switch off during summer)
+                        shmod.sh_curve_summer_off_build(building=curr_build)
+
+                # Save inputs to city, market and environment
+                city.environment.temp_ground = \
+                    dict_city_lhc['temp_ground'][i]
+                city.environment.prices.grid_av_fee = \
+                    dict_city_lhc['grid_av_fee'][i]
+
+                #  Save inputs to annuity_obj
+                annuity_obj.interest = dict_city_lhc['interest'][i]
+                annuity_obj.price_ch_cap = dict_city_lhc['price_ch_cap'][i]
+                annuity_obj.price_ch_dem_gas = dict_city_lhc['price_ch_dem_gas'][
+                    i]
+                annuity_obj.price_ch_dem_el = dict_city_lhc['price_ch_dem_el'][i]
+                # Reuse ch_dem_el for hp price change
+                annuity_obj.price_ch_dem_el_hp = \
+                dict_city_lhc['price_ch_dem_el'][i]
+                annuity_obj.price_ch_op = dict_city_lhc['price_ch_op'][i]
+                annuity_obj.price_ch_eeg_chp = dict_city_lhc['price_ch_eeg_chp'][
+                    i]
+                annuity_obj.price_ch_eeg_pv = dict_city_lhc['price_ch_eeg_pv'][i]
+                annuity_obj.price_ch_eex = dict_city_lhc['price_ch_eex'][i]
+                annuity_obj.price_ch_grid_use = \
+                dict_city_lhc['price_ch_grid_use'][i]
+
+                #  Todo: Add lhn_loss and lhn_inv
 
             #  Rerun initial parameter calculation of annuity_obj
             annuity_obj.initial_calc()
@@ -918,8 +1229,11 @@ class McRunner(object):
                 (total_annuity, co2) = c_eco_copy. \
                     perform_overall_energy_balance_and_economic_calc(
                     run_mc=True,
+                    sampling_method=sampling_method,
                     dict_samples_const=self._dict_samples_const,
                     dict_samples_esys=self._dict_samples_esys,
+                    dict_city_sample_lhc=self._dict_city_sample_lhc,
+                    dict_build_samples_lhc=self._dict_build_samples_lhc,
                     run_idx=i,
                     eeg_pv_limit=eeg_pv_limit)
 
@@ -1006,9 +1320,14 @@ class McRunner(object):
 
         return (dict_mc_res, dict_mc_setup)
 
-    def run_mc_analysis(self, nb_runs, do_sampling=True,
+    def run_mc_analysis(self, nb_runs, sampling_method,
+                        do_sampling=True,
                         failure_tolerance=0.05,
-                        prevent_printing=False, heating_off=True):
+                        prevent_printing=False,
+                        heating_off=True,
+                        load_sh_mc_res=False,
+                        path_mc_res_folder=None,
+                        gen_user_prof_pool=False):
         """
         Perform monte-carlo run with:
         - sampling
@@ -1020,6 +1339,11 @@ class McRunner(object):
         ----------
         nb_runs : int
             Number of Monte-Carlo loops
+        sampling_method : str
+            Defines method used for sampling.
+            Options:
+            - 'lhc': latin hypercube sampling
+            - 'random': randomized sampling
         do_sampling : bool, optional
             Defines, if sampling should be performed or existing samples
             should be used (default: True)
@@ -1032,12 +1356,25 @@ class McRunner(object):
         heating_off : bool, optional
             Defines, if sampling to deactivate heating during summer should
             be used (default: True)
+        load_sh_mc_res : bool, optional
+            If True, tries to load space heating monte-carlo uncertainty run
+            results for each building and uses result to sample space heating
+            values. If False, uses default distribution to sample space heating
+            values (default: False)
+        path_mc_res_folder : str, optional
+            Path to folder, where sh mc run results are stored (default: None).
+            Only necessary if load_sh_mc_res is True
+        gen_user_prof_pool : bool, optional
+            Defines, if user/el. load/dhw profile pool should be generated
+            (default: False). If True, generates profile pool.
 
         Returns
         -------
         tuple_res : tuple (of dicts)
-            Tuple holding four dictionaries
-            (dict_samples_const, dict_samples_esys, dict_mc_res, dict_mc_setup)
+            Tuple holding five dictionaries
+            For sampling_method == 'random':
+            (dict_samples_const, dict_samples_esys, dict_mc_res, dict_mc_setup,
+            None)
             dict_samples_const : dict (of dicts)
                 Dictionary holding dictionaries with constant
                 sample data for MC run
@@ -1070,17 +1407,74 @@ class McRunner(object):
                 dict_mc_setup['failure_tolerance'] = failure_tolerance
                 dict_mc_setup['heating_off'] = heating_off
                 dict_mc_setup['idx_failed_runs'] = self._list_failed_runs
+
+            For sampling_method == 'lhc':
+            (dict_city_sample_lhc, dict_build_samples_lhc, dict_mc_res,
+                    dict_mc_setup, dict_profiles_lhc)
+            dict_city_sample_lhc : dict
+                Dict holding city parameter names as keys and numpy arrays with
+                samples as dict values
+            dict_build_samples_lhc : dict
+                Dict. holding building ids as keys and dict of samples as
+                values.
+                These dicts hold paramter names as keys and numpy arrays with
+                samples as dict values
+            dict_mc_res : dict
+                Dictionary with result arrays for each run
+                dict_mc_res['annuity'] = array_annuity
+                dict_mc_res['co2'] = array_co2
+                dict_mc_res['sh_dem'] = array_net_sh
+                dict_mc_res['el_dem'] = array_net_el
+                dict_mc_res['dhw_dem'] = array_net_dhw
+                dict_mc_res['gas_boiler'] = array_gas_boiler
+                dict_mc_res['gas_chp'] = array_gas_chp
+                dict_mc_res['grid_imp_dem'] = array_grid_imp_dem
+                dict_mc_res['grid_imp_hp'] = array_grid_imp_hp
+                dict_mc_res['grid_imp_eh'] = array_grid_imp_eh
+                dict_mc_res['lhn_pump'] = array_lhn_pump
+                dict_mc_res['grid_exp_chp'] = array_grid_exp_chp
+                dict_mc_res['grid_exp_pv'] = array_grid_exp_pv
+            dict_mc_setup : dict
+                Dictionary holding mc run settings
+                dict_mc_setup['nb_runs'] = nb_runs
+                dict_mc_setup['failure_tolerance'] = failure_tolerance
+                dict_mc_setup['heating_off'] = heating_off
+                dict_mc_setup['idx_failed_runs'] = self._list_failed_runs
+            dict_profiles_lhc : dict
+                Dict. holding building ids as keys and dict with numpy arrays
+                with different el. and dhw profiles for each building as value
+                fict_profiles_build['el_profiles'] = el_profiles
+                dict_profiles_build['dhw_profiles'] = dhw_profiles
+                When gen_user_prof_pool is False, dict_profiles is None
         """
+
+        if sampling_method not in ['lhc', 'random']:
+            msg = 'Sampling method ' + str(sampling_method) + ' is unknown!'
+            raise AssertionError(msg)
 
         if nb_runs <= 0:
             msg = 'nb_runs has to be larger than zero!'
             raise AssertionError(msg)
 
         if do_sampling:
-            #  Call sampling and save sample data to _dict_samples_const and
-            #  _dict_samples_esys
-            (dict_samples_const, dict_samples_esys) = \
-                self.perform_sampling(nb_runs=nb_runs)
+            if sampling_method == 'random':
+                #  Call sampling and save sample data to _dict_samples_const
+                #  and _dict_samples_esys
+                (dict_samples_const, dict_samples_esys) = \
+                    self.perform_sampling(nb_runs=nb_runs)
+            elif sampling_method == 'lhc':
+                #  Perform latin hypercube sampling
+                (dict_city_sample_lhc, dict_build_samples_lhc,
+                 dict_profiles_lhc) = self.perform_lhc_sampling(nb_runs,
+                                          load_sh_mc_res=load_sh_mc_res,
+                                          path_mc_res_folder=path_mc_res_folder,
+                                          gen_user_prof_pool=gen_user_prof_pool)
+        else:
+            dict_samples_const = None
+            dict_samples_esys = None
+            dict_city_sample_lhc = None
+            dict_build_samples_lhc = None
+            dict_profiles_lhc = None
 
         if prevent_printing:
             block_print()
@@ -1088,14 +1482,22 @@ class McRunner(object):
         # Perform monte-carlo runs
         (dict_mc_res, dict_mc_setup) = \
             self.perform_mc_runs(nb_runs=nb_runs,
+                                 sampling_method=sampling_method,
                                  failure_tolerance=failure_tolerance,
                                  heating_off=heating_off)
 
         if prevent_printing:
             enable_print()
 
-        return (dict_samples_const, dict_samples_esys, dict_mc_res,
-                dict_mc_setup)
+        if do_sampling and sampling_method == 'random':
+            return (dict_samples_const, dict_samples_esys, dict_mc_res,
+                    dict_mc_setup, None)
+        elif do_sampling and sampling_method == 'lhc':
+            return (dict_city_sample_lhc, dict_build_samples_lhc, dict_mc_res,
+                    dict_mc_setup, dict_profiles_lhc)
+        else:
+            return (None, None, dict_mc_res, dict_mc_setup, None)
+
 
     def perform_ref_run(self, save_res=True, eeg_pv_limit=False):
         """
@@ -1419,6 +1821,9 @@ if __name__ == '__main__':
     nb_runs = 2  # Number of MC runs
     do_sampling = True  # Perform initial sampling or use existing samples
 
+    sampling_method = 'lhc'
+    #  Options: 'lhc' (latin hypercube) or 'random'
+
     failure_tolerance = 0.05
     #  Allowed share of runs, which fail with EnergyBalanceException.
     #  If failure_tolerance is exceeded, mc runner exception is raised.
@@ -1442,6 +1847,8 @@ if __name__ == '__main__':
     setup_name = 'mc_run_setup_dict.pkl'
     path_setup = os.path.join(this_path, 'output', setup_name)
 
+    profiles_name = 'mc_run_profile_pool_dict.pkl'
+    path_profiles = os.path.join(this_path, 'output', profiles_name)
     #  #####################################################################
     #  Generate object instances
     #  #####################################################################
@@ -1468,11 +1875,13 @@ if __name__ == '__main__':
 
     #  Perform Monte-Carlo uncertainty analysis
     #  #####################################################################
-    (dict_samples_const, dict_samples_esys, dict_res, dict_mc_setup) = \
+    (dict_samples_const, dict_samples_esys, dict_res, dict_mc_setup,
+     dict_profiles_lhc) = \
         mc_run.run_mc_analysis(nb_runs=nb_runs,
                                failure_tolerance=failure_tolerance,
                                do_sampling=do_sampling,
-                               prevent_printing=prevent_printing)
+                               prevent_printing=prevent_printing,
+                               sampling_method=sampling_method)
 
     #  Perform reference run:
     #  #####################################################################
@@ -1502,6 +1911,11 @@ if __name__ == '__main__':
     pickle.dump(dict_mc_setup, open(path_setup, mode='wb'))
     print('Saved mc settings dict to: ', path_setup)
     print()
+
+    if dict_profiles_lhc is not None:
+        pickle.dump(dict_profiles_lhc, open(path_profiles, mode='wb'))
+        print('Saved profiles dict to: ', path_profiles)
+        print()
 
     print('Nb. failed runs: ', str(len(dict_mc_setup['idx_failed_runs'])))
     print()

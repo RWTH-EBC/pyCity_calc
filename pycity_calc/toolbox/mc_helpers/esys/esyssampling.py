@@ -172,7 +172,7 @@ def sample_chp_omega(nb_samples, mean=0.9, std=0.02):
     return array_chp_eff
 
 
-def sample_quality_grade_hp_bw(nb_samples, minv=0.45, maxv=0.55):
+def sample_quality_grade_hp_bw(nb_samples, minv=0.38, maxv=0.48):
     """
     Returns samples for brine/water (or water/water) heat pump quality
     grades.
@@ -182,9 +182,9 @@ def sample_quality_grade_hp_bw(nb_samples, minv=0.45, maxv=0.55):
     nb_samples : int
         Number of samples
     minv : float
-        Minimum value (default: 0.45)
+        Minimum value (default: 0.38)
     maxv : float
-        Maximum value (default: 0.55)
+        Maximum value (default: 0.48)
 
     Returns
     -------
@@ -202,7 +202,7 @@ def sample_quality_grade_hp_bw(nb_samples, minv=0.45, maxv=0.55):
     return array_hp_bw_qual
 
 
-def sample_quality_grade_hp_aw(nb_samples, minv=0.32, maxv=0.4):
+def sample_quality_grade_hp_aw(nb_samples, minv=0.29, maxv=0.39):
     """
     Returns samples for air/water heat pump quality grades
 
@@ -211,9 +211,9 @@ def sample_quality_grade_hp_aw(nb_samples, minv=0.32, maxv=0.4):
     nb_samples : int
         Number of samples
     minv : float
-        Minimum value (default: 0.32)
+        Minimum value (default: 0.29)
     maxv : float
-        Maximum value (default: 0.4)
+        Maximum value (default: 0.39)
 
     Returns
     -------
@@ -229,6 +229,36 @@ def sample_quality_grade_hp_aw(nb_samples, minv=0.32, maxv=0.4):
         np.random.uniform(low=minv, high=maxv, size=nb_samples)
 
     return array_hp_aw_qual
+
+
+def sample_hp_t_sink(nb_samples, minv=28, maxv=52):
+    """
+    Returns samples for sink temperature in degree Celsius for given heat pump
+
+    Parameters
+    ----------
+    nb_samples : int
+        Number of samples
+    minv : float
+        Minimum sink temperature in degree Celsius (default: 28)
+    maxv : float
+        Maximum sink temperature in degree Celsius (default: 52)
+
+    Returns
+    -------
+    array_hp_t_sink : np.array (of float)
+        Numpy array with sink temperatures in degree Celsius for given heat
+        pump
+    """
+
+    assert nb_samples > 0
+    assert minv >= 0
+    assert maxv >= 0
+
+    array_hp_t_sink = \
+        np.random.uniform(low=minv, high=maxv, size=nb_samples)
+
+    return array_hp_t_sink
 
 
 def sample_pv_eta(nb_samples, mean=0.12, std=0.02):
@@ -294,7 +324,7 @@ def sample_pv_beta(nb_samples, minv=0, maxv=60):
     return array_pv_beta
 
 
-def sample_pv_gamma(nb_samples, minv=0, maxv=60):
+def sample_pv_gamma(nb_samples, minv=-180, maxv=180):
     """
     Returns samples for gamma angle of PV system
 
@@ -412,7 +442,7 @@ def sample_maintain(nb_samples, minv=0.5, maxv=1.5):
     return array_maintain
 
 
-def sample_invest_unc(nb_samples, ref_inv, logmean=0, logstd=0.4):
+def sample_invest_unc(nb_samples, ref_inv, logmean=0, logstd=0.3):
     """
     Sample investment cost uncertainty, based on reference investment cost
     input. Assumes log-normal distribution
@@ -423,9 +453,9 @@ def sample_invest_unc(nb_samples, ref_inv, logmean=0, logstd=0.4):
         Number of samples
     ref_inv : float
         Reference investment cost in Euro
-    logmean : float
+    logmean : float, optional (default: 0)
         mean of log-normal distribution
-    logstd : float
+    logstd : float, optional (default: 0.3)
         Standard deviation of log-normal distribution
 
     Returns
@@ -485,6 +515,14 @@ if __name__ == '__main__':
 
     plt.hist(array_ch_eff)
     plt.xlabel('Battery charging efficiency')
+    plt.ylabel('Number of values')
+    plt.show()
+    plt.close()
+
+    array_inv = sample_invest_unc(nb_samples=nb_samples, ref_inv=10000)
+
+    plt.hist(array_inv)
+    plt.xlabel('Capital cost in Euro/a')
     plt.ylabel('Number of values')
     plt.show()
     plt.close()

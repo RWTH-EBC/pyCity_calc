@@ -60,7 +60,9 @@ class CityAnnuityCalc(object):
 
     def calc_cap_rel_annuity_city(self, run_mc=False, dict_samples_const=None,
                                   dict_samples_esys=None,
-                                  run_idx=None):
+                                  run_idx=None, sampling_method=None,
+                                  dict_city_sample_lhc=None,
+                                  dict_build_samples_lhc=None):
         """
         Calculate sum of all capital related annuities of city
 
@@ -84,6 +86,22 @@ class CityAnnuityCalc(object):
             (of building with id <building_id>)
         run_idx : int, optional
             Index / number of run for Monte-Carlo analysis (default: None)
+        sampling_method : str, optional
+            Defines method used for sampling (default: None). Only
+            relevant if mc_run is True.
+            Options:
+            - 'lhc': latin hypercube sampling
+            - 'random': randomized sampling
+        dict_city_sample_lhc : dict, optional
+            Dict holding city parameter names as keys and numpy arrays with
+            samples as dict values (default: None). Only
+            relevant if mc_run is True and sampling_method == 'lhc'
+        dict_build_samples_lhc : dict, optional
+            Dict. holding building ids as keys and dict of samples as
+            values (default: None).
+            These dicts hold paramter names as keys and numpy arrays with
+            samples as dict values.  Only
+            relevant if mc_run is True and sampling_method == 'lhc'
 
         Returns
         -------
@@ -97,15 +115,29 @@ class CityAnnuityCalc(object):
                 List holding tags of system type (str), such as 'B' for boiler
         """
 
-        if run_mc:
-            if dict_samples_const is None or dict_samples_esys is None:
-                msg = 'Sample dictionary dict_samples cannnot be None, if' \
+        if run_mc and sampling_method is 'random':
+            if dict_samples_const is None:
+                msg = 'Sample dicts. cannnot be None, if' \
                       ' you want to perform Monte-Carlo analysis.'
                 raise AssertionError(msg)
             if run_idx is None:
                 msg = 'Index value run_idx cannnot be None, if' \
                       ' you want to perform Monte-Carlo analysis.'
                 raise AssertionError(msg)
+
+        if run_mc and sampling_method is 'lhc':
+            if dict_city_sample_lhc is None or dict_build_samples_lhc is None:
+                msg = 'Sample dicts. cannnot be None, if' \
+                      ' you want to perform Monte-Carlo analysis.'
+                raise AssertionError(msg)
+            if run_idx is None:
+                msg = 'Index value run_idx cannnot be None, if' \
+                      ' you want to perform Monte-Carlo analysis.'
+                raise AssertionError(msg)
+
+        if run_mc and sampling_method is None:
+            msg = 'sampling_method cannot be None, if run_mc is True!'
+            raise AssertionError(msg)
 
         cap_rel_ann = 0  # Dummy value for capital-related annuity
         list_invest = []  # Dummy list to store investment cost
@@ -120,19 +152,23 @@ class CityAnnuityCalc(object):
                 #  BES pointer
                 bes = build.bes
 
-                if run_mc:
+                if run_mc and sampling_method == 'random':
                     #  Get pointer to energy system sample dict
                     dict_esys = dict_samples_esys[str(n)]
 
                 if bes.hasBattery:
                     cap_kWh = bes.battery.capacity / (3600 * 1000)
 
-                    if run_mc:
+                    if run_mc and sampling_method == 'random':
                         inv_unc = dict_esys['bat']['bat_inv'][run_idx]
+                    elif run_mc and sampling_method == 'lhc':
+                        #  Get pointer to energy system sample dict
+                        inv_unc = \
+                            dict_build_samples_lhc[n]['bat_inv'][run_idx]
                     else:
                         inv_unc = 1
 
-                    #  In kWh
+                    # In kWh
                     bat_invest = inv_unc * \
                                  bat_cost.calc_invest_cost_bat(cap=cap_kWh)
 
@@ -147,8 +183,12 @@ class CityAnnuityCalc(object):
                 if bes.hasBoiler:
                     q_nom = bes.boiler.qNominal / 1000  # in kW
 
-                    if run_mc:
+                    if run_mc and sampling_method == 'random':
                         inv_unc = dict_esys['boi']['boi_inv'][run_idx]
+                    elif run_mc and sampling_method == 'lhc':
+                        #  Get pointer to energy system sample dict
+                        inv_unc = \
+                            dict_build_samples_lhc[n]['boi_inv'][run_idx]
                     else:
                         inv_unc = 1
 
@@ -166,8 +206,12 @@ class CityAnnuityCalc(object):
                 if bes.hasChp:
                     p_el_nom = bes.chp.pNominal / 1000  # in kW
 
-                    if run_mc:
+                    if run_mc and sampling_method == 'random':
                         inv_unc = dict_esys['chp']['chp_inv'][run_idx]
+                    elif run_mc and sampling_method == 'lhc':
+                        #  Get pointer to energy system sample dict
+                        inv_unc = \
+                            dict_build_samples_lhc[n]['chp_inv'][run_idx]
                     else:
                         inv_unc = 1
 
@@ -185,8 +229,12 @@ class CityAnnuityCalc(object):
                     q_eh = \
                         bes.electricalHeater.qNominal / 1000  # in kW
 
-                    if run_mc:
+                    if run_mc and sampling_method == 'random':
                         inv_unc = dict_esys['eh']['eh_inv'][run_idx]
+                    elif run_mc and sampling_method == 'lhc':
+                        #  Get pointer to energy system sample dict
+                        inv_unc = \
+                            dict_build_samples_lhc[n]['eh_inv'][run_idx]
                     else:
                         inv_unc = 1
 
@@ -202,8 +250,12 @@ class CityAnnuityCalc(object):
                 if bes.hasHeatpump:
                     q_hp = bes.heatpump.qNominal / 1000  # in kW
 
-                    if run_mc:
+                    if run_mc and sampling_method == 'random':
                         inv_unc = dict_esys['hp']['hp_inv'][run_idx]
+                    elif run_mc and sampling_method == 'lhc':
+                        #  Get pointer to energy system sample dict
+                        inv_unc = \
+                            dict_build_samples_lhc[n]['hp_inv'][run_idx]
                     else:
                         inv_unc = 1
 
@@ -220,8 +272,12 @@ class CityAnnuityCalc(object):
                 if bes.hasPv:
                     pv_area = bes.pv.area
 
-                    if run_mc:
+                    if run_mc and sampling_method == 'random':
                         inv_unc = dict_esys['PV']['pv_inv'][run_idx]
+                    elif run_mc and sampling_method == 'lhc':
+                        #  Get pointer to energy system sample dict
+                        inv_unc = \
+                            dict_build_samples_lhc[n]['pv_inv'][run_idx]
                     else:
                         inv_unc = 1
 
@@ -238,13 +294,17 @@ class CityAnnuityCalc(object):
                 if bes.hasTes:
                     tes_vol = bes.tes.capacity / 1000  # in m3
 
-                    if run_mc:
+                    if run_mc and sampling_method == 'random':
                         inv_unc = dict_esys['tes']['tes_inv'][run_idx]
+                    elif run_mc and sampling_method == 'lhc':
+                        #  Get pointer to energy system sample dict
+                        inv_unc = \
+                            dict_build_samples_lhc[n]['tes_inv'][run_idx]
                     else:
                         inv_unc = 1
 
                     tes_invest = inv_unc * tes_cost.calc_invest_cost_tes(
-                            volume=tes_vol)
+                        volume=tes_vol)
 
                     cap_rel_ann += \
                         self.annuity_obj.calc_capital_rel_annuity_with_type(
@@ -269,12 +329,14 @@ class CityAnnuityCalc(object):
             invest_lhn_pipe = 0
             invest_lhn_trans = 0
 
-            if run_mc:
+            if run_mc and sampling_method == 'random':
                 inv_unc = dict_samples_const['city']['lhn_inv'][run_idx]
+            elif run_mc and sampling_method == 'lhc':
+                inv_unc = dict_city_sample_lhc['lhn_inv'][run_idx]
             else:
                 inv_unc = 1
 
-            #  Loop over each connected lhn network
+            # Loop over each connected lhn network
             for sublist in list_lhn_con:
 
                 list_th_pow = []
@@ -296,8 +358,9 @@ class CityAnnuityCalc(object):
                                     build = self.energy_balance.city.nodes[n][
                                         'entity']
                                     th_pow = \
-                                        dimfunc.get_max_power_of_building(build,
-                                                                          with_dhw=False)
+                                        dimfunc.get_max_power_of_building(
+                                            build,
+                                            with_dhw=False)
                                     list_th_pow.append(
                                         th_pow / 1000)  # Convert W to kW
 
@@ -305,7 +368,7 @@ class CityAnnuityCalc(object):
                         lhn_cost.calc_invest_cost_lhn_stations(
                             list_powers=list_th_pow)
 
-                #  Add to lists
+                # Add to lists
                 list_invest.append(invest_lhn_trans)
                 list_type.append('LHN_station')
 
@@ -318,7 +381,7 @@ class CityAnnuityCalc(object):
                                 if (self.energy_balance.city.edges[u, v][
                                         'network_type'] == 'heating' or
                                             self.energy_balance.city.edges[u,
-                                                v][
+                                                                           v][
                                                 'network_type'] == 'heating_and_deg'):
                                     #  Pointer to pipe (edge)
                                     pipe = self.energy_balance.city.edges[u, v]
@@ -389,7 +452,7 @@ class CityAnnuityCalc(object):
                         if self.energy_balance.city.has_edge(u, v):
                             if 'network_type' in \
                                     self.energy_balance.city.edges[u,
-                                        v]:
+                                                                   v]:
                                 if self.energy_balance.city.edges[u, v][
                                     'network_type'] == 'electricity':
                                     deg_len += \
@@ -424,7 +487,11 @@ class CityAnnuityCalc(object):
     def calc_cap_and_op_rel_annuity_city(self, run_mc=False,
                                          dict_samples_const=None,
                                          dict_samples_esys=None,
-                                         run_idx=None):
+                                         run_idx=None,
+                                         sampling_method=None,
+                                         dict_city_sample_lhc=None,
+                                         dict_build_samples_lhc=None
+                                         ):
         """
         Calculate capital- and operation-related annuities of city
     
@@ -448,6 +515,22 @@ class CityAnnuityCalc(object):
             (of building with id <building_id>)
         run_idx : int, optional
             Index / number of run for Monte-Carlo analysis (default: None)
+        sampling_method : str, optional
+            Defines method used for sampling (default: None). Only
+            relevant if mc_run is True.
+            Options:
+            - 'lhc': latin hypercube sampling
+            - 'random': randomized sampling
+        dict_city_sample_lhc : dict, optional
+            Dict holding city parameter names as keys and numpy arrays with
+            samples as dict values (default: None). Only
+            relevant if mc_run is True and sampling_method == 'lhc'
+        dict_build_samples_lhc : dict, optional
+            Dict. holding building ids as keys and dict of samples as
+            values (default: None).
+            These dicts hold paramter names as keys and numpy arrays with
+            samples as dict values.  Only
+            relevant if mc_run is True and sampling_method == 'lhc'
 
         Returns
         -------
@@ -456,9 +539,9 @@ class CityAnnuityCalc(object):
             (cap_rel_ann, op_rel_ann)
         """
 
-        if run_mc:
-            if dict_samples_const is None or dict_samples_esys is None:
-                msg = 'Sample dictionary dict_samples cannnot be None, if' \
+        if run_mc and sampling_method is 'random':
+            if dict_samples_const is None:
+                msg = 'Sample dicts. cannnot be None, if' \
                       ' you want to perform Monte-Carlo analysis.'
                 raise AssertionError(msg)
             if run_idx is None:
@@ -466,13 +549,34 @@ class CityAnnuityCalc(object):
                       ' you want to perform Monte-Carlo analysis.'
                 raise AssertionError(msg)
 
-        #  Calculate capital-related annuities
+        if run_mc and sampling_method is 'lhc':
+            if dict_city_sample_lhc is None or dict_build_samples_lhc is None:
+                msg = 'Sample dicts. cannnot be None, if' \
+                      ' you want to perform Monte-Carlo analysis.'
+                raise AssertionError(msg)
+            if run_idx is None:
+                msg = 'Index value run_idx cannnot be None, if' \
+                      ' you want to perform Monte-Carlo analysis.'
+                raise AssertionError(msg)
+
+        if run_mc and sampling_method is None:
+            msg = 'sampling_method cannot be None, if run_mc is True!'
+            raise AssertionError(msg)
+
+        # Calculate capital-related annuities
         (cap_rel_ann, list_invest, list_type) = \
             self.calc_cap_rel_annuity_city(run_mc=run_mc,
                                            dict_samples_const=
                                            dict_samples_const,
                                            dict_samples_esys=dict_samples_esys,
-                                           run_idx=run_idx)
+                                           run_idx=run_idx,
+                                           sampling_method=
+                                           sampling_method,
+                                           dict_city_sample_lhc=
+                                           dict_city_sample_lhc,
+                                           dict_build_samples_lhc=
+                                           dict_build_samples_lhc
+                                           )
 
         #  Calculate operation-related annuity
         op_rel_ann = \
@@ -621,7 +725,6 @@ class CityAnnuityCalc(object):
 
         return dem_rel_annuity_pump
 
-
     def calc_dem_rel_annuity_city(self):
         """
         Returns demand related annuity of whole city district
@@ -640,7 +743,7 @@ class CityAnnuityCalc(object):
 
             dem_rel_annuity += dem_rel_build
 
-        #  Add demand related annuity of LHN pump
+        # Add demand related annuity of LHN pump
         dem_rel_annuity += self.calc_lhn_pump_dem_rel_annuity()
 
         return dem_rel_annuity
@@ -697,7 +800,7 @@ class CityAnnuityCalc(object):
         else:
             is_res = False
 
-        #  Dummy value
+        # Dummy value
         annuity_pv = 0
 
         if build.hasBes:
@@ -709,7 +812,7 @@ class CityAnnuityCalc(object):
                                                    pv_peak_load=pv_peak_load,
                                                    is_res=is_res)
 
-        #  Dummy values
+        # Dummy values
         annuity_chp_eex_sold = 0
         annuity_chp_sub_sold = 0
         annuity_chp_sub_self = 0
@@ -725,7 +828,7 @@ class CityAnnuityCalc(object):
 
                 #  Get maximum subsidies CHP total runtime
                 #  (e.g. 30000 or 60000 hours)
-                chp_runtime = self.energy_balance.city.environment.\
+                chp_runtime = self.energy_balance.city.environment. \
                     prices.get_max_total_runtime_chp_sub(p_el_nom=p_el_nom)
 
                 #  Calculate average subsidies runtime per year
@@ -739,7 +842,7 @@ class CityAnnuityCalc(object):
 
                 #  If runtime exceeds maximum subsidies runtime, use maximum
                 #  subsidies runtime
-                if chp_runtime_per_year >=chp_runtime_used_per_year:
+                if chp_runtime_per_year >= chp_runtime_used_per_year:
                     chp_runtime_sub = chp_runtime_used_per_year + 0.0
                 else:
                     chp_runtime_sub = chp_runtime_per_year + 0.0
@@ -776,7 +879,7 @@ class CityAnnuityCalc(object):
 
                 #  Calculate CHP sold subsidies, depending on size and
                 #  maximum runtime
-                annuity_chp_sub_sold = self.\
+                annuity_chp_sub_sold = self. \
                     calc_sub_chp_el_sold(en_chp_sold=chp_en_feed,
                                          pnominal=p_el_nom)
 
@@ -784,25 +887,24 @@ class CityAnnuityCalc(object):
 
                 #  Calculate CHP self subsidies, depending on size and
                 #  maximum runtime
-                annuity_chp_sub_self = self.\
+                annuity_chp_sub_self = self. \
                     calc_sub_chp_el_used(en_chp_used=chp_en_self,
                                          pnominal=p_el_nom)
 
                 assert annuity_chp_sub_self >= 0
 
                 #  Calc CHP tax return
-                annuity_chp_tax_return = self.\
+                annuity_chp_tax_return = self. \
                     calc_sub_chp_gas_used(gas_chp_used=fuel_chp)
 
                 assert annuity_chp_tax_return >= 0
 
-        #  Sum up proceeding related annuities
+        # Sum up proceeding related annuities
         annuity_proceeds = annuity_pv + annuity_chp_eex_sold \
                            + annuity_chp_sub_sold + annuity_chp_sub_self \
                            + annuity_chp_tax_return
 
         return annuity_proceeds
-
 
     def calc_proceeds_annuity_city(self):
         """
@@ -888,12 +990,12 @@ class CityAnnuityCalc(object):
             self.energy_balance.city.environment.prices.eex_baseload) / len(
             self.energy_balance.city.environment.prices.eex_baseload)
         #  Get grid usage avoidance fee
-        sub_avoid_grid_use = self.energy_balance.city.environment.\
+        sub_avoid_grid_use = self.energy_balance.city.environment. \
             prices.grid_av_fee
 
         # Calculate specific incomes [EUro/kWh]
         payment_chp_sold = (b_avoid_grid_usage * sub_avoid_grid_use
-                                + b_eex_base * sub_eex) * en_chp_sold
+                            + b_eex_base * sub_eex) * en_chp_sold
 
         return payment_chp_sold * self.annuity_obj.ann_factor
 
@@ -923,7 +1025,7 @@ class CityAnnuityCalc(object):
         b_chp_sub = self.annuity_obj.price_dyn_chp_sub
 
         #  Calculate specific subsidy payment in Euro/kWh
-        spec_chp_sub = self.energy_balance.city.environment.\
+        spec_chp_sub = self.energy_balance.city.environment. \
             prices.get_sub_chp(p_nom=pnominal)
 
         annuity_chp_sub = b_chp_sub * spec_chp_sub * en_chp_sold * \
@@ -956,7 +1058,7 @@ class CityAnnuityCalc(object):
         b_chp_sub_used = self.annuity_obj.price_dyn_chp_self
 
         # Get specific price
-        sub_chp_self = self.energy_balance.city.environment.\
+        sub_chp_self = self.energy_balance.city.environment. \
             prices.get_sub_chp_self(
             p_nom=pnominal)
 
@@ -988,7 +1090,7 @@ class CityAnnuityCalc(object):
         b_chp_sub_used = self.annuity_obj.price_dyn_chp_tax_return
 
         # Get specific price
-        tax_exep_chp = self.energy_balance.city.environment.\
+        tax_exep_chp = self.energy_balance.city.environment. \
             prices.chp_tax_return
 
         # Calculate specific income [Euro/kWh]
@@ -1039,7 +1141,11 @@ class CityAnnuityCalc(object):
                                                          dict_samples_const=None,
                                                          dict_samples_esys=None,
                                                          run_idx=None,
-                                                         eeg_pv_limit=False):
+                                                         eeg_pv_limit=False,
+                                                         sampling_method=None,
+                                                         dict_city_sample_lhc=None,
+                                                         dict_build_samples_lhc=None
+                                                         ):
         """
         Script runs energy balance and annuity calculation for city in
         energy_balance object
@@ -1069,6 +1175,22 @@ class CityAnnuityCalc(object):
             active (default: False). If limitation is active, maximal 70 %
             of PV peak load are fed into the grid.
             However, self-consumption is used, first.
+        sampling_method : str, optional
+            Defines method used for sampling (default: None). Only
+            relevant if mc_run is True.
+            Options:
+            - 'lhc': latin hypercube sampling
+            - 'random': randomized sampling
+        dict_city_sample_lhc : dict, optional
+            Dict holding city parameter names as keys and numpy arrays with
+            samples as dict values (default: None). Only
+            relevant if mc_run is True and sampling_method == 'lhc'
+        dict_build_samples_lhc : dict, optional
+            Dict. holding building ids as keys and dict of samples as
+            values (default: None).
+            These dicts hold paramter names as keys and numpy arrays with
+            samples as dict values.  Only
+            relevant if mc_run is True and sampling_method == 'lhc'
 
         Returns
         -------
@@ -1080,9 +1202,9 @@ class CityAnnuityCalc(object):
                 Emissions in kg/a
         """
 
-        if run_mc:
+        if run_mc and sampling_method is 'random':
             if dict_samples_const is None or dict_samples_esys is None:
-                msg = 'Sample dictionary dict_samples cannnot be None, if' \
+                msg = 'Sample dicts. cannnot be None, if' \
                       ' you want to perform Monte-Carlo analysis.'
                 raise AssertionError(msg)
             if run_idx is None:
@@ -1090,16 +1212,33 @@ class CityAnnuityCalc(object):
                       ' you want to perform Monte-Carlo analysis.'
                 raise AssertionError(msg)
 
-        #  ##################################################################
+        if run_mc and sampling_method is 'lhc':
+            if dict_city_sample_lhc is None or dict_build_samples_lhc is None:
+                msg = 'Sample dicts. cannnot be None, if' \
+                      ' you want to perform Monte-Carlo analysis.'
+                raise AssertionError(msg)
+            if run_idx is None:
+                msg = 'Index value run_idx cannnot be None, if' \
+                      ' you want to perform Monte-Carlo analysis.'
+                raise AssertionError(msg)
+
+        if run_mc and sampling_method is None:
+            msg = 'sampling_method cannot be None, if run_mc is True!'
+            raise AssertionError(msg)
+
+        # ##################################################################
         #  Run energy balance
         #  ##################################################################
 
         #  Calc. city energy balance
-        self.energy_balance.calc_city_energy_balance(run_mc=run_mc,
-                                                     dict_samples_const=
-                                                     dict_samples_const,
-                                                     run_idx=run_idx,
-                                                     eeg_pv_limit=eeg_pv_limit)
+        self.energy_balance. \
+            calc_city_energy_balance(run_mc=run_mc,
+                                     dict_samples_const=
+                                     dict_samples_const,
+                                     run_idx=run_idx,
+                                     eeg_pv_limit=eeg_pv_limit,
+                                     sampling_method=sampling_method,
+                                     dict_city_sample_lhc=dict_city_sample_lhc)
 
         #  Perform final energy anaylsis
         self.energy_balance.calc_final_energy_balance_city()
@@ -1119,7 +1258,14 @@ class CityAnnuityCalc(object):
                                                   dict_samples_const,
                                                   dict_samples_esys=
                                                   dict_samples_esys,
-                                                  run_idx=run_idx)
+                                                  run_idx=run_idx,
+                                                  sampling_method=
+                                                  sampling_method,
+                                                  dict_city_sample_lhc=
+                                                  dict_city_sample_lhc,
+                                                  dict_build_samples_lhc=
+                                                  dict_build_samples_lhc
+                                                  )
 
         #  Calculate demand related annuity
         dem_rel_annuity = self.calc_dem_rel_annuity_city()
@@ -1387,7 +1533,7 @@ if __name__ == '__main__':
         file_path = os.path.join(this_path, 'input', filename)
         pickle.dump(city, open(file_path, mode='wb'))
 
-    #  #####################################################################
+    # #####################################################################
     #  Generate object instances
     #  #####################################################################
 
@@ -1411,7 +1557,7 @@ if __name__ == '__main__':
     #  #####################################################################
 
     #  Calc. city energy balance
-    city_eco_calc.energy_balance.\
+    city_eco_calc.energy_balance. \
         calc_city_energy_balance(eeg_pv_limit=eeg_pv_limit)
 
     #  Perform final energy anaylsis
@@ -1436,7 +1582,7 @@ if __name__ == '__main__':
     proc_rel_annuity = city_eco_calc.calc_proceeds_annuity_city()
 
     #  Calculate total annuity
-    total_annuity = city_eco_calc.annuity_obj.\
+    total_annuity = city_eco_calc.annuity_obj. \
         calc_total_annuity(ann_capital=cap_rel_ann,
                            ann_demand=dem_rel_annuity,
                            ann_op=op_rel_ann,
