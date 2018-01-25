@@ -663,7 +663,7 @@ def gen_profile_pool(city, nb_samples, dict_build_samples, share_profiles=1):
 
 def run_overall_lhc_sampling(city, nb_samples, load_sh_mc_res=False,
                              path_mc_res_folder=None,
-                             gen_user_prof_pool=False,
+                             use_profile_pool=False,
                              gen_use_prof_method=0,
                              path_profile_dict=None):
     """
@@ -684,7 +684,7 @@ def run_overall_lhc_sampling(city, nb_samples, load_sh_mc_res=False,
     path_mc_res_folder : str, optional
         Path to folder, where sh mc run results are stored (default: None).
         Only necessary if load_sh_mc_res is True
-    gen_user_prof_pool : bool, optional
+    use_profile_pool : bool, optional
         Defines, if user/el. load/dhw profile pool should be generated
         (default: False). If True, generates profile pool.
     gen_use_prof_method : int, optional
@@ -712,18 +712,18 @@ def run_overall_lhc_sampling(city, nb_samples, load_sh_mc_res=False,
             with different el. and dhw profiles for each building as value
             fict_profiles_build['el_profiles'] = el_profiles
             dict_profiles_build['dhw_profiles'] = dhw_profiles
-            When gen_user_prof_pool is False, dict_profiles is None
+            When use_profile_pool is False, dict_profiles is None
     """
     assert nb_samples > 0
     assert gen_use_prof_method in [0, 1]
 
-    if gen_user_prof_pool and gen_use_prof_method == 1:
+    if use_profile_pool and gen_use_prof_method == 1:
         if path_profile_dict is None:
             msg = 'path_profile_dict cannot be None, if ' \
                   'gen_use_prof_method==1 (load el. profile pool)!'
             raise AssertionError(msg)
 
-    #  Get empty result dicts
+    # Get empty result dicts
     (dict_city_sample, dict_build_samples) = \
         gen_empty_res_dicts(city=city,
                             nb_samples=nb_samples)
@@ -740,7 +740,7 @@ def run_overall_lhc_sampling(city, nb_samples, load_sh_mc_res=False,
                          path_mc_res_folder=path_mc_res_folder
                          )
 
-    if gen_user_prof_pool:
+    if use_profile_pool:
         if gen_use_prof_method == 0:
             #  If profile pool should be generated:
             dict_profiles = \
@@ -760,7 +760,7 @@ if __name__ == '__main__':
     #  ###################################################################
     city_name = 'wm_res_east_7_w_street_sh_resc_wm.pkl'
 
-    nb_samples = 2
+    nb_samples = 200
 
     load_sh_mc_res = True
     #  If load_sh_mc_res is True, tries to load monte-carlo space heating
@@ -771,14 +771,9 @@ if __name__ == '__main__':
     save_dicts = True
 
     #  Defines, if profile pool should be used
-    gen_user_prof_pool = True
+    use_profile_pool = True
 
-    #  Only relevant, if sampling_method == 'lhc'
-    random_profile = False
-    #  Defines, if random samples should be used from profiles. If False,
-    #  loops over given profiles (if enough profiles exist).
-
-    gen_use_prof_method = 0
+    gen_use_prof_method = 1
     #  Options:
     #  0: Generate new profiles during runtime
     #  1: Load pre-generated profile sample dictionary
@@ -790,7 +785,7 @@ if __name__ == '__main__':
     path_city = os.path.join(path_mc, 'input', city_name)
 
     path_profile_dict = os.path.join(path_mc,
-                                     'input'
+                                     'input',
                                      'mc_el_profile_pool',
                                      el_profile_dict)
 
@@ -808,7 +803,7 @@ if __name__ == '__main__':
         run_overall_lhc_sampling(city=city, nb_samples=nb_samples,
                                  load_sh_mc_res=load_sh_mc_res,
                                  path_mc_res_folder=path_mc_res_folder,
-                                 gen_user_prof_pool=gen_user_prof_pool,
+                                 use_profile_pool=use_profile_pool,
                                  gen_use_prof_method=gen_use_prof_method,
                                  path_profile_dict=path_profile_dict
                                  )

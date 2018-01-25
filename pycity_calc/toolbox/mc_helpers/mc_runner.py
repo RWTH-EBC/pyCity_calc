@@ -608,7 +608,7 @@ class McRunner(object):
 
     def perform_lhc_sampling(self, nb_runs, load_sh_mc_res=False,
                              path_mc_res_folder=None,
-                             gen_user_prof_pool=False,
+                             use_profile_pool=False,
                              gen_use_prof_method=0,
                              path_profile_dict=None,
                              save_res=True):
@@ -627,7 +627,7 @@ class McRunner(object):
         path_mc_res_folder : str, optional
             Path to folder, where sh mc run results are stored (default: None).
             Only necessary if load_sh_mc_res is True
-        gen_user_prof_pool : bool, optional
+        use_profile_pool : bool, optional
             Defines, if user/el. load/dhw profile pool should be generated
             (default: False). If True, generates profile pool.
         save_res : bool, optional
@@ -658,9 +658,9 @@ class McRunner(object):
                 with different el. and dhw profiles for each building as value
                 fict_profiles_build['el_profiles'] = el_profiles
                 dict_profiles_build['dhw_profiles'] = dhw_profiles
-                When gen_user_prof_pool is False, dict_profiles is None
+                When use_profile_pool is False, dict_profiles is None
         """
-        if gen_user_prof_pool and gen_use_prof_method == 1:
+        if use_profile_pool and gen_use_prof_method == 1:
             if path_profile_dict is None:
                 msg = 'path_profile_dict cannot be None, if ' \
                       'gen_use_prof_method==1 (load el. profile pool)!'
@@ -673,7 +673,7 @@ class McRunner(object):
             nb_samples=nb_runs,
             load_sh_mc_res=load_sh_mc_res,
             path_mc_res_folder=path_mc_res_folder,
-            gen_user_prof_pool=gen_user_prof_pool,
+            use_profile_pool=use_profile_pool,
             gen_use_prof_method=gen_use_prof_method,
             path_profile_dict=path_profile_dict)
 
@@ -986,6 +986,13 @@ class McRunner(object):
                     if self._dict_profiles_lhc is not None:
                         #  Add new el. profile from profile pool, if available
                         if random_profile or len(el_prof_pool) < nb_runs:
+
+                            msg = 'Number of el. profiles in el_prof_pool ' \
+                                  'is smaller than number of runs. Thus, ' \
+                                  'profiles are randomly chosen instead ' \
+                                  'of looping over them.'
+                            warnings.warn(msg)
+
                             idx = rd.randint(0, len(el_prof_pool))
                             el_profile = el_prof_pool[idx]
                             for app in city.nodes[n]['entity'].apartments:
@@ -1379,7 +1386,7 @@ class McRunner(object):
                         heating_off=True,
                         load_sh_mc_res=False,
                         path_mc_res_folder=None,
-                        gen_user_prof_pool=False,
+                        use_profile_pool=False,
                         random_profile=False):
         """
         Perform monte-carlo run with:
@@ -1417,7 +1424,7 @@ class McRunner(object):
         path_mc_res_folder : str, optional
             Path to folder, where sh mc run results are stored (default: None).
             Only necessary if load_sh_mc_res is True
-        gen_user_prof_pool : bool, optional
+        use_profile_pool : bool, optional
             Defines, if user/el. load/dhw profile pool should be generated
             (default: False). If True, generates profile pool.
         random_profile : bool, optional
@@ -1503,7 +1510,7 @@ class McRunner(object):
                 with different el. and dhw profiles for each building as value
                 fict_profiles_build['el_profiles'] = el_profiles
                 dict_profiles_build['dhw_profiles'] = dhw_profiles
-                When gen_user_prof_pool is False, dict_profiles is None
+                When use_profile_pool is False, dict_profiles is None
         """
 
         if sampling_method not in ['lhc', 'random']:
@@ -1526,7 +1533,7 @@ class McRunner(object):
                  dict_profiles_lhc) = self.perform_lhc_sampling(nb_runs,
                                           load_sh_mc_res=load_sh_mc_res,
                                           path_mc_res_folder=path_mc_res_folder,
-                                          gen_user_prof_pool=gen_user_prof_pool)
+                                          use_profile_pool=use_profile_pool)
         else:
             dict_samples_const = None
             dict_samples_esys = None
@@ -1895,10 +1902,12 @@ if __name__ == '__main__':
 
     #  Path to FOLDER with mc sh results (searches for corresponding building
     #  ids)
-    path_mc_res_folder = os.path.join(this_path, 'input', 'sh_mc_run')
+    path_mc_res_folder = os.path.join(this_path,
+                                      'input',
+                                      'sh_mc_run')
 
     #  Generate el. and dhw profile pool to sample from (time consuming)
-    gen_user_prof_pool = True
+    use_profile_pool = False
     #  Only relevant, if sampling_method == 'lhc'
     random_profile = False
     #  Defines, if random samples should be used from profiles. If False,
@@ -1911,7 +1920,7 @@ if __name__ == '__main__':
 
     el_profile_dict = 'dict_profile_samples.pkl'
     path_profile_dict = os.path.join(this_path,
-                                     'input'
+                                     'input',
                                      'mc_el_profile_pool',
                                      el_profile_dict)
 
@@ -1971,7 +1980,7 @@ if __name__ == '__main__':
                                sampling_method=sampling_method,
                                load_sh_mc_res=load_sh_mc_res,
                                path_mc_res_folder=path_mc_res_folder,
-                               gen_user_prof_pool=gen_user_prof_pool,
+                               use_profile_pool=use_profile_pool,
                                random_profile=random_profile)
 
     #  Perform reference run:
