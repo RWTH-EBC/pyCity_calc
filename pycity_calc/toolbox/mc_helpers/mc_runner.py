@@ -11,6 +11,7 @@ import copy
 import warnings
 import pickle
 import time
+import random as rd
 import numpy as np
 import traceback
 
@@ -607,7 +608,9 @@ class McRunner(object):
 
     def perform_lhc_sampling(self, nb_runs, load_sh_mc_res=False,
                              path_mc_res_folder=None,
-                             gen_user_prof_pool=False,
+                             use_profile_pool=False,
+                             gen_use_prof_method=0,
+                             path_profile_dict=None,
                              save_res=True):
         """
         Perform latin hypercube sampling
@@ -624,11 +627,18 @@ class McRunner(object):
         path_mc_res_folder : str, optional
             Path to folder, where sh mc run results are stored (default: None).
             Only necessary if load_sh_mc_res is True
-        gen_user_prof_pool : bool, optional
+        use_profile_pool : bool, optional
             Defines, if user/el. load/dhw profile pool should be generated
             (default: False). If True, generates profile pool.
         save_res : bool, optional
             Save results back to mc_runner object (default: True)
+        gen_use_prof_method : int, optional
+            Defines method for el. profile pool usage (default: 0).
+            Options:
+            - 0: Generate new el. profile pool
+            - 1: Load profile pool from path_profile_dict
+        path_profile_dict : str, optional
+            Path to dict with el. profile pool (default: None).
 
         Returns
         -------
@@ -648,8 +658,14 @@ class McRunner(object):
                 with different el. and dhw profiles for each building as value
                 fict_profiles_build['el_profiles'] = el_profiles
                 dict_profiles_build['dhw_profiles'] = dhw_profiles
-                When gen_user_prof_pool is False, dict_profiles is None
+                When use_profile_pool is False, dict_profiles is None
         """
+        if use_profile_pool and gen_use_prof_method == 1:
+            if path_profile_dict is None:
+                msg = 'path_profile_dict cannot be None, if ' \
+                      'gen_use_prof_method==1 (load el. profile pool)!'
+                raise AssertionError(msg)
+
         (dict_city_sample_lhc, dict_build_samples_lhc, dict_profiles_lhc) \
             = lhcrun. \
             run_overall_lhc_sampling(
@@ -657,7 +673,9 @@ class McRunner(object):
             nb_samples=nb_runs,
             load_sh_mc_res=load_sh_mc_res,
             path_mc_res_folder=path_mc_res_folder,
-            gen_user_prof_pool=gen_user_prof_pool)
+            use_profile_pool=use_profile_pool,
+            gen_use_prof_method=gen_use_prof_method,
+            path_profile_dict=path_profile_dict)
 
         if save_res:
             self._dict_city_sample_lhc = dict_city_sample_lhc
@@ -668,7 +686,8 @@ class McRunner(object):
                 dict_profiles_lhc)
 
     def perform_mc_runs(self, nb_runs, sampling_method, failure_tolerance=0.05,
-                        heating_off=True, eeg_pv_limit=False):
+                        heating_off=True, eeg_pv_limit=False,
+                        random_profile=False):
         """
         Perform mc runs.
         - Extract sample values
@@ -697,6 +716,11 @@ class McRunner(object):
             active (default: False). If limitation is active, maximal 70 %
             of PV peak load are fed into the grid.
             However, self-consumption is used, first.
+        random_profile : bool, optional
+            Defines, if random samples should be kused from profile pool
+            (default: False). Only relevant, if profile pool has been given,
+            sampling_method == 'lhc' and nb. of profiles is equal to nb.
+            of samples
 
         Returns
         -------
@@ -954,14 +978,52 @@ class McRunner(object):
 
                     el_dem = 0
                     for a in range(len(dict_build_lhc['app_el_dem'])):
+                        #  Sum up el. demand
                         el_dem += dict_build_lhc['app_el_dem'][a][i]
-                    #  TODO: Select and save new el. profile
+
+                    nb_app = len(city.nodes[n]['entity'].apartments)
+
+                    if self._dict_profiles_lhc is not None:
+                        #  Add new el. profile from profile pool, if available
+                        if random_profile or len(el_prof_pool) < nb_runs:
+
+                            msg = 'Number of el. profiles in el_prof_pool ' \
+                                  'is smaller than number of runs. Thus, ' \
+                                  'profiles are randomly chosen instead ' \
+                                  'of looping over them.'
+                            warnings.warn(msg)
+
+                            idx = rd.randint(0, len(el_prof_pool))
+                            el_profile = el_prof_pool[idx]
+                            for app in city.nodes[n]['entity'].apartments:
+                                app.power_el.loadcurve = el_profile / nb_app
+                        else:
+                            for app in city.nodes[n]['entity'].apartments:
+                                app.power_el.loadcurve = el_prof_pool[i] / \
+                                                         nb_app
+
+                    #  Rescale profile to el_dem sample
                     elmod.rescale_el_dem_build(building=curr_build,
                                                el_dem=el_dem)
                     dhw_dem = 0
                     for a in range(len(dict_build_lhc['app_dhw_dem'])):
                         dhw_dem += dict_build_lhc['app_dhw_dem'][a][i]
-                    #  TODO: Select and save new dhw profile
+
+                    if self._dict_profiles_lhc is not None:
+                        #  Add new dhw. profile from profile pool, if available
+                        if random_profile or len(dhw_prof_pool) < nb_runs:
+                            #  Add new dhw. profile from profile pool, if
+                            #  available
+                            idx = rd.randint(0, len(dhw_prof_pool))
+                            dhw_profile = dhw_prof_pool[idx]
+                            for app in city.nodes[n]['entity'].apartments:
+                                app.power_el.loadcurve = dhw_profile / nb_app
+                        else:
+                            for app in city.nodes[n]['entity'].apartments:
+                                app.demandDomesticHotWater.loadcurve = \
+                                    dhw_prof_pool[i] / nb_app
+
+                    #  Rescale demand to dhw_dem sample
                     dhwmod.rescale_dhw_build(building=curr_build,
                                              dhw_dem=dhw_dem)
 
@@ -1175,7 +1237,6 @@ class McRunner(object):
                 # # summer
                 # dict_city_sample['list_sum_on']
 
-                #  TODO: Modify heating off to match lhc
                 if heating_off:
                     #  Use sampling to switch demand of some heating systems off
                     #  during summer period
@@ -1216,8 +1277,6 @@ class McRunner(object):
                 annuity_obj.price_ch_eex = dict_city_lhc['price_ch_eex'][i]
                 annuity_obj.price_ch_grid_use = \
                 dict_city_lhc['price_ch_grid_use'][i]
-
-                #  Todo: Add lhn_loss and lhn_inv
 
             #  Rerun initial parameter calculation of annuity_obj
             annuity_obj.initial_calc()
@@ -1327,7 +1386,8 @@ class McRunner(object):
                         heating_off=True,
                         load_sh_mc_res=False,
                         path_mc_res_folder=None,
-                        gen_user_prof_pool=False):
+                        use_profile_pool=False,
+                        random_profile=False):
         """
         Perform monte-carlo run with:
         - sampling
@@ -1364,9 +1424,14 @@ class McRunner(object):
         path_mc_res_folder : str, optional
             Path to folder, where sh mc run results are stored (default: None).
             Only necessary if load_sh_mc_res is True
-        gen_user_prof_pool : bool, optional
+        use_profile_pool : bool, optional
             Defines, if user/el. load/dhw profile pool should be generated
             (default: False). If True, generates profile pool.
+        random_profile : bool, optional
+            Defines, if random samples should be kused from profile pool
+            (default: False). Only relevant, if profile pool has been given,
+            sampling_method == 'lhc' and nb. of profiles is equal to nb.
+            of samples
 
         Returns
         -------
@@ -1445,7 +1510,7 @@ class McRunner(object):
                 with different el. and dhw profiles for each building as value
                 fict_profiles_build['el_profiles'] = el_profiles
                 dict_profiles_build['dhw_profiles'] = dhw_profiles
-                When gen_user_prof_pool is False, dict_profiles is None
+                When use_profile_pool is False, dict_profiles is None
         """
 
         if sampling_method not in ['lhc', 'random']:
@@ -1468,7 +1533,7 @@ class McRunner(object):
                  dict_profiles_lhc) = self.perform_lhc_sampling(nb_runs,
                                           load_sh_mc_res=load_sh_mc_res,
                                           path_mc_res_folder=path_mc_res_folder,
-                                          gen_user_prof_pool=gen_user_prof_pool)
+                                          use_profile_pool=use_profile_pool)
         else:
             dict_samples_const = None
             dict_samples_esys = None
@@ -1484,7 +1549,8 @@ class McRunner(object):
             self.perform_mc_runs(nb_runs=nb_runs,
                                  sampling_method=sampling_method,
                                  failure_tolerance=failure_tolerance,
-                                 heating_off=heating_off)
+                                 heating_off=heating_off,
+                                 random_profile=random_profile)
 
         if prevent_printing:
             enable_print()
@@ -1828,6 +1894,36 @@ if __name__ == '__main__':
     #  Allowed share of runs, which fail with EnergyBalanceException.
     #  If failure_tolerance is exceeded, mc runner exception is raised.
 
+    load_sh_mc_res = False
+    #  If load_sh_mc_res is True, tries to load monte-carlo space heating
+    #  uncertainty run results for each building from given folder
+    #  If load_sh_mc_res is False, uses default value to sample sh demand
+    #  uncertainty per building
+
+    #  Path to FOLDER with mc sh results (searches for corresponding building
+    #  ids)
+    path_mc_res_folder = os.path.join(this_path,
+                                      'input',
+                                      'sh_mc_run')
+
+    #  Generate el. and dhw profile pool to sample from (time consuming)
+    use_profile_pool = False
+    #  Only relevant, if sampling_method == 'lhc'
+    random_profile = False
+    #  Defines, if random samples should be used from profiles. If False,
+    #  loops over given profiles (if enough profiles exist).
+
+    gen_use_prof_method = 0
+    #  Options:
+    #  0: Generate new profiles during runtime
+    #  1: Load pre-generated profile sample dictionary
+
+    el_profile_dict = 'dict_profile_samples.pkl'
+    path_profile_dict = os.path.join(this_path,
+                                     'input',
+                                     'mc_el_profile_pool',
+                                     el_profile_dict)
+
     #  Suppress print and warnings statements during MC-run
     prevent_printing = False
 
@@ -1881,7 +1977,11 @@ if __name__ == '__main__':
                                failure_tolerance=failure_tolerance,
                                do_sampling=do_sampling,
                                prevent_printing=prevent_printing,
-                               sampling_method=sampling_method)
+                               sampling_method=sampling_method,
+                               load_sh_mc_res=load_sh_mc_res,
+                               path_mc_res_folder=path_mc_res_folder,
+                               use_profile_pool=use_profile_pool,
+                               random_profile=random_profile)
 
     #  Perform reference run:
     #  #####################################################################
