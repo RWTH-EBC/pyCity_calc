@@ -6,3 +6,5 @@
 !city_clust_simple_networks.txt
 !street_edges_cluster_simple.csv
 !street_nodes_cluster_simple.csv
+!mc_el_profile_pool
+!sh_mc_run

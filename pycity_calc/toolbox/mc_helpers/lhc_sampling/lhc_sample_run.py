@@ -110,8 +110,7 @@ def gen_empty_res_dicts(city, nb_samples):
     #  Holding list holding arrays with building node ids with heating during
     #  summer (each sample holds array for each building, if heating is on or
     #  off
-    dict_city_sample['list_sum_on'] = np.zeros((nb_samples,
-                                                len(list_build_ids)))
+    dict_city_sample['list_sum_on'] = []
     dict_city_sample['grid_av_fee'] = np.zeros(nb_samples)
 
     #  Loop over buildings
@@ -305,29 +304,20 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
                 max_val = dict_ref_val_city[key][1]
 
                 val_conv = val_lhc * (max_val - min_val) + min_val
-
                 #  val_conv defines share of buildings, which should have
                 #  heating on during summer --> Select buildings with
                 #  heating on
-                array_heat_on = np.zeros(len(list_build_ids))
 
                 #  Define number of buildings, which should have heating on
                 #  during summer
-                nb_heat_on = int(val_conv * len(array_heat_on))
-
-                #  Possible indexes for choice of buildings
-                list_idx = list(range(0, len(list_build_ids)))
+                nb_heat_on = int(val_conv * len(list_build_ids))
 
                 #  Randomly select number of buildings, until share is correct
-                array_sample_idx = np.random.choice(a=list_idx,
-                                                    size=nb_heat_on,
-                                                   replace=False)
+                array_heat_on = np.random.choice(a=list_build_ids,
+                                                 size=nb_heat_on,
+                                                 replace=False)
 
-                for idx in array_sample_idx:
-                    #  Activate heating at chosen indexes
-                    array_heat_on[idx] = 1
-
-                dict_city_sample[key][i] = array_heat_on
+                dict_city_sample[key].append(array_heat_on)
 
         design_count += 1
 
@@ -578,7 +568,7 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
                 # plt.close()
 
 
-def gen_profile_pool(city, nb_samples, dict_build_samples):
+def gen_profile_pool(city, nb_samples, dict_build_samples, share_profiles=1):
     """
     Generate profile pool of user, el. load and dhw profiles for each building
 
@@ -592,6 +582,10 @@ def gen_profile_pool(city, nb_samples, dict_build_samples):
         Dict. holding building ids as keys and dict of samples as values.
         These dicts hold paramter names as keys and numpy arrays with
         samples as dict values
+    share_profiles : float, optional
+        Defines share on nb_samples to define nb. of profiles (default: 1).
+        E.g. 0.5 with 20 nb_samples means, that 10 el. profiles are generated
+        for profile pool
 
     Returns
     -------
@@ -609,7 +603,7 @@ def gen_profile_pool(city, nb_samples, dict_build_samples):
     profile_length = len(city.environment.weather.tAmbient)
 
     #  Estimate nb. of different profiles per building
-    nb_profiles = int(nb_samples / 10)
+    nb_profiles = int(nb_samples * share_profiles)
 
     #  Loop over buildings
     for key in dict_build_samples.keys():
@@ -669,7 +663,9 @@ def gen_profile_pool(city, nb_samples, dict_build_samples):
 
 def run_overall_lhc_sampling(city, nb_samples, load_sh_mc_res=False,
                              path_mc_res_folder=None,
-                             gen_user_prof_pool=False):
+                             use_profile_pool=False,
+                             gen_use_prof_method=0,
+                             path_profile_dict=None):
     """
     Generates empty sample dicts and performs latin hypercube sampling.
     Adds samples to dict_city_sample, dict_build_samples
@@ -688,9 +684,16 @@ def run_overall_lhc_sampling(city, nb_samples, load_sh_mc_res=False,
     path_mc_res_folder : str, optional
         Path to folder, where sh mc run results are stored (default: None).
         Only necessary if load_sh_mc_res is True
-    gen_user_prof_pool : bool, optional
+    use_profile_pool : bool, optional
         Defines, if user/el. load/dhw profile pool should be generated
         (default: False). If True, generates profile pool.
+    gen_use_prof_method : int, optional
+        Defines method for el. profile pool usage (default: 0).
+        Options:
+        - 0: Generate new el. profile pool
+        - 1: Load profile pool from path_profile_dict
+    path_profile_dict : str, optional
+        Path to dict with el. profile pool (default: None).
 
     Returns
     -------
@@ -709,11 +712,18 @@ def run_overall_lhc_sampling(city, nb_samples, load_sh_mc_res=False,
             with different el. and dhw profiles for each building as value
             fict_profiles_build['el_profiles'] = el_profiles
             dict_profiles_build['dhw_profiles'] = dhw_profiles
-            When gen_user_prof_pool is False, dict_profiles is None
+            When use_profile_pool is False, dict_profiles is None
     """
     assert nb_samples > 0
+    assert gen_use_prof_method in [0, 1]
 
-    #  Get empty result dicts
+    if use_profile_pool and gen_use_prof_method == 1:
+        if path_profile_dict is None:
+            msg = 'path_profile_dict cannot be None, if ' \
+                  'gen_use_prof_method==1 (load el. profile pool)!'
+            raise AssertionError(msg)
+
+    # Get empty result dicts
     (dict_city_sample, dict_build_samples) = \
         gen_empty_res_dicts(city=city,
                             nb_samples=nb_samples)
@@ -730,10 +740,14 @@ def run_overall_lhc_sampling(city, nb_samples, load_sh_mc_res=False,
                          path_mc_res_folder=path_mc_res_folder
                          )
 
-    if gen_user_prof_pool:
-        #  If profile pool should be generated:
-        dict_profiles = gen_profile_pool(city=city, nb_samples=nb_samples,
-                                         dict_build_samples=dict_build_samples)
+    if use_profile_pool:
+        if gen_use_prof_method == 0:
+            #  If profile pool should be generated:
+            dict_profiles = \
+                gen_profile_pool(city=city, nb_samples=nb_samples,
+                                 dict_build_samples=dict_build_samples)
+        elif gen_use_prof_method == 1:
+            dict_profiles = pickle.load(open(path_profile_dict, mode='rb'))
     else:
         dict_profiles = None
 
@@ -746,7 +760,7 @@ if __name__ == '__main__':
     #  ###################################################################
     city_name = 'wm_res_east_7_w_street_sh_resc_wm.pkl'
 
-    nb_samples = 100
+    nb_samples = 200
 
     load_sh_mc_res = True
     #  If load_sh_mc_res is True, tries to load monte-carlo space heating
@@ -756,18 +770,31 @@ if __name__ == '__main__':
 
     save_dicts = True
 
-    gen_user_prof_pool = False
+    #  Defines, if profile pool should be used
+    use_profile_pool = True
+
+    gen_use_prof_method = 0
+    #  Options:
+    #  0: Generate new profiles during runtime
+    #  1: Load pre-generated profile sample dictionary
+
+    el_profile_dict = 'dict_profile_samples.pkl'
 
     path_this = os.path.dirname(os.path.abspath(__file__))
     path_mc = os.path.dirname(path_this)
     path_city = os.path.join(path_mc, 'input', city_name)
 
+    path_profile_dict = os.path.join(path_mc,
+                                     'input',
+                                     'mc_el_profile_pool',
+                                     el_profile_dict)
+
     path_mc_res_folder = os.path.join(path_mc, 'input', 'sh_mc_run')
 
     path_save_res = os.path.join(path_mc, 'output')
-    city_pkl_name = 'dict_city_samples.pkl'
-    building_pkl_name = 'dict_build_samples.pkl'
-    profiles_pkl_name = 'dict_profile_samples.pkl'
+    city_pkl_name = 'WM7_10_dict_city_samples.pkl'
+    building_pkl_name = 'WM7_10_dict_build_samples.pkl'
+    profiles_pkl_name = 'WM7_10_dict_profile_samples.pkl'
     #  ###################################################################
 
     city = pickle.load(open(path_city, mode='rb'))
@@ -776,7 +803,10 @@ if __name__ == '__main__':
         run_overall_lhc_sampling(city=city, nb_samples=nb_samples,
                                  load_sh_mc_res=load_sh_mc_res,
                                  path_mc_res_folder=path_mc_res_folder,
-                                 gen_user_prof_pool=gen_user_prof_pool)
+                                 use_profile_pool=use_profile_pool,
+                                 gen_use_prof_method=gen_use_prof_method,
+                                 path_profile_dict=path_profile_dict
+                                 )
 
     #  Save sample dicts
     if save_dicts:
@@ -842,12 +872,6 @@ if __name__ == '__main__':
             if sum(dict_city_sample[key]) == 0:
                 msg = 'dict_city_sample value ' + str(key) + ' holds zero ' \
                                                              'array!'
-                warnings.warn(msg)
-        elif key == 'list_sum_on':
-            if np.sum(dict_city_sample[key]) == 0:
-                msg = 'list_sum_on (matrix) only contains zeros! Should' \
-                      ' also hold multiple ones to represent buildings with' \
-                      ' heating during summer!'
                 warnings.warn(msg)
 
     # Loop over keys in dict_build_samples and identify zero arrays
