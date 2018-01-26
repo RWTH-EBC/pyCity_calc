@@ -412,7 +412,7 @@ class TestCityEnergyBalance():
 
         #  Check fuel thermal energy balance
         assert abs(sh_dem_1 + sh_dem_2 + sum_chp_feed
-                   - (fuel_boiler_energy + fuel_chp_energy)) <= 0.001
+                   - (fuel_boiler_energy + fuel_chp_energy)) <= 0.01
 
         #  Check if pump energy is required for LHN usage
         assert max(city_eb.list_pump_energy) > 0
