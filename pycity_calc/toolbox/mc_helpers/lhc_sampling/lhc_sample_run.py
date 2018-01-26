@@ -773,7 +773,7 @@ if __name__ == '__main__':
     #  Defines, if profile pool should be used
     use_profile_pool = True
 
-    gen_use_prof_method = 1
+    gen_use_prof_method = 0
     #  Options:
     #  0: Generate new profiles during runtime
     #  1: Load pre-generated profile sample dictionary
@@ -792,9 +792,9 @@ if __name__ == '__main__':
     path_mc_res_folder = os.path.join(path_mc, 'input', 'sh_mc_run')
 
     path_save_res = os.path.join(path_mc, 'output')
-    city_pkl_name = 'dict_city_samples.pkl'
-    building_pkl_name = 'dict_build_samples.pkl'
-    profiles_pkl_name = 'dict_profile_samples.pkl'
+    city_pkl_name = 'WM7_10_dict_city_samples.pkl'
+    building_pkl_name = 'WM7_10_dict_build_samples.pkl'
+    profiles_pkl_name = 'WM7_10_dict_profile_samples.pkl'
     #  ###################################################################
 
     city = pickle.load(open(path_city, mode='rb'))

@@ -993,7 +993,7 @@ class McRunner(object):
                                   'of looping over them.'
                             warnings.warn(msg)
 
-                            idx = rd.randint(0, len(el_prof_pool))
+                            idx = rd.randint(0, len(el_prof_pool) - 1)
                             el_profile = el_prof_pool[idx]
                             for app in city.nodes[n]['entity'].apartments:
                                 app.power_el.loadcurve = el_profile / nb_app
@@ -1014,7 +1014,7 @@ class McRunner(object):
                         if random_profile or len(dhw_prof_pool) < nb_runs:
                             #  Add new dhw. profile from profile pool, if
                             #  available
-                            idx = rd.randint(0, len(dhw_prof_pool))
+                            idx = rd.randint(0, len(dhw_prof_pool) - 1)
                             dhw_profile = dhw_prof_pool[idx]
                             for app in city.nodes[n]['entity'].apartments:
                                 app.power_el.loadcurve = dhw_profile / nb_app
