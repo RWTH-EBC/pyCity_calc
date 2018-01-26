@@ -405,7 +405,7 @@ class TestCityEnergyBalance():
 
         #  Check thermal net energy balance
         assert abs(sh_dem_1 + sh_dem_2
-                   - (sum_q_boiler + chp_th_energy)) <= 0.001
+                   - (sum_q_boiler + chp_th_energy)) <= 0.01
 
         #  Electric energy balance
         assert abs(sum_chp_feed - chp_el_energy) <= 0.001
