@@ -83,7 +83,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
         Extended building object of pyCity_calc
     soc_init : float, optional
         Factor of relative state of charge of thermal storage (if thermal
-        storage is existent) (default: 0.75)
+        storage is existent) (default: 0.8)
     boiler_full_pl : bool, optional
         Defines, if boiler should be set to full part load ability
         (default: True)
@@ -174,12 +174,14 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
         if build.bes.tes.tInit != t_init_new:
             msg = 'Current tes initial temperature is different from ' \
                   'chosen one (via soc_init). The old initial temperature is' \
-                  ' ' + str(build.bes.tes.tInit) + ' degree Celsius. The new' \
-                                                   ' one is ' \
-                                                   '' + str(t_init_new) + '' \
-                                                                          ' degree Celsius.'
+                  ' ' + str(build.bes.tes.tInit) + \
+                  ' degree Celsius. The new one is ' \
+                  + str(t_init_new) + \
+                  ' degree Celsius.'
             warnings.warn(msg)
+            #  Set new initial and current temperature to tes
             build.bes.tes.tInit = t_init_new
+            build.bes.tes.t_current = t_init_new + 0.0
 
     # Get building thermal load curves
     #  #################################################################
@@ -200,6 +202,8 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
         #  complete hot water demand / cannot reach temperature levels
         #  required for hot water demand
         #  #################################################################
+
+        print()
 
         #  Loop over power values
         for i in range(len(sh_p_array)):
@@ -1126,6 +1130,10 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                 msg = 'Could not solve thermal energy balance in ' \
                       'building' + str(id) + ' at timestep ' + str(i) + '.'
                 raise EnergyBalanceException(msg)
+
+            if i == 0:
+                print('bla')
+                print()
 
     elif has_tes and has_hp:
         #  Use heat pump with thermal storage to cover space heating demand
