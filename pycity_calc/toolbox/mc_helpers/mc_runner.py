@@ -611,7 +611,8 @@ class McRunner(object):
                              use_profile_pool=False,
                              gen_use_prof_method=0,
                              path_profile_dict=None,
-                             save_res=True):
+                             save_res=True,
+                             nb_profiles=None):
         """
         Perform latin hypercube sampling
 
@@ -639,6 +640,9 @@ class McRunner(object):
             - 1: Load profile pool from path_profile_dict
         path_profile_dict : str, optional
             Path to dict with el. profile pool (default: None).
+        nb_profiles : int, optional
+            Desired number of profile samples per building, when profile pool
+            is generated (default: None). If None, uses nb_runs.
 
         Returns
         -------
@@ -666,6 +670,9 @@ class McRunner(object):
                       'gen_use_prof_method==1 (load el. profile pool)!'
                 raise AssertionError(msg)
 
+        if nb_profiles is None:
+            nb_profiles = int(nb_runs)
+
         (dict_city_sample_lhc, dict_build_samples_lhc, dict_profiles_lhc) \
             = lhcrun. \
             run_overall_lhc_sampling(
@@ -675,7 +682,8 @@ class McRunner(object):
             path_mc_res_folder=path_mc_res_folder,
             use_profile_pool=use_profile_pool,
             gen_use_prof_method=gen_use_prof_method,
-            path_profile_dict=path_profile_dict)
+            path_profile_dict=path_profile_dict,
+            nb_profiles=nb_profiles)
 
         if save_res:
             self._dict_city_sample_lhc = dict_city_sample_lhc

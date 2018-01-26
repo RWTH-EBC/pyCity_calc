@@ -665,7 +665,8 @@ def run_overall_lhc_sampling(city, nb_samples, load_sh_mc_res=False,
                              path_mc_res_folder=None,
                              use_profile_pool=False,
                              gen_use_prof_method=0,
-                             path_profile_dict=None):
+                             path_profile_dict=None,
+                             nb_profiles=None):
     """
     Generates empty sample dicts and performs latin hypercube sampling.
     Adds samples to dict_city_sample, dict_build_samples
@@ -694,6 +695,9 @@ def run_overall_lhc_sampling(city, nb_samples, load_sh_mc_res=False,
         - 1: Load profile pool from path_profile_dict
     path_profile_dict : str, optional
         Path to dict with el. profile pool (default: None).
+    nb_profiles : int, optional
+        Desired number of profile samples per building, when profile pool
+        is generated (default: None). If None, uses nb_samples.
 
     Returns
     -------
@@ -723,6 +727,9 @@ def run_overall_lhc_sampling(city, nb_samples, load_sh_mc_res=False,
                   'gen_use_prof_method==1 (load el. profile pool)!'
             raise AssertionError(msg)
 
+    if nb_profiles is None:
+        nb_profiles = int(nb_samples)
+
     # Get empty result dicts
     (dict_city_sample, dict_build_samples) = \
         gen_empty_res_dicts(city=city,
@@ -742,11 +749,18 @@ def run_overall_lhc_sampling(city, nb_samples, load_sh_mc_res=False,
 
     if use_profile_pool:
         if gen_use_prof_method == 0:
+
+            #  Calculate share of profiles
+            share_profiles = nb_profiles / nb_samples
+
             #  If profile pool should be generated:
             dict_profiles = \
                 gen_profile_pool(city=city, nb_samples=nb_samples,
-                                 dict_build_samples=dict_build_samples)
+                                 dict_build_samples=dict_build_samples,
+                                 share_profiles=share_profiles)
+
         elif gen_use_prof_method == 1:
+            #  Load profiles from pickle file
             dict_profiles = pickle.load(open(path_profile_dict, mode='rb'))
     else:
         dict_profiles = None
@@ -758,9 +772,11 @@ if __name__ == '__main__':
 
     #  User inputs
     #  ###################################################################
+    #  City pickle file name
     city_name = 'wm_res_east_7_w_street_sh_resc_wm.pkl'
 
-    nb_samples = 200
+    #  Number of samples
+    nb_samples = 100
 
     load_sh_mc_res = True
     #  If load_sh_mc_res is True, tries to load monte-carlo space heating
@@ -778,19 +794,27 @@ if __name__ == '__main__':
     #  0: Generate new profiles during runtime
     #  1: Load pre-generated profile sample dictionary
 
+    #  Defines number of profiles per building, which should be generated
+    nb_profiles = 10
+
+    #  Defines name of profile dict, if profiles should be loaded
+    #  (gen_use_prof_method == 1)
     el_profile_dict = 'dict_profile_samples.pkl'
 
     path_this = os.path.dirname(os.path.abspath(__file__))
     path_mc = os.path.dirname(path_this)
     path_city = os.path.join(path_mc, 'input', city_name)
 
+    #  Path to el_profile_dict (gen_use_prof_method == 1)
     path_profile_dict = os.path.join(path_mc,
                                      'input',
                                      'mc_el_profile_pool',
                                      el_profile_dict)
 
+    #  Path to space heating mc results (load_sh_mc_res is True)
     path_mc_res_folder = os.path.join(path_mc, 'input', 'sh_mc_run')
 
+    #  Output path definitions
     path_save_res = os.path.join(path_mc, 'output')
     city_pkl_name = 'WM7_10_dict_city_samples.pkl'
     building_pkl_name = 'WM7_10_dict_build_samples.pkl'
@@ -805,8 +829,8 @@ if __name__ == '__main__':
                                  path_mc_res_folder=path_mc_res_folder,
                                  use_profile_pool=use_profile_pool,
                                  gen_use_prof_method=gen_use_prof_method,
-                                 path_profile_dict=path_profile_dict
-                                 )
+                                 path_profile_dict=path_profile_dict,
+                                 nb_profiles=nb_profiles)
 
     #  Save sample dicts
     if save_dicts:
