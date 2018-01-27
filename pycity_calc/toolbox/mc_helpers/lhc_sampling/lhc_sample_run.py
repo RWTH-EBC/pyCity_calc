@@ -661,12 +661,16 @@ def gen_profile_pool(city, nb_samples, dict_build_samples, share_profiles=1):
     return dict_profiles
 
 
-def run_overall_lhc_sampling(city, nb_samples, load_sh_mc_res=False,
+def run_overall_lhc_sampling(city, nb_samples,
+                             load_sh_mc_res=False,
                              path_mc_res_folder=None,
                              use_profile_pool=False,
                              gen_use_prof_method=0,
                              path_profile_dict=None,
-                             nb_profiles=None):
+                             nb_profiles=None,
+                             load_city_n_build_samples=False,
+                             path_city_sample_dict=None,
+                             path_build_sample_dict=None):
     """
     Generates empty sample dicts and performs latin hypercube sampling.
     Adds samples to dict_city_sample, dict_build_samples
@@ -698,6 +702,15 @@ def run_overall_lhc_sampling(city, nb_samples, load_sh_mc_res=False,
     nb_profiles : int, optional
         Desired number of profile samples per building, when profile pool
         is generated (default: None). If None, uses nb_samples.
+    load_city_n_build_samples : bool, optional
+        Defines, if existing city and building sample dicts should be
+        loaded (default: False). If False, generates new sample dicts.
+    path_city_sample_dict : str, optional
+        Defines path to city sample dict (default: None). Only relevant,
+        if load_city_n_build_samples is True
+    path_build_sample_dict : str, optional
+        Defines path to building sample dict (default: None). Only relevant,
+        if load_city_n_build_samples is True
 
     Returns
     -------
@@ -730,22 +743,31 @@ def run_overall_lhc_sampling(city, nb_samples, load_sh_mc_res=False,
     if nb_profiles is None:
         nb_profiles = int(nb_samples)
 
-    # Get empty result dicts
-    (dict_city_sample, dict_build_samples) = \
-        gen_empty_res_dicts(city=city,
-                            nb_samples=nb_samples)
+    if load_city_n_build_samples:
+        #  Load existing city and building sample dictionaries
+        dict_city_sample = pickle.load(open(path_city_sample_dict, mode='rb'))
+        dict_build_samples = pickle.load(open(path_build_sample_dict,
+                                              mode='rb'))
 
-    #  Calc. number of uncertain parameters
-    nb_par = calc_nb_unc_par(city=city)
+    else:
+        #  Generate new city and building parameter sample dicts
 
-    #  Sampling on city district level (add to dict_city_sample and
-    #  dict_build_samples
-    do_lhc_city_sampling(city=city, nb_samples=nb_samples, nb_par=nb_par,
-                         dict_city_sample=dict_city_sample,
-                         dict_build_samples=dict_build_samples,
-                         load_sh_mc_res=load_sh_mc_res,
-                         path_mc_res_folder=path_mc_res_folder
-                         )
+        # Get empty result dicts
+        (dict_city_sample, dict_build_samples) = \
+            gen_empty_res_dicts(city=city,
+                                nb_samples=nb_samples)
+
+        #  Calc. number of uncertain parameters
+        nb_par = calc_nb_unc_par(city=city)
+
+        #  Sampling on city district level (add to dict_city_sample and
+        #  dict_build_samples
+        do_lhc_city_sampling(city=city, nb_samples=nb_samples, nb_par=nb_par,
+                             dict_city_sample=dict_city_sample,
+                             dict_build_samples=dict_build_samples,
+                             load_sh_mc_res=load_sh_mc_res,
+                             path_mc_res_folder=path_mc_res_folder
+                             )
 
     if use_profile_pool:
         if gen_use_prof_method == 0:
@@ -789,7 +811,7 @@ if __name__ == '__main__':
     #  Defines, if profile pool should be used
     use_profile_pool = True
 
-    gen_use_prof_method = 0
+    gen_use_prof_method = 1
     #  Options:
     #  0: Generate new profiles during runtime
     #  1: Load pre-generated profile sample dictionary
@@ -799,7 +821,7 @@ if __name__ == '__main__':
 
     #  Defines name of profile dict, if profiles should be loaded
     #  (gen_use_prof_method == 1)
-    el_profile_dict = 'dict_profile_samples.pkl'
+    el_profile_dict = 'WM7_10_dict_profile_samples.pkl'
 
     path_this = os.path.dirname(os.path.abspath(__file__))
     path_mc = os.path.dirname(path_this)
@@ -816,8 +838,8 @@ if __name__ == '__main__':
 
     #  Output path definitions
     path_save_res = os.path.join(path_mc, 'output')
-    city_pkl_name = 'WM7_10_dict_city_samples.pkl'
-    building_pkl_name = 'WM7_10_dict_build_samples.pkl'
+    city_pkl_name = 'WM7_100_dict_city_samples.pkl'
+    building_pkl_name = 'WM7_100_dict_build_samples.pkl'
     profiles_pkl_name = 'WM7_10_dict_profile_samples.pkl'
     #  ###################################################################
 
