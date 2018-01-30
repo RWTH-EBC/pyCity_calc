@@ -888,7 +888,8 @@ class TestBuildingEnergyBalance():
         assert abs(sum_pv_energy - (sum_pv_self + sum_pv_feed)) <= 0.001
 
         assert abs(sh_energy + dhw_energy - (sum_hp_th_energy +
-                                             sum_eh_th_energy)) <= 0.001
+                                             sum_eh_th_energy)) <= \
+               0.001 * (sh_energy + dhw_energy)
 
         #  Assert total energy balance
         assert abs(sh_energy + dhw_energy

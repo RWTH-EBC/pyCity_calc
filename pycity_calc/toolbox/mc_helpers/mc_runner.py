@@ -34,6 +34,7 @@ import pycity_calc.toolbox.modifiers.mod_city_esys_size as modesys
 import pycity_calc.energysystems.thermalEnergyStorage as tessys
 import pycity_calc.visualization.city_visual as citvis
 import pycity_calc.toolbox.mc_helpers.lhc_sampling.lhc_sample_run as lhcrun
+import pycity_calc.cities.scripts.energy_sys_generator as esysgen
 
 
 # Disable printing
@@ -339,7 +340,6 @@ class McRunner(object):
                 dict_esys['chp'] = dict_chp
 
             if building.bes.hasHeatpump:
-
                 dict_hp = {}
 
                 dict_hp['quality_grade_aw'] = \
@@ -606,12 +606,18 @@ class McRunner(object):
 
         return (dict_samples_const, dict_samples_esys)
 
-    def perform_lhc_sampling(self, nb_runs, load_sh_mc_res=False,
+    def perform_lhc_sampling(self, nb_runs,
+                             load_sh_mc_res=False,
                              path_mc_res_folder=None,
                              use_profile_pool=False,
                              gen_use_prof_method=0,
                              path_profile_dict=None,
-                             save_res=True):
+                             save_res=True,
+                             nb_profiles=None,
+                             load_city_n_build_samples=False,
+                             path_city_sample_dict=None,
+                             path_build_sample_dict=None
+                             ):
         """
         Perform latin hypercube sampling
 
@@ -639,6 +645,18 @@ class McRunner(object):
             - 1: Load profile pool from path_profile_dict
         path_profile_dict : str, optional
             Path to dict with el. profile pool (default: None).
+        nb_profiles : int, optional
+            Desired number of profile samples per building, when profile pool
+            is generated (default: None). If None, uses nb_runs.
+        load_city_n_build_samples : bool, optional
+            Defines, if existing city and building sample dicts should be
+            loaded (default: False). If False, generates new sample dicts.
+        path_city_sample_dict : str, optional
+            Defines path to city sample dict (default: None). Only relevant,
+            if load_city_n_build_samples is True
+        path_build_sample_dict : str, optional
+            Defines path to building sample dict (default: None).
+            Only relevant, if load_city_n_build_samples is True
 
         Returns
         -------
@@ -666,6 +684,9 @@ class McRunner(object):
                       'gen_use_prof_method==1 (load el. profile pool)!'
                 raise AssertionError(msg)
 
+        if nb_profiles is None:
+            nb_profiles = int(nb_runs)
+
         (dict_city_sample_lhc, dict_build_samples_lhc, dict_profiles_lhc) \
             = lhcrun. \
             run_overall_lhc_sampling(
@@ -675,7 +696,12 @@ class McRunner(object):
             path_mc_res_folder=path_mc_res_folder,
             use_profile_pool=use_profile_pool,
             gen_use_prof_method=gen_use_prof_method,
-            path_profile_dict=path_profile_dict)
+            path_profile_dict=path_profile_dict,
+            nb_profiles=nb_profiles,
+            load_city_n_build_samples=load_city_n_build_samples,
+            path_city_sample_dict=path_city_sample_dict,
+            path_build_sample_dict=path_build_sample_dict
+        )
 
         if save_res:
             self._dict_city_sample_lhc = dict_city_sample_lhc
@@ -905,7 +931,8 @@ class McRunner(object):
 
                             hp = curr_build.bes.heatpump
 
-                            hp.quality_grade_aw = dict_hp['quality_grade_aw'][i]
+                            hp.quality_grade_aw = dict_hp['quality_grade_aw'][
+                                i]
                             hp.quality_grade_ww = dict_hp['quality_grade_ww'][
                                 i]
                             hp.t_sink = dict_hp['t_sink'][i]
@@ -1034,7 +1061,6 @@ class McRunner(object):
 
                         #  Check which devices do exist on bes
                         if curr_build.bes.hasBattery:
-
                             bat = curr_build.bes.battery
 
                             #  Add new parameters to battery
@@ -1052,7 +1078,6 @@ class McRunner(object):
                         #         esyssample.sample_maintain(nb_samples=nb_runs)
 
                         if curr_build.bes.hasBoiler:
-
                             boi = curr_build.bes.boiler
 
                             #  Add new boiler parameters
@@ -1065,7 +1090,6 @@ class McRunner(object):
                             #     esyssample.sample_maintain(nb_samples=nb_runs)
 
                         if curr_build.bes.hasChp:
-
                             chp = curr_build.bes.chp
 
                             #  Get omega sample
@@ -1092,13 +1116,12 @@ class McRunner(object):
                             #     esyssample.sample_maintain(nb_samples=nb_runs)
 
                         if curr_build.bes.hasHeatpump:
-
                             hp = curr_build.bes.heatpump
 
                             hp.quality_grade_aw = \
-                            dict_build_lhc['qual_grade_aw'][i]
+                                dict_build_lhc['qual_grade_aw'][i]
                             hp.quality_grade_ww = \
-                            dict_build_lhc['qual_grade_ww'][i]
+                                dict_build_lhc['qual_grade_ww'][i]
                             hp.t_sink = dict_build_lhc['t_sink'][i]
 
                             # dict_hp['hp_lifetime'] = \
@@ -1108,7 +1131,6 @@ class McRunner(object):
                             #     esyssample.sample_maintain(nb_samples=nb_runs)
 
                         if curr_build.bes.hasElectricalHeater:
-
                             eh = curr_build.bes.electricalHeater
 
                             # dict_eh['eh_lifetime'] = \
@@ -1118,7 +1140,6 @@ class McRunner(object):
                             #     esyssample.sample_maintain(nb_samples=nb_runs)
 
                         if curr_build.bes.hasPv:
-
                             pv = curr_build.bes.pv
 
                             pv.eta = dict_build_lhc['eta_pv'][i]
@@ -1134,7 +1155,6 @@ class McRunner(object):
                             #     esyssample.sample_maintain(nb_samples=nb_runs)
 
                         if curr_build.bes.hasTes:
-
                             tes = curr_build.bes.tes
 
                             tes.k_loss = dict_build_lhc['k_loss'][i]
@@ -1185,22 +1205,27 @@ class McRunner(object):
                         shmod.sh_curve_summer_off_build(building=curr_build)
 
                 # Save inputs to city, market and environment
-                city.environment.temp_ground = dict_city_samples['temp_ground'][i]
+                city.environment.temp_ground = \
+                dict_city_samples['temp_ground'][i]
                 city.environment.prices.grid_av_fee = \
                     dict_city_samples['grid_av_fee'][i]
 
                 #  Save inputs to annuity_obj
                 annuity_obj.interest = dict_city_samples['interest'][i]
                 annuity_obj.price_ch_cap = dict_city_samples['ch_cap'][i]
-                annuity_obj.price_ch_dem_gas = dict_city_samples['ch_dem_gas'][i]
+                annuity_obj.price_ch_dem_gas = dict_city_samples['ch_dem_gas'][
+                    i]
                 annuity_obj.price_ch_dem_el = dict_city_samples['ch_dem_el'][i]
                 # Reuse ch_dem_el for hp price change
-                annuity_obj.price_ch_dem_el_hp = dict_city_samples['ch_dem_el'][i]
+                annuity_obj.price_ch_dem_el_hp = \
+                dict_city_samples['ch_dem_el'][i]
                 annuity_obj.price_ch_op = dict_city_samples['ch_op'][i]
-                annuity_obj.price_ch_eeg_chp = dict_city_samples['ch_eeg_chp'][i]
+                annuity_obj.price_ch_eeg_chp = dict_city_samples['ch_eeg_chp'][
+                    i]
                 annuity_obj.price_ch_eeg_pv = dict_city_samples['ch_eeg_pv'][i]
                 annuity_obj.price_ch_eex = dict_city_samples['ch_eex'][i]
-                annuity_obj.price_ch_grid_use = dict_city_samples['ch_grid_use'][i]
+                annuity_obj.price_ch_grid_use = \
+                dict_city_samples['ch_grid_use'][i]
 
             elif sampling_method == 'lhc':
 
@@ -1264,19 +1289,23 @@ class McRunner(object):
                 #  Save inputs to annuity_obj
                 annuity_obj.interest = dict_city_lhc['interest'][i]
                 annuity_obj.price_ch_cap = dict_city_lhc['price_ch_cap'][i]
-                annuity_obj.price_ch_dem_gas = dict_city_lhc['price_ch_dem_gas'][
+                annuity_obj.price_ch_dem_gas = \
+                dict_city_lhc['price_ch_dem_gas'][
                     i]
-                annuity_obj.price_ch_dem_el = dict_city_lhc['price_ch_dem_el'][i]
+                annuity_obj.price_ch_dem_el = dict_city_lhc['price_ch_dem_el'][
+                    i]
                 # Reuse ch_dem_el for hp price change
                 annuity_obj.price_ch_dem_el_hp = \
-                dict_city_lhc['price_ch_dem_el'][i]
+                    dict_city_lhc['price_ch_dem_el'][i]
                 annuity_obj.price_ch_op = dict_city_lhc['price_ch_op'][i]
-                annuity_obj.price_ch_eeg_chp = dict_city_lhc['price_ch_eeg_chp'][
+                annuity_obj.price_ch_eeg_chp = \
+                dict_city_lhc['price_ch_eeg_chp'][
                     i]
-                annuity_obj.price_ch_eeg_pv = dict_city_lhc['price_ch_eeg_pv'][i]
+                annuity_obj.price_ch_eeg_pv = dict_city_lhc['price_ch_eeg_pv'][
+                    i]
                 annuity_obj.price_ch_eex = dict_city_lhc['price_ch_eex'][i]
                 annuity_obj.price_ch_grid_use = \
-                dict_city_lhc['price_ch_grid_use'][i]
+                    dict_city_lhc['price_ch_grid_use'][i]
 
             #  Rerun initial parameter calculation of annuity_obj
             annuity_obj.initial_calc()
@@ -1371,7 +1400,7 @@ class McRunner(object):
             if self._nb_failed_runs > failure_tolerance * nb_runs:
                 msg = 'Number of failed runs exceeds ' \
                       'allowed limit of %d runs!' % (
-                          failure_tolerance * nb_runs)
+                              failure_tolerance * nb_runs)
                 raise McToleranceException(msg)
 
             # Save failed run information to dict_mc_setup
@@ -1387,7 +1416,15 @@ class McRunner(object):
                         load_sh_mc_res=False,
                         path_mc_res_folder=None,
                         use_profile_pool=False,
-                        random_profile=False):
+                        gen_use_prof_method=0,
+                        path_profile_dict=None,
+                        save_res=True,
+                        nb_profiles=None,
+                        random_profile=False,
+                        load_city_n_build_samples=False,
+                        path_city_sample_dict=None,
+                        path_build_sample_dict=None
+                        ):
         """
         Perform monte-carlo run with:
         - sampling
@@ -1427,11 +1464,32 @@ class McRunner(object):
         use_profile_pool : bool, optional
             Defines, if user/el. load/dhw profile pool should be generated
             (default: False). If True, generates profile pool.
+        gen_use_prof_method : int, optional
+            Defines method for el. profile pool usage (default: 0).
+            Options:
+            - 0: Generate new el. profile pool
+            - 1: Load profile pool from path_profile_dict
+        path_profile_dict : str, optional
+            Path to dict with el. profile pool (default: None).
+        save_res : bool, optional
+            Save results back to mc_runner object (default: True)
+        nb_profiles : int, optional
+            Desired number of profile samples per building, when profile pool
+            is generated (default: None). If None, uses nb_runs.
         random_profile : bool, optional
-            Defines, if random samples should be kused from profile pool
+            Defines, if random samples should be used from profile pool
             (default: False). Only relevant, if profile pool has been given,
             sampling_method == 'lhc' and nb. of profiles is equal to nb.
             of samples
+        load_city_n_build_samples : bool, optional
+            Defines, if existing city and building sample dicts should be
+            loaded (default: False). If False, generates new sample dicts.
+        path_city_sample_dict : str, optional
+            Defines path to city sample dict (default: None). Only relevant,
+            if load_city_n_build_samples is True
+        path_build_sample_dict : str, optional
+            Defines path to building sample dict (default: None). Only relevant,
+            if load_city_n_build_samples is True
 
         Returns
         -------
@@ -1530,10 +1588,19 @@ class McRunner(object):
             elif sampling_method == 'lhc':
                 #  Perform latin hypercube sampling
                 (dict_city_sample_lhc, dict_build_samples_lhc,
-                 dict_profiles_lhc) = self.perform_lhc_sampling(nb_runs,
-                                          load_sh_mc_res=load_sh_mc_res,
-                                          path_mc_res_folder=path_mc_res_folder,
-                                          use_profile_pool=use_profile_pool)
+                 dict_profiles_lhc) = self.\
+                    perform_lhc_sampling(nb_runs=nb_runs,
+                                         load_sh_mc_res=load_sh_mc_res,
+                                         path_mc_res_folder=path_mc_res_folder,
+                                         use_profile_pool=use_profile_pool,
+                                         gen_use_prof_method=gen_use_prof_method,
+                                         path_profile_dict=path_profile_dict,
+                                         save_res=save_res,
+                                         nb_profiles=nb_profiles,
+                                         load_city_n_build_samples=load_city_n_build_samples,
+                                         path_city_sample_dict=path_city_sample_dict,
+                                         path_build_sample_dict=path_build_sample_dict
+                                         )
         else:
             dict_samples_const = None
             dict_samples_esys = None
@@ -1563,7 +1630,6 @@ class McRunner(object):
                     dict_mc_setup, dict_profiles_lhc)
         else:
             return (None, None, dict_mc_res, dict_mc_setup, None)
-
 
     def perform_ref_run(self, save_res=True, eeg_pv_limit=False):
         """
@@ -1632,7 +1698,7 @@ if __name__ == '__main__':
 
     try:
         #  Try loading city pickle file
-        filename = 'city_clust_simple_with_esys.pkl'
+        filename = 'wm_res_east_7_w_street_sh_resc_wm.pkl'
         file_path = os.path.join(this_path, 'input', filename)
         city = pickle.load(open(file_path, mode='rb'))
 
@@ -1873,9 +1939,37 @@ if __name__ == '__main__':
         file_path = os.path.join(this_path, 'input', filename)
         pickle.dump(city, open(file_path, mode='wb'))
 
+
+
+    # #  TODO: Uncomment later
+    # #  Temporary add energy systems to buildings
+    # #  Generate energy systems
+    # #  Generate one feeder with CHP, boiler and TES
+    # list_esys = [(1001, 0, 1),
+    #              (1002, 0, 2),
+    #              (1003, 1, 1),
+    #              (1004, 1, 1),
+    #              (1005, 1, 1),
+    #              (1006, 2, 1),
+    #              (1007, 2, 2),
+    #              (1001, 3, 10),
+    #              (1002, 3, 20),
+    #              (1003, 3, 30),
+    #              (1004, 3, 40),
+    #              (1005, 3, 50),
+    #              (1006, 3, 60),
+    #              (1007, 3, 70)
+    #              ]
+    #
+    # esysgen.gen_esys_for_city(city=city,
+    #                           list_data=list_esys,
+    #                           dhw_scale=True)
+
+
+
     # Uncomment, if you require further increase of energy system size
     #  Increase system size
-    modesys.incr_esys_size_city(city=city, base_factor=2)
+    modesys.incr_esys_size_city(city=city, base_factor=3)
 
     # #  Uncomment, if you want to plot city district
     # #  Plot city district
@@ -1884,17 +1978,37 @@ if __name__ == '__main__':
 
     # User inputs
     #  ####################################################################
-    nb_runs = 2  # Number of MC runs
+    nb_runs = 100  # Number of MC runs
     do_sampling = True  # Perform initial sampling or use existing samples
 
     sampling_method = 'lhc'
     #  Options: 'lhc' (latin hypercube) or 'random'
 
-    failure_tolerance = 0.05
+    failure_tolerance = 0.5
     #  Allowed share of runs, which fail with EnergyBalanceException.
     #  If failure_tolerance is exceeded, mc runner exception is raised.
 
-    load_sh_mc_res = False
+    #  Defines, if pre-generated sample file should be loaded
+    #  ##############################
+
+    load_city_n_build_samples = True
+    #  Defines, if city and building sample dictionaries should be loaded
+    #  instead of generating new samples
+
+    city_sample_name = 'WM7_100_dict_city_samples.pkl'
+    build_sample_name = 'WM7_100_dict_build_samples.pkl'
+
+    path_city_sample_dict = os.path.join(this_path,
+                                         'input',
+                                         'sample_dicts',
+                                         city_sample_name)
+
+    path_build_sample_dict = os.path.join(this_path,
+                                          'input',
+                                          'sample_dicts',
+                                          build_sample_name)
+
+    load_sh_mc_res = True
     #  If load_sh_mc_res is True, tries to load monte-carlo space heating
     #  uncertainty run results for each building from given folder
     #  If load_sh_mc_res is False, uses default value to sample sh demand
@@ -1907,22 +2021,28 @@ if __name__ == '__main__':
                                       'sh_mc_run')
 
     #  Generate el. and dhw profile pool to sample from (time consuming)
-    use_profile_pool = False
+    use_profile_pool = True
     #  Only relevant, if sampling_method == 'lhc'
     random_profile = False
     #  Defines, if random samples should be used from profiles. If False,
     #  loops over given profiles (if enough profiles exist).
 
-    gen_use_prof_method = 0
+    gen_use_prof_method = 1
     #  Options:
     #  0: Generate new profiles during runtime
     #  1: Load pre-generated profile sample dictionary
 
-    el_profile_dict = 'dict_profile_samples.pkl'
+    el_profile_dict = 'WM7_10_dict_profile_samples.pkl'
     path_profile_dict = os.path.join(this_path,
                                      'input',
                                      'mc_el_profile_pool',
                                      el_profile_dict)
+
+    heating_off = True
+    #  Defines, if heating can be switched of during summer
+
+    #  Output options
+    #  ##############################
 
     #  Suppress print and warnings statements during MC-run
     prevent_printing = False
@@ -1945,6 +2065,7 @@ if __name__ == '__main__':
 
     profiles_name = 'mc_run_profile_pool_dict.pkl'
     path_profiles = os.path.join(this_path, 'output', profiles_name)
+
     #  #####################################################################
     #  Generate object instances
     #  #####################################################################
@@ -1977,11 +2098,19 @@ if __name__ == '__main__':
                                failure_tolerance=failure_tolerance,
                                do_sampling=do_sampling,
                                prevent_printing=prevent_printing,
+                               heating_off=heating_off,
                                sampling_method=sampling_method,
                                load_sh_mc_res=load_sh_mc_res,
                                path_mc_res_folder=path_mc_res_folder,
                                use_profile_pool=use_profile_pool,
-                               random_profile=random_profile)
+                               gen_use_prof_method=gen_use_prof_method,
+                               path_profile_dict=path_profile_dict,
+                               random_profile=random_profile,
+                               load_city_n_build_samples=
+                               load_city_n_build_samples,
+                               path_city_sample_dict=path_city_sample_dict,
+                               path_build_sample_dict=path_build_sample_dict
+                               )
 
     #  Perform reference run:
     #  #####################################################################

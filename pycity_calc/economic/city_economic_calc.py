@@ -1412,7 +1412,7 @@ if __name__ == '__main__':
         #  Define city district input data filename
         filename = 'city_clust_simple.txt'
 
-        txt_path = os.path.join(this_path, 'input', filename)
+        txt_path = os.path.join(this_path, 'inputs', filename)
 
         #  Define city district output file
         save_filename = None
@@ -1448,7 +1448,7 @@ if __name__ == '__main__':
 
         #  Log file for city_generator
         do_log = False  # True, generate log file
-        log_path = os.path.join(this_path, 'input',
+        log_path = os.path.join(this_path, 'inputs',
                                 'city_gen_overall_log.txt')
 
         #  Generate street networks
@@ -1459,9 +1459,9 @@ if __name__ == '__main__':
         str_edge_filename = 'street_edges_cluster_simple.csv'
 
         #  Load street data from csv
-        str_node_path = os.path.join(this_path, 'input',
+        str_node_path = os.path.join(this_path, 'inputs',
                                      str_node_filename)
-        str_edge_path = os.path.join(this_path, 'input',
+        str_edge_path = os.path.join(this_path, 'inputs',
                                      str_edge_filename)
 
         #  Add energy networks to city
@@ -1469,7 +1469,7 @@ if __name__ == '__main__':
 
         #  Path to energy network input file (csv/txt; tab separated)
         network_filename = 'city_clust_simple_networks.txt'
-        network_path = os.path.join(this_path, 'input',
+        network_path = os.path.join(this_path, 'inputs',
                                     network_filename)
 
         #  Add energy systems to city
@@ -1477,7 +1477,7 @@ if __name__ == '__main__':
 
         #  Path to energy system input file (csv/txt; tab separated)
         esys_filename = 'city_clust_simple_enersys.txt'
-        esys_path = os.path.join(this_path, 'input',
+        esys_path = os.path.join(this_path, 'inputs',
                                  esys_filename)
 
         #  #----------------------------------------------------------------------
