@@ -377,8 +377,8 @@ class CityEBCalculator(object):
                 if 'network_type' in self.city.edges[ref_id, n]:
 
                     if (self.city.edges[ref_id, n]['network_type'] == 'heating'
-                        or self.city.edges[ref_id, n][
-                            'network_type'] == 'heating_and_deg'):
+                            or self.city.edges[ref_id, n][
+                                'network_type'] == 'heating_and_deg'):
                         #  Extract lhn data
                         temp_vl = self.city.edges[ref_id, n]['temp_vl']
                         temp_rl = self.city.edges[ref_id, n]['temp_rl']
@@ -884,12 +884,14 @@ class CityEBCalculator(object):
 
         array_co2_dyn = np.zeros(len(self.city.environment.weather.tAmbient))
 
+        #  Static factors
         co2_fac_gas = self.city.environment.co2emissions.co2_factor_gas + 0.0
+        co2_fac_el = self.city.environment.co2emissions.co2_factor_el_mix + 0.0
 
         if share_ren == 0.6:
-            array_co2_mix = self.city.environment.\
+            array_co2_mix = self.city.environment. \
                 co2emissions.array_co2_el_mix_60_ren
-            array_co2_sup = self.city.environment.\
+            array_co2_sup = self.city.environment. \
                 co2emissions.array_co2_el_sup_60_ren
         elif share_ren == 0.8:
             array_co2_mix = self.city.environment. \
@@ -903,11 +905,17 @@ class CityEBCalculator(object):
                 co2emissions.array_co2_el_sup_100_ren
 
         #  Extract co2 emissions caused by pump usage in LHN
+        pump_energy = 0
         if self.list_pump_energy is not None:
-            for i in range(len(array_co2_dyn)):
-                array_co2_dyn[i] += array_co2_mix[i] * \
-                                   self.list_pump_energy[i] * \
-                                   timestep / (1000 * 3600)
+            for p_energy in self.list_pump_energy:
+                pump_energy += p_energy
+
+        co2_pump = pump_energy * co2_fac_el
+        co2_pump_per_timestep = co2_pump / len(array_co2_dyn)
+
+        #  Equally distribute co2 emission of pump usage over one year
+        for i in range(len(array_co2_dyn)):
+            array_co2_dyn[i] += co2_pump_per_timestep
 
         #  Extract dynamic co2 emission per building
         list_buildings = self.city.get_list_build_entity_node_ids()
@@ -962,6 +970,7 @@ class CityEBCalculator(object):
                 array_co2_dyn[i] -= array_co2_sup[i] * array_pv_feed[i]
 
         return array_co2_dyn
+
 
 if __name__ == '__main__':
 
@@ -1264,13 +1273,11 @@ if __name__ == '__main__':
     array_co2_dyn = energy_balance.calc_co2_em_with_dyn_signal(share_ren=0.6)
 
     print()
-    print('Sum of dynamic CO2 emissions in kg/a: ')
-    print(sum(array_co2_dyn))
+    print('Sum of dynamic CO2 emissions in t/a: ')
+    print(round(sum(array_co2_dyn) / 1000, 0))
 
     plt.plot(array_co2_dyn)
     plt.ylabel('CO2 emission in kg')
     plt.title('Dynamic CO2 emissions')
     plt.show()
     plt.close()
-
-
