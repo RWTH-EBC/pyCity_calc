@@ -25,7 +25,7 @@ class Emissions(object):
                  pe_total_wood=1.2, pe_non_ren_wood=0.2, pe_total_el_mix=2.8,
                  pe_non_ren_el_mix=2.4, pe_total_feed_in_el=2.8,
                  pe_non_ren_feed_in_el=2.8, pe_total_env_energy=1,
-                 pe_non_ren_env_energy=0, load_dyn_co2=False):
+                 pe_non_ren_env_energy=0, load_dyn_co2=True):
         """
         Constructor of emissions object in pycity_calc. Holds emission factors
         for Germany, currently for the years:
@@ -123,7 +123,7 @@ class Emissions(object):
             such as solarenergy, geothermal energy or environmental heat
             (default: 0)
         load_dyn_co2 : bool, optional
-            Defines, if dynamic CO2 signals should be loaded (default: False)
+            Defines, if dynamic CO2 signals should be loaded (default: True)
 
         References
         ----------

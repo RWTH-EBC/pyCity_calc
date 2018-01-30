@@ -861,11 +861,113 @@ class CityEBCalculator(object):
 
         return co2
 
+    def calc_co2_em_with_dyn_signal(self, share_ren=0.6):
+        """
+        Calculates co2 emission with dynamic co2 signal
+
+        Parameters
+        ----------
+        share_ren : float, optional
+            Share of renewables on total el. consumption (default: 0.6).
+            E.g. 0.6 means 60% renewables related to total annual el. energy
+            consumption. Options: [0.6, 0.8, 1]
+
+        Returns
+        -------
+        array_co2_dyn : float
+            Array with dynamic CO2 emissions in kg (for each timestep)
+        """
+
+        assert share_ren in [0.6, 0.8, 1]
+
+        timestep = self.city.environment.timer.timeDiscretization
+
+        array_co2_dyn = np.zeros(len(self.city.environment.weather.tAmbient))
+
+        co2_fac_gas = self.city.environment.co2emissions.co2_factor_gas + 0.0
+
+        if share_ren == 0.6:
+            array_co2_mix = self.city.environment.\
+                co2emissions.array_co2_el_mix_60_ren
+            array_co2_sup = self.city.environment.\
+                co2emissions.array_co2_el_sup_60_ren
+        elif share_ren == 0.8:
+            array_co2_mix = self.city.environment. \
+                co2emissions.array_co2_el_mix_80_ren
+            array_co2_sup = self.city.environment. \
+                co2emissions.array_co2_el_sup_80_ren
+        elif share_ren == 1:
+            array_co2_mix = self.city.environment. \
+                co2emissions.array_co2_el_mix_100_ren
+            array_co2_sup = self.city.environment. \
+                co2emissions.array_co2_el_sup_100_ren
+
+        #  Extract co2 emissions caused by pump usage in LHN
+        if self.list_pump_energy is not None:
+            for i in range(len(array_co2_dyn)):
+                array_co2_dyn[i] += array_co2_mix[i] * \
+                                   self.list_pump_energy[i] * \
+                                   timestep / (1000 * 3600)
+
+        #  Extract dynamic co2 emission per building
+        list_buildings = self.city.get_list_build_entity_node_ids()
+
+        for n in list_buildings:
+
+            build = self.city.nodes[n]['entity']
+
+            if build.hasBes:
+                #  Boiler
+                if build.bes.hasBoiler:
+                    for i in range(len(array_co2_dyn)):
+                        array_co2_dyn[i] += \
+                            co2_fac_gas * \
+                            build.bes.boiler.array_fuel_power[i] * \
+                            timestep / (1000 * 3600)
+
+                # CHP
+                if build.bes.hasChp:
+                    for i in range(len(array_co2_dyn)):
+                        array_co2_dyn[i] += \
+                            co2_fac_gas * \
+                            build.bes.chp.array_fuel_power[i] * \
+                            timestep / (1000 * 3600)
+
+            # General electric energy import (without HP and EH) in kWh
+            array_grid_import_dem = build.dict_el_eb_res['grid_import_dem'] \
+                                    * timestep / (1000 * 3600)  # in kWh
+
+            #  Electric energy import for HP in kWh
+            array_grid_import_hp = build.dict_el_eb_res['grid_import_hp'] \
+                                   * timestep / (1000 * 3600)  # in kWh
+
+            #  Electric energy import for EH in kWh
+            array_grid_import_eh = build.dict_el_eb_res['grid_import_eh'] \
+                                   * timestep / (1000 * 3600)  # in kWh
+
+            #  CHP electric energy export in kWh
+            array_chp_feed = build.dict_el_eb_res['chp_feed'] \
+                             * timestep / (1000 * 3600)  # in kWh
+
+            #  PV electric energy export in kWh/a
+            array_pv_feed = build.dict_el_eb_res['pv_feed'] \
+                            * timestep / (1000 * 3600)  # in kWh
+
+            for i in range(len(array_co2_dyn)):
+                array_co2_dyn[i] += array_co2_mix[i] * array_grid_import_dem[i]
+                array_co2_dyn[i] += array_co2_mix[i] * array_grid_import_hp[i]
+                array_co2_dyn[i] += array_co2_mix[i] * array_grid_import_eh[i]
+
+                array_co2_dyn[i] -= array_co2_sup[i] * array_chp_feed[i]
+                array_co2_dyn[i] -= array_co2_sup[i] * array_pv_feed[i]
+
+        return array_co2_dyn
 
 if __name__ == '__main__':
 
     import pycity_calc.cities.scripts.city_generator.city_generator as citygen
     import pycity_calc.cities.scripts.overall_gen_and_dimensioning as overall
+    import matplotlib.pyplot as plt
 
     this_path = os.path.dirname(os.path.abspath(__file__))
 
@@ -1157,3 +1259,18 @@ if __name__ == '__main__':
 
     print('Total emissions of city district in t/a:')
     print(round(co2 / 1000, 0))
+
+    #  Calculate dynamic CO2 signal
+    array_co2_dyn = energy_balance.calc_co2_em_with_dyn_signal(share_ren=0.6)
+
+    print()
+    print('Sum of dynamic CO2 emissions in kg/a: ')
+    print(sum(array_co2_dyn))
+
+    plt.plot(array_co2_dyn)
+    plt.ylabel('CO2 emission in kg')
+    plt.title('Dynamic CO2 emissions')
+    plt.show()
+    plt.close()
+
+
