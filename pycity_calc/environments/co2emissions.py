@@ -25,7 +25,7 @@ class Emissions(object):
                  pe_total_wood=1.2, pe_non_ren_wood=0.2, pe_total_el_mix=2.8,
                  pe_non_ren_el_mix=2.4, pe_total_feed_in_el=2.8,
                  pe_non_ren_feed_in_el=2.8, pe_total_env_energy=1,
-                 pe_non_ren_env_energy=0):
+                 pe_non_ren_env_energy=0, load_dyn_co2=False):
         """
         Constructor of emissions object in pycity_calc. Holds emission factors
         for Germany, currently for the years:
@@ -122,6 +122,8 @@ class Emissions(object):
             Primary energy factor (non-renewable) for environmental energy,
             such as solarenergy, geothermal energy or environmental heat
             (default: 0)
+        load_dyn_co2 : bool, optional
+            Defines, if dynamic CO2 signals should be loaded (default: False)
 
         References
         ----------
@@ -211,6 +213,66 @@ class Emissions(object):
         self.pe_non_ren_feed_in_el = pe_non_ren_feed_in_el
         self.pe_total_env_energy = pe_total_env_energy
         self.pe_non_ren_env_energy = pe_non_ren_env_energy
+
+        #  Arrays with dynamic CO2 signals for electricity mix in Germany
+        #  for different shares of renewables (60%, 80%, 100%)
+        self.array_co2_el_mix_60_ren = None
+        self.array_co2_el_mix_80_ren = None
+        self.array_co2_el_mix_100_ren = None
+
+        #  Arrays with dynamic CO2 signals for conventional electricity
+        #  in Germany for different shares of renewables (60%, 80%, 100%)
+        self.array_co2_el_sup_60_ren = None
+        self.array_co2_el_sup_80_ren = None
+        self.array_co2_el_sup_100_ren = None
+
+        if load_dyn_co2:
+            #  Load dynamic CO2 signals
+            self.load_dyn_co2_signals()
+
+    def load_dyn_co2_signals(self, path_mix=None, path_sup=None):
+        """
+        Load dynamic co2 signals from given pathes. If path is None, uses
+        default path.
+
+        Parameters
+        ----------
+        path_mix : str, optional
+            Path to dynamic CO2 signals for electricity
+            mix (default: None). If None, uses data set within
+            ..\pyCity_calc\pycity_calc\data\El_grid\CO2factors_mix.txt
+        path_sup : str, optional
+            Path to dynamic CO2 signals for conventional electricity supply
+            (default: None). If None, uses data set within
+            ..\pyCity_calc\pycity_calc\data\El_grid\CO2factors_supp.txt
+        """
+
+        path_this = os.path.dirname(os.path.abspath(__file__))
+        path_src = os.path.dirname(path_this)
+        path_data_folder = os.path.join(path_src, 'data', 'El_grid')
+
+        if path_mix is None:
+            name_mix = 'CO2factors_mix.txt'
+            path_mix = os.path.join(path_data_folder, name_mix)
+
+        if path_sup is None:
+            name_sup = 'CO2factors_supp.txt'
+            path_sup = os.path.join(path_data_folder, name_sup)
+
+        matrix_co2_mix = np.loadtxt(path_mix, usecols=(0, 1, 2))
+        matrix_co2_sup = np.loadtxt(path_sup, usecols=(0, 1, 2))
+
+        #  Arrays with dynamic CO2 signals for electricity mix in Germany
+        #  for different shares of renewables (60%, 80%, 100%)
+        self.array_co2_el_mix_60_ren = matrix_co2_mix[:, 0]
+        self.array_co2_el_mix_80_ren = matrix_co2_mix[:, 1]
+        self.array_co2_el_mix_100_ren = matrix_co2_mix[:, 2]
+
+        #  Arrays with dynamic CO2 signals for conventional electricity
+        #  in Germany for different shares of renewables (60%, 80%, 100%)
+        self.array_co2_el_sup_60_ren = matrix_co2_sup[:, 0]
+        self.array_co2_el_sup_80_ren = matrix_co2_sup[:, 1]
+        self.array_co2_el_sup_100_ren = matrix_co2_sup[:, 2]
 
     def get_co2_emission_factors(self, type):
         """
@@ -313,7 +375,7 @@ class Emissions(object):
 
 
 if __name__ == '__main__':
-    emission = Emissions()
+    emission = Emissions(load_dyn_co2=True)
 
     #  Get CO2 factor for natural gas
     co2_gas = emission.get_co2_emission_factors(type='gas')
