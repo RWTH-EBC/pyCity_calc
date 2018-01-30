@@ -836,6 +836,78 @@ def calc_chp_el_sizes_for_opt(city, nb_sizes, mode, with_dhw=False):
 
     return list_chp_size_el
 
+
+def sort_build_ids_by_annual_en_dem(city, nodelist=None, dem='el',
+                                    start_highest=True):
+    """
+    Returns list of building ids sorted by energy demand (default:
+    electric energy demand, starting with highest demand id)
+
+    Parameters
+    ----------
+    city : object
+        City object of pyCity_calc
+    nodelist : list (of ints), optional
+        Nodelist of building ids, which should be used for sorting
+        (default: None). If None, uses all building ids found in city
+    dem : str, optional
+        String defining, which demand should be used (default: 'el').
+        Options:
+        - 'el': Electric demand
+        - 'sh': Space heating
+        - 'dhw': Hot water
+        - 'th': Total thermal demand (space heating and hot water)
+    start_highest : bool, optional
+        Defines, if demands should be sorted in reverse order (starting
+        with highest demand values, followed by decreasing values)
+        (default: True)
+
+    Returns
+    -------
+    list_dem_ids : list (of ints)
+        Sorted list of building ids (sorted by demands)
+    """
+
+    if dem not in ['el', 'sh', 'dhw', 'th']:
+        msg = 'Method dem ' + str(dem) + ' is unkown!'
+        raise AssertionError(msg)
+
+    if nodelist is not None:
+        #  Check if all ids of nodelist are within city
+        for n in nodelist:
+            if n not in city.nodes():
+                msg = 'Node ' + str(n) + ' is no node id of given city!'
+                raise AssertionError(msg)
+    else:
+        #  Extract list with all building node ids
+        nodelist = city.get_list_build_entity_node_ids()
+
+    list_dem_ids = []
+    list_dem = []
+
+    for n in nodelist:
+
+        build = city.nodes[n]['entity']
+
+        list_dem_ids.append(n)
+        if dem == 'el':
+            demand = build.get_annual_el_demand()
+        elif dem == 'sh':
+            demand = build.get_annual_space_heating_demand()
+        elif dem == 'dhw':
+            demand = build.get_annual_dhw_demand()
+        elif dem == 'th':
+            demand = build.get_annual_space_heating_demand() + \
+                     build.get_annual_dhw_demand()
+
+        list_dem.append(demand)
+
+    list_dem, list_dem_ids = zip(*sorted(zip(list_dem, list_dem_ids),
+                                         reverse=start_highest))
+
+    return list_dem_ids
+
+
 if __name__ == '__main__':
 
     #  Estimate CHP sized
