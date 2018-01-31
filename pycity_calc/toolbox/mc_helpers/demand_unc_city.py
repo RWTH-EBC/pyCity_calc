@@ -174,7 +174,7 @@ if __name__ == '__main__':
     # city_f_name = 'aachen_preusweg_mod_new_1.pkl'
     #city_f_name = 'aachen_tuerme_mod_new_1.pkl'
 
-    city_f_name = 'aachen_kronenberg_mod_new_1.pkl'
+    city_f_name = 'aachen_kronenberg_mod_new_1_red.pkl'
 
     save_f_name = city_f_name[:-4] + '_mc_city_samples_' + str(nb_samples) + '_fixed_year.pkl'
 
