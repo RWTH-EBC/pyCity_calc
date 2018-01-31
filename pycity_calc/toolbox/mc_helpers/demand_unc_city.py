@@ -160,30 +160,30 @@ if __name__ == '__main__':
 
     #  User Inputs
     #  ##############################
-    nb_samples = 5
-    time_sp_force_retro = 50
-    max_retro_year = 2014
+    nb_samples = 10000
+    time_sp_force_retro = 70
+    max_retro_year = 2000
     weather_region = 5
     weather_year = 2010
     nb_occ_unc = True
 
     # city_f_name = 'aachen_forsterlinde_mod_new_1.pkl'
-    city_f_name = 'aachen_frankenberg_mod_new_1.pkl'
+    #city_f_name = 'aachen_frankenberg_mod_new_1.pkl'
     #city_f_name = 'aachen_huenefeld_mod_new_1.pkl'
     #city_f_name = 'aachen_kronenberg_mod_new_1.pkl'
     # city_f_name = 'aachen_preusweg_mod_new_1.pkl'
     #city_f_name = 'aachen_tuerme_mod_new_1.pkl'
 
-    city_f_name = 'city_3_buildings_mixed.pkl'
+    city_f_name = 'aachen_kronenberg_mod_new_1.pkl'
 
-    save_f_name = city_f_name[:-4] + '_mc_city_samples_' + str(nb_samples) + '.pkl'
+    save_f_name = city_f_name[:-4] + '_mc_city_samples_' + str(nb_samples) + '_red_year_span.pkl'
 
     #  Define, if older years of construction should be set to enable a larger
     #  variation of modernization years
     change_constr_years = True
     #  If True, overwrite all construction years with value
     #  If False, uses existing modernization years of city object
-    new_constr_year = 1970
+    new_constr_year = 1980
 
     #  End of user Inputs
     #  ##############################
