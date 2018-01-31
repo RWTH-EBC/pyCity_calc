@@ -213,7 +213,7 @@ class EconomicCalculation(object):
                                'EH': 20,
                                'CHP': 15,
                                'TES': 20,
-                               'PV': 25,
+                               'PV': 20,
                                'BAT': 15,
                                'DEG': 15}
 

@@ -1,7 +1,7 @@
 # coding=utf-8
 """
 Simple heat Pump class, based on heating device of pycity
-(not on heat pump class of pycity!)
+(not based on heat pump class of pycity!)
 
 """
 from __future__ import division
@@ -15,12 +15,15 @@ import pycity_calc.toolbox.unit_conversion as unitcon
 class heatPumpSimple(heat.HeatingDevice):
     """
     Implementation of simple heat pump. COP is estimated via quality grade
-    (Guetegrad) and Carnot COP.
+    (Guetegrad) and Carnot COP. Nominal thermal / maximal output power is
+    constant and not dependend on temperature levels! However, COP can
+    vary for air/water heat pumps, depending on source temperature (e.g.
+    environment.weather.tAmbient)
     """
 
     def __init__(self, environment, q_nominal, t_max=55.0,
                  lower_activation_limit=0.5, hp_type='aw',
-                 t_sink=45.0):
+                 t_sink=45.0, qual_grade_aw=0.34, qual_grade_ww=0.43):
         """
         Parameters
         ----------
@@ -50,16 +53,23 @@ class heatPumpSimple(heat.HeatingDevice):
             (default : 'aw')
         t_sink : float, optional
             Temperature of heat sink in °C
-            (default : 45 °C)
-
+            (default : 45 °C). Default temperature of 45 °C enables usage of
+            heat pump with regular radiators. Value should be reduced when
+            using floor heating system.
+        qual_grade_aw : float, optional
+            Quality grade of air water heat pump (default: 0.34). Only used,
+            if hp_type == 'aw'
+        qual_grade_ww : float, optional
+            Quality grade of air water heat pump (default: 0.43). Only used,
+            if hp_type == 'ww'
 
         Attributes
         ----------
         quality_grade : float
             Estimation for quality grad of different hp Types
             Options:
-            0.36: for air water hp
-            0.5. for water water hp
+            0.34: for air water hp
+            0.43. for water water hp
 
         Annotations
         -----------
@@ -73,6 +83,24 @@ class heatPumpSimple(heat.HeatingDevice):
         function call.
         """
 
+        assert q_nominal > 0
+        assert lower_activation_limit >= 0
+        assert lower_activation_limit <= 1
+
+        if hp_type not in ['aw', 'ww']:
+            msg = 'Unkown heat pump type ' + str(hp_type)
+            raise AssertionError(msg)
+
+        if hp_type == 'aw':
+            assert qual_grade_aw > 0
+            assert qual_grade_aw <= 1
+        if hp_type == 'ww':
+            assert qual_grade_ww > 0
+            assert qual_grade_ww <= 1
+
+        assert t_sink <= t_max, ('Temperature of heat sink cannot be ' +
+                                 ' higher than max. output temperature.')
+
         # super Class
         super(heatPumpSimple, self).__init__(environment=environment,
                                              qNominal=q_nominal,
@@ -81,24 +109,56 @@ class heatPumpSimple(heat.HeatingDevice):
                                              lower_activation_limit)
         # further attributes
         self._kind = "heatpump"
+        #  Todo: Project hp_type with properties/getter/setter
+        #  Currently not applied to be able to pickle.load older project city
+        #  files
         self.hp_type = hp_type
-
-        assert t_sink <= t_max, ('Temperature of heat sink cannot be ' +
-                                 ' higher than max. output temperature.')
         self.t_sink = t_sink
 
-        #  TODO: Add reference for quality grades (Guetegrade)
-        if hp_type == 'aw':
-            self.quality_grade = 0.36  # Estimation of quality grade (Guetegrad)
-        elif hp_type == 'ww':
-            self.quality_grade = 0.5  # Estimation of quality grade (Guetegrad)
-        else:
-            warnings.warn(
-                'Unkown type of heat pump. Cannot define quality grade.')
-            self.quality_grade = None
+        #  Quality grades
+        self.qual_grade_aw = qual_grade_aw  #  Air/water
+        self.qual_grade_ww = qual_grade_ww  #  Water/water
+        self.quality_grade = None  # Quality grade used for calculation
 
         timesteps_total = environment.timer.timestepsTotal
         self.array_el_power_in = np.zeros(timesteps_total)
+
+        #  Calculate quality grade
+        self._recalc_quality_grade()
+
+    def _recalc_quality_grade(self):
+        """
+        Recalculate quality grade, if hp_type is changed
+        """
+
+        if self.hp_type == 'aw':
+            self.quality_grade = self.qual_grade_aw + 0.0
+        elif self.hp_type == 'ww':
+            self.quality_grade = self.qual_grade_ww + 0.0
+
+    def change_hp_type(self, hp_type):
+        """
+        Function changes hp type during operation.
+
+        Parameters
+        ----------
+        hp_type : str
+            Heat pump type. Options:
+            'aw': Air/water (air temperature is taken from function call)
+            'ww': Water/water (water temperature is taken from
+            environment.temp_ground)
+        """
+
+        if hp_type not in ['aw', 'ww']:
+            msg = 'Unkown heat pump type ' + str(hp_type)
+            raise AssertionError(msg)
+
+        if self.hp_type == 'ww' and hp_type == 'aw':
+            self.hp_type == 'aw'
+        elif self.hp_type == 'aw' and hp_type == 'ww':
+            self.hp_type == 'ww'
+        # Recalculate quality grade
+        self._recalc_quality_grade()
 
     def calc_hp_carnot_cop(self, temp_source):
         """
@@ -117,12 +177,12 @@ class heatPumpSimple(heat.HeatingDevice):
 
         assert unitcon.con_celsius_to_kelvin(temp_source) > 0
         assert temp_source < self.t_sink, ('the temperature of the heat ' +
-                                          'source must be below the ' +
-                                          'temperature of the heat sink. ' +
-                                          'Check your System')
+                                           'source must be below the ' +
+                                           'temperature of the heat sink. ' +
+                                           'Check your System')
 
         cop_max = unitcon.con_celsius_to_kelvin(self.t_sink) / (
-        self.t_sink - temp_source)
+            self.t_sink - temp_source)
 
         return cop_max
 
@@ -178,16 +238,16 @@ class heatPumpSimple(heat.HeatingDevice):
         if control_signal < 0:
             warnings.warn(
                 'Control signal for heatpump' + str(
-                self) + 'is negative. Therefore, output is defined as zero.')
+                    self) + 'is negative. Therefore, output is defined as zero.')
             control_signal = 0
         elif (control_signal < self.lowerActivationLimit * self.qNominal
-              and control_signal !=0):
+              and control_signal != 0):
             warnings.warn('Control signal for heatpump' + str(
                 self) + 'is below minimum part load performance. '
                         'Therefore, output is defined as zero.')
             control_signal = 0
 
-        #  If desired output power is smaller or equal to nominal power,
+        # If desired output power is smaller or equal to nominal power,
         #  desired power can be provided
         if control_signal <= self.qNominal:
             q_power_output = control_signal

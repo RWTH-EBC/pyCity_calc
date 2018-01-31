@@ -71,7 +71,7 @@ def get_tes_status(tes, buffer_low, buffer_high):
 
 
 def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
-                        eh_full_pl=True, buffer_low=0.1, buffer_high=0.98,
+                        eh_full_pl=True, buffer_low=0.1, buffer_high=0.9,
                         id=None, th_lhn_pow_rem=None):
     """
     Calculate building thermal energy balance. Requires extended building
@@ -83,7 +83,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
         Extended building object of pyCity_calc
     soc_init : float, optional
         Factor of relative state of charge of thermal storage (if thermal
-        storage is existent) (default: 0.75)
+        storage is existent) (default: 0.8)
     boiler_full_pl : bool, optional
         Defines, if boiler should be set to full part load ability
         (default: True)
@@ -99,7 +99,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
         Defines factor of relative storage buffer (relative to max state of
         charge), when no further thermal power input into tes is allowed.
         Below buffer_low * soc_max usage of CHP and/or HP is allowed.
-        (default: 0.98). E.g. 0.98 means 98 % of soc_max.
+        (default: 0.9). E.g. 0.95 means 95 % of soc_max.
     id : int, optional
         Building id (default: None)
     th_lhn_pow_rem : np.array, optional
@@ -142,8 +142,8 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
         has_hp = True
 
         if (build.bes.hasElectricalHeater is False
-            and build.bes.hasBoiler is False
-            and build.get_annual_dhw_demand() > 0):  # pragma: no cover
+                and build.bes.hasBoiler is False
+                and build.get_annual_dhw_demand() > 0):  # pragma: no cover
             msg = 'Building ' + str() + ' only has HP (no boiler or EH).' \
                                         ' Thus, it cannot cover hot water' \
                                         ' energy demand, which is larger ' \
@@ -174,12 +174,14 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
         if build.bes.tes.tInit != t_init_new:
             msg = 'Current tes initial temperature is different from ' \
                   'chosen one (via soc_init). The old initial temperature is' \
-                  ' ' + str(build.bes.tes.tInit) + ' degree Celsius. The new' \
-                                                   ' one is ' \
-                                                   '' + str(t_init_new) + '' \
-                                                                          ' degree Celsius.'
+                  ' ' + str(build.bes.tes.tInit) + \
+                  ' degree Celsius. The new one is ' \
+                  + str(t_init_new) + \
+                  ' degree Celsius.'
             warnings.warn(msg)
+            #  Set new initial and current temperature to tes
             build.bes.tes.tInit = t_init_new
+            build.bes.tes.t_current = t_init_new + 0.0
 
     # Get building thermal load curves
     #  #################################################################
@@ -287,7 +289,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                         chp_lal = chp.lowerActivationLimit
 
                         if (sh_pow_remain + dhw_pow_remain
-                                + th_lhn_pow_rem[i]) \
+                            + th_lhn_pow_rem[i]) \
                                 < chp_lal * q_nom_chp:
                             #  Required power is below part load performance,
                             #  thus, chp cannot be used
@@ -350,7 +352,6 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                 #
                 #             sh_pow_remain = 0
 
-
                 #  Use TES
                 #  #####################################################
 
@@ -401,8 +402,8 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                             sh_pow_remain = 0
                         else:
                             th_lhn_pow_rem[i] -= (q_out_max \
-                                                 - sh_pow_remain \
-                                                 - dhw_pow_remain)
+                                                  - sh_pow_remain \
+                                                  - dhw_pow_remain)
                             dhw_pow_remain = 0
                             sh_pow_remain = 0
 
@@ -417,7 +418,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                     if q_out_check > q_out_limit:
                         msg = 'q_out_max (' \
                               + str(q_out_check) + ' W) exceeds tes output' \
-                                                 'power limit of ' \
+                                                   'power limit of ' \
                               + str(q_out_limit) + ' W.'
                         raise EnergyBalanceException(msg)
 
@@ -442,7 +443,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                     q_nom_boi = boiler.qNominal
 
                     #  if sh_pow_remain > 0 or dhw_pow_remain > 0, use boiler
-                    if (sh_pow_remain + dhw_pow_remain + th_lhn_pow_rem[i])\
+                    if (sh_pow_remain + dhw_pow_remain + th_lhn_pow_rem[i]) \
                             >= q_nom_boi:
                         #  Cover part of power with full boiler load
                         boiler.calc_boiler_all_results(
@@ -464,8 +465,8 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                                 sh_pow_remain = 0
                             else:
                                 th_lhn_pow_rem[i] -= (q_nom_boi \
-                                                     - sh_pow_remain \
-                                                     - dhw_pow_remain)
+                                                      - sh_pow_remain \
+                                                      - dhw_pow_remain)
                                 dhw_pow_remain = 0
                                 sh_pow_remain = 0
 
@@ -495,7 +496,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
 
                     #  if sh_pow_remain > 0 or dhw_pow_remain > 0, use eh
                     if (sh_pow_remain + dhw_pow_remain
-                            + th_lhn_pow_rem[i]) >= q_nom_eh:
+                        + th_lhn_pow_rem[i]) >= q_nom_eh:
                         #  Cover part of power with full eh load
                         eheater.calc_el_h_all_results(
                             control_signal=q_nom_eh,
@@ -516,13 +517,13 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                                 sh_pow_remain = 0
                             else:
                                 th_lhn_pow_rem[i] -= (q_nom_eh \
-                                                     - sh_pow_remain \
-                                                     - dhw_pow_remain)
+                                                      - sh_pow_remain \
+                                                      - dhw_pow_remain)
                                 dhw_pow_remain = 0
                                 sh_pow_remain = 0
 
                     elif (sh_pow_remain + dhw_pow_remain
-                              + th_lhn_pow_rem[i]) < q_nom_eh:
+                          + th_lhn_pow_rem[i]) < q_nom_eh:
                         #  Use eh in part load
 
                         eheater.calc_el_h_all_results(
@@ -549,7 +550,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                     q_nom_chp = chp.qNominal
 
                     if (sh_pow_remain + dhw_pow_remain + q_tes_in_remain
-                            + th_lhn_pow_rem[i]) \
+                        + th_lhn_pow_rem[i]) \
                             >= q_nom_chp:
                         #  Cover part of power with full CHP load
                         chp.th_op_calc_all_results(control_signal=q_nom_chp,
@@ -575,17 +576,18 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                                 dhw_pow_remain = 0
                                 q_tes_in = 0
 
-                            elif dhw_pow_remain - (q_nom_chp - sh_pow_remain) < 0:
+                            elif dhw_pow_remain - (
+                                    q_nom_chp - sh_pow_remain) < 0:
 
                                 if (q_tes_in_remain > q_nom_chp
-                                    - sh_pow_remain - dhw_pow_remain):
+                                        - sh_pow_remain - dhw_pow_remain):
 
                                     q_tes_in = q_nom_chp - sh_pow_remain - \
                                                dhw_pow_remain
                                     q_tes_in_remain -= q_tes_in
 
                                 elif (q_tes_in_remain == q_nom_chp
-                                    - sh_pow_remain - dhw_pow_remain):
+                                      - sh_pow_remain - dhw_pow_remain):
                                     q_tes_in = q_tes_in_remain + 0.0
                                     q_tes_in_remain = 0
 
@@ -601,14 +603,14 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                             sh_pow_remain = 0
 
                     elif (sh_pow_remain + dhw_pow_remain + q_tes_in_remain
-                              + th_lhn_pow_rem[i]) < \
+                          + th_lhn_pow_rem[i]) < \
                             q_nom_chp:
                         #  Try to use CHP, depending on part load
 
                         chp_lal = chp.lowerActivationLimit
 
                         if ((sh_pow_remain + dhw_pow_remain + q_tes_in_remain
-                                 + th_lhn_pow_rem[i])
+                             + th_lhn_pow_rem[i])
                                 < chp_lal * q_nom_chp):
                             #  Required power is below part load performance,
                             #  thus, chp cannot be used
@@ -642,7 +644,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
 
                     #  if sh_pow_remain > 0 or dhw_pow_remain > 0, use boiler
                     if (sh_pow_remain + dhw_pow_remain
-                            + th_lhn_pow_rem[i]) >= q_nom_boi:
+                        + th_lhn_pow_rem[i]) >= q_nom_boi:
                         #  Cover part of power with full boiler load
                         boiler.calc_boiler_all_results(
                             control_signal=q_nom_boi,
@@ -669,7 +671,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                                 sh_pow_remain = 0
 
                     elif (sh_pow_remain + dhw_pow_remain
-                              + th_lhn_pow_rem[i]) < q_nom_boi:
+                          + th_lhn_pow_rem[i]) < q_nom_boi:
                         #  Use boiler in part load
 
                         boiler.calc_boiler_all_results(
@@ -694,7 +696,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
 
                     #  if sh_pow_remain > 0 or dhw_pow_remain > 0, use eh
                     if (sh_pow_remain + dhw_pow_remain
-                            + th_lhn_pow_rem[i]) >= q_nom_eh:
+                        + th_lhn_pow_rem[i]) >= q_nom_eh:
                         #  Cover part of power with full eh load
                         eheater.calc_el_h_all_results(
                             control_signal=q_nom_eh,
@@ -721,7 +723,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                                 sh_pow_remain = 0
 
                     elif (sh_pow_remain + dhw_pow_remain
-                              + th_lhn_pow_rem[i]) < q_nom_eh:
+                          + th_lhn_pow_rem[i]) < q_nom_eh:
                         #  Use eh in part load
 
                         eheater.calc_el_h_all_results(
@@ -816,7 +818,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                     q_nom_chp = chp.qNominal
 
                     if (sh_pow_remain + dhw_pow_remain
-                            + q_tes_in_remain + th_lhn_pow_rem[i]) \
+                        + q_tes_in_remain + th_lhn_pow_rem[i]) \
                             >= q_nom_chp:
                         #  Cover part of power with full CHP load
                         chp.th_op_calc_all_results(control_signal=q_nom_chp,
@@ -833,7 +835,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
 
                         elif sh_pow_remain - q_nom_chp < 0:
                             if dhw_pow_remain - (
-                                        q_nom_chp - sh_pow_remain) > 0:
+                                    q_nom_chp - sh_pow_remain) > 0:
                                 dhw_pow_remain -= (q_nom_chp - sh_pow_remain)
                                 q_tes_in = 0
 
@@ -845,7 +847,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                                     < 0:
 
                                 if (q_tes_in_remain > q_nom_chp
-                                    - sh_pow_remain - dhw_pow_remain):
+                                        - sh_pow_remain - dhw_pow_remain):
 
                                     q_tes_in = q_nom_chp - sh_pow_remain - \
                                                dhw_pow_remain
@@ -866,14 +868,14 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                             sh_pow_remain = 0
 
                     elif (sh_pow_remain + dhw_pow_remain
-                              + q_tes_in_max + th_lhn_pow_rem[i]) < \
+                          + q_tes_in_max + th_lhn_pow_rem[i]) < \
                             q_nom_chp:
                         #  Try to use CHP, depending on part load
 
                         chp_lal = chp.lowerActivationLimit
 
                         if ((sh_pow_remain + dhw_pow_remain + q_tes_in_max +
-                                 th_lhn_pow_rem[i])
+                             th_lhn_pow_rem[i])
                                 < chp_lal * q_nom_chp):
                             #  Required power is below part load performance,
                             #  thus, chp cannot be used
@@ -906,7 +908,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
 
                     #  if sh_pow_remain > 0 or dhw_pow_remain > 0, use boiler
                     if (sh_pow_remain + dhw_pow_remain
-                            + q_tes_in_remain + th_lhn_pow_rem[i]) \
+                        + q_tes_in_remain + th_lhn_pow_rem[i]) \
                             >= q_nom_boi:
                         #  Cover part of power with full boiler load
                         boiler.calc_boiler_all_results(
@@ -935,8 +937,8 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                                     q_tes_in = 0
 
                                 if q_tes_in_remain > (q_nom_boi
-                                                          - sh_pow_remain
-                                                          - dhw_pow_remain):
+                                                      - sh_pow_remain
+                                                      - dhw_pow_remain):
 
                                     # Add boiler power to CHP power to load
                                     #  storage
@@ -947,8 +949,8 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                                                        sh_pow_remain - \
                                                        dhw_pow_remain
                                 elif q_tes_in_remain == (q_nom_boi
-                                                          - sh_pow_remain
-                                                          - dhw_pow_remain):
+                                                         - sh_pow_remain
+                                                         - dhw_pow_remain):
                                     q_tes_in += q_tes_in_remain
                                     q_tes_in_remain = 0
                                 else:
@@ -970,7 +972,8 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                         #  Cover part of demand with full boiler load
                         boiler.calc_boiler_all_results(
                             control_signal=sh_pow_remain + dhw_pow_remain
-                            + q_tes_in_remain + th_lhn_pow_rem[i],
+                                           + q_tes_in_remain + th_lhn_pow_rem[
+                                               i],
                             time_index=i)
                         sh_pow_remain = 0
                         dhw_pow_remain = 0
@@ -989,7 +992,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
 
                     #  if sh_pow_remain > 0 or dhw_pow_remain > 0, use EH
                     if (sh_pow_remain + dhw_pow_remain
-                            + q_tes_in_remain + th_lhn_pow_rem[i]) \
+                        + q_tes_in_remain + th_lhn_pow_rem[i]) \
                             >= q_nom_eh:
                         #  Cover part of power with full EH load
                         eheater.calc_el_h_all_results(
@@ -1018,8 +1021,8 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                                     q_tes_in = 0
 
                                 if q_tes_in_remain > (q_nom_eh
-                                                          - sh_pow_remain
-                                                          - dhw_pow_remain):
+                                                      - sh_pow_remain
+                                                      - dhw_pow_remain):
 
                                     # Add boiler power to CHP power to load
                                     #  storage
@@ -1030,8 +1033,8 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                                                        sh_pow_remain - \
                                                        dhw_pow_remain
                                 elif q_tes_in_remain == (q_nom_eh
-                                                             - sh_pow_remain
-                                                             - dhw_pow_remain):
+                                                         - sh_pow_remain
+                                                         - dhw_pow_remain):
                                     q_tes_in += q_tes_in_remain
                                     q_tes_in_remain = 0
                                 else:
@@ -1053,7 +1056,8 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                         #  Cover full power with EH part load
                         eheater.calc_el_h_all_results(
                             control_signal=sh_pow_remain + dhw_pow_remain
-                            + q_tes_in_remain + th_lhn_pow_rem[i],
+                                           + q_tes_in_remain + th_lhn_pow_rem[
+                                               i],
                             time_index=i)
                         sh_pow_remain = 0
                         dhw_pow_remain = 0
@@ -1065,7 +1069,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
 
                 # If uncovered demand, use TES
                 if (sh_pow_remain > 0 or dhw_pow_remain > 0
-                    or th_lhn_pow_rem[i] > 0):
+                        or th_lhn_pow_rem[i] > 0):
                     #  Use tes to cover demands
                     q_out_requ = sh_pow_remain + dhw_pow_remain
 
@@ -1097,7 +1101,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                 if q_out_requ > q_out_limit:
                     msg = 'q_out_requ (' \
                           + str(q_out_requ) + ' W) exceeds tes output' \
-                                             'power limit of ' \
+                                              'power limit of ' \
                           + str(q_out_limit) + ' W.'
                     raise EnergyBalanceException(msg)
 
@@ -1126,6 +1130,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                 msg = 'Could not solve thermal energy balance in ' \
                       'building' + str(id) + ' at timestep ' + str(i) + '.'
                 raise EnergyBalanceException(msg)
+
 
     elif has_tes and has_hp:
         #  Use heat pump with thermal storage to cover space heating demand
@@ -1257,7 +1262,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                     if sh_pow_remain > q_out_limit:
                         msg = 'sh_pow_remain (' \
                               + str(sh_pow_remain) + ' W) exceeds tes output' \
-                                                 'power limit of ' \
+                                                     'power limit of ' \
                               + str(q_out_limit) + ' W.'
                         raise EnergyBalanceException(msg)
 
@@ -1301,7 +1306,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
 
                         boiler.calc_boiler_all_results(
                             control_signal=(
-                                sh_pow_remain + dhw_pow_remain),
+                                    sh_pow_remain + dhw_pow_remain),
                             time_index=i)
 
                         sh_pow_remain = 0
@@ -1338,7 +1343,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
 
                         eheater.calc_el_h_all_results(
                             control_signal=(
-                                sh_pow_remain + dhw_pow_remain),
+                                    sh_pow_remain + dhw_pow_remain),
                             time_index=i)
 
                         sh_pow_remain = 0
@@ -1513,7 +1518,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
 
                         eheater.calc_el_h_all_results(
                             control_signal=(
-                                sh_pow_remain + dhw_pow_remain),
+                                    sh_pow_remain + dhw_pow_remain),
                             time_index=i)
 
                         sh_pow_remain = 0
@@ -1601,7 +1606,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                         elif sh_pow_remain - q_nom_boi < 0:
                             if dhw_pow_remain > q_nom_boi - sh_pow_remain:
                                 dhw_pow_remain -= (
-                                    q_nom_boi - sh_pow_remain)
+                                        q_nom_boi - sh_pow_remain)
                                 sh_pow_remain = 0
                             elif dhw_pow_remain == q_nom_boi - sh_pow_remain:
                                 sh_pow_remain = 0
@@ -1673,7 +1678,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
 
                         eheater.calc_el_h_all_results(
                             control_signal=(
-                                sh_pow_remain + dhw_pow_remain + q_tes_in_remain),
+                                    sh_pow_remain + dhw_pow_remain + q_tes_in_remain),
                             time_index=i)
 
                         sh_pow_remain = 0
@@ -1707,7 +1712,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                 if q_out_requ > q_out_limit:
                     msg = 'q_out_requ (' \
                           + str(q_out_requ) + ' W) exceeds tes output' \
-                                             'power limit of ' \
+                                              'power limit of ' \
                           + str(q_out_limit) + ' W.'
                     raise EnergyBalanceException(msg)
 
@@ -1793,8 +1798,9 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
 
                     else:  # Cover total thermal power demand with boiler
 
-                        boiler.calc_boiler_all_results(control_signal=th_power+th_lhn_pow_rem[i],
-                                                       time_index=i)
+                        boiler.calc_boiler_all_results(
+                            control_signal=th_power + th_lhn_pow_rem[i],
+                            time_index=i)
                         th_pow_remain = 0
                         th_lhn_pow_rem[i] = 0
 
@@ -1821,8 +1827,9 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
 
                     else:  # Cover total thermal power demand with eh
 
-                        eh.calc_el_h_all_results(control_signal=th_pow_remain+th_lhn_pow_rem[i],
-                                                 time_index=i)
+                        eh.calc_el_h_all_results(
+                            control_signal=th_pow_remain + th_lhn_pow_rem[i],
+                            time_index=i)
                         th_pow_remain = 0
                         th_lhn_pow_rem[i] = 0
 
@@ -1860,7 +1867,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                 if q_out_requ > q_out_limit:
                     msg = 'q_out_requ (' \
                           + str(q_out_requ) + ' W) exceeds tes output' \
-                                             'power limit of ' \
+                                              'power limit of ' \
                           + str(q_out_limit) + ' W.'
                     raise EnergyBalanceException(msg)
 
@@ -1903,7 +1910,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                     q_nom_boi = boiler.qNominal
 
                     if q_nom_boi < (th_pow_remain
-                                        + q_tes_in_remain + th_lhn_pow_rem[i]):
+                                    + q_tes_in_remain + th_lhn_pow_rem[i]):
                         #  Only cover partial power demand with boiler power
                         boiler.calc_boiler_all_results(
                             control_signal=q_nom_boi,
@@ -1923,7 +1930,8 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                                 q_tes_in_remain = 0
                                 th_pow_remain = 0
                             else:
-                                th_lhn_pow_rem[i] -= (q_nom_boi - th_pow_remain - q_tes_in_remain)
+                                th_lhn_pow_rem[i] -= (
+                                            q_nom_boi - th_pow_remain - q_tes_in_remain)
                                 q_tes_in += q_tes_in_remain
                                 q_tes_in_remain = 0
                                 th_pow_remain = 0
@@ -1950,7 +1958,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                     q_nom_eh = eh.qNominal
 
                     if q_nom_eh < (th_pow_remain
-                                       + q_tes_in_remain + th_lhn_pow_rem[i]):
+                                   + q_tes_in_remain + th_lhn_pow_rem[i]):
                         #  Only cover partial power demand with boiler power
                         eh.calc_el_h_all_results(
                             control_signal=q_nom_eh,
@@ -2027,7 +2035,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                 if q_out_requ > q_out_limit:
                     msg = 'q_out_requ (' \
                           + str(q_out_requ) + ' W) exceeds tes output' \
-                                             'power limit of ' \
+                                              'power limit of ' \
                           + str(q_out_limit) + ' W.'
                     raise EnergyBalanceException(msg)
 
@@ -2094,8 +2102,9 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
 
                 else:  # Cover total thermal power demand with boiler
 
-                    boiler.calc_boiler_all_results(control_signal=th_pow_remain + th_lhn_pow_rem[i],
-                                                   time_index=i)
+                    boiler.calc_boiler_all_results(
+                        control_signal=th_pow_remain + th_lhn_pow_rem[i],
+                        time_index=i)
                     th_pow_remain = 0
                     th_lhn_pow_rem[i] = 0
 
@@ -2124,7 +2133,8 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                 else:  # Cover total thermal power demand with eh
 
                     eh.calc_el_h_all_results(control_signal=th_pow_remain
-                                                            +th_lhn_pow_rem[i],
+                                                            + th_lhn_pow_rem[
+                                                                i],
                                              time_index=i)
                     th_pow_remain = 0
                     th_lhn_pow_rem[i] = 0
@@ -2133,6 +2143,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                 msg = 'Could not cover thermal energy power at timestep ' \
                       '' + str(i) + ' at building ' + str(id)
                 EnergyBalanceException(msg)
+
 
 def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False,
                      eeg_pv_limit=False, save_eb_dict=True):
@@ -2206,11 +2217,11 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False,
                 pv_ideal.gamma = 0
                 pv_ideal.tau_alpha = 0.9
 
-                pv_peak = max (pv_ideal.getPower(currentValues=False,
-                                                 updatePower=True))
+                pv_peak = max(pv_ideal.getPower(currentValues=False,
+                                                updatePower=True))
 
                 #  Logiccheck if weather file radiation is low
-                if pv_peak/pv_ideal.area < 125:  # 125 W/m2
+                if pv_peak / pv_ideal.area < 125:  # 125 W/m2
                     pv_peak = 125 * pv_ideal.area
 
                 pv_p_limit = 0.7 * pv_peak
@@ -2275,6 +2286,7 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False,
             p_el_chp = build.bes.chp.totalPOutput[i]
             p_el_chp_remain = p_el_chp + 0.0
 
+        assert p_pv_remain >= 0
         assert p_el_remain >= 0
         assert p_el_chp_remain >= 0
 
@@ -2327,6 +2339,7 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False,
                     pv_self_eh[i] += p_pv_remain
                     p_pv_remain = 0
 
+        assert p_pv_remain >= 0
         assert p_el_remain >= 0
         assert p_el_chp_remain >= 0
 
@@ -2513,6 +2526,7 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False,
                                                save_res=True,
                                                time_index=i)
 
+        assert p_pv_remain >= 0
         assert p_el_remain >= 0
         assert p_el_chp_remain >= 0
 
@@ -2540,8 +2554,10 @@ def calc_build_el_eb(build, use_chp=True, use_pv=True, has_deg=False,
                     pv_off[i] += p_pv_remain - pv_p_limit
                     p_pv_remain = pv_p_limit + 0.0
 
+            assert p_pv_remain >= 0
             pv_feed[i] += p_pv_remain
             p_pv_remain = 0
+
         if has_chp:
             chp_feed[i] += p_el_chp_remain
             p_el_chp_remain = 0
@@ -2783,47 +2799,47 @@ if __name__ == '__main__':
         district_data = citygen.get_district_data_from_txt(txt_path)
 
         city = overall.run_overall_gen_and_dim(timestep=timestep,
-                                                      year_timer=year_timer,
-                                                      year_co2=year_co2,
-                                                      location=location,
-                                                      try_path=try_path,
-                                                      th_gen_method=th_gen_method,
-                                                      el_gen_method=el_gen_method,
-                                                      use_dhw=use_dhw,
-                                                      dhw_method=dhw_method,
-                                                      district_data=district_data,
-                                                      gen_str=gen_str,
-                                                      str_node_path=str_node_path,
-                                                      str_edge_path=str_edge_path,
-                                                      generation_mode=0,
-                                                      eff_factor=eff_factor,
-                                                      save_path=save_path,
-                                                      altitude=altitude,
-                                                      do_normalization=do_normalization,
-                                                      dhw_volumen=dhw_volumen,
-                                                      gen_e_net=gen_e_net,
-                                                      network_path=network_path,
-                                                      gen_esys=gen_esys,
-                                                      esys_path=esys_path,
-                                                      dhw_dim_esys=dhw_dim_esys,
-                                                      plot_pycity_calc=plot_pycity_calc,
-                                                      slp_manipulate=slp_manipulate,
-                                                      call_teaser=call_teaser,
-                                                      teaser_proj_name=teaser_proj_name,
-                                                      do_log=do_log,
-                                                      log_path=log_path,
-                                                      air_vent_mode=air_vent_mode,
-                                                      vent_factor=vent_factor,
-                                                      t_set_heat=t_set_heat,
-                                                      t_set_cool=t_set_cool,
-                                                      t_night=t_set_night,
-                                                      vdi_sh_manipulate=vdi_sh_manipulate,
-                                                      el_random=el_random,
-                                                      dhw_random=dhw_random,
-                                                      prev_heat_dev=prev_heat_dev,
-                                                      season_mod=season_mod,
-                                                      merge_windows=merge_windows,
-                                                      new_try=new_try)
+                                               year_timer=year_timer,
+                                               year_co2=year_co2,
+                                               location=location,
+                                               try_path=try_path,
+                                               th_gen_method=th_gen_method,
+                                               el_gen_method=el_gen_method,
+                                               use_dhw=use_dhw,
+                                               dhw_method=dhw_method,
+                                               district_data=district_data,
+                                               gen_str=gen_str,
+                                               str_node_path=str_node_path,
+                                               str_edge_path=str_edge_path,
+                                               generation_mode=0,
+                                               eff_factor=eff_factor,
+                                               save_path=save_path,
+                                               altitude=altitude,
+                                               do_normalization=do_normalization,
+                                               dhw_volumen=dhw_volumen,
+                                               gen_e_net=gen_e_net,
+                                               network_path=network_path,
+                                               gen_esys=gen_esys,
+                                               esys_path=esys_path,
+                                               dhw_dim_esys=dhw_dim_esys,
+                                               plot_pycity_calc=plot_pycity_calc,
+                                               slp_manipulate=slp_manipulate,
+                                               call_teaser=call_teaser,
+                                               teaser_proj_name=teaser_proj_name,
+                                               do_log=do_log,
+                                               log_path=log_path,
+                                               air_vent_mode=air_vent_mode,
+                                               vent_factor=vent_factor,
+                                               t_set_heat=t_set_heat,
+                                               t_set_cool=t_set_cool,
+                                               t_night=t_set_night,
+                                               vdi_sh_manipulate=vdi_sh_manipulate,
+                                               el_random=el_random,
+                                               dhw_random=dhw_random,
+                                               prev_heat_dev=prev_heat_dev,
+                                               season_mod=season_mod,
+                                               merge_windows=merge_windows,
+                                               new_try=new_try)
 
         city.nodes[1006]['entity'].bes.boiler.qNominal *= 5
         city.nodes[1006]['entity'].bes.tes.capacity *= 5

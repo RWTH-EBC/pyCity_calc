@@ -3,6 +3,7 @@
 
 # But not these files...
 !.gitignore
+!README.md
 !city_3_buildings.p
 !city_3_buildings_networks.txt
 !city_3_buildings_networks.xlsx

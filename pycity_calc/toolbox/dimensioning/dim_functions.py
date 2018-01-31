@@ -481,7 +481,8 @@ def get_id_max_th_power(city, with_dhw=False, current_values=False,
 #  #-----------------------------------------------------------------------
 
 def calc_chp_nom_th_power(th_power_curve, method=1, min_runtime=6000,
-                          force_min_runtime=False, timestep=None):
+                          force_min_runtime=False, timestep=None,
+                          share_max_th=1/5):
     """
     Calculate nominal thermal power of CHP system (for given thermal power
     curve)
@@ -495,8 +496,10 @@ def calc_chp_nom_th_power(th_power_curve, method=1, min_runtime=6000,
         (default: 1)
         Options:
         1 - Maximum rectangular
-        2 - Minimum runtime per year
+        2 - Minimum runtime per year (might fail, if min. runtime cannot be
+        reached!)
         3 - Maximum power
+        4 - Share of maximum thermal power (default: 1/5)
     min_runtime : float, optional
         Minimum runtime CHP should have per year (in hours!).
         Only relevant, if method == 2
@@ -510,6 +513,9 @@ def calc_chp_nom_th_power(th_power_curve, method=1, min_runtime=6000,
     timestep : int, optional
         Timestep in seconds. Only relevant for methods 2
         (default: None)
+    share_max_th : float, optional
+        Defines share of chp nominalt thermal power on max. th. power of given
+        th_power_curve (default: 1/5). Only relevant for method == 4
 
     Returns
     -------
@@ -517,7 +523,7 @@ def calc_chp_nom_th_power(th_power_curve, method=1, min_runtime=6000,
         CHP nominal thermal power
     """
 
-    list_method = [1, 2, 3]
+    list_method = [1, 2, 3, 4]
     assert method in list_method, 'Unknown chp sizing method.'
 
     if method == 1:  # Max. rectangle method
@@ -540,6 +546,10 @@ def calc_chp_nom_th_power(th_power_curve, method=1, min_runtime=6000,
     elif method == 3:  # Max. th. power
 
         chp_nom_power = np.amax(th_power_curve)
+
+    elif method == 4:  # share_max_th * max. th. power
+
+        chp_nom_power = share_max_th * np.amax(th_power_curve)
 
     return chp_nom_power
 
@@ -825,6 +835,78 @@ def calc_chp_el_sizes_for_opt(city, nb_sizes, mode, with_dhw=False):
             list_chp_size_el.append(el_power)
 
     return list_chp_size_el
+
+
+def sort_build_ids_by_annual_en_dem(city, nodelist=None, dem='el',
+                                    start_highest=True):
+    """
+    Returns list of building ids sorted by energy demand (default:
+    electric energy demand, starting with highest demand id)
+
+    Parameters
+    ----------
+    city : object
+        City object of pyCity_calc
+    nodelist : list (of ints), optional
+        Nodelist of building ids, which should be used for sorting
+        (default: None). If None, uses all building ids found in city
+    dem : str, optional
+        String defining, which demand should be used (default: 'el').
+        Options:
+        - 'el': Electric demand
+        - 'sh': Space heating
+        - 'dhw': Hot water
+        - 'th': Total thermal demand (space heating and hot water)
+    start_highest : bool, optional
+        Defines, if demands should be sorted in reverse order (starting
+        with highest demand values, followed by decreasing values)
+        (default: True)
+
+    Returns
+    -------
+    list_dem_ids : list (of ints)
+        Sorted list of building ids (sorted by demands)
+    """
+
+    if dem not in ['el', 'sh', 'dhw', 'th']:
+        msg = 'Method dem ' + str(dem) + ' is unkown!'
+        raise AssertionError(msg)
+
+    if nodelist is not None:
+        #  Check if all ids of nodelist are within city
+        for n in nodelist:
+            if n not in city.nodes():
+                msg = 'Node ' + str(n) + ' is no node id of given city!'
+                raise AssertionError(msg)
+    else:
+        #  Extract list with all building node ids
+        nodelist = city.get_list_build_entity_node_ids()
+
+    list_dem_ids = []
+    list_dem = []
+
+    for n in nodelist:
+
+        build = city.nodes[n]['entity']
+
+        list_dem_ids.append(n)
+        if dem == 'el':
+            demand = build.get_annual_el_demand()
+        elif dem == 'sh':
+            demand = build.get_annual_space_heating_demand()
+        elif dem == 'dhw':
+            demand = build.get_annual_dhw_demand()
+        elif dem == 'th':
+            demand = build.get_annual_space_heating_demand() + \
+                     build.get_annual_dhw_demand()
+
+        list_dem.append(demand)
+
+    list_dem, list_dem_ids = zip(*sorted(zip(list_dem, list_dem_ids),
+                                         reverse=start_highest))
+
+    return list_dem_ids
+
 
 if __name__ == '__main__':
 

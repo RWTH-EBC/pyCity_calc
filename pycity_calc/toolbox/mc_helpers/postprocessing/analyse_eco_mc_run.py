@@ -460,9 +460,9 @@ class EcoMCRunAnalyze(object):
         """
 
         if (self._array_co2_mod is None
-            or self._array_sh_dem_mod is None
-            or self._array_el_dem_mod is None
-            or self._array_dhw_dem_mod is None):
+                or self._array_sh_dem_mod is None
+                or self._array_el_dem_mod is None
+                or self._array_dhw_dem_mod is None):
             msg = 'Cannot calculate net energy to annuity ratio, as inputs ' \
                   'are missing. Have you loaded all results files and called' \
                   ' extract_basic_results?'
@@ -554,9 +554,9 @@ class EcoMCRunAnalyze(object):
         """
 
         if (self._array_ann_mod is None
-            or self._array_sh_dem_mod is None
-            or self._array_el_dem_mod is None
-            or self._array_dhw_dem_mod is None):
+                or self._array_sh_dem_mod is None
+                or self._array_el_dem_mod is None
+                or self._array_dhw_dem_mod is None):
             msg = 'Cannot calculate net energy to annuity ratio, as inputs ' \
                   'are missing. Have you loaded all results files and called' \
                   ' extract_basic_results?'
@@ -791,9 +791,9 @@ class EcoMCRunAnalyze(object):
         """
 
         if (self._array_co2_mod is None
-            or self._array_sh_dem_mod is None
-            or self._array_el_dem_mod is None
-            or self._array_dhw_dem_mod is None):
+                or self._array_sh_dem_mod is None
+                or self._array_el_dem_mod is None
+                or self._array_dhw_dem_mod is None):
             msg = 'Cannot calculate net energy to annuity ratio, as inputs ' \
                   'are missing. Have you loaded all results files and called' \
                   ' extract_basic_results?'
@@ -831,9 +831,9 @@ class EcoMCRunAnalyze(object):
         """
 
         if (self._array_ann_mod is None
-            or self._array_sh_dem_mod is None
-            or self._array_el_dem_mod is None
-            or self._array_dhw_dem_mod is None):
+                or self._array_sh_dem_mod is None
+                or self._array_el_dem_mod is None
+                or self._array_dhw_dem_mod is None):
             msg = 'Cannot calculate net energy to annuity ratio, as inputs ' \
                   'are missing. Have you loaded all results files and called' \
                   ' extract_basic_results?'
@@ -854,7 +854,7 @@ class EcoMCRunAnalyze(object):
         return array_ann_to_en
 
     @staticmethod
-    def calc_res_factor(array_in):
+    def calc_res_factor(array_in, obj):
         """
         Calculate resilience factor
 
@@ -862,6 +862,10 @@ class EcoMCRunAnalyze(object):
         ----------
         array_in : np.array  (of floats)
             Array holding result values
+        obj : str
+            Objective. Options:
+            - 'min' : Minimization
+            - 'max' : Maximization
 
         Returns
         -------
@@ -869,20 +873,62 @@ class EcoMCRunAnalyze(object):
             Risk aversion factor to evaluate solution
         """
 
+        assert obj in ['min', 'max'], 'Unknown objective!'
+
         #  Calculate mean
         mean = np.mean(a=array_in)
 
         #  Calculate standard deviation
         std = np.std(a=array_in)
 
-        risk_av_factor = mean / (std ** (10 / 25))
-
+        if obj == 'max':
+            risk_av_factor = mean / (std ** (10 / 25))
+        elif obj == 'min':
+            risk_av_factor = mean + 10 * std ** 2 / mean
         return risk_av_factor
+
+    @staticmethod
+    def calc_risk_friendly_factor(array_in, obj):
+        """
+        Calculate risk friendly factor
+
+        Parameters
+        ----------
+        array_in : np.array  (of floats)
+            Array holding result values
+        obj : str
+            Objective. Options:
+            - 'min' : Minimization
+            - 'max' : Maximization
+
+        Returns
+        -------
+        risk_friendly_factor : float
+            Risk aversion factor to evaluate solution
+        """
+
+        assert obj in ['min', 'max'], 'Unknown objective!'
+
+        #  Calculate mean
+        mean = np.mean(a=array_in)
+
+        #  Calculate standard deviation
+        std = np.std(a=array_in)
+
+        if obj == 'max':
+            # risk_friendly_factor = mean / (std ** (25 / 10))
+            msg = 'calc_risk_friendly_factor has currently no max method!'
+            raise NotImplementedError(msg)
+        elif obj == 'min':
+            risk_friendly_factor = mean - 10 * std ** 2 / mean
+
+        return risk_friendly_factor
 
     def calc_risk_averse_parameters(self, type):
         """
         Calculate and returns risk averse parameter, depending on input type.
         Uses mean and standard deviation of result parameters for evaluation.
+        Differentiates between objectives for minimization and maximization
 
         Parameters
         ----------
@@ -908,24 +954,91 @@ class EcoMCRunAnalyze(object):
 
         if type == 'annuity':
             array_in = self._array_ann_mod
+            obj = 'min'
         elif type == 'co2':
             array_in = self._array_co2_mod
+            obj = 'min'
         elif type == 'en_to_an':
             array_in = self._array_en_to_an
+            obj = 'max'
         elif type == 'en_to_co2':
             array_in = self._array_en_to_co2
+            obj = 'max'
         elif type == 'ex_to_an':
             array_in = self._array_ex_to_an
+            obj = 'max'
         elif type == 'ex_to_co2':
             array_in = self._array_ex_to_co2
+            obj = 'max'
         elif type == 'an_to_en':
             array_in = self._array_ann_to_en
+            obj = 'min'
         elif type == 'co2_to_en':
             array_in = self._array_co2_to_en
+            obj = 'min'
 
-        risk_av_factor = self.calc_res_factor(array_in=array_in)
+        risk_av_factor = self.calc_res_factor(array_in=array_in, obj=obj)
 
         return risk_av_factor
+
+    def calc_risk_friendly_parameters(self, type):
+        """
+        Calculate and returns risk friendly parameter, depending on input type.
+        Uses mean and standard deviation of result parameters for evaluation.
+        Differentiates between objectives for minimization and maximization
+
+        Parameters
+        ----------
+        type : str
+            Type of evaluated result parameter. Options:
+            - 'annuity' : Annualized cost
+            - 'co2' : Emissions
+            - 'en_to_an' : Net energy to annuity ratio
+            - 'en_to_co2' : Net energy to co2 ratio
+            - 'ex_to_an' : Net exergy to annuity ratio
+            - 'ex_to_co2' : Net exergy to co2 ratio
+
+        Returns
+        -------
+        risk_friendly_factor : float
+            Risk friendly factor to evaluate solution
+        """
+
+        if type not in ['annuity', 'co2', 'en_to_an', 'en_to_co2',
+                        'ex_to_an', 'ex_to_co2', 'an_to_en', 'co2_to_en']:
+            msg = 'Unknown input type for calc_risk_averse_parameters()'
+            raise AssertionError(msg)
+
+        if type == 'annuity':
+            array_in = self._array_ann_mod
+            obj = 'min'
+        elif type == 'co2':
+            array_in = self._array_co2_mod
+            obj = 'min'
+        elif type == 'en_to_an':
+            array_in = self._array_en_to_an
+            obj = 'max'
+        elif type == 'en_to_co2':
+            array_in = self._array_en_to_co2
+            obj = 'max'
+        elif type == 'ex_to_an':
+            array_in = self._array_ex_to_an
+            obj = 'max'
+        elif type == 'ex_to_co2':
+            array_in = self._array_ex_to_co2
+            obj = 'max'
+        elif type == 'an_to_en':
+            array_in = self._array_ann_to_en
+            obj = 'min'
+        elif type == 'co2_to_en':
+            array_in = self._array_co2_to_en
+            obj = 'min'
+
+        risk_friendly_factor = self. \
+            calc_risk_friendly_factor(array_in=array_in,
+                                      obj=obj)
+
+        return risk_friendly_factor
 
 
 if __name__ == '__main__':
@@ -1048,5 +1161,3 @@ if __name__ == '__main__':
     plt.ylabel('Nb. of occurence')
     plt.show()
     plt.close()
-
-

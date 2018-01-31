@@ -60,7 +60,8 @@ def load_enersys_input_data(esys_path):
 
 
 def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
-                      buffer_factor=2, lhn_buffer=1.2):
+                      tes_default_chp=None,
+                      buffer_factor=2, lhn_buffer=1.2, eta_pv=0.12):
     """
     Generate and dimensions energy systems within city district, based on
     user defined energy system types and method within txt input file.
@@ -77,14 +78,24 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
         account. (default: False)
         If True, only space heating power demand is taken into account.
     tes_default : float, optional
-        Default value for smallest thermal storage size in kg
-        (default: 100)
+        Default value for smallest thermal storage size in kg (for boiler
+        usage) (default: 100)
+    tes_default_chp : float, optional
+        Default value for smallest thermal storage size in kg (for CHP
+        usage) (default: None). If None, estimates TES size based on CHP
+        power. Else, performs the same estimation, but increases value to
+        given tes_default_chp value, if estimation value is smaller than
+        tes_default_chp.
     buffer_factor : float, optional
         Factor for boiler/EH oversizing (default: 2)
     lhn_buffer : float, optional
         Factor for LHN connection oversizing (default: 1.2). Relevant to
         account for LHN losses in Boiler/CHP sytem dimensioning
+    eta_pv : float, optional
+        Efficiency of PV system (default: 0.12)
     """
+    assert eta_pv > 0
+    assert eta_pv <= 1
 
     #  Check if all node ids exist within city object
     for tup in list_data:
@@ -378,6 +389,10 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
             #  power for 6 hours (T_spread = 60 Kelvin)
             mass_tes = chp_th_power * 6 * 3600 / (4180 * 60)
 
+            if tes_default_chp is not None:
+                if tes_default_chp > mass_tes:
+                    mass_tes = tes_default_chp
+
             #  Round to realistic storage size
             mass_tes = dimfunc.storage_rounding(mass_tes)
 
@@ -484,7 +499,8 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
 
             storage = tes. \
                 thermalEnergyStorageExtended(environment=city.environment,
-                                             t_init=20, capacity=mass_tes)
+                                             t_init=20, capacity=mass_tes,
+                                             t_max=50, t_min=20)
 
             list_entities = [heatpump, el_heater, storage]
 
@@ -497,7 +513,7 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
             # method --> Defines area of PV as float value
 
             pv = PV.PV(environment=city.environment, area=method,
-                       eta=0.15)
+                       eta=eta_pv, beta=30)
 
             print('Add PV system with area in m2: ', method)
 
