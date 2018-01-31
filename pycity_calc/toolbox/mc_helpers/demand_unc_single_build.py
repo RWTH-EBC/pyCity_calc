@@ -809,8 +809,8 @@ if __name__ == '__main__':
     #  User inputs for Monte-Carlo Simulation
     #  ###############################################################
     nb_samples = 10000
-    time_sp_force_retro = 50  # years
-    max_retro_year = 2014
+    time_sp_force_retro = 70  # years
+    max_retro_year = 2000
     weather_region = 5
     weather_year = 2010
     build_physic_unc = True  # Building physics are uncertain --> True
@@ -838,8 +838,8 @@ if __name__ == '__main__':
 
     # #  Data to save building object
     # #  ###############################################################
-    save_building = False
-    building_save_file = 'building_obj.pkl'
+    save_building = True
+    building_save_file = 'Kronenberg_1002_old_12_b_district.pkl'
     build_path = os.path.join(this_path, 'output', building_save_file)
 
     #  Settings of MA Laura Esling
@@ -855,15 +855,15 @@ if __name__ == '__main__':
         #city_f_name = 'aachen_kronenberg_mod_new_1.pkl'
         #city_f_name = 'aachen_preusweg_mod_new_1.pkl'
         #city_f_name = 'aachen_tuerme_mod_new_1.pkl'
-        city_f_name = 'aachen_huenefeld_mod_new_1.pkl'
+        city_f_name = 'aachen_kronenberg_mod_new_1.pkl'
 
         #  Building node number, which should be used to extract building data
         #build_node_nb = 1011  # Forsterlinde
         #build_node_nb = 1020   # Frankenberg
-        #build_node_nb = 1002  # Kronenberg
+        build_node_nb = 1002  # Kronenberg
         #build_node_nb = 1092  # Preusweg
         #build_node_nb = 1010  # Tuerme
-        build_node_nb = 1003  # Huenefeld
+        #build_node_nb = 1003  # Huenefeld
 
         #  Path to load city file
         load_city_path = os.path.join(this_path, 'input', city_f_name)
@@ -993,6 +993,9 @@ if __name__ == '__main__':
 
         #  Add apartment to extended building
         extended_building.addEntity(entity=apartment)
+
+    #  Modify year of construction
+    city.nodes[1002]['entity'].build_year = 1980
 
     (list_sh, list_sh_curves, list_el, list_dhw, dict_samples, dict_problem) = \
         run_mc_sh_uncertain_single_building(building=extended_building,
