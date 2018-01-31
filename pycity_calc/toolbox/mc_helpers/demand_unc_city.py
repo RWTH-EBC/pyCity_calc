@@ -109,7 +109,7 @@ def run_mc_sh_uncertain_city(city, nb_samples,
             #  Get list of space heating demand samples for each building
             curr_b = city.nodes[n]['entity']
 
-            if curr_b.build_type == 0:  # Residential building
+            if curr_b.build_type == 0 or curr_b.build_type is None:  # Residential building
                 #  TODO: Add office simulation building type
 
                 #  Extract single sample dict for each parameter
