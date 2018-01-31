@@ -97,13 +97,8 @@ def building_unc_sampling(exbuilding, nb_samples, max_retro_year=2014,
 
     #  Do retrofit year sampling
     if buil_physic_unc:
-        list_mod_years = bunc.calc_array_mod_years_single_build(
-            nb_samples=nb_samples,
-            year_of_constr=year_of_constr,
-            max_year=max_retro_year,
-            time_sp_force_retro=
-            time_sp_force_retro)
-
+        list_mod_years = list(np.ones(nb_samples) * 1990)
+    
         dict_samples['mod_year'] = list_mod_years
 
         # Dormer, attic, cellar, construction_type sampling
@@ -810,7 +805,7 @@ if __name__ == '__main__':
     #  ###############################################################
     nb_samples = 10000
     time_sp_force_retro = 70  # years
-    max_retro_year = 2000
+    max_retro_year = 1990
     weather_region = 5
     weather_year = 2010
     build_physic_unc = True  # Building physics are uncertain --> True
@@ -839,7 +834,7 @@ if __name__ == '__main__':
     # #  Data to save building object
     # #  ###############################################################
     save_building = True
-    building_save_file = 'Kronenberg_1002_old_12_b_district.pkl'
+    building_save_file = 'Kronenberg_1002_old_12_b_district_1990.pkl'
     build_path = os.path.join(this_path, 'output', building_save_file)
 
     #  Settings of MA Laura Esling
@@ -874,7 +869,7 @@ if __name__ == '__main__':
         extended_building = city.nodes[build_node_nb]['entity']
 
         save_file = city_f_name[:-4] + '_single_b_new_dhw_' + str(
-            build_node_nb) + '.pkl'
+            build_node_nb) + '1990.pkl'
         save_path = os.path.join(this_path, 'output', save_file)
 
     # Load building object
@@ -995,7 +990,7 @@ if __name__ == '__main__':
         extended_building.addEntity(entity=apartment)
 
     #  Modify year of construction
-    city.nodes[1002]['entity'].build_year = 1980
+    city.nodes[1002]['entity'].build_year = 1985
 
     (list_sh, list_sh_curves, list_el, list_dhw, dict_samples, dict_problem) = \
         run_mc_sh_uncertain_single_building(building=extended_building,
