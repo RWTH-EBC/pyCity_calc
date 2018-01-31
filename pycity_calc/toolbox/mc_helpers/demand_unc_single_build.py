@@ -97,12 +97,13 @@ def building_unc_sampling(exbuilding, nb_samples, max_retro_year=2014,
 
     #  Do retrofit year sampling
     if buil_physic_unc:
-        list_mod_years = bunc.calc_array_mod_years_single_build(
-            nb_samples=nb_samples,
-            year_of_constr=year_of_constr,
-            max_year=max_retro_year,
-            time_sp_force_retro=
-            time_sp_force_retro)
+        list_mod_years = list(np.ones(nb_samples) * 1990)
+        #list_mod_years = bunc.calc_array_mod_years_single_build(
+        #    nb_samples=nb_samples,
+        #    year_of_constr=year_of_constr,
+        #    max_year=max_retro_year,
+        #    time_sp_force_retro=
+        #    time_sp_force_retro)
 
         dict_samples['mod_year'] = list_mod_years
 

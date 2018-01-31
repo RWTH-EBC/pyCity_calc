@@ -162,7 +162,7 @@ if __name__ == '__main__':
     #  ##############################
     nb_samples = 10000
     time_sp_force_retro = 70
-    max_retro_year = 2000
+    max_retro_year = 1990
     weather_region = 5
     weather_year = 2010
     nb_occ_unc = True
@@ -176,14 +176,14 @@ if __name__ == '__main__':
 
     city_f_name = 'aachen_kronenberg_mod_new_1.pkl'
 
-    save_f_name = city_f_name[:-4] + '_mc_city_samples_' + str(nb_samples) + '_red_year_span.pkl'
+    save_f_name = city_f_name[:-4] + '_mc_city_samples_' + str(nb_samples) + '_fixed_year.pkl'
 
     #  Define, if older years of construction should be set to enable a larger
     #  variation of modernization years
     change_constr_years = True
     #  If True, overwrite all construction years with value
     #  If False, uses existing modernization years of city object
-    new_constr_year = 1980
+    new_constr_year = 1985
 
     #  End of user Inputs
     #  ##############################
