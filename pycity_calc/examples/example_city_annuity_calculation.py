@@ -16,7 +16,6 @@ import pycity_calc.cities.scripts.city_generator.city_generator as citygen
 import pycity_calc.cities.scripts.overall_gen_and_dimensioning as overall
 
 
-
 def run_example_city_energy_balance_and_annuity_calc():
     """
     Example script how to run an energy balance calculation and
@@ -24,6 +23,9 @@ def run_example_city_energy_balance_and_annuity_calc():
     """
 
     this_path = os.path.dirname(os.path.abspath(__file__))
+
+    eeg_pv_limit = True
+    use_kwkg_lhn_sub = True
 
     # try:
     #     #  Try loading city pickle file
@@ -33,7 +35,7 @@ def run_example_city_energy_balance_and_annuity_calc():
     #
     # except:
 
-        # print('Could not load city pickle file. Going to generate a new one.')
+    # print('Could not load city pickle file. Going to generate a new one.')
 
     #  # Userinputs
     #  #----------------------------------------------------------------------
@@ -290,8 +292,11 @@ def run_example_city_energy_balance_and_annuity_calc():
     city_eco_calc = citecon.CityAnnuityCalc(annuity_obj=annuity_obj,
                                             energy_balance=energy_balance)
 
-    (total_annuity, co2) = city_eco_calc.\
-        perform_overall_energy_balance_and_economic_calc(eeg_pv_limit=False)
+    (total_annuity, co2) = city_eco_calc. \
+        perform_overall_energy_balance_and_economic_calc(eeg_pv_limit=
+                                                         eeg_pv_limit,
+                                                         use_kwkg_lhn_sub=
+                                                         use_kwkg_lhn_sub)
 
     print('##########################################')
     print()
@@ -307,5 +312,4 @@ def run_example_city_energy_balance_and_annuity_calc():
 
 
 if __name__ == '__main__':
-
     run_example_city_energy_balance_and_annuity_calc()
