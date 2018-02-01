@@ -1604,7 +1604,7 @@ if __name__ == '__main__':
 
         # Save new pickle file
         filename = 'city_clust_simple_with_esys.pkl'
-        file_path = os.path.join(this_path, 'input', filename)
+        file_path = os.path.join(this_path, 'inputs', filename)
         pickle.dump(city, open(file_path, mode='wb'))
 
     # #####################################################################
