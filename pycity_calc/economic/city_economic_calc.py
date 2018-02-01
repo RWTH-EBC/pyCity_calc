@@ -62,7 +62,8 @@ class CityAnnuityCalc(object):
                                   dict_samples_esys=None,
                                   run_idx=None, sampling_method=None,
                                   dict_city_sample_lhc=None,
-                                  dict_build_samples_lhc=None):
+                                  dict_build_samples_lhc=None,
+                                  use_kwkg_lhn_sub=False):
         """
         Calculate sum of all capital related annuities of city
 
@@ -102,6 +103,10 @@ class CityAnnuityCalc(object):
             These dicts hold paramter names as keys and numpy arrays with
             samples as dict values.  Only
             relevant if mc_run is True and sampling_method == 'lhc'
+        use_kwkg_lhn_sub : bool, optional
+            Defines, if KWKG LHN subsidies are used (default: False).
+            If True, can get 100 Euro/m as subdidy, if share of CHP LHN fed-in
+            is equal to or higher than 60 %
 
         Returns
         -------
@@ -396,6 +401,57 @@ class CityAnnuityCalc(object):
                 # Add to lists
                 list_invest.append(invest_lhn_pipe)
                 list_type.append('LHN_plastic_pipe')
+
+                #  Check, if KWKG subsidies can be used
+                if use_kwkg_lhn_sub:
+
+                    timestep = self.energy_balance.\
+                        city.environment.timer.timeDiscretization
+
+                    en_boi_th = 0
+                    en_chp_th = 0
+                    en_eh_th = 0
+
+                    #  Loop over all nodes
+                    for n in sublist:
+                        if 'entity' in self.energy_balance.city.nodes[n]:
+                            #  If node is building
+                            if self.energy_balance.city.nodes[n][
+                                'entity']._kind == 'building':
+                                #  Building pointer
+                                cur_b = self.energy_balance.city.nodes[n][
+                                'entity']
+                                if cur_b.hasBes:
+                                    if cur_b.bes.hasBoiler:
+                                        #  Extract boiler th. output
+                                        cur_boi = cur_b.bes.boiler
+                                        th_power = cur_boi.totalQOutput
+                                        en_boi_th += sum(th_power) * \
+                                                    timestep / (3600 * 1000)
+
+                                    if cur_b.bes.hasChp:
+                                        #  Extract CHP th. output
+                                        cur_chp = cur_b.bes.chp
+                                        th_power = cur_chp.totalQOutput
+                                        en_chp_th += sum(th_power) * \
+                                                    timestep / (3600 * 1000)
+
+                                    if cur_b.bes.hasElectricalHeater:
+                                        #  Extract EH th. output
+                                        cur_eh = cur_b.bes.electricalHeater
+                                        th_power = cur_eh.totalQOutput
+                                        en_eh_th += sum(th_power) * \
+                                                   timestep / (3600 * 1000)
+
+                    chp_share = en_chp_th / (en_chp_th + en_boi_th + en_eh_th)
+
+                    if chp_share >= 0.6:
+                        #  Get subsidy (100 Euro/m)
+                        lhn_sub = 100 * length
+                        invest_lhn_pipe -= lhn_sub
+                        print('Got KWKG LHN subsidy of ' + str(lhn_sub) +
+                              ' Euro for LHN-subnetwork.')
+                        print()
 
             # Calculate capital-related annuity of LHN network
 
