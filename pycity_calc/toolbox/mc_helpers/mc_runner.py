@@ -713,7 +713,7 @@ class McRunner(object):
 
     def perform_mc_runs(self, nb_runs, sampling_method, failure_tolerance=0.05,
                         heating_off=True, eeg_pv_limit=False,
-                        random_profile=False):
+                        random_profile=False, use_kwkg_lhn_sub=True):
         """
         Perform mc runs.
         - Extract sample values
@@ -747,6 +747,10 @@ class McRunner(object):
             (default: False). Only relevant, if profile pool has been given,
             sampling_method == 'lhc' and nb. of profiles is equal to nb.
             of samples
+        use_kwkg_lhn_sub : bool, optional
+            Defines, if KWKG LHN subsidies are used (default: True).
+            If True, can get 100 Euro/m as subdidy, if share of CHP LHN fed-in
+            is equal to or higher than 60 %
 
         Returns
         -------
@@ -1323,7 +1327,8 @@ class McRunner(object):
                     dict_city_sample_lhc=self._dict_city_sample_lhc,
                     dict_build_samples_lhc=self._dict_build_samples_lhc,
                     run_idx=i,
-                    eeg_pv_limit=eeg_pv_limit)
+                    eeg_pv_limit=eeg_pv_limit,
+                    use_kwkg_lhn_sub=use_kwkg_lhn_sub)
 
                 #  Extract further results
                 sh_dem = c_eco_copy.energy_balance. \
@@ -1423,7 +1428,9 @@ class McRunner(object):
                         random_profile=False,
                         load_city_n_build_samples=False,
                         path_city_sample_dict=None,
-                        path_build_sample_dict=None
+                        path_build_sample_dict=None,
+                        eeg_pv_limit=False,
+                        use_kwkg_lhn_sub=True
                         ):
         """
         Perform monte-carlo run with:
@@ -1490,6 +1497,15 @@ class McRunner(object):
         path_build_sample_dict : str, optional
             Defines path to building sample dict (default: None). Only relevant,
             if load_city_n_build_samples is True
+        eeg_pv_limit : bool, optional
+            Defines, if EEG PV feed-in limitation of 70 % of peak load is
+            active (default: False). If limitation is active, maximal 70 %
+            of PV peak load are fed into the grid.
+            However, self-consumption is used, first.
+        use_kwkg_lhn_sub : bool, optional
+            Defines, if KWKG LHN subsidies are used (default: True).
+            If True, can get 100 Euro/m as subdidy, if share of CHP LHN fed-in
+            is equal to or higher than 60 %
 
         Returns
         -------
@@ -1617,7 +1633,9 @@ class McRunner(object):
                                  sampling_method=sampling_method,
                                  failure_tolerance=failure_tolerance,
                                  heating_off=heating_off,
-                                 random_profile=random_profile)
+                                 random_profile=random_profile,
+                                 eeg_pv_limit=eeg_pv_limit,
+                                 use_kwkg_lhn_sub=use_kwkg_lhn_sub)
 
         if prevent_printing:
             enable_print()
@@ -1631,7 +1649,8 @@ class McRunner(object):
         else:
             return (None, None, dict_mc_res, dict_mc_setup, None)
 
-    def perform_ref_run(self, save_res=True, eeg_pv_limit=False):
+    def perform_ref_run(self, save_res=True, eeg_pv_limit=False,
+                        use_kwkg_lhn_sub=True):
         """
         Perform reference energy balance and annuity run with default values
         given by city object, environment etc.
@@ -1646,6 +1665,10 @@ class McRunner(object):
             active (default: False). If limitation is active, maximal 70 %
             of PV peak load are fed into the grid.
             However, self-consumption is used, first.
+        use_kwkg_lhn_sub : bool, optional
+            Defines, if KWKG LHN subsidies are used (default: True).
+            If True, can get 100 Euro/m as subdidy, if share of CHP LHN fed-in
+            is equal to or higher than 60 %
 
         Returns
         -------
@@ -1669,7 +1692,9 @@ class McRunner(object):
         (total_annuity, co2) = c_eco_copy. \
             perform_overall_energy_balance_and_economic_calc(run_mc=False,
                                                              eeg_pv_limit=
-                                                             eeg_pv_limit)
+                                                             eeg_pv_limit,
+                                                             use_kwkg_lhn_sub=
+                                                             use_kwkg_lhn_sub)
 
         #  Extract further results
         sh_dem = c_eco_copy.energy_balance. \
@@ -2041,6 +2066,9 @@ if __name__ == '__main__':
     heating_off = True
     #  Defines, if heating can be switched of during summer
 
+    eeg_pv_limit = True
+    use_kwkg_lhn_sub = True
+
     #  Output options
     #  ##############################
 
@@ -2109,12 +2137,16 @@ if __name__ == '__main__':
                                load_city_n_build_samples=
                                load_city_n_build_samples,
                                path_city_sample_dict=path_city_sample_dict,
-                               path_build_sample_dict=path_build_sample_dict
+                               path_build_sample_dict=path_build_sample_dict,
+                               eeg_pv_limit=eeg_pv_limit,
+                               use_kwkg_lhn_sub=use_kwkg_lhn_sub
                                )
 
     #  Perform reference run:
     #  #####################################################################
-    (total_annuity, co2, sh_dem, el_dem, dhw_dem) = mc_run.perform_ref_run()
+    (total_annuity, co2, sh_dem, el_dem, dhw_dem) = \
+        mc_run.perform_ref_run(eeg_pv_limit=eeg_pv_limit,
+                               use_kwkg_lhn_sub=use_kwkg_lhn_sub)
 
     print()
     print('Total annualized cost in Euro/a of reference run:')
