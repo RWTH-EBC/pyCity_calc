@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
 Tool for the dimensioning of heating devices and district heating networks in city districts, based on approaches
 as being common in the industry.
