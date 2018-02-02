@@ -1,0 +1,6 @@
+#  Ignore everything
+*
+
+#  Exceptions
+!.gitignore
+!heat_pumps.xlsx
