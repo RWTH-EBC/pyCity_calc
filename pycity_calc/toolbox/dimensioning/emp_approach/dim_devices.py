@@ -139,7 +139,7 @@ def choose_hp(q_ideal, t_biv=-2, method=0, hp_type='aw', t_ground=10):
             # COPs for [A-7/W35, A2/W35, A7/W35]
             best_cop_list = [2.9, 3.7, 4.4]
 
-            # 55/35 normal temp spread (Vor-/Rücklauf)
+            # 55/35 normal temp spread (Vor-/Ruecklauf)
             tMax = 43   #55
             tSink = 43  #35
 
@@ -404,7 +404,7 @@ def dim_decentral_chp(th_LDC, q_total, method=0):
                         break
 
                 if ee_ratio >= 1:
-                    raise Warning('EEWärmeG not satisfied: unrealistic values! (Q_chp >= Q_total)')
+                    raise Warning('EEWaermeG not satisfied: unrealistic values! (Q_chp >= Q_total)')
 
             # Raise th.power with 5% per iteration if conditions for EEWaermeG were not met
             q_chp = 0.5 * q_total / 8760 + count * q_total / (8760 * 100)
@@ -575,7 +575,7 @@ def dim_central_chp(th_LDC, q_total, method=0):
                         break
 
                 if ee_ratio >= 1:
-                    print('EEWärmeG not satisfied: unrealistic values! (Q_chp >= Q_total)')
+                    print('EEWaermeG not satisfied: unrealistic values! (Q_chp >= Q_total)')
                     break
 
             # Raise th.power with 5% per iteration if conditions for EEWaermeG were not met
