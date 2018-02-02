@@ -125,8 +125,8 @@ def run_approach(city,scenarios):
 
 def get_building_age(city):
     """
-    Evaluates the age of a building in regards to the EEWärmeG. If one building in district is built in or after 2009,
-    EEWärmeG must be complied by whole district.
+    Evaluates the age of a building in regards to the EEWaermeG. If one building in district is built in or after 2009,
+    EEWaermeG must be complied by whole district.
 
     Parameters
     ----------
@@ -231,7 +231,7 @@ def get_eligibility_dhn(city, method=1):
     ----------
     city    :   city object
     method  :   int
-        0 : Calculate Wärmeliniendichten (use only if spaceHeating in district was calculated with method 0)
+        0 : Calculate Waermeliniendichten (use only if spaceHeating in district was calculated with method 0)
         1 : Use Matrix from Wolff & Jagnow 2011
 
     Returns
@@ -252,16 +252,16 @@ def get_eligibility_dhn(city, method=1):
     th_curve = ((city.get_aggr_dhw_power_curve(current_values=False) +
                  city.get_aggr_space_h_power_curve(current_values=False)) / 0.8) / 1000  # in kW
 
-    # -------- Calculate "Wärmeliniendichten" ---------
+    # -------- Calculate "Waermeliniendichten" ---------
     if method == 0:
         elig_val = 0
 
-        # Wärmeleistungsliniendichte
+        # Waermeleistungsliniendichte
         wlld = max(th_curve)/net_len    # in kW/m
         if wlld >= 1.5:
             elig_val += 2
 
-        # Wärmeabnahmeliniendichte
+        # Waermeabnahmeliniendichte
         wald = th_total_elig/net_len     # in kWh/(m*a)
         if wald >= 1500:
             elig_val += 2
@@ -373,7 +373,7 @@ def get_eligibility_dhn(city, method=1):
 
 def get_eta_transmission(district_type):
     """
-    Returns efficency of lhn based on Fraunhofer Umsicht: Leitfaden Nahwärme (p.51)
+    Returns efficency of lhn based on Fraunhofer Umsicht: Leitfaden Nahwaerme (p.51)
 
     Parameters
     ----------
@@ -499,7 +499,7 @@ def dim_centralized(city, slp_city, scenario, district_type):
               '% of Q_max, ' + str(np.round(q_nom * t_ann_op * 100 / q_total_slp,2)) + '% of ann. production) ->',
               t_x, 'full-load hours.')
 
-        # Check if CHP is according to EEWärmeG
+        # Check if CHP is according to EEWaermeG
         if not check_eewaermeg(city=city,
                                device=chp,
                                ee_ratio=chp_ee_ratio):
@@ -577,7 +577,7 @@ def dim_centralized(city, slp_city, scenario, district_type):
         # Check EnEV
         check_enev(area_total)
 
-        # Check if CHP is according to EEWärmeG
+        # Check if CHP is according to EEWaermeG
         if not check_eewaermeg(city=city,
                                device=boiler,
                                ee_ratio=0):
@@ -602,7 +602,7 @@ def dim_centralized(city, slp_city, scenario, district_type):
                bafa_lhn=bafa_lhn,
                bafa_chp_tes=bafa_chp_tes)
 
-    calc_emissions(q_gas, w_el)
+    print('** CO2 per year: ' + str(round(calc_emissions(q_gas, w_el), 2)) + ' kgCO2/a **')
 
     return city
 
@@ -685,7 +685,7 @@ def dim_decentralized(city, slp_city, scenario):
                 print('CHP: Q_nom (th.) = ' + str(q_nom / 1000) + ' kW (' + str(round(q_nom * 100 / max(th_LDC_slp), 2)) +
                       '% of Q_max) ->', t_x, 'full-load hours.')
 
-                # Check if CHP is according to EEWärmeG
+                # Check if CHP is according to EEWaermeG
                 if not check_eewaermeg(city=city,
                                        device=chp,
                                        ee_ratio=chp_ee_ratio):
@@ -778,7 +778,7 @@ def dim_decentralized(city, slp_city, scenario):
                                   sh_curve=sh_curve_orig,
                                   cop=cop_list)
 
-                # Check if energysystem with heat pump is according to EEWärmeG
+                # Check if energysystem with heat pump is according to EEWaermeG
                 if not check_eewaermeg(city=city,
                                        device=heatPump,
                                        ee_ratio=hp_ee_ratio,
@@ -892,7 +892,7 @@ def dim_decentralized(city, slp_city, scenario):
                                   sh_curve=sh_curve_orig,
                                   cop=cop)
 
-                # Check if according to EEWärmeG
+                # Check if according to EEWaermeG
                 ee_ratio = 1
                 if not check_eewaermeg(city=city,
                                        device=heatPump,
@@ -948,7 +948,7 @@ def dim_decentralized(city, slp_city, scenario):
                 # Check if Boiler according to EnEV
                 check_enev(building.net_floor_area)
 
-                # Check if CHP is according to EEWärmeG
+                # Check if CHP is according to EEWaermeG
                 if not check_eewaermeg(city=city,
                                        device=boiler,
                                        ee_ratio=0):
@@ -968,7 +968,7 @@ def dim_decentralized(city, slp_city, scenario):
                    w_el_out=chp_el_prod,
                    bafa_chp_tes=bafa_chp_tes)
 
-        calc_emissions(q_gas, w_el)
+        print('** CO2 per year: ' + str(round(calc_emissions(q_gas, w_el), 2)) + ' kgCO2/a **')
 
     return city
 
@@ -1174,7 +1174,7 @@ def calc_emissions(q_gas, w_el):
     co2_el = sum(w_el) * emf_el
     co2_total = co2_el + co2_gas
 
-    print('** CO2 per year: ' + str(round(co2_total,2)) + ' kgCO2/a **')
+    return co2_total
 
 
 def calc_costs(city, q_gas, w_el_in, w_el_out, i=0.08, price_gas=0.0661, price_el=0.29, el_feedin_epex=0.02978, bafa_lhn=False, bafa_chp_tes=False):
@@ -1188,16 +1188,26 @@ def calc_costs(city, q_gas, w_el_in, w_el_out, i=0.08, price_gas=0.0661, price_e
 
     Parameters
     ----------
-    city:           pyCity city-object
-    q_gas:          amount of gas needed
-    w_el_in:        amount of el. energy needed
-    w_el_out:       amount of el. energy produced
-    i:              interest rate
-    price_gas:      price of gas EUR/kWh
-    price_el:       price of electricity for heatpump in EUR/kWh
-    el_feedin_epex: average price for baseload power at EPEX Spot for Q2 2017 in Euro/kWh
-    bafa_lhn:       indicates if BAFA funding for lhn is applicable
-    bafa_chp_tes:   indicates if BAFA funding for TES with CHP is applicable
+    city:           pyCity_calc city_object
+        City Object
+    q_gas:          list of floats
+        amount of gas needed
+    w_el_in:        list of floats
+        amount of el. energy needed
+    w_el_out:       float
+        amount of el. energy produced
+    i:              float
+        interest rate
+    price_gas:      float
+        price of gas EUR/kWh
+    price_el:       float
+        price of electricity for heatpump in EUR/kWh
+    el_feedin_epex: float
+        average price for baseload power at EPEX Spot for Q2 2017 in Euro/kWh
+    bafa_lhn:       bool
+        indicates if BAFA funding for lhn is applicable
+    bafa_chp_tes:   bool
+        indicates if BAFA funding for TES with CHP is applicable
 
     Returns
     -------
@@ -1473,7 +1483,7 @@ if __name__ == '__main__':
 
     this_path = os.path.dirname(os.path.abspath(__file__))
 
-    city_f_name = 'wm_res_east_7_w_street_sh_resc_wm.pkl'
+    city_f_name = 'city_2_buildings_w_street.pkl'
 
     city_path = os.path.join(this_path, 'input', city_f_name)
     city = pickle.load(open(city_path, mode='rb'))
