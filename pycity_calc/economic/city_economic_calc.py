@@ -63,7 +63,7 @@ class CityAnnuityCalc(object):
                                   run_idx=None, sampling_method=None,
                                   dict_city_sample_lhc=None,
                                   dict_build_samples_lhc=None,
-                                  use_kwkg_lhn_sub=True):
+                                  use_kwkg_lhn_sub=False):
         """
         Calculate sum of all capital related annuities of city
 
@@ -104,7 +104,7 @@ class CityAnnuityCalc(object):
             samples as dict values.  Only
             relevant if mc_run is True and sampling_method == 'lhc'
         use_kwkg_lhn_sub : bool, optional
-            Defines, if KWKG LHN subsidies are used (default: True).
+            Defines, if KWKG LHN subsidies are used (default: False).
             If True, can get 100 Euro/m as subdidy, if share of CHP LHN fed-in
             is equal to or higher than 60 %
 
@@ -552,7 +552,7 @@ class CityAnnuityCalc(object):
                                          sampling_method=None,
                                          dict_city_sample_lhc=None,
                                          dict_build_samples_lhc=None,
-                                         use_kwkg_lhn_sub=True
+                                         use_kwkg_lhn_sub=False
                                          ):
         """
         Calculate capital- and operation-related annuities of city
@@ -594,7 +594,7 @@ class CityAnnuityCalc(object):
             samples as dict values.  Only
             relevant if mc_run is True and sampling_method == 'lhc'
         use_kwkg_lhn_sub : bool, optional
-            Defines, if KWKG LHN subsidies are used (default: True).
+            Defines, if KWKG LHN subsidies are used (default: False).
             If True, can get 100 Euro/m as subdidy, if share of CHP LHN fed-in
             is equal to or higher than 60 %
 
@@ -1211,7 +1211,7 @@ class CityAnnuityCalc(object):
                                                          sampling_method=None,
                                                          dict_city_sample_lhc=None,
                                                          dict_build_samples_lhc=None,
-                                                         use_kwkg_lhn_sub=True):
+                                                         use_kwkg_lhn_sub=False):
         """
         Script runs energy balance and annuity calculation for city in
         energy_balance object
@@ -1258,7 +1258,7 @@ class CityAnnuityCalc(object):
             samples as dict values.  Only
             relevant if mc_run is True and sampling_method == 'lhc'
         use_kwkg_lhn_sub : bool, optional
-            Defines, if KWKG LHN subsidies are used (default: True).
+            Defines, if KWKG LHN subsidies are used (default: False).
             If True, can get 100 Euro/m as subdidy, if share of CHP LHN fed-in
             is equal to or higher than 60 %
 
@@ -1367,7 +1367,7 @@ if __name__ == '__main__':
 
     eeg_pv_limit = True
 
-    use_kwkg_lhn_sub = True
+    use_kwkg_lhn_sub = False
 
     try:
         #  Try loading city pickle file

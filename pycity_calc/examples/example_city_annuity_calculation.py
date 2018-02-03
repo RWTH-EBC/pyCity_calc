@@ -25,7 +25,7 @@ def run_example_city_energy_balance_and_annuity_calc():
     this_path = os.path.dirname(os.path.abspath(__file__))
 
     eeg_pv_limit = True
-    use_kwkg_lhn_sub = True
+    use_kwkg_lhn_sub = False
 
     # try:
     #     #  Try loading city pickle file

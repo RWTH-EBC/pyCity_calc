@@ -713,7 +713,7 @@ class McRunner(object):
 
     def perform_mc_runs(self, nb_runs, sampling_method, failure_tolerance=0.05,
                         heating_off=True, eeg_pv_limit=False,
-                        random_profile=False, use_kwkg_lhn_sub=True):
+                        random_profile=False, use_kwkg_lhn_sub=False):
         """
         Perform mc runs.
         - Extract sample values
@@ -748,7 +748,7 @@ class McRunner(object):
             sampling_method == 'lhc' and nb. of profiles is equal to nb.
             of samples
         use_kwkg_lhn_sub : bool, optional
-            Defines, if KWKG LHN subsidies are used (default: True).
+            Defines, if KWKG LHN subsidies are used (default: False).
             If True, can get 100 Euro/m as subdidy, if share of CHP LHN fed-in
             is equal to or higher than 60 %
 
@@ -1430,7 +1430,7 @@ class McRunner(object):
                         path_city_sample_dict=None,
                         path_build_sample_dict=None,
                         eeg_pv_limit=False,
-                        use_kwkg_lhn_sub=True
+                        use_kwkg_lhn_sub=False
                         ):
         """
         Perform monte-carlo run with:
@@ -1650,7 +1650,7 @@ class McRunner(object):
             return (None, None, dict_mc_res, dict_mc_setup, None)
 
     def perform_ref_run(self, save_res=True, eeg_pv_limit=False,
-                        use_kwkg_lhn_sub=True):
+                        use_kwkg_lhn_sub=False):
         """
         Perform reference energy balance and annuity run with default values
         given by city object, environment etc.
@@ -1666,7 +1666,7 @@ class McRunner(object):
             of PV peak load are fed into the grid.
             However, self-consumption is used, first.
         use_kwkg_lhn_sub : bool, optional
-            Defines, if KWKG LHN subsidies are used (default: True).
+            Defines, if KWKG LHN subsidies are used (default: False).
             If True, can get 100 Euro/m as subdidy, if share of CHP LHN fed-in
             is equal to or higher than 60 %
 
@@ -2067,7 +2067,7 @@ if __name__ == '__main__':
     #  Defines, if heating can be switched of during summer
 
     eeg_pv_limit = True
-    use_kwkg_lhn_sub = True
+    use_kwkg_lhn_sub = False
 
     #  Output options
     #  ##############################
