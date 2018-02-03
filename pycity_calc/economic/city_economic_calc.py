@@ -62,7 +62,8 @@ class CityAnnuityCalc(object):
                                   dict_samples_esys=None,
                                   run_idx=None, sampling_method=None,
                                   dict_city_sample_lhc=None,
-                                  dict_build_samples_lhc=None):
+                                  dict_build_samples_lhc=None,
+                                  use_kwkg_lhn_sub=False):
         """
         Calculate sum of all capital related annuities of city
 
@@ -102,6 +103,10 @@ class CityAnnuityCalc(object):
             These dicts hold paramter names as keys and numpy arrays with
             samples as dict values.  Only
             relevant if mc_run is True and sampling_method == 'lhc'
+        use_kwkg_lhn_sub : bool, optional
+            Defines, if KWKG LHN subsidies are used (default: False).
+            If True, can get 100 Euro/m as subdidy, if share of CHP LHN fed-in
+            is equal to or higher than 60 %
 
         Returns
         -------
@@ -393,6 +398,62 @@ class CityAnnuityCalc(object):
                                                            d=d_i,
                                                            length=length)
 
+                #  Check, if KWKG subsidies can be used
+                if use_kwkg_lhn_sub:
+
+                    #  Annotation: This method only estimates share of
+                    #  thermal CHP energy to total thermal energy in LHN, as
+                    #  it does not account for the internal usage of thermal
+                    #  energy within the feeder building!
+
+                    timestep = self.energy_balance.\
+                        city.environment.timer.timeDiscretization
+
+                    en_boi_th = 0
+                    en_chp_th = 0
+                    en_eh_th = 0
+
+                    #  Loop over all nodes
+                    for n in sublist:
+                        if 'entity' in self.energy_balance.city.nodes[n]:
+                            #  If node is building
+                            if self.energy_balance.city.nodes[n][
+                                'entity']._kind == 'building':
+                                #  Building pointer
+                                cur_b = self.energy_balance.city.nodes[n][
+                                'entity']
+                                if cur_b.hasBes:
+                                    if cur_b.bes.hasBoiler:
+                                        #  Extract boiler th. output
+                                        cur_boi = cur_b.bes.boiler
+                                        th_power = cur_boi.totalQOutput
+                                        en_boi_th += sum(th_power) * \
+                                                    timestep / (3600 * 1000)
+
+                                    if cur_b.bes.hasChp:
+                                        #  Extract CHP th. output
+                                        cur_chp = cur_b.bes.chp
+                                        th_power = cur_chp.totalQOutput
+                                        en_chp_th += sum(th_power) * \
+                                                    timestep / (3600 * 1000)
+
+                                    if cur_b.bes.hasElectricalHeater:
+                                        #  Extract EH th. output
+                                        cur_eh = cur_b.bes.electricalHeater
+                                        th_power = cur_eh.totalQOutput
+                                        en_eh_th += sum(th_power) * \
+                                                   timestep / (3600 * 1000)
+
+                    chp_share = en_chp_th / (en_chp_th + en_boi_th + en_eh_th)
+
+                    if chp_share >= 0.6:
+                        #  Get subsidy (100 Euro/m)
+                        lhn_sub = 100 * length
+                        invest_lhn_pipe -= lhn_sub
+                        print('Got KWKG LHN subsidy of ' + str(lhn_sub) +
+                              ' Euro for LHN-subnetwork.')
+                        print()
+
                 # Add to lists
                 list_invest.append(invest_lhn_pipe)
                 list_type.append('LHN_plastic_pipe')
@@ -490,7 +551,8 @@ class CityAnnuityCalc(object):
                                          run_idx=None,
                                          sampling_method=None,
                                          dict_city_sample_lhc=None,
-                                         dict_build_samples_lhc=None
+                                         dict_build_samples_lhc=None,
+                                         use_kwkg_lhn_sub=False
                                          ):
         """
         Calculate capital- and operation-related annuities of city
@@ -531,6 +593,10 @@ class CityAnnuityCalc(object):
             These dicts hold paramter names as keys and numpy arrays with
             samples as dict values.  Only
             relevant if mc_run is True and sampling_method == 'lhc'
+        use_kwkg_lhn_sub : bool, optional
+            Defines, if KWKG LHN subsidies are used (default: False).
+            If True, can get 100 Euro/m as subdidy, if share of CHP LHN fed-in
+            is equal to or higher than 60 %
 
         Returns
         -------
@@ -575,8 +641,8 @@ class CityAnnuityCalc(object):
                                            dict_city_sample_lhc=
                                            dict_city_sample_lhc,
                                            dict_build_samples_lhc=
-                                           dict_build_samples_lhc
-                                           )
+                                           dict_build_samples_lhc,
+                                           use_kwkg_lhn_sub=use_kwkg_lhn_sub)
 
         #  Calculate operation-related annuity
         op_rel_ann = \
@@ -1144,8 +1210,8 @@ class CityAnnuityCalc(object):
                                                          eeg_pv_limit=False,
                                                          sampling_method=None,
                                                          dict_city_sample_lhc=None,
-                                                         dict_build_samples_lhc=None
-                                                         ):
+                                                         dict_build_samples_lhc=None,
+                                                         use_kwkg_lhn_sub=False):
         """
         Script runs energy balance and annuity calculation for city in
         energy_balance object
@@ -1191,6 +1257,10 @@ class CityAnnuityCalc(object):
             These dicts hold paramter names as keys and numpy arrays with
             samples as dict values.  Only
             relevant if mc_run is True and sampling_method == 'lhc'
+        use_kwkg_lhn_sub : bool, optional
+            Defines, if KWKG LHN subsidies are used (default: False).
+            If True, can get 100 Euro/m as subdidy, if share of CHP LHN fed-in
+            is equal to or higher than 60 %
 
         Returns
         -------
@@ -1264,7 +1334,9 @@ class CityAnnuityCalc(object):
                                                   dict_city_sample_lhc=
                                                   dict_city_sample_lhc,
                                                   dict_build_samples_lhc=
-                                                  dict_build_samples_lhc
+                                                  dict_build_samples_lhc,
+                                                  use_kwkg_lhn_sub=
+                                                  use_kwkg_lhn_sub
                                                   )
 
         #  Calculate demand related annuity
@@ -1293,7 +1365,9 @@ if __name__ == '__main__':
     #  Check requirements for pycity_deap
     pycity_deap = False
 
-    eeg_pv_limit = False
+    eeg_pv_limit = True
+
+    use_kwkg_lhn_sub = False
 
     try:
         #  Try loading city pickle file
@@ -1530,7 +1604,7 @@ if __name__ == '__main__':
 
         # Save new pickle file
         filename = 'city_clust_simple_with_esys.pkl'
-        file_path = os.path.join(this_path, 'input', filename)
+        file_path = os.path.join(this_path, 'inputs', filename)
         pickle.dump(city, open(file_path, mode='wb'))
 
     # #####################################################################
@@ -1573,7 +1647,8 @@ if __name__ == '__main__':
 
     #  Calculate capital and operation related annuity
     (cap_rel_ann, op_rel_ann) = \
-        city_eco_calc.calc_cap_and_op_rel_annuity_city()
+        city_eco_calc.calc_cap_and_op_rel_annuity_city(use_kwkg_lhn_sub=
+                                                       use_kwkg_lhn_sub)
 
     #  Calculate demand related annuity
     dem_rel_annuity = city_eco_calc.calc_dem_rel_annuity_city()
