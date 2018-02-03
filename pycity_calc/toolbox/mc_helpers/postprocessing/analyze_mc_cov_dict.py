@@ -26,11 +26,12 @@ def analyze_cov(dict_mc_cov):
         dict_mc_cov['th_cov_eh'] = array_th_cov_eh
         dict_mc_cov['el_cov_chp'] = array_el_cov_chp
         dict_mc_cov['el_cov_pv'] = array_el_cov_pv
+        dict_mc_cov['el_cov_grid']
     """
 
     fig = plt.figure()
 
-    list_names = ['b', 'c', 'a', 'w', 'e', 'h', 'p']
+    list_names = ['b', 'c', 'a', 'w', 'e', 'h', 'p', 'g']
 
 
     idx = 0

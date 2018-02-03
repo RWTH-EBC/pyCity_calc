@@ -846,6 +846,7 @@ class McRunner(object):
 
             array_el_cov_chp = np.zeros(nb_runs)
             array_el_cov_pv = np.zeros(nb_runs)
+            array_el_cov_grid = np.zeros(nb_runs)
         else:
             dict_mc_cov = None
 
@@ -1509,6 +1510,8 @@ class McRunner(object):
                     #  Electric coverage factors
                     el_cov_chp = (el_energy_chp - grid_exp_chp) / el_ref_dem
                     el_cov_pv = (el_energy_pv - grid_exp_pv) / el_ref_dem
+                    el_cov_grid = (grid_imp_dem + grid_imp_hp
+                                   + grid_imp_eh) / el_ref_dem
 
                     #  Add coverage factors to results file
                     array_th_cov_boi[i] = th_cov_boi
@@ -1519,6 +1522,7 @@ class McRunner(object):
 
                     array_el_cov_chp[i] = el_cov_chp
                     array_el_cov_pv[i] = el_cov_pv
+                    array_el_cov_grid[i] = el_cov_grid
 
                     #  Save results to dict
                     dict_mc_cov['th_cov_boi'] = array_th_cov_boi
@@ -1528,6 +1532,7 @@ class McRunner(object):
                     dict_mc_cov['th_cov_eh'] = array_th_cov_eh
                     dict_mc_cov['el_cov_chp'] = array_el_cov_chp
                     dict_mc_cov['el_cov_pv'] = array_el_cov_pv
+                    dict_mc_cov['el_cov_grid'] = array_el_cov_grid
 
             except buildeb.EnergyBalanceException as ermessage:
                 print(ermessage)
@@ -1708,6 +1713,7 @@ class McRunner(object):
                 dict_mc_cov['th_cov_eh'] = array_th_cov_eh
                 dict_mc_cov['el_cov_chp'] = array_el_cov_chp
                 dict_mc_cov['el_cov_pv'] = array_el_cov_pv
+                dict_mc_cov['el_cov_grid']
 
             For sampling_method == 'lhc':
             (dict_city_sample_lhc, dict_build_samples_lhc, dict_mc_res,
@@ -1756,6 +1762,7 @@ class McRunner(object):
                 dict_mc_cov['th_cov_eh'] = array_th_cov_eh
                 dict_mc_cov['el_cov_chp'] = array_el_cov_chp
                 dict_mc_cov['el_cov_pv'] = array_el_cov_pv
+                dict_mc_cov['el_cov_grid']
         """
 
         if sampling_method not in ['lhc', 'random']:
