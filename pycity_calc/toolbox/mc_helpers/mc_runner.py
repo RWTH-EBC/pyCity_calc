@@ -784,7 +784,7 @@ class McRunner(object):
             dict_mc_cov : dict
                 Dictionary holding thermal/electrical coverage factors
                 dict_mc_cov['th_cov_boi'] = array_th_cov_boi
-                dict_mc_cov['th_cov_chp'] = th_cov_chp
+                dict_mc_cov['th_cov_chp'] = array_th_cov_chp
                 dict_mc_cov['th_cov_hp_aw'] = array_th_cov_hp_aw
                 dict_mc_cov['th_cov_hp_ww'] = array_th_cov_hp_ww
                 dict_mc_cov['th_cov_eh'] = array_th_cov_eh
@@ -1522,7 +1522,7 @@ class McRunner(object):
 
                     #  Save results to dict
                     dict_mc_cov['th_cov_boi'] = array_th_cov_boi
-                    dict_mc_cov['th_cov_chp'] = th_cov_chp
+                    dict_mc_cov['th_cov_chp'] = array_th_cov_chp
                     dict_mc_cov['th_cov_hp_aw'] = array_th_cov_hp_aw
                     dict_mc_cov['th_cov_hp_ww'] = array_th_cov_hp_ww
                     dict_mc_cov['th_cov_eh'] = array_th_cov_eh
@@ -1702,7 +1702,7 @@ class McRunner(object):
             dict_mc_cov : dict
                 Dictionary holding thermal/electrical coverage factors
                 dict_mc_cov['th_cov_boi'] = array_th_cov_boi
-                dict_mc_cov['th_cov_chp'] = th_cov_chp
+                dict_mc_cov['th_cov_chp'] = array_th_cov_chp
                 dict_mc_cov['th_cov_hp_aw'] = array_th_cov_hp_aw
                 dict_mc_cov['th_cov_hp_ww'] = array_th_cov_hp_ww
                 dict_mc_cov['th_cov_eh'] = array_th_cov_eh
@@ -1750,7 +1750,7 @@ class McRunner(object):
             dict_mc_cov : dict
                 Dictionary holding thermal/electrical coverage factors
                 dict_mc_cov['th_cov_boi'] = array_th_cov_boi
-                dict_mc_cov['th_cov_chp'] = th_cov_chp
+                dict_mc_cov['th_cov_chp'] = array_th_cov_chp
                 dict_mc_cov['th_cov_hp_aw'] = array_th_cov_hp_aw
                 dict_mc_cov['th_cov_hp_ww'] = array_th_cov_hp_ww
                 dict_mc_cov['th_cov_eh'] = array_th_cov_eh
