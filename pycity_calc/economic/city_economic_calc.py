@@ -723,7 +723,7 @@ class CityAnnuityCalc(object):
 
         #  Heat pump tariffs
         if build.hasBes:
-            if type == 'res' and build.bes.hasHeatpump:
+            if (type == 'res' or type == None) and build.bes.hasHeatpump:
                 hp_tariff = self.energy_balance.city. \
                                 environment.prices.hp_day_tarif + 0.0
             else:
