@@ -183,7 +183,7 @@ if __name__ == '__main__':
     change_constr_years = True
     #  If True, overwrite all construction years with value
     #  If False, uses existing modernization years of city object
-    new_constr_year = 1985
+    new_constr_year = 1970
 
     #  End of user Inputs
     #  ##############################
