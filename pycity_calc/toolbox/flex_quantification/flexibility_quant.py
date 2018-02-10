@@ -274,10 +274,14 @@ def calc_power_ref_curve(building):
 
     Returns
     -------
-    array_p_el_ref : np.array
-        Array holding electric power values in Watt (used/produced by
-        electric heat generator (EHG)) (+ used energy (HP/EH) / - produced
-        electric energy (CHP))
+    res_tuple : tuple
+        Tuple holding (array_p_el_ref, array_el_power_hp_in)
+        array_p_el_ref : np.array
+            Array holding electric power values in Watt (used/produced by
+            electric heat generator (EHG)) (+ used energy (HP/EH) / - produced
+            electric energy (CHP))
+        array_el_power_hp_in : np.array
+            Array holding input electrical power for heat pump in Watt
     """
     #  Copy building object
     build_copy = copy.deepcopy(building)
@@ -313,29 +317,95 @@ def calc_power_ref_curve(building):
     #  Plus EH grid usage
     array_p_el_ref += dict_el_eb_res['grid_import_eh']
 
-    return array_p_el_ref
+    if build_copy.bes.hasHeatpump:
+        array_el_power_hp_in = copy.\
+            copy(build_copy.bes.heatpump.array_el_power_in)
+    else:
+        array_el_power_hp_in = None
+
+    return (array_p_el_ref, array_el_power_hp_in)
 
 
-def calc_power_flex(building, method='cycle'):
-    """
-    Calculate electric power flexibility.
+# def calc_power_flex(building, type, array_p_el_ref, array_el_power_hp_in=None):
+#     """
+#     Calculate P_flex (with t_forced or t_delayed)
+#
+#     Parameters
+#     ----------
+#     building : object
+#         Building object of pyCity_calc
+#     type : str
+#         Type of flexibility ('forced' or 'delayed')
+#     array_p_el_ref : np.array
+#         Array holding electric power values in Watt (used/produced by
+#         electric heat generator (EHG)) (+ used energy (HP/EH) / - produced
+#         electric energy (CHP))
+#     array_el_power_hp_in : np.array
+#         Array holding input electrical power for heat pump in Watt
+#         (default: None). If None, no heat pump is in use.
+#
+#     Returns
+#     -------
+#     array_p_flex : array
+#         Array with electrical power flexibility
+#     """
+#     assert type in ['forced', 'delayed'], 'Unknown flexibility type!'
+#
+#     array_p_flex = np.zeros()
+#
+#     #  Get maximal el output power of electric heat generators
+#     #  (CHP, EH, HP)
+#     p_el_ehg_nom = 0  # in Watt
+#     if building.bes.hasChp:
+#         p_el_ehg_nom -= building.bes.chp.pNominal
+#     # if building.bes.hasHeatpump:
+#     #     p_el_ehg_nom += max(array_el_power_hp_in)
+#     if building.bes.hasElectricalHeater:
+#         p_el_ehg_nom += building.bes.electricalHeater.qNominal
+#
+#     #  ###########################################################
+#     if p_el_ehg_nom == 0:
+#         msg = 'Building ' \
+#               + str(id) + ' has no thermo-electric energy systems. ' \
+#                           'Thus, therm. flexibility is zero.'
+#         warnings.warn(msg)
+#         #  Flexibility is zero, return array with zeros
+#         return array_t_delayed
 
-    Parameters
-    ----------
-    building : object
-        Building object of pyCity_calc
-    method : str, optional
-        Defininig calculation method (default: 'cycle')
-        Options:
-        - 'average': Average power curve values
-        - 'cycle': Average power curve values, but accounting for whole
-        charging/discharging cycle
-
-    Returns
-    -------
-    array_p_flex : float
-        Electric power flexibility value
-    """
+# def calc_power_flex(building, type, array_p_el_ref,
+#                     array_t, method='cycle'):
+#     """
+#     Calculate electric power flexibility.
+#
+#     Parameters
+#     ----------
+#     building : object
+#         Building object of pyCity_calc
+#     type : str
+#         Type of flexibility ('forced' or 'delayed')
+#     array_p_el_ref : np.array
+#         Array holding electric power values in Watt (used/produced by
+#         electric heat generator (EHG)) (+ used energy (HP/EH) / - produced
+#         electric energy (CHP))
+#     array_t : np.array
+#         Array holding t_forced or t_delayed values
+#     method : str, optional
+#         Defininig calculation method (default: 'cycle')
+#         Options:
+#         - 'average': Average power curve values
+#         - 'cycle': Average power curve values, but accounting for whole
+#         charging/discharging cycle
+#
+#     Returns
+#     -------
+#     array_p_flex : float
+#         Electric power flexibility value
+#     """
+#
+#     assert type in ['forced', 'delayed'], 'Unknown flexibility type!'
+#     assert method in ['cycle', 'average'], 'Unknown method!'
+#
+#     #
 
 
 if __name__ == '__main__':
@@ -397,7 +467,8 @@ if __name__ == '__main__':
 
     #  Calculate reference EHG el. load curve
     ###################################################################
-    array_p_el_ref = calc_power_ref_curve(building=curr_build)
+    (array_p_el_ref, array_el_power_hp_in) = \
+        calc_power_ref_curve(building=curr_build)
 
     plt.plot(array_p_el_ref / 1000)
     plt.xlabel('Time in hours')
