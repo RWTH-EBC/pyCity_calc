@@ -15,6 +15,7 @@ import numpy as np
 import warnings
 
 import pycity_calc.cities.scripts.energy_sys_generator as esysgen
+import pycity_calc.simulation.energy_balance.building_eb_calc as buildeb
 
 
 def calc_t_forced_build(building, id=None):
@@ -215,7 +216,7 @@ def calc_t_delayed_build(building, id=None):
 
         #  Save current state of charge (with delay of one timestep, as
         #  availability is given at next timestep
-        array_tes_en[i+1] = q_sto_cur
+        array_tes_en[i + 1] = q_sto_cur
 
     #  Calculate soc value for eacht timestep
     for i in range(len(th_power)):
@@ -260,6 +261,61 @@ def calc_t_delayed_build(building, id=None):
     return array_t_delayed
 
 
+def calc_power_ref_curve(building):
+    """
+    Calculate reference electric heat generator load curve by solving thermal
+    and electric energy balance with reduced tes size.
+    (+ used energy (HP/EH) / - produced electric energy (CHP))
+
+    Parameters
+    ----------
+    building : object
+        Building object
+
+    Returns
+    -------
+    array_p_el_ref : np.array
+        Array holding electric power values in Watt (used/produced by
+        electric heat generator (EHG)) (+ used energy (HP/EH) / - produced
+        electric energy (CHP))
+    """
+    #  Copy building object
+    build_copy = copy.deepcopy(building)
+
+    #  Reduce TES size (TES still required to prevent assertion error in
+    #  energy balance, when CHP is used!)
+    build_copy.bes.tes.capacity = 0.001
+
+    #  Remove PV, if existent
+    if build_copy.bes.hasPv:
+        build_copy.bes.pv = None
+        build_copy.bes.hasPv = False
+
+    #  Remove Bat, if existent
+    if build_copy.bes.hasBattery:
+        build_copy.bes.battery = None
+        build_copy.bes.hasBattery = False
+
+    #  Calculate thermal energy balance with reduced TES
+    buildeb.calc_build_therm_eb(build=build_copy)
+
+    #  Calculate electric energy balance with reduced TES
+    dict_el_eb_res = buildeb.calc_build_el_eb(build=build_copy)
+
+    timestep = build_copy.environment.timer.timeDiscretization
+
+    array_p_el_ref = np.zeros(int(365 * 24 * 3600 / timestep))
+
+    #  Minus CHP power production
+    array_p_el_ref -= dict_el_eb_res['chp_feed']
+    #  Plus HP grid usage
+    array_p_el_ref += dict_el_eb_res['grid_import_hp']
+    #  Plus EH grid usage
+    array_p_el_ref += dict_el_eb_res['grid_import_eh']
+
+    return array_p_el_ref
+
+
 def calc_power_flex(building, method='cycle'):
     """
     Calculate electric power flexibility.
@@ -290,6 +346,8 @@ if __name__ == '__main__':
     #  Necessary to perform flexibility calculation
     add_esys = True
 
+    build_id = 1001
+
     city_name = 'aachen_kronenberg_6.pkl'
     path_here = os.path.dirname(os.path.abspath(__file__))
     path_city = os.path.join(path_here, 'input', city_name)
@@ -310,43 +368,39 @@ if __name__ == '__main__':
                                   list_data=list_esys,
                                   dhw_scale=False)
 
-    #  Get list of buildings
-    list_build_ids = city.get_list_build_entity_node_ids()
+    #  Pointer to current building object
+    curr_build = city.nodes[build_id]['entity']
 
-    dict_array_t_forced = {}
+    #  Calculate t_forced
+    #  ###################################################################
 
-    #  Loop over buildings
-    for n in list_build_ids:
-        #  Pointer to current building object
-        curr_build = city.nodes[n]['entity']
+    #  Calculate t_force array
+    array_t_forced = calc_t_forced_build(building=curr_build, id=build_id)
 
-        #  Calculate t_force array
-        array_t_forced = calc_t_forced_build(building=curr_build, id=n)
+    plt.plot(array_t_forced / 3600)
+    plt.xlabel('Time in hours')
+    plt.ylabel('T_forced in hours')
+    plt.show()
+    plt.close()
 
-        dict_array_t_forced[n] = array_t_forced
+    #  Calculate t_forced
+    #  ###################################################################
 
-        if n == 1001 or n == 1004:
-            plt.plot(array_t_forced / 3600)
-            plt.xlabel('Time in hours')
-            plt.ylabel('T_forced in hours')
-            plt.show()
-            plt.close()
+    #  Calculate t_force array
+    array_t_delayed = calc_t_delayed_build(building=curr_build, id=build_id)
 
-    dict_array_t_delayed = {}
+    plt.plot(array_t_delayed / 3600)
+    plt.xlabel('Time in hours')
+    plt.ylabel('T_delayed in hours')
+    plt.show()
+    plt.close()
 
-    #  Loop over buildings
-    for n in list_build_ids:
-        #  Pointer to current building object
-        curr_build = city.nodes[n]['entity']
+    #  Calculate reference EHG el. load curve
+    ###################################################################
+    array_p_el_ref = calc_power_ref_curve(building=curr_build)
 
-        #  Calculate t_force array
-        array_t_delayed = calc_t_delayed_build(building=curr_build, id=n)
-
-        dict_array_t_delayed[n] = array_t_delayed
-
-        if n == 1001 or n == 1004:
-            plt.plot(array_t_delayed / 3600)
-            plt.xlabel('Time in hours')
-            plt.ylabel('T_delayed in hours')
-            plt.show()
-            plt.close()
+    plt.plot(array_p_el_ref / 1000)
+    plt.xlabel('Time in hours')
+    plt.ylabel('Reference EHG el. power in kW')
+    plt.show()
+    plt.close()
