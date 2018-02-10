@@ -97,6 +97,7 @@ def calc_t_forced_build(building, id=None):
                 p_charge = q_ehg_nom - th_pow_cur
             else:
                 p_charge = 0
+                #  TODO: Add discharging?
 
             #  if calc_storage_q_in_max > q_ehg_nom
             if tes_copy.calc_storage_q_in_max() > p_charge:
