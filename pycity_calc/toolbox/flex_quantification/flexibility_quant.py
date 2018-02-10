@@ -408,6 +408,61 @@ def calc_power_ref_curve(building):
 #     #
 
 
+def calc_dimless_th_power_flex(building):
+    """
+    Calculates dimensionless thermal power flexibility alpha_th
+
+    Parameters
+    ----------
+    building : object
+        Building object of pyCity_calc
+
+    Returns
+    -------
+    alpha_th : float
+        Dimensionless thermal power flexibility of BES
+    """
+
+    #  Check if building has energy system
+    #  ###########################################################
+    if building.hasBes is False:
+        msg = 'Building ' + str(id) + ' has no building energy system! ' \
+                                      'Thus, cannot calculate th. flexibility.'
+        raise AssertionError(msg)
+
+    #  Get maximal thermal output power of electric heat generators
+    #  (CHP, EH, HP)
+    q_ehg_nom = 0  # in Watt
+    if building.bes.hasChp:
+        q_ehg_nom += building.bes.chp.qNominal
+    if building.bes.hasHeatpump:
+        q_ehg_nom += building.bes.heatpump.qNominal
+    if building.bes.hasElectricalHeater:
+        q_ehg_nom += building.bes.electricalHeater.qNominal
+
+    #  ###########################################################
+    if q_ehg_nom == 0:
+        msg = 'Building ' \
+              + str(id) + ' has no thermo-electric energy systems. ' \
+                          'Thus, therm. flexibility is zero.'
+        warnings.warn(msg)
+        #  Flexibility is zero
+        return 0
+
+    #  Calculate average building thermal power
+    #  ###########################################################
+    #  Extract thermal power curve of building
+    sh_power = building.get_space_heating_power_curve()
+    dhw_power = building.get_dhw_power_curve()
+    th_power = sh_power + dhw_power
+
+    q_dot_build_av = sum(th_power) / len(th_power)
+
+    alpha_th = q_ehg_nom / q_dot_build_av
+
+    return alpha_th
+
+
 if __name__ == '__main__':
 
     import matplotlib.pyplot as plt
@@ -440,6 +495,13 @@ if __name__ == '__main__':
 
     #  Pointer to current building object
     curr_build = city.nodes[build_id]['entity']
+
+    #  Calculate dimensionless thermal power flexibility
+    alpha_th = calc_dimless_th_power_flex(building=curr_build)
+
+    print('Dimensionless thermal power flexibility: ')
+    print(alpha_th)
+    print()
 
     #  Calculate t_forced
     #  ###################################################################
