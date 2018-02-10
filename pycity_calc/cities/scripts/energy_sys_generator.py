@@ -487,8 +487,8 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
 
             #  TES sizing
             #  Storage should be capable of storing full hp thermal
-            #  power for 3 hour (T_spread = 30 Kelvin)
-            mass_tes = hp_th_power * 3 * 3600 / (4180 * 30)
+            #  power for 2 hour (T_spread = 30 Kelvin)
+            mass_tes = hp_th_power * 2 * 3600 / (4180 * 30)
 
             #  Round to realistic storage size
             mass_tes = dimfunc.storage_rounding(mass_tes)
