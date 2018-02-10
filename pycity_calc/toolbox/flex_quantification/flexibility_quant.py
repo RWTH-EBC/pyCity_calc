@@ -618,6 +618,7 @@ if __name__ == '__main__':
     ###################################################################
     (array_p_el_ref, array_el_power_hp_in) = \
         calc_power_ref_curve(building=curr_build)
+    #  TODO: This way not working for heat pump usage (undersupply)
 
     plt.plot(array_p_el_ref / 1000)
     plt.xlabel('Time in hours')
