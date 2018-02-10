@@ -161,18 +161,74 @@ def calc_t_delayed_build(building, id=None):
         #  Flexibility is zero, return array with zeros
         return array_t_delayed
 
+    #  Get maximal thermal output power of electric heat generators
+    #  (CHP, EH, HP)
+    q_ehg_nom = 0  # in Watt
+    if building.bes.hasChp:
+        q_ehg_nom += building.bes.chp.qNominal
+    if building.bes.hasHeatpump:
+        q_ehg_nom += building.bes.heatpump.qNominal
+    if building.bes.hasElectricalHeater:
+        q_ehg_nom += building.bes.electricalHeater.qNominal
+
+    #  ###########################################################
+    if q_ehg_nom == 0:
+        msg = 'Building ' \
+              + str(id) + ' has no thermo-electric energy systems. ' \
+                          'Thus, therm. flexibility is zero.'
+        warnings.warn(msg)
+        #  Flexibility is zero, return array with zeros
+        return array_t_delayed
+
     #  Extract thermal power curve of building
     sh_power = building.get_space_heating_power_curve()
     dhw_power = building.get_dhw_power_curve()
     th_power = sh_power + dhw_power
 
+    #  Precalculate, if it is possible to fully charge tes in prior timestep
+    #  ###########################################################
+    array_tes_en = np.zeros(len(array_t_delayed))
+    array_tes_soc = np.zeros(len(array_t_delayed))
+
+    #  Calculate maximal amount of storable energy in kWh
+    q_sto_max = building.bes.tes.calc_storage_max_amount_of_energy()
+
+    #  Assuming empty storage at beginning
+    q_sto_cur = 0
+
+    for i in range(len(th_power) - 1):
+
+        if q_ehg_nom > th_power[i]:
+            #  Charging possible
+            delta_q = (q_ehg_nom - th_power[i]) * timestep / (3600 * 1000)
+            if q_sto_cur + delta_q < q_sto_max:
+                q_sto_cur += delta_q
+            else:
+                q_sto_cur = q_sto_max + 0.0
+        else:
+            #  Discharging event
+            delta_q = (-q_ehg_nom + th_power[i]) * timestep / (3600 * 1000)
+            if q_sto_cur - delta_q > 0:
+                q_sto_cur -= delta_q
+            else:
+                q_sto_cur = 0
+
+        #  Save current state of charge (with delay of one timestep, as
+        #  availability is given at next timestep
+        array_tes_en[i+1] = q_sto_cur
+
+    #  Calculate soc value for eacht timestep
+    for i in range(len(th_power)):
+        array_tes_soc[i] = array_tes_en[i] / q_sto_max
+
     #  Loop over each timestep
     #  ###########################################################
     for i in range(len(array_t_delayed)):
-        #  Copy storage and set initial / current temperature to t_max (full)
+        #  Copy storage and set initial / current temperature
+        #  to t_max * soc (definingn state of charge for TES)
         tes_copy = copy.deepcopy(building.bes.tes)
-        tes_copy.t_current = tes_copy.tMax
-        tes_copy.tInit = tes_copy.tMax
+        tes_copy.t_current = tes_copy.tMax * array_tes_soc[i]
+        tes_copy.tInit = tes_copy.tMax * array_tes_soc[i]
 
         #  Initial timestep
         for t in range(len(array_t_delayed) - i):
@@ -202,6 +258,28 @@ def calc_t_delayed_build(building, id=None):
         array_t_delayed[i] = t * timestep  # in seconds
 
     return array_t_delayed
+
+
+def calc_power_flex(building, method='cycle'):
+    """
+    Calculate electric power flexibility.
+
+    Parameters
+    ----------
+    building : object
+        Building object of pyCity_calc
+    method : str, optional
+        Defininig calculation method (default: 'cycle')
+        Options:
+        - 'average': Average power curve values
+        - 'cycle': Average power curve values, but accounting for whole
+        charging/discharging cycle
+
+    Returns
+    -------
+    array_p_flex : float
+        Electric power flexibility value
+    """
 
 
 if __name__ == '__main__':
