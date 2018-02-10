@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pylab as plt
 from scipy.interpolate import spline
 from scipy.interpolate import interp1d
+import pickle
 
 import ebc_ues_plot.line_plots as uesline
 
@@ -45,7 +46,7 @@ def gen_1_min_el_profiles():
 
     #  Generate weather object
     weather = weath.Weather(timer, useTRY=True, location=location,
-                              altitude=altitude)
+                            altitude=altitude)
 
     #  Generate market object
     market = mark.Market()
@@ -58,23 +59,23 @@ def gen_1_min_el_profiles():
                                           location=location, co2em=co2em)
 
     el_slp_obj = elec.ElectricalDemand(environment=environment,
-                                    method=1,  # Standard load profile
-                                    profileType="H0",
-                                    annualDemand=1000)
+                                       method=1,  # Standard load profile
+                                       profileType="H0",
+                                       annualDemand=1000)
 
     slp_load = el_slp_obj.loadcurve[:]
 
     occupancy = occ.Occupancy(environment=environment, number_occupants=3)
 
     el_stoch_obj = elec.ElectricalDemand(environment,
-                                             method=2,
-                                             annualDemand=1000,
-                                             total_nb_occupants=3,
-                                             randomizeAppliances=True,
-                                             lightConfiguration=10,
-                                             occupancy=occupancy.occupancy,
-                                             do_normalization=True,
-                                             prev_heat_dev=True)
+                                         method=2,
+                                         annualDemand=1000,
+                                         total_nb_occupants=3,
+                                         randomizeAppliances=True,
+                                         lightConfiguration=10,
+                                         occupancy=occupancy.occupancy,
+                                         do_normalization=True,
+                                         prev_heat_dev=True)
 
     print(len(el_stoch_obj.loadcurve))
 
@@ -95,7 +96,7 @@ def gen_1_min_el_profiles():
     # plt.show()
     # plt.close()
 
-    x_smooth = np.linspace(time_array.min(), time_array.max(), 144/2)
+    x_smooth = np.linspace(time_array.min(), time_array.max(), 144 / 2)
     # x_smooth = np.linspace(time_array.min(), time_array.max(),
     #                        int((idx_stop-idx_start)/60))
     y_smooth = spline(time_array, slp_load, x_smooth)
@@ -110,12 +111,10 @@ def gen_1_min_el_profiles():
     print('Len. time_array: ', len(time_array))
     print('Len. smooth time array: ', len(x_smooth))
 
-
     plot_data = uesline.PlottingData()
 
     plot_data.add_data_entry(x_smooth, y_smooth)
     plot_data.add_data_entry(time_array, stoch_load)
-
 
     #  Plot into one figure or use subplots?
     plot_sub = False  # Plot into single figure
@@ -127,6 +126,13 @@ def gen_1_min_el_profiles():
     this_path = os.path.dirname(os.path.abspath(__file__))
     output_filename = 'slp_vs_rich_24_h'
     output_path = os.path.join(this_path, 'output', output_filename)
+
+    path_save_rich = os.path.join(this_path, 'output', output_filename,
+                                  '24_h_rich_el_profile.pkl')
+    path_save_slp = os.path.join(this_path, 'output', output_filename,
+                                  '24_h_slp_el_profile.pkl')
+    pickle.dump(stoch_load, open(path_save_rich, mode='wb'))
+    pickle.dump(y_smooth, open(path_save_slp, mode='wb'))
 
     #  English infos
     title_engl = ''  # Add 'u' in front of string to define it as unicode
@@ -161,7 +167,7 @@ def gen_1_min_el_profiles():
     #  If  plot_sub == True, define ylabs as labels!
 
     #  Fontsize
-    fontsize = 12
+    fontsize = 11
     #  dpi size
     dpi = 1000
     #  Linewidth
@@ -187,7 +193,7 @@ def gen_1_min_el_profiles():
     put_leg = 'below'  # 'right' or 'below'
 
     #  Adjust figure size to default (None), 'a4' or 'a4_half', 'a5'
-    fig_adjust = 'a5'  # 'a4_half', 'a5'
+    fig_adjust = 'a4'  # 'a4_half', 'a5'
     #  fig_adjust = None  # default
 
     #  Set base point to (0 / 0)
@@ -204,7 +210,7 @@ def gen_1_min_el_profiles():
     rotate_x_labels = False
 
     #  Copy Python code into output folder?
-    copy_py = True
+    copy_py = False
 
     #  Copy input file into output folder?
     copy_input = False
@@ -231,33 +237,37 @@ def gen_1_min_el_profiles():
     # columns: define
     # values)
 
-    uesline.plot_multi_language_multi_color(plot_data=plot_data, plot_sub=plot_sub,
+    uesline.plot_multi_language_multi_color(plot_data=plot_data,
+                                            plot_sub=plot_sub,
                                             output_path=output_path,
                                             output_filename=output_filename,
                                             show_plot=show_plot,
-                                            use_tight=use_tight, title_engl=title_engl,
-                                    xlab_engl=xlab_engl,
-                                    ylab_engl=ylab_engl,
+                                            use_tight=use_tight,
+                                            title_engl=title_engl,
+                                            xlab_engl=xlab_engl,
+                                            ylab_engl=ylab_engl,
                                             list_labels_engl=list_labels_engl,
-                                    title_dt=title_dt, xlab_dt=xlab_dt,
-                                    ylab_dt=ylab_dt,
+                                            title_dt=title_dt, xlab_dt=xlab_dt,
+                                            ylab_dt=ylab_dt,
                                             list_labels_dt=list_labels_dt,
-                                    fontsize=fontsize,
-                                    fig_adjust=fig_adjust,
+                                            fontsize=fontsize,
+                                            fig_adjust=fig_adjust,
                                             legend_pos_within=legend_pos_within,
-                                    put_leg=put_leg, dpi=dpi, linewidth=linewidth,
-                                    set_zero_point=set_zero_point,
+                                            put_leg=put_leg, dpi=dpi,
+                                            linewidth=linewidth,
+                                            set_zero_point=set_zero_point,
                                             set_x_limits=set_x_limits,
-                                    xmin=xmin, xmax=xmax,
+                                            xmin=xmin, xmax=xmax,
                                             set_y_limits=set_y_limits,
-                                    ymin=ymin, ymax=ymax,
+                                            ymin=ymin, ymax=ymax,
                                             use_grid=False,
-                                    copy_py=copy_py, copy_input=copy_input,
-                                    input_path=None, save_data_array=save_data_array,
-                                    save_tikz=save_tikz, rotate_x_labels=rotate_x_labels)
-
+                                            copy_py=copy_py,
+                                            copy_input=copy_input,
+                                            input_path=None,
+                                            save_data_array=save_data_array,
+                                            save_tikz=save_tikz,
+                                            rotate_x_labels=rotate_x_labels)
 
 
 if __name__ == '__main__':
-
     gen_1_min_el_profiles()
