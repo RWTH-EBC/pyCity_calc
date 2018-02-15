@@ -42,7 +42,7 @@ if __name__ == '__main__':
                                   'input',
                                   '2e_analysis_sh_mc_red_unc_year')
 
-    path_output = os.path.join(this_path, 'output')
+    path_output = os.path.join(this_path, 'output', 'sh_mc_unc_diff_years')
     output_filename = 'sh_box_diff_years'
 
     dict_res = {}
