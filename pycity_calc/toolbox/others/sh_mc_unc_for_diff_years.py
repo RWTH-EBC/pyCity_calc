@@ -42,6 +42,9 @@ if __name__ == '__main__':
                                   'input',
                                   '2e_analysis_sh_mc_red_unc_year')
 
+    path_output = os.path.join(this_path, 'output')
+    output_filename = 'sh_box_diff_years'
+
     dict_res = {}
     list_b_data = []
     list_c_data = []
@@ -177,7 +180,7 @@ if __name__ == '__main__':
     ax = fig.gca()
 
     pb = ax.boxplot(list_b_data[0:3], showfliers=True
-                    # , widths=(0.8, 0.8)
+                    , widths=(0.8, 0.8, 0.8)
                     )
     plt.ylabel('Net space heating\ndemand in MWh')
 
@@ -194,7 +197,7 @@ if __name__ == '__main__':
     ax = fig.gca()
 
     pb = ax.boxplot(list_c_data[0:3], showfliers=True
-                    # , widths=(0.8, 0.8)
+                    , widths=(0.8, 0.8, 0.8)
                     )
 
     ax.set_xticklabels(list_xticks[3:6])
@@ -207,5 +210,33 @@ if __name__ == '__main__':
 
     fig.autofmt_xdate()
     plt.tight_layout()
+
+    if not os.path.exists(path_output):
+        os.makedirs(path_output)
+
+    #  Generate file names for different formats
+    file_pdf = output_filename + '.pdf'
+    file_eps = output_filename + '.eps'
+    file_png = output_filename + '.png'
+    file_tikz = output_filename + '.tikz'
+
+    #  Generate saving pathes
+    path_pdf = os.path.join(path_output, file_pdf)
+    path_eps = os.path.join(path_output, file_eps)
+    path_png = os.path.join(path_output, file_png)
+    path_tikz = os.path.join(path_output, file_tikz)
+
+    #  Save figure in different formats
+    plt.savefig(path_pdf, format='pdf')
+    plt.savefig(path_eps, format='eps')
+    plt.savefig(path_png, format='png')
+
+    try:
+        tikz_save(path_tikz, figureheight='\\figureheight',
+                  figurewidth='\\figurewidth')
+    except:
+        msg = 'Could not use tikz_save command to save figure in tikz format'
+        warnings.warn(msg)
+
     plt.show()
     plt.close()
