@@ -803,7 +803,7 @@ if __name__ == '__main__':
 
     #  User inputs for Monte-Carlo Simulation
     #  ###############################################################
-    nb_samples = 2
+    nb_samples = 10000
     time_sp_force_retro = 70  # years
     max_retro_year = 1990
     weather_region = 5
