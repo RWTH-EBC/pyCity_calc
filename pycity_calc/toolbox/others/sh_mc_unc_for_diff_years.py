@@ -35,6 +35,8 @@ if __name__ == '__main__':
                                   '2e_analysis_sh_mc_red_unc_year')
 
     dict_res = {}
+    list_b_data = []
+    list_c_data = []
 
     #  Load results on building level
     #  #####################################################
@@ -49,6 +51,7 @@ if __name__ == '__main__':
     res_build_high_unc = pickle.load(open(path_results, mode='rb'))
     list_build_high_unc = res_build_high_unc[0]
     dict_res['sh_b_high'] = list_build_high_unc
+    list_b_data.append(list_build_high_unc)
 
     #  Building level - Medium uncertainty
     res_name = 'aachen_kronenberg_mod_new_1_single_b_new_dhw_1002.pkl'
@@ -59,6 +62,7 @@ if __name__ == '__main__':
     res_build_med_unc = pickle.load(open(path_results, mode='rb'))
     list_build_med_unc = res_build_med_unc[0]
     dict_res['sh_b_med'] = list_build_med_unc
+    list_b_data.append(list_build_med_unc)
 
     #  Building level - Small uncertainty
     res_name = 'aachen_kronenberg_mod_new_1_single_b_new_dhw_10021990.pkl'
@@ -69,6 +73,7 @@ if __name__ == '__main__':
     res_build_low_unc = pickle.load(open(path_results, mode='rb'))
     list_build_low_unc = res_build_low_unc[0]
     dict_res['sh_b_low'] = list_build_low_unc
+    list_b_data.append(list_build_low_unc)
 
     #  City level
     #  ################
@@ -81,6 +86,7 @@ if __name__ == '__main__':
     res_city_high_unc = pickle.load(open(path_results, mode='rb'))
     list_city_high_unc = res_city_high_unc[0]
     dict_res['sh_c_high'] = list_city_high_unc
+    list_c_data.append(list_city_high_unc)
 
     #  Building level - Medium uncertainty
     res_name = 'aachen_kronenberg_mod_new_1_red_mc_city_samples_10000_red_year_span.pkl'
@@ -91,6 +97,7 @@ if __name__ == '__main__':
     res_city_med_unc = pickle.load(open(path_results, mode='rb'))
     list_city_med_unc = res_city_med_unc[0]
     dict_res['sh_c_med'] = list_city_med_unc
+    list_c_data.append(list_city_med_unc)
 
     #  Building level - Small uncertainty
     res_name = 'aachen_kronenberg_mod_new_1_red_mc_city_samples_10000_fixed_year.pkl'
@@ -101,6 +108,47 @@ if __name__ == '__main__':
     res_city_low_unc = pickle.load(open(path_results, mode='rb'))
     list_city_low_unc = res_city_low_unc[0]
     dict_res['sh_c_low'] = list_city_low_unc
+    list_c_data.append(list_city_low_unc)
 
+    #  Convert kWh to MWh
+    for i in range(len(list_b_data)):
+        for t in range(len(list_b_data[0])):
+            list_b_data[i][t] /= 1000
+            list_c_data[i][t] /= 1000
 
+    list_xticks = ['Building - No\nretrofit knowledge',
+                   'Building - Minor\nretrofit knowledge',
+                   'Building - High\nretrofit knowledge',
+                   'City - No\nretrofit knowledge',
+                   'City - Minor\nretrofit knowledge',
+                   'City - High\nretrofit knowledge',
+                   ]
+
+    fig = plt.figure()
+
+    fig.add_subplot(121)
+
+    ax = fig.gca()
+
+    pb = ax.boxplot(list_b_data[0:3], showfliers=True
+                    # , widths=(0.8, 0.8)
+                    )
+    plt.ylabel('Net space heating\ndemand in MWh')
+
+    ax.set_xticklabels(list_xticks[0:3])
+
+    fig.add_subplot(122)
+
+    ax = fig.gca()
+
+    pb = ax.boxplot(list_c_data[0:3], showfliers=True
+                    # , widths=(0.8, 0.8)
+                    )
+
+    ax.set_xticklabels(list_xticks[3:6])
+
+    fig.autofmt_xdate()
+    plt.tight_layout()
+    plt.show()
+    plt.close()
 
