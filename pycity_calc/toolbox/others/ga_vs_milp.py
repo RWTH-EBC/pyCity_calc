@@ -28,7 +28,7 @@ if __name__ == '__main__':
     path_in_folder = os.path.join(this_path, 'input')
 
     # name_ga_res_folder = 'ga_run_ref_run_with_rescaling'
-    name_ga_res_folder = 'ga_run_ref_run_with_rescaling_opt_limit'
+    name_ga_res_folder = 'ga_run_ref_run_with_rescaling_opt_limit-x'
     path_ga_results = os.path.join(path_in_folder, name_ga_res_folder)
 
     path_save_gen_dev = os.path.join(this_path, 'output', 'ga_gen_dev')
@@ -38,8 +38,8 @@ if __name__ == '__main__':
     output_filename = 'pareto_front'
     dpi = 100
 
-    #  Complete analysis call
-    gadev.analyze_pareto_sol(path_results_folder=path_ga_results)
+    # #  Complete analysis call
+    # gadev.analyze_pareto_sol(path_results_folder=path_ga_results)
 
     #  Process GA results
     #  #############################################################
@@ -57,9 +57,18 @@ if __name__ == '__main__':
     list_inds_pareto = gadev.get_pareto_front_list(final_pop)
 
     #  Write down obj. of MILP runs (Min. Cost --> Min. CO2)
-    list_mip_cost = [68698, 68873, 70808, 72441, 73201, 74233, 75915, 143544]
-    list_mip_co2 = [133946, 129035, 124125, 119261, 119214, 114304, 109393,
-                    104479]
+
+    list_mip_cost = [68698, 68873, 70808,
+                     # 72441, # Min. CO2 with cost constraint of 72441
+                     73201, 74233, 75915
+                    # , 143544
+                     ]
+
+    list_mip_co2 = [133946, 129035, 124125,
+                    # 119261, # Min. CO2 with cost constraint of 72441
+                    119214, 114304, 109393
+                 # ,104479
+                    ]
 
     #  Extract pareto solutions (blue) - print suboptimal solutions in grey
     #  MILP red
@@ -107,7 +116,7 @@ if __name__ == '__main__':
             plt.plot([cost],
                      [co2], linestyle='',
                      marker='o', markersize=3, c='#E53027',
-                     label='GA (pareto optimal)')
+                     label='GA (non-dominated solutions)')
         else:
             plt.plot([cost],
                      [co2], c='#E53027', linestyle='',
@@ -120,7 +129,7 @@ if __name__ == '__main__':
             plt.plot([cost],
                      [co2], linestyle='',
                      marker='o', markersize=3, c='#1058B0',
-                     label='MILP (pareto optimal)')
+                     label='MILP (optimal solutions)')
         else:
             plt.plot([cost],
                      [co2], linestyle='',
