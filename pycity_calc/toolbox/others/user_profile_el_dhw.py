@@ -6,6 +6,7 @@
 
 import os
 import numpy as np
+import pickle
 import matplotlib.pylab as plt
 from scipy.interpolate import spline
 from scipy.interpolate import interp1d
@@ -24,39 +25,49 @@ import pycity_calc.environments.market as mark
 import pycity_calc.environments.timer as time
 
 
-def gen_user_dep_profiles():
+def gen_user_dep_profiles(load_profiles=False):
     """
 
     """
 
-    #  Create extended environment of pycity_calc
-    year = 2010
-    timestep = 60  # Timestep in seconds
-    location = (51.529086, 6.944689)  # (latitude, longitute) of Bottrop
-    altitude = 55  # Altitude of Bottrop
+    if load_profiles:
 
-    #  Generate timer object
-    timer = time.TimerExtended(timestep=timestep, year=year)
+        profile_name = 'user_profile_el_dhw.pickle'
+        this_path = os.path.dirname(os.path.abspath(__file__))
+        path_occ = os.path.join(this_path, 'input', profile_name)
 
-    #  Generate weather object
-    weather = weath.Weather(timer, useTRY=True, location=location,
-                              altitude=altitude)
+        plot_data = pickle.load(open(path_occ, mode='rb'))
 
-    #  Generate market object
-    market = mark.Market()
+    else:
 
-    #  Generate co2 emissions object
-    co2em = co2.Emissions(year=year)
+        #  Create extended environment of pycity_calc
+        year = 2010
+        timestep = 60  # Timestep in seconds
+        location = (51.529086, 6.944689)  # (latitude, longitute) of Bottrop
+        altitude = 55  # Altitude of Bottrop
 
-    #  Generate environment
-    environment = env.EnvironmentExtended(timer, weather, prices=market,
-                                          location=location, co2em=co2em)
+        #  Generate timer object
+        timer = time.TimerExtended(timestep=timestep, year=year)
 
-    occupancy = occ.Occupancy(environment=environment, number_occupants=3)
+        #  Generate weather object
+        weather = weath.Weather(timer, useTRY=True, location=location,
+                                altitude=altitude)
 
-    occ_profile = occupancy.occupancy[:]
+        #  Generate market object
+        market = mark.Market()
 
-    el_stoch_obj = elec.ElectricalDemand(environment,
+        #  Generate co2 emissions object
+        co2em = co2.Emissions(year=year)
+
+        #  Generate environment
+        environment = env.EnvironmentExtended(timer, weather, prices=market,
+                                              location=location, co2em=co2em)
+
+        occupancy = occ.Occupancy(environment=environment, number_occupants=3)
+
+        occ_profile = occupancy.occupancy[:]
+
+        el_stoch_obj = elec.ElectricalDemand(environment,
                                              method=2,
                                              annualDemand=3500,
                                              total_nb_occupants=3,
@@ -66,43 +77,39 @@ def gen_user_dep_profiles():
                                              do_normalization=True,
                                              prev_heat_dev=True)
 
-    stoch_load = el_stoch_obj.loadcurve[:]
+        stoch_load = el_stoch_obj.loadcurve[:]
 
-    dhw_stochastical = DomesticHotWater.DomesticHotWater(environment,
-                                                         tFlow=60,
-                                                         thermal=True,
-                                                         method=2,
-                                                         supplyTemperature=25,
-                                                         occupancy=occ_profile)
+        dhw_stochastical = DomesticHotWater.DomesticHotWater(environment,
+                                                             tFlow=60,
+                                                             thermal=True,
+                                                             method=2,
+                                                             supplyTemperature=25,
+                                                             occupancy=occ_profile)
 
-    dhw_power_curve = dhw_stochastical.get_power(currentValues=False,
-                                                 returnTemperature=False)
+        dhw_power_curve = dhw_stochastical.get_power(currentValues=False,
+                                                     returnTemperature=False)
 
+        #  Change resolution of occupancy profile
+        occ_profile = chres.changeResolution(values=occ_profile,
+                                             newResolution=timestep,
+                                             oldResolution=600)
 
-    #  Change resolution of occupancy profile
-    occ_profile = chres.changeResolution(values=occ_profile, newResolution=timestep,
-                                         oldResolution=600)
+        idx_start = int(0)
+        idx_stop = int(idx_start + 3600 * 24 / timestep)
 
+        #  Generate time array
+        time_array = np.arange(start=0, stop=365 * 24 * 3600, step=timestep) / 3600
 
-    idx_start = int(0)
-    idx_stop = int(idx_start + 3600 * 24 / timestep)
+        time_array = time_array[idx_start:idx_stop]
+        occ_profile = occ_profile[idx_start:idx_stop]
+        stoch_load = stoch_load[idx_start:idx_stop] / 1000
+        dhw_power_curve = dhw_power_curve[idx_start:idx_stop] / 1000
 
-    #  Generate time array
-    time_array = np.arange(start=0, stop=365 * 24 * 3600, step=timestep) / 3600
+        plot_data = uesline.PlottingData()
 
-    time_array = time_array[idx_start:idx_stop]
-    occ_profile = occ_profile[idx_start:idx_stop]
-    stoch_load = stoch_load[idx_start:idx_stop] / 1000
-    dhw_power_curve = dhw_power_curve[idx_start:idx_stop] / 1000
-
-
-
-    plot_data = uesline.PlottingData()
-
-    plot_data.add_data_entry(time_array, occ_profile)
-    plot_data.add_data_entry(time_array, stoch_load)
-    plot_data.add_data_entry(time_array, dhw_power_curve)
-
+        plot_data.add_data_entry(time_array, occ_profile)
+        plot_data.add_data_entry(time_array, stoch_load)
+        plot_data.add_data_entry(time_array, dhw_power_curve)
 
     #  Plot into one figure or use subplots?
     # plot_sub = False  # Plot into single figure
@@ -218,33 +225,39 @@ def gen_user_dep_profiles():
     # columns: define
     # values)
 
-    uesline.plot_multi_language_multi_color(plot_data=plot_data, plot_sub=plot_sub,
+    uesline.plot_multi_language_multi_color(plot_data=plot_data,
+                                            plot_sub=plot_sub,
                                             output_path=output_path,
                                             output_filename=output_filename,
                                             show_plot=show_plot,
-                                            use_tight=use_tight, title_engl=title_engl,
-                                    xlab_engl=xlab_engl,
-                                    ylab_engl=ylab_engl,
+                                            use_tight=use_tight,
+                                            title_engl=title_engl,
+                                            xlab_engl=xlab_engl,
+                                            ylab_engl=ylab_engl,
                                             list_labels_engl=list_labels_engl,
-                                    title_dt=title_dt, xlab_dt=xlab_dt,
-                                    ylab_dt=ylab_dt,
+                                            title_dt=title_dt, xlab_dt=xlab_dt,
+                                            ylab_dt=ylab_dt,
                                             list_labels_dt=list_labels_dt,
-                                    fontsize=fontsize,
-                                    fig_adjust=fig_adjust,
+                                            fontsize=fontsize,
+                                            fig_adjust=fig_adjust,
                                             legend_pos_within=legend_pos_within,
-                                    put_leg=put_leg, dpi=dpi, linewidth=linewidth,
-                                    set_zero_point=set_zero_point,
+                                            put_leg=put_leg, dpi=dpi,
+                                            linewidth=linewidth,
+                                            set_zero_point=set_zero_point,
                                             set_x_limits=set_x_limits,
-                                    xmin=xmin, xmax=xmax,
+                                            xmin=xmin, xmax=xmax,
                                             set_y_limits=set_y_limits,
-                                    ymin=ymin, ymax=ymax,
+                                            ymin=ymin, ymax=ymax,
                                             use_grid=False,
-                                    copy_py=copy_py, copy_input=copy_input,
-                                    input_path=None, save_data_array=save_data_array,
-                                    save_tikz=save_tikz, rotate_x_labels=rotate_x_labels)
-
+                                            copy_py=copy_py,
+                                            copy_input=copy_input,
+                                            input_path=None,
+                                            save_data_array=save_data_array,
+                                            save_tikz=save_tikz,
+                                            rotate_x_labels=rotate_x_labels)
 
 
 if __name__ == '__main__':
+    load_profiles = True
 
-    gen_user_dep_profiles()
+    gen_user_dep_profiles(load_profiles=load_profiles)

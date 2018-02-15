@@ -713,7 +713,8 @@ class McRunner(object):
 
     def perform_mc_runs(self, nb_runs, sampling_method, failure_tolerance=0.05,
                         heating_off=True, eeg_pv_limit=False,
-                        random_profile=False):
+                        random_profile=False, use_kwkg_lhn_sub=False,
+                        calc_th_el_cov=False):
         """
         Perform mc runs.
         - Extract sample values
@@ -747,6 +748,13 @@ class McRunner(object):
             (default: False). Only relevant, if profile pool has been given,
             sampling_method == 'lhc' and nb. of profiles is equal to nb.
             of samples
+        use_kwkg_lhn_sub : bool, optional
+            Defines, if KWKG LHN subsidies are used (default: False).
+            If True, can get 100 Euro/m as subdidy, if share of CHP LHN fed-in
+            is equal to or higher than 60 %
+        calc_th_el_cov : bool, optional
+            Defines, if thermal and electric coverage of different types of
+            devices should be calculated (default: False)
 
         Returns
         -------
@@ -773,6 +781,15 @@ class McRunner(object):
                 dict_mc_setup['failure_tolerance'] = failure_tolerance
                 dict_mc_setup['heating_off'] = heating_off
                 dict_mc_setup['idx_failed_runs'] = self._list_failed_runs
+            dict_mc_cov : dict
+                Dictionary holding thermal/electrical coverage factors
+                dict_mc_cov['th_cov_boi'] = array_th_cov_boi
+                dict_mc_cov['th_cov_chp'] = array_th_cov_chp
+                dict_mc_cov['th_cov_hp_aw'] = array_th_cov_hp_aw
+                dict_mc_cov['th_cov_hp_ww'] = array_th_cov_hp_ww
+                dict_mc_cov['th_cov_eh'] = array_th_cov_eh
+                dict_mc_cov['el_cov_chp'] = array_el_cov_chp
+                dict_mc_cov['el_cov_pv'] = array_el_cov_pv
         """
 
         if sampling_method not in ['lhc', 'random']:
@@ -815,6 +832,23 @@ class McRunner(object):
         #  Set failure counter to zero
         self._nb_failed_runs = 0
         self._list_failed_runs = []
+
+        if calc_th_el_cov:
+            #  Calculate thermal and electric coverage by device
+
+            dict_mc_cov = {}
+
+            array_th_cov_boi = np.zeros(nb_runs)
+            array_th_cov_chp = np.zeros(nb_runs)
+            array_th_cov_hp_aw = np.zeros(nb_runs)
+            array_th_cov_hp_ww = np.zeros(nb_runs)
+            array_th_cov_eh = np.zeros(nb_runs)
+
+            array_el_cov_chp = np.zeros(nb_runs)
+            array_el_cov_pv = np.zeros(nb_runs)
+            array_el_cov_grid = np.zeros(nb_runs)
+        else:
+            dict_mc_cov = None
 
         #  Run energy balance and economic analysis
         #  #################################################################
@@ -1323,7 +1357,8 @@ class McRunner(object):
                     dict_city_sample_lhc=self._dict_city_sample_lhc,
                     dict_build_samples_lhc=self._dict_build_samples_lhc,
                     run_idx=i,
-                    eeg_pv_limit=eeg_pv_limit)
+                    eeg_pv_limit=eeg_pv_limit,
+                    use_kwkg_lhn_sub=use_kwkg_lhn_sub)
 
                 #  Extract further results
                 sh_dem = c_eco_copy.energy_balance. \
@@ -1380,6 +1415,125 @@ class McRunner(object):
                 dict_mc_res['lhn_pump'] = array_lhn_pump
                 dict_mc_res['grid_exp_chp'] = array_grid_exp_chp
                 dict_mc_res['grid_exp_pv'] = array_grid_exp_pv
+
+                if calc_th_el_cov:
+                    #  #####################################################
+                    #  Calculate thermal and electric coverage by device
+
+                    timestep = city.environment.timer.timeDiscretization
+
+                    nb_timesteps = int((365 * 24 * 3600) / timestep)
+
+                    #  Initial zero result arrays (on city district level)
+                    array_chp_q_out = np.zeros(nb_timesteps)
+                    array_chp_el_out = np.zeros(nb_timesteps)
+                    array_boi_q_out = np.zeros(nb_timesteps)
+                    array_hp_aw_q_out = np.zeros(nb_timesteps)
+                    array_hp_aw_el_in = np.zeros(nb_timesteps)
+                    array_hp_ww_q_out = np.zeros(nb_timesteps)
+                    array_hp_ww_el_in = np.zeros(nb_timesteps)
+                    array_eh_q_out = np.zeros(nb_timesteps)
+                    array_pv_el_out = np.zeros(nb_timesteps)
+
+                    #  Loop over each building in city and extract generated
+                    #  power
+
+                    for n in c_eco_copy._list_buildings:
+                        curr_b = city.nodes[n]['entity']
+                        if curr_b.hasBes:
+                            if curr_b.bes.hasBoiler:
+                                array_boi_q_out += \
+                                    curr_b.bes.boiler.totalQOutput
+                            if curr_b.bes.hasChp:
+                                array_chp_q_out += \
+                                    curr_b.bes.chp.totalQOutput
+                                array_chp_el_out += \
+                                    curr_b.bes.chp.totalPOutput
+                            if curr_b.bes.hasHeatpump:
+                                if curr_b.bes.heatpump.hp_type == 'aw':
+                                    array_hp_aw_q_out += \
+                                        curr_b.bes.heatpump.totalQOutput
+                                    array_hp_aw_el_in += \
+                                        curr_b.bes.heatpump.array_el_power_in
+                                elif curr_b.bes.heatpump.hp_type == 'ww':
+                                    array_hp_ww_q_out += \
+                                        curr_b.bes.heatpump.totalQOutput
+                                    array_hp_ww_el_in += \
+                                        curr_b.bes.heatpump.array_el_power_in
+                                else:
+                                    msg = 'Unkown heat pump type'
+                                    raise AssertionError(msg)
+                            if curr_b.bes.hasElectricalHeater:
+                                array_eh_q_out += \
+                                    curr_b.bes.electricalHeater.totalQOutput
+                            if curr_b.bes.hasPv:
+                                array_pv_el_out += \
+                                    curr_b.bes.pv.totalPower
+
+                    #  Calculate coverage factors
+                    th_energy_boi = sum(array_boi_q_out) * timestep \
+                                    / (3600 * 1000)
+                    th_energy_chp = sum(array_chp_q_out) * timestep \
+                                    / (3600 * 1000)
+                    el_energy_chp = sum(array_chp_el_out) * timestep \
+                                    / (3600 * 1000)
+                    th_energy_hp_aw = sum(array_hp_aw_q_out) * timestep \
+                                    / (3600 * 1000)
+                    el_energy_hp_aw = sum(array_hp_aw_el_in) * timestep \
+                                      / (3600 * 1000)
+                    th_energy_hp_ww = sum(array_hp_ww_q_out) * timestep \
+                                      / (3600 * 1000)
+                    el_energy_hp_ww = sum(array_hp_ww_el_in) * timestep \
+                                      / (3600 * 1000)
+                    th_energy_eh = sum(array_eh_q_out) * timestep \
+                                      / (3600 * 1000)
+                    el_energy_pv = sum(array_pv_el_out) * timestep \
+                                   / (3600 * 1000)
+
+                    #  Also includes LHN and storage losses (thus, not using
+                    #  sh_dem value)
+                    th_energy_overall_gen = (th_energy_boi + th_energy_chp
+                                             + th_energy_hp_aw
+                                             + th_energy_hp_ww + th_energy_eh)
+
+                    #  Thermal coverage factors
+                    th_cov_boi = th_energy_boi / th_energy_overall_gen
+                    th_cov_chp = th_energy_chp / th_energy_overall_gen
+                    th_cov_hp_aw = th_energy_hp_aw / th_energy_overall_gen
+                    th_cov_hp_ww = th_energy_hp_ww / th_energy_overall_gen
+                    th_cov_eh = th_energy_eh / th_energy_overall_gen
+
+                    #  El. ref. demand (100 % eff. of electr. heater)
+                    el_ref_dem = (el_dem + el_energy_hp_aw + el_energy_hp_ww
+                                  + th_energy_eh)
+
+                    #  Electric coverage factors
+                    el_cov_chp = (el_energy_chp - grid_exp_chp) / el_ref_dem
+                    el_cov_pv = (el_energy_pv - grid_exp_pv) / el_ref_dem
+                    el_cov_grid = (grid_imp_dem + grid_imp_hp
+                                   + grid_imp_eh) / el_ref_dem
+
+                    #  Add coverage factors to results file
+                    array_th_cov_boi[i] = th_cov_boi
+                    array_th_cov_chp[i] = th_cov_chp
+                    array_th_cov_hp_aw[i] = th_cov_hp_aw
+                    array_th_cov_hp_ww[i] = th_cov_hp_ww
+                    array_th_cov_eh[i] = th_cov_eh
+
+                    array_el_cov_chp[i] = el_cov_chp
+                    array_el_cov_pv[i] = el_cov_pv
+                    array_el_cov_grid[i] = el_cov_grid
+
+                    #  Save results to dict
+                    dict_mc_cov['th_cov_boi'] = array_th_cov_boi
+                    dict_mc_cov['th_cov_chp'] = array_th_cov_chp
+                    dict_mc_cov['th_cov_hp_aw'] = array_th_cov_hp_aw
+                    dict_mc_cov['th_cov_hp_ww'] = array_th_cov_hp_ww
+                    dict_mc_cov['th_cov_eh'] = array_th_cov_eh
+                    dict_mc_cov['el_cov_chp'] = array_el_cov_chp
+                    dict_mc_cov['el_cov_pv'] = array_el_cov_pv
+                    dict_mc_cov['el_cov_grid'] = array_el_cov_grid
+
             except buildeb.EnergyBalanceException as ermessage:
                 print(ermessage)
                 traceback.print_exc()
@@ -1388,6 +1542,7 @@ class McRunner(object):
                 self._list_failed_runs.append(i)
                 msg = 'Run %d failed with EnergyBalanceException' % (i)
                 warnings.warn(msg)
+
             except tessys.TESChargingException as ermessage:
                 print(ermessage)
                 traceback.print_exc()
@@ -1396,6 +1551,10 @@ class McRunner(object):
                 self._list_failed_runs.append(i)
                 msg = 'Run %d failed with EnergyBalanceException' % (i)
                 warnings.warn(msg)
+
+            #  Write results to dict
+
+
 
             if self._nb_failed_runs > failure_tolerance * nb_runs:
                 msg = 'Number of failed runs exceeds ' \
@@ -1406,7 +1565,7 @@ class McRunner(object):
             # Save failed run information to dict_mc_setup
             dict_mc_setup['idx_failed_runs'] = self._list_failed_runs
 
-        return (dict_mc_res, dict_mc_setup)
+        return (dict_mc_res, dict_mc_setup, dict_mc_cov)
 
     def run_mc_analysis(self, nb_runs, sampling_method,
                         do_sampling=True,
@@ -1423,7 +1582,10 @@ class McRunner(object):
                         random_profile=False,
                         load_city_n_build_samples=False,
                         path_city_sample_dict=None,
-                        path_build_sample_dict=None
+                        path_build_sample_dict=None,
+                        eeg_pv_limit=False,
+                        use_kwkg_lhn_sub=False,
+                        calc_th_el_cov=False
                         ):
         """
         Perform monte-carlo run with:
@@ -1490,6 +1652,18 @@ class McRunner(object):
         path_build_sample_dict : str, optional
             Defines path to building sample dict (default: None). Only relevant,
             if load_city_n_build_samples is True
+        eeg_pv_limit : bool, optional
+            Defines, if EEG PV feed-in limitation of 70 % of peak load is
+            active (default: False). If limitation is active, maximal 70 %
+            of PV peak load are fed into the grid.
+            However, self-consumption is used, first.
+        use_kwkg_lhn_sub : bool, optional
+            Defines, if KWKG LHN subsidies are used (default: True).
+            If True, can get 100 Euro/m as subdidy, if share of CHP LHN fed-in
+            is equal to or higher than 60 %
+        calc_th_el_cov : bool, optional
+            Defines, if thermal and electric coverage of different types of
+            devices should be calculated (default: False)
 
         Returns
         -------
@@ -1530,6 +1704,16 @@ class McRunner(object):
                 dict_mc_setup['failure_tolerance'] = failure_tolerance
                 dict_mc_setup['heating_off'] = heating_off
                 dict_mc_setup['idx_failed_runs'] = self._list_failed_runs
+            dict_mc_cov : dict
+                Dictionary holding thermal/electrical coverage factors
+                dict_mc_cov['th_cov_boi'] = array_th_cov_boi
+                dict_mc_cov['th_cov_chp'] = array_th_cov_chp
+                dict_mc_cov['th_cov_hp_aw'] = array_th_cov_hp_aw
+                dict_mc_cov['th_cov_hp_ww'] = array_th_cov_hp_ww
+                dict_mc_cov['th_cov_eh'] = array_th_cov_eh
+                dict_mc_cov['el_cov_chp'] = array_el_cov_chp
+                dict_mc_cov['el_cov_pv'] = array_el_cov_pv
+                dict_mc_cov['el_cov_grid']
 
             For sampling_method == 'lhc':
             (dict_city_sample_lhc, dict_build_samples_lhc, dict_mc_res,
@@ -1569,6 +1753,16 @@ class McRunner(object):
                 fict_profiles_build['el_profiles'] = el_profiles
                 dict_profiles_build['dhw_profiles'] = dhw_profiles
                 When use_profile_pool is False, dict_profiles is None
+            dict_mc_cov : dict
+                Dictionary holding thermal/electrical coverage factors
+                dict_mc_cov['th_cov_boi'] = array_th_cov_boi
+                dict_mc_cov['th_cov_chp'] = array_th_cov_chp
+                dict_mc_cov['th_cov_hp_aw'] = array_th_cov_hp_aw
+                dict_mc_cov['th_cov_hp_ww'] = array_th_cov_hp_ww
+                dict_mc_cov['th_cov_eh'] = array_th_cov_eh
+                dict_mc_cov['el_cov_chp'] = array_el_cov_chp
+                dict_mc_cov['el_cov_pv'] = array_el_cov_pv
+                dict_mc_cov['el_cov_grid']
         """
 
         if sampling_method not in ['lhc', 'random']:
@@ -1612,26 +1806,30 @@ class McRunner(object):
             block_print()
 
         # Perform monte-carlo runs
-        (dict_mc_res, dict_mc_setup) = \
+        (dict_mc_res, dict_mc_setup, dict_mc_cov) = \
             self.perform_mc_runs(nb_runs=nb_runs,
                                  sampling_method=sampling_method,
                                  failure_tolerance=failure_tolerance,
                                  heating_off=heating_off,
-                                 random_profile=random_profile)
+                                 random_profile=random_profile,
+                                 eeg_pv_limit=eeg_pv_limit,
+                                 use_kwkg_lhn_sub=use_kwkg_lhn_sub,
+                                 calc_th_el_cov=calc_th_el_cov)
 
         if prevent_printing:
             enable_print()
 
         if do_sampling and sampling_method == 'random':
             return (dict_samples_const, dict_samples_esys, dict_mc_res,
-                    dict_mc_setup, None)
+                    dict_mc_setup, None, dict_mc_cov)
         elif do_sampling and sampling_method == 'lhc':
             return (dict_city_sample_lhc, dict_build_samples_lhc, dict_mc_res,
-                    dict_mc_setup, dict_profiles_lhc)
+                    dict_mc_setup, dict_profiles_lhc, dict_mc_cov)
         else:
-            return (None, None, dict_mc_res, dict_mc_setup, None)
+            return (None, None, dict_mc_res, dict_mc_setup, None, dict_mc_cov)
 
-    def perform_ref_run(self, save_res=True, eeg_pv_limit=False):
+    def perform_ref_run(self, save_res=True, eeg_pv_limit=False,
+                        use_kwkg_lhn_sub=False):
         """
         Perform reference energy balance and annuity run with default values
         given by city object, environment etc.
@@ -1646,6 +1844,10 @@ class McRunner(object):
             active (default: False). If limitation is active, maximal 70 %
             of PV peak load are fed into the grid.
             However, self-consumption is used, first.
+        use_kwkg_lhn_sub : bool, optional
+            Defines, if KWKG LHN subsidies are used (default: False).
+            If True, can get 100 Euro/m as subdidy, if share of CHP LHN fed-in
+            is equal to or higher than 60 %
 
         Returns
         -------
@@ -1669,7 +1871,9 @@ class McRunner(object):
         (total_annuity, co2) = c_eco_copy. \
             perform_overall_energy_balance_and_economic_calc(run_mc=False,
                                                              eeg_pv_limit=
-                                                             eeg_pv_limit)
+                                                             eeg_pv_limit,
+                                                             use_kwkg_lhn_sub=
+                                                             use_kwkg_lhn_sub)
 
         #  Extract further results
         sh_dem = c_eco_copy.energy_balance. \
@@ -2041,6 +2245,11 @@ if __name__ == '__main__':
     heating_off = True
     #  Defines, if heating can be switched of during summer
 
+    eeg_pv_limit = True
+    use_kwkg_lhn_sub = False
+
+    calc_th_el_cov = True
+
     #  Output options
     #  ##############################
 
@@ -2065,6 +2274,9 @@ if __name__ == '__main__':
 
     profiles_name = 'mc_run_profile_pool_dict.pkl'
     path_profiles = os.path.join(this_path, 'output', profiles_name)
+
+    cov_dict_name = 'mc_cov_dict.pkl'
+    path_mc_cov = os.path.join(this_path, 'output', cov_dict_name)
 
     #  #####################################################################
     #  Generate object instances
@@ -2093,7 +2305,7 @@ if __name__ == '__main__':
     #  Perform Monte-Carlo uncertainty analysis
     #  #####################################################################
     (dict_samples_const, dict_samples_esys, dict_res, dict_mc_setup,
-     dict_profiles_lhc) = \
+     dict_profiles_lhc, dict_mc_cov) = \
         mc_run.run_mc_analysis(nb_runs=nb_runs,
                                failure_tolerance=failure_tolerance,
                                do_sampling=do_sampling,
@@ -2109,12 +2321,17 @@ if __name__ == '__main__':
                                load_city_n_build_samples=
                                load_city_n_build_samples,
                                path_city_sample_dict=path_city_sample_dict,
-                               path_build_sample_dict=path_build_sample_dict
+                               path_build_sample_dict=path_build_sample_dict,
+                               eeg_pv_limit=eeg_pv_limit,
+                               use_kwkg_lhn_sub=use_kwkg_lhn_sub,
+                               calc_th_el_cov=calc_th_el_cov
                                )
 
     #  Perform reference run:
     #  #####################################################################
-    (total_annuity, co2, sh_dem, el_dem, dhw_dem) = mc_run.perform_ref_run()
+    (total_annuity, co2, sh_dem, el_dem, dhw_dem) = \
+        mc_run.perform_ref_run(eeg_pv_limit=eeg_pv_limit,
+                               use_kwkg_lhn_sub=use_kwkg_lhn_sub)
 
     print()
     print('Total annualized cost in Euro/a of reference run:')
@@ -2144,6 +2361,11 @@ if __name__ == '__main__':
     if dict_profiles_lhc is not None:
         pickle.dump(dict_profiles_lhc, open(path_profiles, mode='wb'))
         print('Saved profiles dict to: ', path_profiles)
+        print()
+
+    if calc_th_el_cov and dict_mc_cov is not None:
+        pickle.dump(dict_mc_cov, open(path_mc_cov, mode='wb'))
+        print('Saved dict_mc_cov to: ', path_mc_cov)
         print()
 
     print('Nb. failed runs: ', str(len(dict_mc_setup['idx_failed_runs'])))
