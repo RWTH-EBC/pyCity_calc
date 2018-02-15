@@ -803,7 +803,7 @@ if __name__ == '__main__':
 
     #  User inputs for Monte-Carlo Simulation
     #  ###############################################################
-    nb_samples = 10000
+    nb_samples = 2
     time_sp_force_retro = 70  # years
     max_retro_year = 1990
     weather_region = 5
@@ -989,8 +989,8 @@ if __name__ == '__main__':
         #  Add apartment to extended building
         extended_building.addEntity(entity=apartment)
 
-    #  Modify year of construction
-    city.nodes[1002]['entity'].build_year = 1985
+    # #  Modify year of construction
+    # city.nodes[1002]['entity'].build_year = 1985
 
     (list_sh, list_sh_curves, list_el, list_dhw, dict_samples, dict_problem) = \
         run_mc_sh_uncertain_single_building(building=extended_building,
