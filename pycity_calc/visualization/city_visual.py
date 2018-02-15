@@ -963,7 +963,7 @@ if __name__ == '__main__':
     bes = BES.BES(city_object.environment)
 
     #  Create Boiler
-    boiler = Boiler.Boiler(city_object.environment, qNominal=10000, eta=0.9)
+    boiler = Boiler.Boiler(city_object.environment, qNominal=10000, eta=0.95)
 
     #  Create CHP
     chp = CHP.CHP(city_object.environment, pNominal=2000, qNominal=3000,
