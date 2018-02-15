@@ -61,7 +61,8 @@ def load_enersys_input_data(esys_path):
 
 def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
                       tes_default_chp=None,
-                      buffer_factor=2, lhn_buffer=1.2, eta_pv=0.12):
+                      buffer_factor=2, lhn_buffer=1.2, eta_pv=0.12,
+                      eta_boi=0.95):
     """
     Generate and dimensions energy systems within city district, based on
     user defined energy system types and method within txt input file.
@@ -93,9 +94,13 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
         account for LHN losses in Boiler/CHP sytem dimensioning
     eta_pv : float, optional
         Efficiency of PV system (default: 0.12)
+    eta_boi : float, optional
+        Initial boiler efficiency (default: 0.95)
     """
     assert eta_pv > 0
     assert eta_pv <= 1
+    assert eta_boi > 0
+    assert eta_boi <= 1
 
     #  Check if all node ids exist within city object
     for tup in list_data:
@@ -190,7 +195,7 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
 
                 boiler = boil.BoilerExtended(environment=city.environment,
                                              q_nominal=boiler_th_power,
-                                             eta=0.85,
+                                             eta=eta_boi,
                                              lower_activation_limit=0)
 
                 list_entities = [boiler]
@@ -199,7 +204,7 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
 
                 boiler = boil.BoilerExtended(environment=city.environment,
                                              q_nominal=boiler_th_power,
-                                             eta=0.85)
+                                             eta=eta_boi)
 
                 #  Estimate tes size
                 if dhw_scale:  # With dhw usage
@@ -404,7 +409,7 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
             #  #------------------------------------------
             boiler = boil.BoilerExtended(environment=city.environment,
                                          q_nominal=boiler_th_power,
-                                         eta=0.85)
+                                         eta=eta_boi)
 
             chp = chpsys.ChpExtended(environment=city.environment,
                                      q_nominal=chp_th_power,

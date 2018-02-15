@@ -34,7 +34,7 @@ def run_test():
     lower_activation_limit = 0.5
     q_nominal = 10000
     t_max = 90
-    eta = 0.9
+    eta = 0.95
     heater = Boiler.BoilerExtended(environment, q_nominal, eta, t_max,
                                    lower_activation_limit)
 
