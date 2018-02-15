@@ -268,3 +268,26 @@ class Test_Chp():
                                       with_inst=True,
                                       use_el_input=True,
                                       q_th_nom=None)
+
+    def test_nb_switches(self, fixture_environment):
+        """
+        Test checks returning of number of switching events
+        """
+
+        chp = Chp.ChpExtended(environment=fixture_environment,
+                              q_nominal=1000)
+
+        #  Manipulate results array (8 switching events)
+        chp.totalQOutput[1] = 1
+        chp.totalQOutput[2] = 1
+        chp.totalQOutput[3] = 2
+        chp.totalQOutput[4] = 3
+
+        chp.totalQOutput[25] = 3
+        chp.totalQOutput[27] = 3.9
+
+        chp.totalQOutput[50] = 0.5
+
+        nb_switch = chp.calc_nb_on_off_switching()
+
+        assert nb_switch == 8
