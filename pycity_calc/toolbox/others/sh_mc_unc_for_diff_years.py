@@ -23,9 +23,17 @@ from __future__ import division
 
 import os
 import pickle
+import warnings
 import matplotlib.pyplot as plt
+import numpy as np
+import scipy
+import scipy.stats
 
-
+try:
+    from matplotlib2tikz import save as tikz_save
+except:
+    msg = 'Could not import matplotlib2tikz'
+    warnings.warn(msg)
 
 if __name__ == '__main__':
 
@@ -116,6 +124,44 @@ if __name__ == '__main__':
             list_b_data[i][t] /= 1000
             list_c_data[i][t] /= 1000
 
+    for i in range(len(list_b_data)):
+        list_dat = list_b_data[i]
+
+        median = np.median(list_dat)
+        iqr = scipy.stats.iqr(list_dat)
+        riqr = iqr / median
+
+        if i == 0:
+            print('Building high uncertainty')
+        elif i == 1:
+            print('Building med uncertainty')
+        elif i == 2:
+            print('Building low uncertainty')
+        print('Median: ')
+        print(median)
+        print('RIQR: ')
+        print(riqr)
+        print()
+
+    for i in range(len(list_c_data)):
+        list_dat = list_c_data[i]
+
+        median = np.median(list_dat)
+        iqr = scipy.stats.iqr(list_dat)
+        riqr = iqr / median
+
+        if i == 0:
+            print('City high uncertainty')
+        elif i == 1:
+            print('City med uncertainty')
+        elif i == 2:
+            print('City low uncertainty')
+        print('Median: ')
+        print(median)
+        print('RIQR: ')
+        print(riqr)
+        print()
+
     list_xticks = ['Building - No\nretrofit knowledge',
                    'Building - Minor\nretrofit knowledge',
                    'Building - High\nretrofit knowledge',
@@ -163,4 +209,3 @@ if __name__ == '__main__':
     plt.tight_layout()
     plt.show()
     plt.close()
-
