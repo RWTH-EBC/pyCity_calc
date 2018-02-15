@@ -119,9 +119,9 @@ if __name__ == '__main__':
     list_xticks = ['Building - No\nretrofit knowledge',
                    'Building - Minor\nretrofit knowledge',
                    'Building - High\nretrofit knowledge',
-                   'City - No\nretrofit knowledge',
-                   'City - Minor\nretrofit knowledge',
-                   'City - High\nretrofit knowledge',
+                   'City - No retrofit\n knowledge',
+                   'City - Minor retrofit\n knowledge',
+                   'City - High retrofit\n knowledge',
                    ]
 
     fig = plt.figure()
@@ -137,6 +137,12 @@ if __name__ == '__main__':
 
     ax.set_xticklabels(list_xticks[0:3])
 
+    for median in pb['medians']:
+        median.set(color='#E53027')
+
+    for flier in pb['fliers']:
+        flier.set(marker='.', markersize=1)
+
     fig.add_subplot(122)
 
     ax = fig.gca()
@@ -146,6 +152,12 @@ if __name__ == '__main__':
                     )
 
     ax.set_xticklabels(list_xticks[3:6])
+
+    for median in pb['medians']:
+        median.set(color='#E53027')
+
+    for flier in pb['fliers']:
+        flier.set(marker='.', markersize=1)
 
     fig.autofmt_xdate()
     plt.tight_layout()
