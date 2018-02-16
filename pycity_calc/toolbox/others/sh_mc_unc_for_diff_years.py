@@ -185,6 +185,7 @@ if __name__ == '__main__':
     plt.ylabel('Net space heating\ndemand in MWh')
 
     ax.set_xticklabels(list_xticks[0:3])
+    plt.xticks(rotation=90)
 
     for median in pb['medians']:
         median.set(color='#E53027')
@@ -201,6 +202,7 @@ if __name__ == '__main__':
                     )
 
     ax.set_xticklabels(list_xticks[3:6])
+    plt.xticks(rotation=90)
 
     for median in pb['medians']:
         median.set(color='#E53027')
@@ -208,7 +210,7 @@ if __name__ == '__main__':
     for flier in pb['fliers']:
         flier.set(marker='.', markersize=1)
 
-    fig.autofmt_xdate()
+    # fig.autofmt_xdate()
     plt.tight_layout()
 
     if not os.path.exists(path_output):
