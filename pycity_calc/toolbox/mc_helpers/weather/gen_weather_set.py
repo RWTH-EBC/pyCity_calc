@@ -281,7 +281,19 @@ if __name__ == '__main__':
     plt.show()
     plt.close()
 
+    for weather in list_wea:
+        plt.plot(weather.qDirect, alpha=0.3)
+    plt.xlabel('Time in hours')
+    plt.ylabel('Direct radiation in W/m2')
+    plt.show()
+    plt.close()
 
+    for weather in list_wea:
+        plt.plot(weather.qDiffuse, alpha=0.3)
+    plt.xlabel('Time in hours')
+    plt.ylabel('Diffuse radiation in W/m2')
+    plt.show()
+    plt.close()
 
     #  Further analysis
     #  ###########################################################
