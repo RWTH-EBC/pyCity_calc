@@ -48,6 +48,46 @@ def enable_print():
     sys.stdout = sys.__stdout__
 
 
+def penalize_switching(city, max_switch):
+    """
+    Returns True, if number of switching commands per CHP is always below or
+    equal to max_switches. False, if, at least, one CHP has more switching
+    commands.
+    Returns True, if no CHP exists.
+
+    Parameters
+    ----------
+    city : object
+        City object of pyCity_calc. Should have been processed with energy
+        balance calculation to hold results on every CHP object
+    max_switch
+
+    Returns
+    -------
+    switching_okay: bool
+        True, if number of switching commands per CHP is always below or
+        equal to max_switches. False, if, at least, one CHP has more switching
+        commands. Returns True, if no CHP exists.
+    """
+
+    assert max_switch > 0
+
+    list_build_ids = city.get_list_build_entity_node_ids()
+
+    switching_okay = True  # Initial value
+
+    for n in list_build_ids:
+        build = city.nodes[n]['entity']
+        if build.hasBes:
+            if build.bes.hasChp:
+                nb_per_day = build.bes.chp.calc_nb_on_off_switching() / 365
+                if nb_per_day > max_switch:
+                    switching_okay = False
+                    break
+
+    return switching_okay
+
+
 class McToleranceException(Exception):
     def __init__(self, message):
         """
@@ -1829,7 +1869,8 @@ class McRunner(object):
             return (None, None, dict_mc_res, dict_mc_setup, None, dict_mc_cov)
 
     def perform_ref_run(self, save_res=True, eeg_pv_limit=False,
-                        use_kwkg_lhn_sub=False):
+                        use_kwkg_lhn_sub=False, chp_switch_pen=False,
+                        max_switch=None):
         """
         Perform reference energy balance and annuity run with default values
         given by city object, environment etc.
@@ -1848,6 +1889,14 @@ class McRunner(object):
             Defines, if KWKG LHN subsidies are used (default: False).
             If True, can get 100 Euro/m as subdidy, if share of CHP LHN fed-in
             is equal to or higher than 60 %
+        chp_switch_pen : bool, optional
+            Defines, if too many switchings per day (CHP) should be penalized
+            (default: False).
+        max_switch : int, optional
+            Defines maximum number of allowed average switching commands per
+            CHP for a single day (default: None), e.g. 8 means that a
+            maximum of 8 on/off or off/on switching commands is allowed as
+            average per day. Only relevant, if chp_switch_pen is True
 
         Returns
         -------
@@ -1865,6 +1914,13 @@ class McRunner(object):
                 Net hot water thermal energy demand in kWH/a
         """
 
+        if chp_switch_pen:
+            if max_switch is None:
+                msg = 'max_switch cannot be None, if chp_switch_pen is ' \
+                      'True. Please set a maximum number of allowed ' \
+                      'switching CHP commands per day (e.g. max_switch = 8).'
+                raise AssertionError(msg)
+
         #  Copy CityAnnuityCalc object
         c_eco_copy = copy.deepcopy(self._city_eco_calc)
 
@@ -1874,6 +1930,21 @@ class McRunner(object):
                                                              eeg_pv_limit,
                                                              use_kwkg_lhn_sub=
                                                              use_kwkg_lhn_sub)
+
+        if chp_switch_pen:
+            #  #####################################################
+            #  Penalize too many switching commands
+            #  Relevant for pyCity_resilience
+            switch_okay = penalize_switching(
+                city=c_eco_copy.energy_balance.city,
+                max_switch=max_switch)
+            if switch_okay is False:
+                msg = 'Too many CHP switchings per day. ' \
+                      'Penalize solution.'
+                warnings.warn(msg)
+                total_annuity = 10 ** 100
+                co2 = 10 ** 100
+            #  #####################################################
 
         #  Extract further results
         sh_dem = c_eco_copy.energy_balance. \
