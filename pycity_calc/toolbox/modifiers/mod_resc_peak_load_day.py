@@ -123,6 +123,7 @@ if __name__ == '__main__':
     import pycity_calc.environments.environment as env
     import pycity_calc.environments.market as mark
     import pycity_calc.environments.timer as time
+    import pycity_calc.toolbox.modifiers.slp_th_manipulator as slpman
 
     #  Rescaling factor
     resc_factor = 3
@@ -157,6 +158,17 @@ if __name__ == '__main__':
                                     method=1,  # Standard load profile
                                     livingArea=150,
                                     specificDemand=100)
+
+    #  Pointer to temperature curve
+    temp_curve = environment.weather.tAmbient
+
+    #  Manipulate SLP
+    slp_mod_curve = slpman.slp_th_manipulator(timestep=timestep,
+                                              th_slp_curve=hd_slp.loadcurve,
+                                              temp_array=temp_curve)
+
+    #  Overwrite load curve on hd_slp
+    hd_slp.loadcurve = slp_mod_curve
 
     #  Pointer to loadcurve
     loadcurve = hd_slp.loadcurve
