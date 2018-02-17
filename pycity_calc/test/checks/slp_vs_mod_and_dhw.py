@@ -16,7 +16,7 @@ import pycity_base.classes.demand.SpaceHeating as SpaceHeating
 import pycity_base.classes.demand.DomesticHotWater as DomesticHotWater
 import pycity_base.classes.demand.Occupancy as occup
 import pycity_base.functions.changeResolution as chres
-import pycity_calc.toolbox.dimensioning.slp_th_manipulator as slpman
+import pycity_calc.toolbox.modifiers.slp_th_manipulator as slpman
 
 
 def compare_slp_mod_dhw(timestep=3600, nb_occ=3):

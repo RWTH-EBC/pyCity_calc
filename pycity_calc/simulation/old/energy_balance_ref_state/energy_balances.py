@@ -8,16 +8,13 @@ __author__ = 'tsh-dor'
 import os
 import sys
 import pickle
-import copy
-import time as ti
 import itertools
 import numpy as np
-import matplotlib.pyplot as plt
 import pycity_calc.toolbox.networks.network_ops as netop
 import pycity_calc.environments.timer as time
 import pycity_calc.visualization.city_visual as citvis
 import pycity_calc.toolbox.dimensioning.dim_networks as dimnet
-import pycity_calc.toolbox.dimensioning.dhw_manipulator as dhwman
+import pycity_calc.toolbox.modifiers.dhw_manipulator as dhwman
 
 
 class calculator(object):
