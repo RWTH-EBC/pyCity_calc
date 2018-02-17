@@ -4,7 +4,6 @@ Script to generate city object.
 """
 from __future__ import division
 import os
-import math
 import numpy as np
 import pickle
 import warnings
@@ -27,7 +26,7 @@ import pycity_calc.environments.co2emissions as co2
 import pycity_calc.buildings.building as build_ex
 import pycity_calc.cities.city as city
 import pycity_calc.visualization.city_visual as citvis
-import pycity_calc.toolbox.dimensioning.slp_th_manipulator as slpman
+import pycity_calc.toolbox.modifiers.slp_th_manipulator as slpman
 import pycity_calc.toolbox.teaser_usage.teaser_use as tusage
 import pycity_calc.toolbox.mc_helpers.user.user_unc_sampling as usunc
 
