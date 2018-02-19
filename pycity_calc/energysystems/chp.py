@@ -913,3 +913,36 @@ class ChpExtended(chp.CHP):
             self.array_fuel_power[time_index] = fuel_power_in
 
         return (th_power, el_power, fuel_power_in)
+
+    def calc_nb_on_off_switching(self):
+        """
+        Calculates number of on/off-switching events during one year.
+        This includes both on-to-off and off-to-on switching events!
+        Raises warning and returns None, if results arrays are zero arrays.
+
+        Returns
+        -------
+        nb_switch : int
+            Number of switching events
+        """
+
+        if sum(self.totalQOutput) == 0:
+            msg = 'It seems like the CHP has not been used for calculations' \
+                  ', yet. The result array chp.totalQOutput is empty.' \
+                  ' You need to call the energy balance simulation or your' \
+                  ' own script first, that performs operations with the CHP' \
+                  ' object an saves the results back to the CHP!' \
+                  '\nGoing to return None.'
+            warnings.warn(msg)
+            return None
+
+        nb_switch = 0
+
+        for i in range(len(self.totalQOutput) - 1):
+            #  If one of the values is zero and the sum of both is not zero,
+            #  a switching event has been detected.
+            if (self.totalQOutput[i + 1] == 0 or self.totalQOutput[i] == 0)\
+                and (self.totalQOutput[i + 1] + self.totalQOutput[i] != 0):
+                nb_switch += 1
+
+        return nb_switch
