@@ -190,7 +190,7 @@ def run_example_tes2(print_results=False):
 
     #  Generate tes object
     my_tes = TES.thermalEnergyStorageExtended(environment, t_init=20,
-                                              capacity=500)
+                                              capacity=2000)
 
     #  Generate time array from environment
     timestep = environment.timer.timeDiscretization
@@ -239,7 +239,7 @@ def run_example_tes3(print_results=False):
                                           location=location, co2em=co2em)
 
     #  Generate tes object
-    my_tes = TES.thermalEnergyStorageExtended(environment, t_init=80,
+    my_tes = TES.thermalEnergyStorageExtended(environment, t_init=60,
                                               capacity=500)
 
     #  Generate time array from environment
