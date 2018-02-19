@@ -502,10 +502,11 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
             print(mass_tes)
             print()
 
+            #  Assuming temperature split of 20 Kelvin for HP TES
             storage = tes. \
                 thermalEnergyStorageExtended(environment=city.environment,
                                              t_init=20, capacity=mass_tes,
-                                             t_max=50, t_min=20)
+                                             t_max=40, t_min=20)
 
             list_entities = [heatpump, el_heater, storage]
 
