@@ -388,9 +388,9 @@ class TestCityCO2():
 
         #  Create thermal storage
         # Create Heating Device
-        t_init = 70  # °C
+        t_init = 55  # °C
         capacity = 100  # kg
-        t_max = 80  # °C
+        t_max = 60  # °C
         t_min = 20  # °C
         cp = 4186  # J/kgK
         t_surroundings = 20  # °C
@@ -593,9 +593,9 @@ class TestCityCO2():
 
         #  Create thermal storage
         # Create Heating Device
-        t_init = 70  # °C
+        t_init = 55  # °C
         capacity = 100  # kg
-        t_max = 80  # °C
+        t_max = 60  # °C
         t_min = 20  # °C
         cp = 4186  # J/kgK
         t_surroundings = 20  # °C
