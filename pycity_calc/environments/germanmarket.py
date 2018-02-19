@@ -59,8 +59,8 @@ class GermanMarket(market.Market):
         #  List of CHP subsidies for self-consumed electric energy
         self._sub_chp_self = [0.04, 0.03, 0]
 
-        #  List of PV subsidies
-        self._sub_pv = [0.123, 0.1196, 0.1069, 0.0851]
+        #  List of PV subsidies (<= 10 kW, <= 40 kW, <= 100 kW, commercial
+        self._sub_pv = [0.122, 0.1187, 0.1061, 0.0851]
 
         #  CHP tax return on gas
         self.chp_tax_return = chp_tax_return
