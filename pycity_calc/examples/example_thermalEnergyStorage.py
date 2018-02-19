@@ -306,7 +306,7 @@ def run_example_tes4(print_results=False):
 
     #  Generate tes object (use outdoor temperature for loss calculation)
     my_tes = TES.thermalEnergyStorageExtended(environment, t_init=60,
-                                              capacity=2000,
+                                              capacity=5000,
                                               use_outside_temp=True)
 
     #  Generate time array from environment
