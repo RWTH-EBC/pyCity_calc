@@ -20,7 +20,7 @@ class GermanMarket(market.Market):
 
     def __init__(self, reset_pycity_default_values=True,
                  chp_tax_return=0.0055, eeg_pay=0.0688,
-                 eex_baseload=[0.03272, 0.03272, 0.03272, 0.03272],
+                 eex_baseload=[0.03309, 0.03309, 0.03309, 0.03309],
                  grid_av_fee=0.0055, hp_day_tarif=0.22, hp_night_tarif=0.2):
         """
         Constructor of GermanMarket object instance
