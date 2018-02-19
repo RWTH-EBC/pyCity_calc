@@ -32,9 +32,9 @@ class Test_GermanMarket():
 
         # gmarket._sub_pv = [0.123, 0.1196, 0.1069, 0.0851]
 
-        assert gmarket.get_sub_pv(pv_peak_load=9000, is_res=True) == 0.123
-        assert gmarket.get_sub_pv(pv_peak_load=39000, is_res=True) == 0.1196
-        assert gmarket.get_sub_pv(pv_peak_load=99000, is_res=True) == 0.1069
+        assert gmarket.get_sub_pv(pv_peak_load=9000, is_res=True) == 0.122
+        assert gmarket.get_sub_pv(pv_peak_load=39000, is_res=True) == 0.1187
+        assert gmarket.get_sub_pv(pv_peak_load=99000, is_res=True) == 0.1061
         assert gmarket.get_sub_pv(pv_peak_load=99000, is_res=False) == 0.0851
 
     def test_get_eeg_payments(self):
