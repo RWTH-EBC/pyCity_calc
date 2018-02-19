@@ -126,7 +126,7 @@ def run_example_tes(print_results=False):
                                           location=location, co2em=co2em)
 
     #  Generate tes object
-    my_tes = TES.thermalEnergyStorageExtended(environment, t_init=80,
+    my_tes = TES.thermalEnergyStorageExtended(environment, t_init=60,
                                               capacity=200)
 
     #  Calc storage diameter
