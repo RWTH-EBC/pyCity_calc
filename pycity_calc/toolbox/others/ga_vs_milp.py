@@ -28,7 +28,7 @@ if __name__ == '__main__':
     path_in_folder = os.path.join(this_path, 'input')
 
     # name_ga_res_folder = 'ga_run_ref_run_with_rescaling'
-    name_ga_res_folder = 'ga_run_ref_run_with_rescaling_opt_limit-x'
+    name_ga_res_folder = 'ga_run_aachen_kronenberg_6_peak_resc_2'
     path_ga_results = os.path.join(path_in_folder, name_ga_res_folder)
 
     path_save_gen_dev = os.path.join(this_path, 'output', 'ga_gen_dev')
