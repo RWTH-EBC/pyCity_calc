@@ -126,7 +126,7 @@ def run_example_tes(print_results=False):
                                           location=location, co2em=co2em)
 
     #  Generate tes object
-    my_tes = TES.thermalEnergyStorageExtended(environment, t_init=80,
+    my_tes = TES.thermalEnergyStorageExtended(environment, t_init=60,
                                               capacity=200)
 
     #  Calc storage diameter
@@ -190,7 +190,7 @@ def run_example_tes2(print_results=False):
 
     #  Generate tes object
     my_tes = TES.thermalEnergyStorageExtended(environment, t_init=20,
-                                              capacity=500)
+                                              capacity=2000)
 
     #  Generate time array from environment
     timestep = environment.timer.timeDiscretization
@@ -239,7 +239,7 @@ def run_example_tes3(print_results=False):
                                           location=location, co2em=co2em)
 
     #  Generate tes object
-    my_tes = TES.thermalEnergyStorageExtended(environment, t_init=80,
+    my_tes = TES.thermalEnergyStorageExtended(environment, t_init=60,
                                               capacity=500)
 
     #  Generate time array from environment
@@ -306,7 +306,7 @@ def run_example_tes4(print_results=False):
 
     #  Generate tes object (use outdoor temperature for loss calculation)
     my_tes = TES.thermalEnergyStorageExtended(environment, t_init=60,
-                                              capacity=2000,
+                                              capacity=5000,
                                               use_outside_temp=True)
 
     #  Generate time array from environment

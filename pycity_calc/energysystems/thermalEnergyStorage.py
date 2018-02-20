@@ -32,7 +32,7 @@ class thermalEnergyStorageExtended(TES.ThermalEnergyStorage):
     """
 
     def __init__(self, environment, t_init, capacity, c_p=4186, rho=1000,
-                 t_max=80.0, t_min=20.0,
+                 t_max=60.0, t_min=20.0,
                  t_surroundings=20.0, k_loss=0.3, h_d_ratio=3.5,
                  use_outside_temp=False):
         """
@@ -54,7 +54,9 @@ class thermalEnergyStorageExtended(TES.ThermalEnergyStorage):
             (default: 1000 kg/m^3 <-> water)
         t_max : float, optional
             Maximum storage temperature in °C
-            (default: 80 °C)
+            (default: 60 °C). Reduced to 60 °C to prevent overestimation of
+            storable energy per volume, as TES is modeled as single capacity
+            model.
         t_min : float, optional
             Minimal storage temperature in °C
             (default: 20 °C)

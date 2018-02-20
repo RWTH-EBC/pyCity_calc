@@ -20,7 +20,7 @@ class GermanMarket(market.Market):
 
     def __init__(self, reset_pycity_default_values=True,
                  chp_tax_return=0.0055, eeg_pay=0.0688,
-                 eex_baseload=[0.03272, 0.03272, 0.03272, 0.03272],
+                 eex_baseload=[0.03309, 0.03309, 0.03309, 0.03309],
                  grid_av_fee=0.0055, hp_day_tarif=0.22, hp_night_tarif=0.2):
         """
         Constructor of GermanMarket object instance
@@ -59,8 +59,8 @@ class GermanMarket(market.Market):
         #  List of CHP subsidies for self-consumed electric energy
         self._sub_chp_self = [0.04, 0.03, 0]
 
-        #  List of PV subsidies
-        self._sub_pv = [0.123, 0.1196, 0.1069, 0.0851]
+        #  List of PV subsidies (<= 10 kW, <= 40 kW, <= 100 kW, commercial
+        self._sub_pv = [0.122, 0.1187, 0.1061, 0.0851]
 
         #  CHP tax return on gas
         self.chp_tax_return = chp_tax_return
