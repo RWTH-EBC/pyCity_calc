@@ -1892,7 +1892,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                 if th_pow_remain > 0:
                     msg = 'Could not cover thermal energy power at timestep ' \
                           '' + str(i) + ' at building ' + str(id)
-                    EnergyBalanceException(msg)
+                    raise EnergyBalanceException(msg)
 
             elif tes_status == 3 or tes_status == 2:
                 # Use boiler and/or EH to load TES
@@ -2060,7 +2060,7 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                 if th_pow_remain > 0:
                     msg = 'Could not cover thermal energy power at timestep ' \
                           '' + str(i) + ' at building ' + str(id)
-                    EnergyBalanceException(msg)
+                    raise EnergyBalanceException(msg)
 
 
     elif has_tes is False and has_hp is False and has_chp is False:
