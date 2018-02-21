@@ -176,10 +176,10 @@ class Market(Price.Prices):
         spec_cost_gas : float
             Specific cost of gas in Euro/kWh
         """
-        list_of_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017]
+        list_of_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018]
         assert year in list_of_years, 'Year must be in list_of_years!'
 
-        if year == 2017:
+        if year == 2017 or year == 2018:
             msg = 'Year 2017 is chosen. However, prices are only available' \
                   ' for 2016!'
             warnings.warn(msg)
@@ -233,10 +233,10 @@ class Market(Price.Prices):
         spec_cost_el : float
             Specific cost of gas in Euro/kWh
         """
-        list_of_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017]
+        list_of_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018]
         assert year in list_of_years, 'Year must be in list_of_years!'
 
-        if year == 2017:
+        if year == 2017 or year == 2018:
             msg = 'Year 2017 is chosen. However, prices are only available' \
                   ' for 2016!'
             warnings.warn(msg)
@@ -282,6 +282,17 @@ if __name__ == '__main__':
 
     spec_cost_el = market.get_spec_el_cost(type='ind', year=2012,
                                            annual_demand=600 * 1000)
+    print('Specific cost of electricity for chosen type, year and demand in ' +
+          'Euro/kWh:')
+    print(spec_cost_el)
+
+    spec_cost_gas = market.get_spec_gas_cost(type='res', year=2018,
+                                             annual_demand=15000)
+    print('Specific cost of gas for chosen type, year and demand in Euro/kWh:')
+    print(spec_cost_gas)
+
+    spec_cost_el = market.get_spec_el_cost(type='res', year=2018,
+                                           annual_demand=3000)
     print('Specific cost of electricity for chosen type, year and demand in ' +
           'Euro/kWh:')
     print(spec_cost_el)
