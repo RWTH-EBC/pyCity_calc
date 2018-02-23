@@ -39,8 +39,11 @@ if __name__ == '__main__':
     output_filename = 'pareto_front'
     dpi = 100
 
-    # #  Complete analysis call
-    # gadev.analyze_pareto_sol(path_results_folder=path_ga_results)
+    out_name = name_ga_res_folder + '_dict_par_front_sol.pkl'
+    path_save_par = os.path.join(this_path, 'output', 'ga_opt', out_name)
+
+    #  Complete analysis call
+    gadev.analyze_pareto_sol(path_results_folder=path_ga_results)
 
     #  Process GA results
     #  #############################################################
@@ -57,8 +60,18 @@ if __name__ == '__main__':
     #  Extract list of pareto optimal results
     list_inds_pareto = gadev.get_pareto_front_list(final_pop)
 
-    #  Write down obj. of MILP runs (Min. Cost --> Min. CO2)
+    #  Parse list of pareto solutions to dict (nb. as keys to re-identify
+    #  each solution
+    dict_pareto_sol = {}
+    for i in range(len(list_inds_pareto)):
+        dict_pareto_sol[int(i + 1)] = list_inds_pareto[i]
 
+    #  Save pareto-frontier solution
+
+
+
+    #  Write down obj. of MILP runs (Min. Cost --> Min. CO2)
+    #  #############################################################
     list_mip_cost = [68698, 68873, 70808,
                      # 72441, # Min. CO2 with cost constraint of 72441
                      73201, 74233, 75915
