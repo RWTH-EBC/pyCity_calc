@@ -374,7 +374,7 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
                           # 'tes_lifetime': [0.9, 0.005],  # curr. const.
                           # 'tes_maintain': [0.9, 0.005],  # curr. const.
                           'tes_inv': [0, 0.2],  # log mean, std
-                          'eta_pv': [0.12, 0.02],  # mean, std
+                          'eta_pv': [0.1275, 0.02],  # mean, std
                           'beta': [0, 60],
                           'gamma': [-180, 180],
                           # 'pv_lifetime': [0.9, 0.005],  # curr. const.
