@@ -7,11 +7,12 @@ Be aware of correct use of units!
 """
 from __future__ import division
 
+import warnings
 import numpy as np
 import matplotlib.pyplot as plt
 
 
-def calc_spec_cost_boiler(q_nom, method='viess2013'):
+def calc_spec_cost_boiler(q_nom, method='buderus2017'):
     """
     Estimate specific boiler cost in Euro/kW, based on nominal thermal power
     in kW.
@@ -21,7 +22,7 @@ def calc_spec_cost_boiler(q_nom, method='viess2013'):
     q_nom : float
         Nominal thermal power of boiler in kW
     method : str, optional
-        Method for calculation of specific cost (default: 'viess2013')
+        Method for calculation of specific cost (default: 'buderus2017')
         Options:
         - 'dbi'
         Based on reference:
@@ -33,6 +34,8 @@ def calc_spec_cost_boiler(q_nom, method='viess2013'):
         S. Spieker, Dimensionierung von Mini-KWK-Anlagen zur Teilnahme am
         liberalisierten Strommarkt, Optimierung in der Energiewirtschaft 2011,
         VDI Berichte 2157 (2011).
+        - 'buderus2017': Based on Buderus price lists
+        https://www.buderus.com/ch/media/documents/buderus-preislisten/buderus-preislisten-waermeerzeuger-de/kk_de_02.pdf
 
     Returns
     -------
@@ -40,7 +43,7 @@ def calc_spec_cost_boiler(q_nom, method='viess2013'):
         Specific cost of boiler in Euro/kW
     """
 
-    list_methods = ['dbi', 'viess2013', 'spieker']
+    list_methods = ['dbi', 'viess2013', 'spieker', 'buderus2017']
 
     assert method in list_methods, 'Unknown method'
     assert q_nom > 0, 'Nominal boiler power should be larger than zero!'
@@ -57,10 +60,14 @@ def calc_spec_cost_boiler(q_nom, method='viess2013'):
 
         spec_cost = (3100 + q_nom * 62) / q_nom
 
+    elif method == 'buderus2017':
+
+        spec_cost = 549.29 * q_nom ** (-0.369)
+
     return spec_cost
 
 
-def calc_abs_boiler_cost(q_nom, method='viess2013'):
+def calc_abs_boiler_cost(q_nom, method='buderus2017'):
     """
     Calculate absolute investment cost for boiler (input for q_nom is kW)
 
@@ -69,7 +76,7 @@ def calc_abs_boiler_cost(q_nom, method='viess2013'):
     q_nom : float
         Nominal thermal power of boiler in kW
     method : str, optional
-        Method for calculation of investement cost (default: 'viess2013')
+        Method for calculation of investement cost (default: 'buderus2017')
         Options:
         - 'dbi'
         Based on reference:
@@ -81,12 +88,24 @@ def calc_abs_boiler_cost(q_nom, method='viess2013'):
         S. Spieker, Dimensionierung von Mini-KWK-Anlagen zur Teilnahme am
         liberalisierten Strommarkt, Optimierung in der Energiewirtschaft 2011,
         VDI Berichte 2157 (2011).
+        - 'buderus2017': Based on Buderus price lists
+        https://www.buderus.com/ch/media/documents/buderus-preislisten/buderus-preislisten-waermeerzeuger-de/kk_de_02.pdf
+
 
     Returns
     -------
     boiler_inv : float
         Boiler investment cost in Euro
     """
+
+    if method == 'viess2013':
+        if q_nom > 75:
+            msg = 'Your nominal boiler th. power is ' + \
+                  str(q_nom) + ' kW. The method viess2013 might lead to an ' \
+                               'underestimation of capital cost for this ' \
+                               'boiler! Consider changing the boiler_cost ' \
+                               'method!'
+            warnings.warn(msg)
 
     spec_cost = calc_spec_cost_boiler(q_nom=q_nom, method=method)
 
@@ -127,10 +146,21 @@ if __name__ == '__main__':
     print(round(spiek_abs, 2))
     print()
 
+    #  Specific cost according to Buderus 2017
+    spiek_spec_cost = \
+        calc_spec_cost_boiler(q_nom=boiler_kW, method='buderus2017')
+    spiek_abs = calc_abs_boiler_cost(q_nom=boiler_kW, method='buderus2017')
+    print('buderus2017 specific boiler cost in Euro/kW:')
+    print(round(spiek_spec_cost, 2))
+    print('buderus2017 absolut boiler cost in Euro:')
+    print(round(spiek_abs, 2))
+    print()
+
     array_ref_sizes = np.arange(1, 500, 1)  # in kW
     array_cost_dbi = np.zeros(len(array_ref_sizes))
     array_cost_viess = np.zeros(len(array_ref_sizes))
     array_cost_spiek = np.zeros(len(array_ref_sizes))
+    array_cost_buderus = np.zeros(len(array_ref_sizes))
 
     for i in range(len(array_ref_sizes)):
         size = array_ref_sizes[i]  # in kW
@@ -139,10 +169,13 @@ if __name__ == '__main__':
                                                    method='viess2013')
         array_cost_spiek[i] = calc_abs_boiler_cost(q_nom=size,
                                                    method='spieker')
+        array_cost_buderus[i] = calc_abs_boiler_cost(q_nom=size,
+                                                     method='buderus2017')
 
     plt.plot(array_ref_sizes, array_cost_dbi, label='dbi')
     plt.plot(array_ref_sizes, array_cost_viess, label='viess2013')
     plt.plot(array_ref_sizes, array_cost_spiek, label='spieker')
+    plt.plot(array_ref_sizes, array_cost_buderus, label='buderus2017')
     plt.legend()
     plt.show()
     plt.close()
