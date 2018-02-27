@@ -7,6 +7,10 @@ Be aware of correct use of units!
 """
 from __future__ import division
 
+import numpy as np
+import matplotlib.pyplot as plt
+
+
 def calc_spec_cost_boiler(q_nom, method='viess2013'):
     """
     Estimate specific boiler cost in Euro/kW, based on nominal thermal power
@@ -122,3 +126,23 @@ if __name__ == '__main__':
     print('Spieker et al.  absolut boiler cost in Euro:')
     print(round(spiek_abs, 2))
     print()
+
+    array_ref_sizes = np.arange(1, 500, 1)  # in kW
+    array_cost_dbi = np.zeros(len(array_ref_sizes))
+    array_cost_viess = np.zeros(len(array_ref_sizes))
+    array_cost_spiek = np.zeros(len(array_ref_sizes))
+
+    for i in range(len(array_ref_sizes)):
+        size = array_ref_sizes[i]  # in kW
+        array_cost_dbi[i] = calc_abs_boiler_cost(q_nom=size, method='dbi')
+        array_cost_viess[i] = calc_abs_boiler_cost(q_nom=size,
+                                                   method='viess2013')
+        array_cost_spiek[i] = calc_abs_boiler_cost(q_nom=size,
+                                                   method='spieker')
+
+    plt.plot(array_ref_sizes, array_cost_dbi, label='dbi')
+    plt.plot(array_ref_sizes, array_cost_viess, label='viess2013')
+    plt.plot(array_ref_sizes, array_cost_spiek, label='spieker')
+    plt.legend()
+    plt.show()
+    plt.close()
