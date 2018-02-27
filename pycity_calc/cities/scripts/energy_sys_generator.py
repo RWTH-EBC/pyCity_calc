@@ -61,7 +61,7 @@ def load_enersys_input_data(esys_path):
 
 def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
                       tes_default_chp=None,
-                      buffer_factor=2, lhn_buffer=1.2, eta_pv=0.12,
+                      buffer_factor=2, lhn_buffer=1.2, eta_pv=0.1275,
                       eta_boi=0.95):
     """
     Generate and dimensions energy systems within city district, based on
@@ -93,7 +93,7 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
         Factor for LHN connection oversizing (default: 1.2). Relevant to
         account for LHN losses in Boiler/CHP sytem dimensioning
     eta_pv : float, optional
-        Efficiency of PV system (default: 0.12)
+        Efficiency of PV system (default: 0.1275)
     eta_boi : float, optional
         Initial boiler efficiency (default: 0.95)
     """
