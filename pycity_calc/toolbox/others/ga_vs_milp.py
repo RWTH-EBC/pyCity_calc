@@ -42,8 +42,8 @@ if __name__ == '__main__':
     out_name = name_ga_res_folder + '_dict_par_front_sol.pkl'
     path_save_par = os.path.join(this_path, 'output', 'ga_opt', out_name)
 
-    #  Complete analysis call
-    gadev.analyze_pareto_sol(path_results_folder=path_ga_results)
+    # #  Complete analysis call
+    # gadev.analyze_pareto_sol(path_results_folder=path_ga_results)
 
     #  Process GA results
     #  #############################################################
@@ -148,6 +148,39 @@ if __name__ == '__main__':
             plt.plot([cost],
                      [co2], linestyle='',
                      marker='o', markersize=3, c='#1058B0')
+
+    ax = fig.gca()
+
+    #  Add annotations with arrows
+    ax.annotate('BOI+PV', xy=(64, 132), xytext=(62, 125),
+                arrowprops=dict(#facecolor='black',
+                                arrowstyle='->'
+                                # ,shrink=0.01
+                                ))
+
+    ax.annotate('1-2 CHPs+PV\nor 1 HP+PV', xy=(68, 126), xytext=(62, 115),
+                arrowprops=dict(#facecolor='black',
+                                arrowstyle='->'
+                                # ,shrink=0.01
+                                ))
+
+    ax.annotate('1-2 CHPs and\n1 HPs+PV', xy=(72, 121), xytext=(62, 105),
+                arrowprops=dict(#facecolor='black',
+                                arrowstyle='->'
+                                # ,shrink=0.01
+                                ))
+
+    ax.annotate('1 LHN (3 nodes\n+1 CHP)+PV', xy=(76, 111), xytext=(62, 95),
+                arrowprops=dict(#facecolor='black',
+                                arrowstyle='->'
+                                # ,shrink=0.01
+                                ))
+
+    ax.annotate('2 LHN (3 nodes\n+1 CHP)+PV', xy=(81, 106), xytext=(74, 95),
+                arrowprops=dict(#facecolor='black',
+                                arrowstyle='->'
+                                # ,shrink=0.01
+                                ))
 
     plt.xlabel('Total annualized cost in thousand-Euro/a')
     plt.ylabel('CO2 emissions in t/a')
