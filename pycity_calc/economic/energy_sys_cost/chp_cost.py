@@ -8,6 +8,9 @@ Be aware of correct use of units!
 from __future__ import division
 import pycity_calc.energysystems.Input.chp_asue_2015 as chp_asue
 
+import numpy as np
+import matplotlib.pyplot as plt
+
 
 def calc_spec_cost_chp(p_el_nom, method='asue2015', with_inst=True,
                        use_el_input=True, q_th_nom=None):
@@ -84,7 +87,7 @@ def calc_spec_cost_chp(p_el_nom, method='asue2015', with_inst=True,
 
     elif method == 'spieker':
 
-        spec_cost_chp = (19725 + 1365 * p_el_nom) /p_el_nom
+        spec_cost_chp = (19725 + 1365 * p_el_nom) / p_el_nom
 
     if with_inst:  # Use percentage for installation and transport cost
 
@@ -194,3 +197,16 @@ if __name__ == '__main__':
                                       with_inst=with_inst)
     print('Total investment cost for CHP in Euro:')
     print(round(total_cost, 2))
+
+    array_ref_sizes = np.arange(1, 1000, 1)
+    array_chp_cost = np.zeros(len(array_ref_sizes))
+
+    for i in range(len(array_ref_sizes)):
+        size = array_ref_sizes[i]
+        array_chp_cost[i] = calc_invest_cost_chp(p_el_nom=size) / 1000
+
+    plt.plot(array_ref_sizes, array_chp_cost)
+    plt.xlabel('Nominal el. power of CHP in kW')
+    plt.ylabel('Capital cost in thousand-Euro')
+    plt.show()
+    plt.close()
