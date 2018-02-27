@@ -10,6 +10,9 @@ from __future__ import division
 import math
 import warnings
 
+import numpy as np
+import matplotlib.pyplot as plt
+
 
 def get_dn_cost_dict():
     """
@@ -97,10 +100,9 @@ def calc_invest_single_lhn_station(q_nom):
 
     assert q_nom > 0, 'q_nom has to be larger than zero.'
     if q_nom > 100:  # Larger 100 kW
-        msg = str('Thermal power value of ' +str(q_nom) + ' kW seems to be'
-                                                          ' to high.')
+        msg = str('Thermal power value of ' + str(q_nom) + ' kW seems to be'
+                                                           ' to high.')
         warnings.warn(msg)
-
 
     return 5722.3 * math.exp(0.0015 * q_nom)
 
@@ -225,3 +227,29 @@ if __name__ == '__main__':
                                               list_powers=list_q_nom)
     print('Total investment cost for LHN:')
     print(round(total_invest, 2))
+
+    array_len = np.arange(1, 1000, 1)  # in m
+    array_cost = np.zeros(len(array_len))
+    for i in range(len(array_len)):
+        size = array_len[i]  # in m
+        array_cost[i] = calc_invest_cost_lhn_pipes(d=0.01, length=size) / 1000
+
+    plt.plot(array_len, array_cost)
+    plt.title('LHN network cost (d_i = 0.01 m)')
+    plt.xlabel('LHN network length in m')
+    plt.ylabel('Capital cost of LHN pipes in thousand-Euro')
+    plt.show()
+    plt.close()
+
+    array_di = np.arange(0.01, 1, 0.01)  # in m
+    array_cost = np.zeros(len(array_di))
+    for i in range(len(array_di)):
+        size = array_di[i]  # in m
+        array_cost[i] = calc_invest_cost_lhn_pipes(d=size, length=100) / 1000
+
+    plt.plot(array_di, array_cost)
+    plt.title('LHN network cost (length = 100 m)')
+    plt.xlabel('Inner diameter in m')
+    plt.ylabel('Capital cost of LHN pipes in thousand-Euro')
+    plt.show()
+    plt.close()

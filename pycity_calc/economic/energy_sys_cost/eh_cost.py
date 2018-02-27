@@ -5,6 +5,10 @@ Script to estimate Electrical Heater cost
 """
 from __future__ import division
 
+import numpy as np
+import matplotlib.pyplot as plt
+
+
 def calc_spec_cost_eh(q_nom, method='spieker'):
     """
     Estimate electrical heater (EH) cost in Euro/kW, based on nominal thermal
@@ -85,3 +89,16 @@ if __name__ == '__main__':
     print('Investment cost of EH in Euro:')
     print(round(inv_cost, 2))
     print()
+
+    array_ref_sizes = np.arange(1, 100, 1)  # in kW
+    array_cost = np.zeros(len(array_ref_sizes))
+
+    for i in range(len(array_ref_sizes)):
+        size = array_ref_sizes[i]  # in kW
+        array_cost[i] = calc_abs_cost_eh(q_nom=size)
+
+    plt.plot(array_ref_sizes, array_cost)
+    plt.xlabel('Heating power in kW')
+    plt.ylabel('Capital cost of electric heater in Euro')
+    plt.show()
+    plt.close()
