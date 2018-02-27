@@ -80,10 +80,15 @@ def penalize_switching(city, max_switch):
         build = city.nodes[n]['entity']
         if build.hasBes:
             if build.bes.hasChp:
-                nb_per_day = build.bes.chp.calc_nb_on_off_switching() / 365
-                if nb_per_day > max_switch:
-                    switching_okay = False
-                    break
+                nb_switches = build.bes.chp.calc_nb_on_off_switching()
+
+                # assert nb_switches is not None
+
+                if nb_switches is not None:
+                    nb_per_day = build.bes.chp.calc_nb_on_off_switching() / 365
+                    if nb_per_day > max_switch:
+                        switching_okay = False
+                        break
 
     return switching_okay
 
