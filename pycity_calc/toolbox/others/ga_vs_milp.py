@@ -72,13 +72,13 @@ if __name__ == '__main__':
 
     #  Write down obj. of MILP runs (Min. Cost --> Min. CO2)
     #  #############################################################
-    list_mip_cost = [68698, 68873, 70808,
+    list_mip_cost = [67550, 68873, 70808,
                      # 72441, # Min. CO2 with cost constraint of 72441
                      73201, 74233, 75915
                     # , 143544
                      ]
 
-    list_mip_co2 = [133946, 129035, 124125,
+    list_mip_co2 = [134143, 129035, 124125,
                     # 119261, # Min. CO2 with cost constraint of 72441
                     119214, 114304, 109393
                  # ,104479
