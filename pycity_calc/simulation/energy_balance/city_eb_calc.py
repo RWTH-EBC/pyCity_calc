@@ -799,7 +799,8 @@ class CityEBCalculator(object):
 
         return dict_fe_city_balance
 
-    def calc_co2_emissions(self, el_mix_for_chp=True):
+    def calc_co2_emissions(self, el_mix_for_chp=True, gcv_to_ncv=True,
+                           gcv_to_ncv_factor=1.11):
         """
         Calculate overall CO2 emissions of city district for building energy
         supply.
@@ -810,6 +811,12 @@ class CityEBCalculator(object):
             Defines, if el. mix should be used for CHP fed-in electricity
             (default: True). If False, uses specific fed-in CHP factor,
             defined in co2emissions object.
+        gcv_to_ncv : bool, optional
+            Perform gross calorific to net calorific conversion
+            for gas emissions calculation (default: True)
+        gcv_to_ncv_factor : float, optional
+            Conversion factor for gross calorific to net calorific conversion
+            for gas emissions calculation (default: 1.11)
 
         Returns
         -------
@@ -842,8 +849,16 @@ class CityEBCalculator(object):
             f_chp = co2em.co2_factor_el_feed_in
 
         # Add emission depending on energy system and fuel
-        co2 += self.dict_fe_city_balance['fuel_boiler'] * co2em.co2_factor_gas
-        co2 += self.dict_fe_city_balance['fuel_chp'] * co2em.co2_factor_gas
+        if gcv_to_ncv:
+            co2 += self.dict_fe_city_balance[
+                       'fuel_boiler'] * co2em.co2_factor_gas \
+                   / gcv_to_ncv_factor
+            co2 += self.dict_fe_city_balance['fuel_chp'] * \
+                   co2em.co2_factor_gas / gcv_to_ncv_factor
+        else:
+            co2 += self.dict_fe_city_balance[
+                       'fuel_boiler'] * co2em.co2_factor_gas
+            co2 += self.dict_fe_city_balance['fuel_chp'] * co2em.co2_factor_gas
         co2 += self.dict_fe_city_balance['grid_import_dem'] \
                * co2em.co2_factor_el_mix
         co2 += self.dict_fe_city_balance['grid_import_hp'] \
