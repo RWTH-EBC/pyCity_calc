@@ -876,7 +876,7 @@ class CityEBCalculator(object):
 
         return co2
 
-    def calc_co2_em_with_dyn_signal(self, share_ren=0.6, , gcv_to_ncv=True,
+    def calc_co2_em_with_dyn_signal(self, share_ren=0.6, gcv_to_ncv=True,
                            gcv_to_ncv_factor=1.11):
         """
         Calculates co2 emission with dynamic co2 signal
