@@ -89,6 +89,9 @@ def penalize_switching(city, max_switch):
                     if nb_per_day > max_switch:
                         switching_okay = False
                         break
+                else:
+                    switching_okay = None
+                    break
 
     return switching_okay
 
@@ -159,6 +162,8 @@ class McRunner(object):
         self._dict_city_sample_lhc = None
         self._dict_build_samples_lhc = None
         self._dict_profiles_lhc = None
+
+        self._count_none_chp_switch = 0
 
         if get_build_ids:
             #  Extract building node ids
@@ -1949,6 +1954,28 @@ class McRunner(object):
                 warnings.warn(msg)
                 total_annuity = 10 ** 100
                 co2 = 10 ** 100
+            if switch_okay is None:
+                msg = 'penalize_switching retunred None. Thus, CHP results' \
+                      ' array is empty and might not have been processed ' \
+                      'Penalized solution.'
+                warnings.warn(msg)
+                total_annuity = 10 ** 100
+                co2 = 10 ** 100
+
+                self._count_none_chp_switch += 1
+
+                #  Create subfolder to save c_eco_copy with None results
+                #  for switching
+                this_path = os.path.dirname(os.path.abspath(__file__))
+                path_out_folder = os.path.join(this_path, 'output',
+                                               'out_chp_switch_none')
+                if not os.path.exists(path_out_folder):
+                    os.makedirs(path_out_folder)
+                out_name = 'c_eco_copy_' \
+                           + str(self._count_none_chp_switch) + '.pkl'
+                path_out_eco = os.path.join(path_out_folder, out_name)
+                pickle.dump(c_eco_copy, open(path_out_eco, mode='rb'))
+
             #  #####################################################
 
         #  Extract further results
