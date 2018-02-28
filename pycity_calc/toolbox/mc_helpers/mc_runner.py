@@ -1975,7 +1975,11 @@ class McRunner(object):
                 out_name = 'c_eco_copy_' \
                            + str(self._count_none_chp_switch) + '.pkl'
                 path_out_eco = os.path.join(path_out_folder, out_name)
-                pickle.dump(c_eco_copy, open(path_out_eco, mode='rb'))
+                try:
+                    pickle.dump(c_eco_copy, open(path_out_eco, mode='wb'))
+                except:
+                    msg = 'Could not save ' + out_name
+                    warnings.warn(msg)
 
             #  #####################################################
 
