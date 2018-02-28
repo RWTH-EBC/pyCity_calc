@@ -1832,7 +1832,7 @@ if __name__ == '__main__':
 
     #  City pickle object filename
     #  (city object should include street graph)
-    filename = 'city_clust_simple_with_esys.p'
+    filename = 'city_clust_simple_with_esys.pkl'
     #  Load pickle city file
     file_path = os.path.join(this_path, 'inputs', filename)
 
