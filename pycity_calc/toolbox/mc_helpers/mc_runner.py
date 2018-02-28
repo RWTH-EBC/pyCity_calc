@@ -1969,8 +1969,9 @@ class McRunner(object):
                 this_path = os.path.dirname(os.path.abspath(__file__))
                 path_out_folder = os.path.join(this_path, 'output',
                                                'out_chp_switch_none')
-                if not os.path.exists(path_out_folder):
-                    os.makedirs(path_out_folder)
+                #  Uncommented to prevent race condition on cluster #420
+                # if not os.path.exists(path_out_folder):
+                #     os.makedirs(path_out_folder)
                 out_name = 'c_eco_copy_' \
                            + str(self._count_none_chp_switch) + '.pkl'
                 path_out_eco = os.path.join(path_out_folder, out_name)
