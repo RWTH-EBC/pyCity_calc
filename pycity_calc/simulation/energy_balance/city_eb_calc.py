@@ -876,7 +876,8 @@ class CityEBCalculator(object):
 
         return co2
 
-    def calc_co2_em_with_dyn_signal(self, share_ren=0.6):
+    def calc_co2_em_with_dyn_signal(self, share_ren=0.6, , gcv_to_ncv=True,
+                           gcv_to_ncv_factor=1.11):
         """
         Calculates co2 emission with dynamic co2 signal
 
@@ -886,6 +887,12 @@ class CityEBCalculator(object):
             Share of renewables on total el. consumption (default: 0.6).
             E.g. 0.6 means 60% renewables related to total annual el. energy
             consumption. Options: [0.6, 0.8, 1]
+        gcv_to_ncv : bool, optional
+            Perform gross calorific to net calorific conversion
+            for gas emissions calculation (default: True)
+        gcv_to_ncv_factor : float, optional
+            Conversion factor for gross calorific to net calorific conversion
+            for gas emissions calculation (default: 1.11)
 
         Returns
         -------
@@ -940,21 +947,39 @@ class CityEBCalculator(object):
             build = self.city.nodes[n]['entity']
 
             if build.hasBes:
-                #  Boiler
-                if build.bes.hasBoiler:
-                    for i in range(len(array_co2_dyn)):
-                        array_co2_dyn[i] += \
-                            co2_fac_gas * \
-                            build.bes.boiler.array_fuel_power[i] * \
-                            timestep / (1000 * 3600)
+                if gcv_to_ncv:
+                    #  Boiler
+                    if build.bes.hasBoiler:
+                        for i in range(len(array_co2_dyn)):
+                            array_co2_dyn[i] += \
+                                co2_fac_gas * \
+                                build.bes.boiler.array_fuel_power[i] * \
+                                timestep / (1000 * 3600 * gcv_to_ncv_factor)
 
-                # CHP
-                if build.bes.hasChp:
-                    for i in range(len(array_co2_dyn)):
-                        array_co2_dyn[i] += \
-                            co2_fac_gas * \
-                            build.bes.chp.array_fuel_power[i] * \
-                            timestep / (1000 * 3600)
+                    # CHP
+                    if build.bes.hasChp:
+                        for i in range(len(array_co2_dyn)):
+                            array_co2_dyn[i] += \
+                                co2_fac_gas * \
+                                build.bes.chp.array_fuel_power[i] * \
+                                timestep / (1000 * 3600 * gcv_to_ncv_factor)
+
+                else:
+                    #  Boiler
+                    if build.bes.hasBoiler:
+                        for i in range(len(array_co2_dyn)):
+                            array_co2_dyn[i] += \
+                                co2_fac_gas * \
+                                build.bes.boiler.array_fuel_power[i] * \
+                                timestep / (1000 * 3600)
+
+                    # CHP
+                    if build.bes.hasChp:
+                        for i in range(len(array_co2_dyn)):
+                            array_co2_dyn[i] += \
+                                co2_fac_gas * \
+                                build.bes.chp.array_fuel_power[i] * \
+                                timestep / (1000 * 3600)
 
             # General electric energy import (without HP and EH) in kWh
             array_grid_import_dem = build.dict_el_eb_res['grid_import_dem'] \
