@@ -1011,6 +1011,103 @@ class CityEBCalculator(object):
 
         return array_co2_dyn
 
+    def calc_coverage(self):
+        """
+        Calculate thermal and electric coverage of city
+
+        Returns
+        -------
+
+        """
+
+        #  Dummy dicts storing amounts of energy in kWh
+        dict_th_en = {'boi': 0, 'chp': 0, 'hp_aw': 0, 'hp_ww': 0, 'eh': 0}
+        dict_el_gen = {'chp': 0, 'pv': 0}
+        dict_el_con = {'dem': 0, 'hp_aw': 0, 'hp_ww': 0, 'eh': 0, 'pump': 0}
+        dict_el_exp = {'pv': 0, 'chp': 0}
+        dict_el_imp = {'dem': 0, 'hp': 0, 'eh':0 }
+
+        #  Timestep pointer
+        timestep = self.city.environment.timer.timeDiscretization
+
+        #  Get list of building ids
+        list_build_ids = self.city.get_list_build_entity_node_ids()
+
+        #  Loop over buildings
+        for n in list_build_ids:
+            build = self.city.nodes[n]['entity']
+
+            #  Sum up el. demands in kWh
+            dict_el_con += build.get_annual_el_demand()
+
+            if build.hasBes:
+
+                #  Extract produced amount of thermal energy in kWh
+                if build.bes.hasBoiler:
+                    dict_th_en['boi'] += \
+                        sum(build.bes.boiler.totalQOutput) * timestep / \
+                          (3600 * 1000)
+                if build.bes.hasChp:
+                    dict_th_en['chp'] += \
+                        sum(build.bes.chp.totalQOutput) * timestep / \
+                          (3600 * 1000)
+                if build.bes.hasHeatpump:
+                    if build.bes.heatpump.hp_type == 'aw':
+                        dict_th_en['hp_aw'] += \
+                            sum(build.bes.hp.totalQOutput) * timestep / \
+                              (3600 * 1000)
+                    if build.bes.heatpump.hp_type == 'ww':
+                        dict_th_en['hp_ww'] += \
+                            sum(build.bes.hp.totalQOutput) * timestep / \
+                              (3600 * 1000)
+                if build.bes.hasElectricalHeater:
+                    dict_th_en['eh'] += \
+                        sum(build.bes.electricalHeater.totalQOutput) \
+                        * timestep / (3600 * 1000)
+
+                #  Extract produced amount of electric energy in kWh
+                if build.bes.hasPv:
+                    dict_el_gen['pv'] += \
+                        sum(build.bes.pv.totalPower) * timestep / \
+                        (3600 * 1000)
+                if build.bes.hasChp:
+                    dict_el_gen['chp'] += \
+                        sum(build.bes.chp.totalPOutput) * timestep / \
+                          (3600 * 1000)
+
+                #  Extract electric consumption in kWh (for HPs)
+                if build.bes.hasHeatpump:
+                    if build.bes.heatpump.hp_type == 'aw':
+                        dict_el_con['hp_aw'] += \
+                            sum(build.bes.hp.array_el_power_in) * timestep / \
+                              (3600 * 1000)
+                    if build.bes.heatpump.hp_type == 'ww':
+                        dict_el_con['hp_ww'] += \
+                            sum(build.bes.hp.array_el_power_in) * timestep / \
+                              (3600 * 1000)
+                if build.bes.hasElectricalHeater:
+                    dict_el_con['eh'] += \
+                        sum(build.bes.electricalHeater.totalPConsumption) \
+                        * timestep / (3600 * 1000)
+
+        #  Get pump energy in kWh
+        dict_el_con['pump'] = self.dict_fe_city_balance['pump_energy'] + 0.0
+
+        dict_el_exp = {'pv': 0, 'chp': 0}
+        dict_el_imp = {'dem': 0, 'hp': 0, 'eh': 0}
+
+        dict_el_exp['pv'] = self.dict_fe_city_balance['pv_feed'] + 0.0
+        dict_el_exp['chp'] = self.dict_fe_city_balance['chp_feed'] + 0.0
+
+        dict_el_imp['dem'] = self.dict_fe_city_balance['grid_import_dem'] + 0.0
+        dict_el_imp['hp'] = self.dict_fe_city_balance['grid_import_hp'] + 0.0
+        dict_el_imp['eh'] = self.dict_fe_city_balance['grid_import_eh'] + 0.0
+
+        
+
+
+
+
 
 if __name__ == '__main__':
 
