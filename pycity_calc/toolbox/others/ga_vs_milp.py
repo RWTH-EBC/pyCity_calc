@@ -100,7 +100,7 @@ if __name__ == '__main__':
     fig = plt.figure()
 
     max_key = len(dict_gen) - 1
-    array_allowed_keys = np.arange(max_key, 0, -10)
+    array_allowed_keys = np.arange(max_key, 0, -1)
     list_allowed_keys = array_allowed_keys.tolist()
 
     for key in sorted(list(dict_gen.keys()), reverse=True):
@@ -127,10 +127,10 @@ if __name__ == '__main__':
             list_ann[i] /= 1000
             list_co2[i] /= 1000
 
-        if key == 1:
-            plt.plot(list_ann, list_co2, marker='o', linestyle='',
-                     markersize=3,
-                     c='orange', label='GA (start solutions)')
+        # if key == 1:
+        #     plt.plot(list_ann, list_co2, marker='o', linestyle='',
+        #              markersize=3,
+        #              c='orange', label='GA (start solutions)')
         if key == 2:
             plt.plot(list_ann, list_co2, marker='o', linestyle='',
                      markersize=3,
@@ -138,6 +138,36 @@ if __name__ == '__main__':
         elif key in list_allowed_keys:
             plt.plot(list_ann, list_co2, marker='o', linestyle='',
                      markersize=3, c='gray')
+
+    #  Plot population 1 results
+    #  ####################################################################
+    #  Get population
+    pop = dict_gen[1]
+
+    list_ann = []
+    list_co2 = []
+
+    #  Loop over individuals
+    for ind in pop:
+        #  Get annuity
+        ann = ind.fitness.values[0]
+        co2 = ind.fitness.values[1]
+
+        if isinstance(ann, float) and isinstance(co2, float):
+            if ann < 10 ** 90:  # Smaller than penalty function
+                list_ann.append(ann)
+            if co2 < 10 ** 90:  # Smaller than penalty function
+                list_co2.append(co2)
+
+    #  Convert from Euro to kilo-Euro and kilograms to tons CO2
+    for i in range(len(list_ann)):
+        list_ann[i] /= 1000
+        list_co2[i] /= 1000
+
+    plt.plot(list_ann, list_co2, marker='o', linestyle='',
+             markersize=3,
+             c='orange', label='GA (start solutions)')
+    #  ####################################################################
 
     for i in range(len(dict_pareto_sol)):
         sol = dict_pareto_sol[i + 1]
@@ -169,10 +199,20 @@ if __name__ == '__main__':
 
     #  Plot force LHN scenario
     #  #######################################################################
-    plt.plot([75.9],
-             [139.57], linestyle='',
-             marker='*', markersize=7, c='black',
-             label='MILP (force LHN (1 CHP))')
+    # plt.plot([75.9],
+    #          [139.57], linestyle='',
+    #          marker='*', markersize=7, c='black',
+    #          label='MILP (force LHN (1 CHP))')
+    #
+    # plt.plot([74.6],
+    #          [80], linestyle='',
+    #          marker='D', markersize=7, c='black',
+    #          label='MILP (force HPs)')
+    #
+    # plt.plot([80],
+    #          [146], linestyle='',
+    #          marker='v', markersize=7, c='black',
+    #          label='MILP (force CHPs)')
 
     #  #######################################################################
     ax = fig.gca()
