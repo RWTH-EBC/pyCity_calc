@@ -42,8 +42,8 @@ if __name__ == '__main__':
     out_name = name_ga_res_folder + '_dict_par_front_sol.pkl'
     path_save_par = os.path.join(this_path, 'output', 'ga_opt', out_name)
 
-    #  Complete analysis call
-    gadev.analyze_pareto_sol(path_results_folder=path_ga_results)
+    # #  Complete analysis call
+    # gadev.analyze_pareto_sol(path_results_folder=path_ga_results)
 
     #  Process GA results
     #  #############################################################
@@ -57,33 +57,39 @@ if __name__ == '__main__':
     # #  Extract final population
     # (final_pop, list_ann, list_co2) = gadev.get_final_pop(dict_gen=dict_gen)
 
-    #  Extract list of pareto optimal results
-    list_inds_pareto = gadev.get_pareto_front(dict_gen=dict_gen,
-                                              size_used=None,
-                                              nb_ind_used=400)
+    file_par_front = name_ga_res_folder + '_pareto_front.pkl'
+    path_save_par = os.path.join(this_path, 'output', file_par_front)
 
-    #  Parse list of pareto solutions to dict (nb. as keys to re-identify
-    #  each solution
-    dict_pareto_sol = {}
-    for i in range(len(list_inds_pareto)):
-        dict_pareto_sol[int(i + 1)] = list_inds_pareto[i]
+    try:
+        dict_pareto_sol = pickle.load(open(path_save_par, mode='rb'))
+    except:
+        msg = 'Could not load file from ' + str(path_save_par)
+        warnings.warn(msg)
+        #  Extract list of pareto optimal results
+        list_inds_pareto = gadev.get_pareto_front(dict_gen=dict_gen,
+                                                  size_used=None,  # Nb. Gen.
+                                                  nb_ind_used=400)  # Nb. ind.
+        #  Parse list of pareto solutions to dict (nb. as keys to re-identify
+        #  each solution
+        dict_pareto_sol = {}
+        for i in range(len(list_inds_pareto)):
+            dict_pareto_sol[int(i + 1)] = list_inds_pareto[i]
 
-    #  Save pareto-frontier solution
-
-
+        #  Save pareto-frontier solution
+        pickle.dump(dict_pareto_sol, open(path_save_par, mode='wb'))
 
     #  Write down obj. of MILP runs (Min. Cost --> Min. CO2)
     #  #############################################################
     list_mip_cost = [67550, 68873, 70808,
                      # 72441, # Min. CO2 with cost constraint of 72441
                      73201, 74233, 75915
-                    # , 143544
+                     # , 143544
                      ]
 
     list_mip_co2 = [134143, 129035, 124125,
                     # 119261, # Min. CO2 with cost constraint of 72441
                     119214, 114304, 109393
-                 # ,104479
+                    # ,104479
                     ]
 
     #  Extract pareto solutions (blue) - print suboptimal solutions in grey
@@ -131,8 +137,8 @@ if __name__ == '__main__':
             plt.plot(list_ann, list_co2, marker='o', linestyle='',
                      markersize=3, c='gray')
 
-    for i in range(len(list_inds_pareto)):
-        sol = list_inds_pareto[i]
+    for i in range(len(dict_pareto_sol)):
+        sol = dict_pareto_sol[i + 1]
         cost = sol.fitness.values[0] / 1000
         co2 = sol.fitness.values[1] / 1000
 
@@ -163,34 +169,34 @@ if __name__ == '__main__':
 
     #  Add annotations with arrows
     ax.annotate('BOI+PV', xy=(64, 132), xytext=(62, 125),
-                arrowprops=dict(#facecolor='black',
-                                arrowstyle='->'
-                                # ,shrink=0.01
-                                ))
+                arrowprops=dict(  # facecolor='black',
+                    arrowstyle='->'
+                    # ,shrink=0.01
+                ))
 
     ax.annotate('1-2 CHPs+PV\nor 1 HP+PV', xy=(68, 126), xytext=(62, 115),
-                arrowprops=dict(#facecolor='black',
-                                arrowstyle='->'
-                                # ,shrink=0.01
-                                ))
+                arrowprops=dict(  # facecolor='black',
+                    arrowstyle='->'
+                    # ,shrink=0.01
+                ))
 
     ax.annotate('1-2 CHPs and\n1 HPs+PV', xy=(72, 121), xytext=(62, 105),
-                arrowprops=dict(#facecolor='black',
-                                arrowstyle='->'
-                                # ,shrink=0.01
-                                ))
+                arrowprops=dict(  # facecolor='black',
+                    arrowstyle='->'
+                    # ,shrink=0.01
+                ))
 
     ax.annotate('1 LHN (3 nodes\n+1 CHP)+PV', xy=(76, 111), xytext=(62, 95),
-                arrowprops=dict(#facecolor='black',
-                                arrowstyle='->'
-                                # ,shrink=0.01
-                                ))
+                arrowprops=dict(  # facecolor='black',
+                    arrowstyle='->'
+                    # ,shrink=0.01
+                ))
 
     ax.annotate('2 LHN (3 nodes\n+1 CHP)+PV', xy=(81, 106), xytext=(74, 95),
-                arrowprops=dict(#facecolor='black',
-                                arrowstyle='->'
-                                # ,shrink=0.01
-                                ))
+                arrowprops=dict(  # facecolor='black',
+                    arrowstyle='->'
+                    # ,shrink=0.01
+                ))
 
     plt.xlabel('Total annualized cost in thousand-Euro/a')
     plt.ylabel('CO2 emissions in t/a')
