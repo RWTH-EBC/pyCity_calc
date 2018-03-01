@@ -109,7 +109,7 @@ def main():
 
     path_city = os.path.join(this_path, 'input', city_name)
 
-    city_save = city_name[:-4] + '_w_esys.pkl'
+    city_save = city_name[:-4] + '_milp_min_cost.pkl'
     path_save = os.path.join(this_path, 'output', city_save)
 
     city = pickle.load(open(path_city, mode='rb'))
@@ -120,41 +120,79 @@ def main():
     #  Add energy system to building 1001
     #  #################################################################
     dict_esys = {
-        #  el. battery [cap_kWh, soc_init_ratio]
-        'bat': [20, 0.5],
         #  boiler [q_nom_kW, eta]
-        'boi': [30, 0.95],
-        #  CHP [q_nom_kW, omega]
-        'chp': [2, 0.9],
-        #  el. heater [q_nom_kW]
-        'eh': [10],
-        #  HP [q_nom_kw, hp_type] --> 'aw' or 'ww' for hp_type
-        'hp': [5, 'aw'],
-        #  TES [mass_kg, t_init_celsius, t_max_celsius]
-        'tes': [500, 60, 60],
+        'boi': [79, 0.95],
         #  PV [area_m2, eta]
-        'pv': [55, 0.12]
+        'pv': [43.2, 0.12]
     }
 
     #  Add dict_esys to dict_dicts_esys
     dict_dicts_esys[1001] = dict_esys
     #  #################################################################
 
-    #  Add energy system to building 1002
+    #  Add energy system to building 1001
     #  #################################################################
     dict_esys = {
         #  boiler [q_nom_kW, eta]
-        'boi': [30, 0.95],
-        #  CHP [q_nom_kW, omega]
-        'chp': [2, 0.9],
-        #  el. heater [q_nom_kW]
-        'tes': [500, 60, 60],
+        'boi': [86.8, 0.95],
         #  PV [area_m2, eta]
-        'pv': [55, 0.12]
+        'pv': [73.6, 0.12]
     }
 
     #  Add dict_esys to dict_dicts_esys
     dict_dicts_esys[1002] = dict_esys
+    #  #################################################################
+
+    #  Add energy system to building 1001
+    #  #################################################################
+    dict_esys = {
+        #  boiler [q_nom_kW, eta]
+        'boi': [109.3, 0.95],
+        #  PV [area_m2, eta]
+        'pv': [74.4, 0.12]
+    }
+
+    #  Add dict_esys to dict_dicts_esys
+    dict_dicts_esys[1003] = dict_esys
+    #  #################################################################
+
+    #  Add energy system to building 1001
+    #  #################################################################
+    dict_esys = {
+        #  boiler [q_nom_kW, eta]
+        'boi': [79.5, 0.95],
+        #  PV [area_m2, eta]
+        'pv': [66.4, 0.12]
+    }
+
+    #  Add dict_esys to dict_dicts_esys
+    dict_dicts_esys[1004] = dict_esys
+    #  #################################################################
+
+    #  Add energy system to building 1001
+    #  #################################################################
+    dict_esys = {
+        #  boiler [q_nom_kW, eta]
+        'boi': [82.2, 0.95],
+        #  PV [area_m2, eta]
+        'pv': [62.4, 0.12]
+    }
+
+    #  Add dict_esys to dict_dicts_esys
+    dict_dicts_esys[1005] = dict_esys
+    #  #################################################################
+
+    #  Add energy system to building 1001
+    #  #################################################################
+    dict_esys = {
+        #  boiler [q_nom_kW, eta]
+        'boi': [111.2, 0.95],
+        #  PV [area_m2, eta]
+        'pv': [42.4, 0.12]
+    }
+
+    #  Add dict_esys to dict_dicts_esys
+    dict_dicts_esys[1006] = dict_esys
     #  #################################################################
 
     #  #################################################################

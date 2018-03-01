@@ -1371,7 +1371,7 @@ if __name__ == '__main__':
 
     try:
         #  Try loading city pickle file
-        filename = 'city_clust_simple_with_esys.pkl'
+        filename = 'aachen_kronenberg_6_milp_min_cost.pkl'
         file_path = os.path.join(this_path, 'inputs', filename)
         city = pickle.load(open(file_path, mode='rb'))
 

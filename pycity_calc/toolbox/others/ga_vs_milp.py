@@ -29,7 +29,7 @@ if __name__ == '__main__':
 
     # name_ga_res_folder = 'ga_run_ref_run_with_rescaling'
     # name_ga_res_folder = 'ga_run_aachen_kronenberg_6_peak_resc_2'
-    name_ga_res_folder = 'ga_run_aachen_kronenberg_6_peak_resc_2_chp_pen'
+    name_ga_res_folder = 'ga_run_kronen_6_resc_2_ref_with_chp_pen_meanshift'
     path_ga_results = os.path.join(path_in_folder, name_ga_res_folder)
 
     path_save_gen_dev = os.path.join(this_path, 'output', 'ga_gen_dev')
@@ -42,8 +42,8 @@ if __name__ == '__main__':
     out_name = name_ga_res_folder + '_dict_par_front_sol.pkl'
     path_save_par = os.path.join(this_path, 'output', 'ga_opt', out_name)
 
-    # #  Complete analysis call
-    # gadev.analyze_pareto_sol(path_results_folder=path_ga_results)
+    #  Complete analysis call
+    gadev.analyze_pareto_sol(path_results_folder=path_ga_results)
 
     #  Process GA results
     #  #############################################################
