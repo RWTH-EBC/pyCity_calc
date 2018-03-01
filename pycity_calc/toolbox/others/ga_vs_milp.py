@@ -168,31 +168,39 @@ if __name__ == '__main__':
     ax = fig.gca()
 
     #  Add annotations with arrows
-    ax.annotate('BOI+PV', xy=(64, 132), xytext=(62, 125),
+    ax.annotate('BOI+PV', xy=(69, 131), xytext=(65, 145),
                 arrowprops=dict(  # facecolor='black',
                     arrowstyle='->'
                     # ,shrink=0.01
                 ))
 
-    ax.annotate('1-2 CHPs+PV\nor 1 HP+PV', xy=(68, 126), xytext=(62, 115),
+    ax.annotate('1 HP+PV/\n1 CHP+PV', xy=(72.5, 126), xytext=(65, 110),
                 arrowprops=dict(  # facecolor='black',
                     arrowstyle='->'
                     # ,shrink=0.01
                 ))
 
-    ax.annotate('1-2 CHPs and\n1 HPs+PV', xy=(72, 121), xytext=(62, 105),
+    ax.annotate('1 LHN (CHP\n+3 nodes)+PV', xy=(77, 116), xytext=(65, 95),
                 arrowprops=dict(  # facecolor='black',
                     arrowstyle='->'
                     # ,shrink=0.01
                 ))
 
-    ax.annotate('1 LHN (3 nodes\n+1 CHP)+PV', xy=(76, 111), xytext=(62, 95),
+    ax.annotate('1 LHN (CHP\n+6 nodes)+PV', xy=(79, 105), xytext=(70, 80),
                 arrowprops=dict(  # facecolor='black',
                     arrowstyle='->'
                     # ,shrink=0.01
                 ))
 
-    ax.annotate('2 LHN (3 nodes\n+1 CHP)+PV', xy=(81, 106), xytext=(74, 95),
+    ax.annotate('1 LHN (CHP\n+6 nodes)+PV\n(increasing size)',
+                xy=(92, 74), xytext=(75, 63),
+                arrowprops=dict(  # facecolor='black',
+                    arrowstyle='->'
+                    # ,shrink=0.01
+                ))
+
+    ax.annotate('$\Delta$: Change\nin CHP location',
+                xy=(87, 81), xytext=(102, 110),
                 arrowprops=dict(  # facecolor='black',
                     arrowstyle='->'
                     # ,shrink=0.01
