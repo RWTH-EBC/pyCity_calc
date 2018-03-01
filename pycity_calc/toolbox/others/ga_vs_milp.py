@@ -101,7 +101,7 @@ if __name__ == '__main__':
     array_allowed_keys = np.arange(max_key, 0, -10)
     list_allowed_keys = array_allowed_keys.tolist()
 
-    for key in sorted(list(dict_gen.keys())):
+    for key in sorted(list(dict_gen.keys()), reverse=True):
         #  Get population
         pop = dict_gen[key]
 
