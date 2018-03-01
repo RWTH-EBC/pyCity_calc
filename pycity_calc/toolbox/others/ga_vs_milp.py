@@ -80,15 +80,17 @@ if __name__ == '__main__':
 
     #  Write down obj. of MILP runs (Min. Cost --> Min. CO2)
     #  #############################################################
-    list_mip_cost = [67550, 68873, 70808,
+    list_mip_cost = [67550, 68539, 70199,
                      # 72441, # Min. CO2 with cost constraint of 72441
-                     73201, 74233, 75915
+                     # 85604, 74233,
+                     102637
                      # , 143544
                      ]
 
-    list_mip_co2 = [134143, 129035, 124125,
+    list_mip_co2 = [134143, 124302, 114461,
                     # 119261, # Min. CO2 with cost constraint of 72441
-                    119214, 114304, 109393
+                    # 104620, 114304,
+                    75495
                     # ,104479
                     ]
 
@@ -165,6 +167,14 @@ if __name__ == '__main__':
                      [co2], linestyle='',
                      marker='o', markersize=3, c='#1058B0')
 
+    #  Plot force LHN scenario
+    #  #######################################################################
+    plt.plot([75.9],
+             [139.57], linestyle='',
+             marker='*', markersize=7, c='black',
+             label='MILP (force LHN (1 CHP))')
+
+    #  #######################################################################
     ax = fig.gca()
 
     #  Add annotations with arrows
