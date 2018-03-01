@@ -1093,9 +1093,6 @@ class CityEBCalculator(object):
         #  Get pump energy in kWh
         dict_el_con['pump'] = self.dict_fe_city_balance['pump_energy'] + 0.0
 
-        dict_el_exp = {'pv': 0, 'chp': 0}
-        dict_el_imp = {'dem': 0, 'hp': 0, 'eh': 0}
-
         dict_el_exp['pv'] = self.dict_fe_city_balance['pv_feed'] + 0.0
         dict_el_exp['chp'] = self.dict_fe_city_balance['chp_feed'] + 0.0
 
@@ -1103,7 +1100,7 @@ class CityEBCalculator(object):
         dict_el_imp['hp'] = self.dict_fe_city_balance['grid_import_hp'] + 0.0
         dict_el_imp['eh'] = self.dict_fe_city_balance['grid_import_eh'] + 0.0
 
-        
+
 
 
 
