@@ -54,11 +54,12 @@ if __name__ == '__main__':
     # #  Plot development of generations
     # gadev.print_gen_sol_dev(dict_gen=dict_gen, path_save=path_save_gen_dev)
 
-    #  Extract final population
-    (final_pop, list_ann, list_co2) = gadev.get_final_pop(dict_gen=dict_gen)
+    # #  Extract final population
+    # (final_pop, list_ann, list_co2) = gadev.get_final_pop(dict_gen=dict_gen)
 
     #  Extract list of pareto optimal results
-    list_inds_pareto = gadev.get_pareto_front_list(final_pop)
+    list_inds_pareto = gadev.get_pareto_front(dict_gen=dict_gen,
+                                              nb_ind_used=400)
 
     #  Parse list of pareto solutions to dict (nb. as keys to re-identify
     #  each solution
@@ -89,6 +90,10 @@ if __name__ == '__main__':
 
     fig = plt.figure()
 
+    max_key = len(dict_gen) - 1
+    array_allowed_keys = np.arange(max_key, 0, -10)
+    list_allowed_keys = array_allowed_keys.tolist()
+
     for key in sorted(list(dict_gen.keys())):
         #  Get population
         pop = dict_gen[key]
@@ -117,7 +122,7 @@ if __name__ == '__main__':
             plt.plot(list_ann, list_co2, marker='o', linestyle='',
                      markersize=3,
                      c='gray', label='GA (dominated solutions)')
-        else:
+        elif key in list_allowed_keys:
             plt.plot(list_ann, list_co2, marker='o', linestyle='',
                      markersize=3, c='gray')
 
