@@ -59,6 +59,7 @@ if __name__ == '__main__':
 
     #  Extract list of pareto optimal results
     list_inds_pareto = gadev.get_pareto_front(dict_gen=dict_gen,
+                                              size_used=None,
                                               nb_ind_used=400)
 
     #  Parse list of pareto solutions to dict (nb. as keys to re-identify
@@ -119,6 +120,10 @@ if __name__ == '__main__':
             list_co2[i] /= 1000
 
         if key == 1:
+            plt.plot(list_ann, list_co2, marker='o', linestyle='',
+                     markersize=3,
+                     c='orange', label='GA (start solutions)')
+        if key == 2:
             plt.plot(list_ann, list_co2, marker='o', linestyle='',
                      markersize=3,
                      c='gray', label='GA (dominated solutions)')
