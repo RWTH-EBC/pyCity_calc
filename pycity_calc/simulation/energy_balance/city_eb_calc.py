@@ -145,6 +145,10 @@ class CityEBCalculator(object):
         self._list_single_build = None
         self._list_no_th_esys = None
 
+        self._dict_energy = None  # Dictionary with amounts of generated and
+        #  consumed energy (call get_gen_and_con_energy after energy_balance
+        #  has been un to calculate this dict (save_res=True))
+
         #  Get list of sub-cities
         self.set_subcity_lists()
 
@@ -877,7 +881,7 @@ class CityEBCalculator(object):
         return co2
 
     def calc_co2_em_with_dyn_signal(self, share_ren=0.6, gcv_to_ncv=True,
-                           gcv_to_ncv_factor=1.11):
+                                    gcv_to_ncv_factor=1.11):
         """
         Calculates co2 emission with dynamic co2 signal
 
@@ -1011,21 +1015,46 @@ class CityEBCalculator(object):
 
         return array_co2_dyn
 
-    def calc_coverage(self):
+    def get_gen_and_con_energy(self, save_res=False):
         """
-        Calculate thermal and electric coverage of city
+        Calculate thermal and electric coverage of city. Returning dict with
+        amounts of generated and consumed thermal and eletric energy
+        (plus grid import/export).
+
+        Requires thermal and electric energy balance to have been run!
+
+        Parameters
+        ----------
+        save_res : bool, optional
+            Defines, if results should be stored on CityEBCalculator
 
         Returns
         -------
+        dict_energy : dict (of dicts)
+            Dict holdings dicts with amounts of energy
+                dict_energy['el_con'] = dict_el_con
+                dict_energy['th_gen'] = dict_th_en
+                dict_energy['el_gen'] = dict_el_gen
+                dict_energy['el_exp'] = dict_el_exp
+                dict_energy['el_imp'] = dict_el_imp
 
+                dict_th_en = {'boi': 0, 'chp': 0, 'hp_aw': 0, 'hp_ww': 0,
+                'eh': 0}
+                dict_el_gen = {'chp': 0, 'pv': 0}
+                dict_el_con = {'dem': 0, 'hp_aw': 0, 'hp_ww': 0, 'eh': 0,
+                'pump': 0}
+                dict_el_exp = {'pv': 0, 'chp': 0}
+                dict_el_imp = {'dem': 0, 'hp': 0, 'eh': 0}
         """
+
+        dict_energy = {}
 
         #  Dummy dicts storing amounts of energy in kWh
         dict_th_en = {'boi': 0, 'chp': 0, 'hp_aw': 0, 'hp_ww': 0, 'eh': 0}
         dict_el_gen = {'chp': 0, 'pv': 0}
         dict_el_con = {'dem': 0, 'hp_aw': 0, 'hp_ww': 0, 'eh': 0, 'pump': 0}
         dict_el_exp = {'pv': 0, 'chp': 0}
-        dict_el_imp = {'dem': 0, 'hp': 0, 'eh':0 }
+        dict_el_imp = {'dem': 0, 'hp': 0, 'eh': 0}
 
         #  Timestep pointer
         timestep = self.city.environment.timer.timeDiscretization
@@ -1038,7 +1067,7 @@ class CityEBCalculator(object):
             build = self.city.nodes[n]['entity']
 
             #  Sum up el. demands in kWh
-            dict_el_con += build.get_annual_el_demand()
+            dict_el_con['dem'] += build.get_annual_el_demand()
 
             if build.hasBes:
 
@@ -1046,20 +1075,20 @@ class CityEBCalculator(object):
                 if build.bes.hasBoiler:
                     dict_th_en['boi'] += \
                         sum(build.bes.boiler.totalQOutput) * timestep / \
-                          (3600 * 1000)
+                        (3600 * 1000)
                 if build.bes.hasChp:
                     dict_th_en['chp'] += \
                         sum(build.bes.chp.totalQOutput) * timestep / \
-                          (3600 * 1000)
+                        (3600 * 1000)
                 if build.bes.hasHeatpump:
                     if build.bes.heatpump.hp_type == 'aw':
                         dict_th_en['hp_aw'] += \
-                            sum(build.bes.hp.totalQOutput) * timestep / \
-                              (3600 * 1000)
+                            sum(build.bes.heatpump.totalQOutput) * timestep / \
+                            (3600 * 1000)
                     if build.bes.heatpump.hp_type == 'ww':
                         dict_th_en['hp_ww'] += \
-                            sum(build.bes.hp.totalQOutput) * timestep / \
-                              (3600 * 1000)
+                            sum(build.bes.heatpump.totalQOutput) * timestep / \
+                            (3600 * 1000)
                 if build.bes.hasElectricalHeater:
                     dict_th_en['eh'] += \
                         sum(build.bes.electricalHeater.totalQOutput) \
@@ -1073,18 +1102,18 @@ class CityEBCalculator(object):
                 if build.bes.hasChp:
                     dict_el_gen['chp'] += \
                         sum(build.bes.chp.totalPOutput) * timestep / \
-                          (3600 * 1000)
+                        (3600 * 1000)
 
                 #  Extract electric consumption in kWh (for HPs)
                 if build.bes.hasHeatpump:
                     if build.bes.heatpump.hp_type == 'aw':
                         dict_el_con['hp_aw'] += \
-                            sum(build.bes.hp.array_el_power_in) * timestep / \
-                              (3600 * 1000)
+                            sum(build.bes.heatpump.array_el_power_in) \
+                            * timestep / (3600 * 1000)
                     if build.bes.heatpump.hp_type == 'ww':
                         dict_el_con['hp_ww'] += \
                             sum(build.bes.hp.array_el_power_in) * timestep / \
-                              (3600 * 1000)
+                            (3600 * 1000)
                 if build.bes.hasElectricalHeater:
                     dict_el_con['eh'] += \
                         sum(build.bes.electricalHeater.totalPConsumption) \
@@ -1100,10 +1129,17 @@ class CityEBCalculator(object):
         dict_el_imp['hp'] = self.dict_fe_city_balance['grid_import_hp'] + 0.0
         dict_el_imp['eh'] = self.dict_fe_city_balance['grid_import_eh'] + 0.0
 
+        #  Save results to dict energy
+        dict_energy['el_con'] = dict_el_con
+        dict_energy['th_gen'] = dict_th_en
+        dict_energy['el_gen'] = dict_el_gen
+        dict_energy['el_exp'] = dict_el_exp
+        dict_energy['el_imp'] = dict_el_imp
 
+        if save_res:
+            self._dict_energy = dict_energy
 
-
-
+        return dict_energy
 
 
 if __name__ == '__main__':
@@ -1370,6 +1406,10 @@ if __name__ == '__main__':
     #  Perform emissions calculation
     co2 = energy_balance.calc_co2_emissions(el_mix_for_chp=True)
 
+    #  Calculate amounts of generated and consumed energy to calculate
+    #  coverage
+    dict_energy = energy_balance.get_gen_and_con_energy()
+
     fuel_boiler = dict_fe_city['fuel_boiler']
     fuel_chp = dict_fe_city['fuel_chp']
     grid_import_dem = dict_fe_city['grid_import_dem']
@@ -1378,6 +1418,17 @@ if __name__ == '__main__':
     chp_feed = dict_fe_city['chp_feed']
     pv_feed = dict_fe_city['pv_feed']
     pump_energy = dict_fe_city['pump_energy']
+
+    print('Amounts of generated and consumed energy')
+    print('#############################################')
+    for key in dict_energy.keys():
+        print('Dict. key: ')
+        print(key)
+        print('Values')
+        print(dict_energy[key])
+        print()
+    print('#############################################')
+    print()
 
     print('Boiler fuel demand in kWh/a: ')
     print(round(fuel_boiler, 0))
@@ -1398,6 +1449,9 @@ if __name__ == '__main__':
 
     print('LHN electric pump energy in kWh/a:')
     print(round(pump_energy, 0))
+    print()
+
+    print('#############################################')
     print()
 
     print('Total emissions of city district in t/a:')
