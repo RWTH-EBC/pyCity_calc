@@ -11,6 +11,16 @@ import pickle
 import warnings
 import numpy as np
 import networkx as nx
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+from matplotlib.patches import Patch
+from matplotlib.lines import Line2D
+
+try:
+    from matplotlib2tikz import save as tikz_save
+except:
+    msg = 'Could not import matplotlib2tikz'
+    warnings.warn(msg)
 
 import pycity_calc.simulation.energy_balance.check_eb_requ as check_eb
 import pycity_calc.toolbox.networks.network_ops as netop
@@ -144,6 +154,10 @@ class CityEBCalculator(object):
         self._list_lists_deg_ids_build = None
         self._list_single_build = None
         self._list_no_th_esys = None
+
+        self._dict_energy = None  # Dictionary with amounts of generated and
+        #  consumed energy (call get_gen_and_con_energy after energy_balance
+        #  has been un to calculate this dict (save_res=True))
 
         #  Get list of sub-cities
         self.set_subcity_lists()
@@ -877,7 +891,7 @@ class CityEBCalculator(object):
         return co2
 
     def calc_co2_em_with_dyn_signal(self, share_ren=0.6, gcv_to_ncv=True,
-                           gcv_to_ncv_factor=1.11):
+                                    gcv_to_ncv_factor=1.11):
         """
         Calculates co2 emission with dynamic co2 signal
 
@@ -1010,6 +1024,449 @@ class CityEBCalculator(object):
                 array_co2_dyn[i] -= array_co2_sup[i] * array_pv_feed[i]
 
         return array_co2_dyn
+
+    def get_gen_and_con_energy(self, save_res=True):
+        """
+        Calculate thermal and electric coverage of city. Returning dict with
+        amounts of generated and consumed thermal and eletric energy
+        (plus grid import/export).
+
+        Requires thermal and electric energy balance to have been run!
+
+        Parameters
+        ----------
+        save_res : bool, optional
+            Defines, if results should be stored on CityEBCalculator
+            (default: True)
+
+        Returns
+        -------
+        dict_energy : dict (of dicts)
+            Dict holdings dicts with amounts of energy
+                dict_energy['el_con'] = dict_el_con
+                dict_energy['th_gen'] = dict_th_en
+                dict_energy['el_gen'] = dict_el_gen
+                dict_energy['el_exp'] = dict_el_exp
+                dict_energy['el_imp'] = dict_el_imp
+
+                dict_th_en = {'boi': 0, 'chp': 0, 'hp_aw': 0, 'hp_ww': 0,
+                'eh': 0}
+                dict_el_gen = {'chp': 0, 'pv': 0}
+                dict_el_con = {'dem': 0, 'hp_aw': 0, 'hp_ww': 0, 'eh': 0,
+                'pump': 0}
+                dict_el_exp = {'pv': 0, 'chp': 0}
+                dict_el_imp = {'dem': 0, 'hp': 0, 'eh': 0}
+        """
+
+        dict_energy = {}
+
+        #  Dummy dicts storing amounts of energy in kWh
+        dict_th_en = {'boi': 0, 'chp': 0, 'hp_aw': 0, 'hp_ww': 0, 'eh': 0}
+        dict_el_gen = {'chp': 0, 'pv': 0}
+        dict_el_con = {'dem': 0, 'hp_aw': 0, 'hp_ww': 0, 'eh': 0, 'pump': 0}
+        dict_el_exp = {'pv': 0, 'chp': 0}
+        dict_el_imp = {'dem': 0, 'hp': 0, 'eh': 0}
+
+        #  Timestep pointer
+        timestep = self.city.environment.timer.timeDiscretization
+
+        #  Get list of building ids
+        list_build_ids = self.city.get_list_build_entity_node_ids()
+
+        #  Loop over buildings
+        for n in list_build_ids:
+            build = self.city.nodes[n]['entity']
+
+            #  Sum up el. demands in kWh
+            dict_el_con['dem'] += build.get_annual_el_demand()
+
+            if build.hasBes:
+
+                #  Extract produced amount of thermal energy in kWh
+                if build.bes.hasBoiler:
+                    dict_th_en['boi'] += \
+                        sum(build.bes.boiler.totalQOutput) * timestep / \
+                        (3600 * 1000)
+                if build.bes.hasChp:
+                    dict_th_en['chp'] += \
+                        sum(build.bes.chp.totalQOutput) * timestep / \
+                        (3600 * 1000)
+                if build.bes.hasHeatpump:
+                    if build.bes.heatpump.hp_type == 'aw':
+                        dict_th_en['hp_aw'] += \
+                            sum(build.bes.heatpump.totalQOutput) * timestep / \
+                            (3600 * 1000)
+                    if build.bes.heatpump.hp_type == 'ww':
+                        dict_th_en['hp_ww'] += \
+                            sum(build.bes.heatpump.totalQOutput) * timestep / \
+                            (3600 * 1000)
+                if build.bes.hasElectricalHeater:
+                    dict_th_en['eh'] += \
+                        sum(build.bes.electricalHeater.totalQOutput) \
+                        * timestep / (3600 * 1000)
+
+                #  Extract produced amount of electric energy in kWh
+                if build.bes.hasPv:
+                    dict_el_gen['pv'] += \
+                        sum(build.bes.pv.totalPower) * timestep / \
+                        (3600 * 1000)
+                if build.bes.hasChp:
+                    dict_el_gen['chp'] += \
+                        sum(build.bes.chp.totalPOutput) * timestep / \
+                        (3600 * 1000)
+
+                #  Extract electric consumption in kWh (for HPs)
+                if build.bes.hasHeatpump:
+                    if build.bes.heatpump.hp_type == 'aw':
+                        dict_el_con['hp_aw'] += \
+                            sum(build.bes.heatpump.array_el_power_in) \
+                            * timestep / (3600 * 1000)
+                    if build.bes.heatpump.hp_type == 'ww':
+                        dict_el_con['hp_ww'] += \
+                            sum(build.bes.hp.array_el_power_in) * timestep / \
+                            (3600 * 1000)
+                if build.bes.hasElectricalHeater:
+                    dict_el_con['eh'] += \
+                        sum(build.bes.electricalHeater.totalPConsumption) \
+                        * timestep / (3600 * 1000)
+
+        #  Get pump energy in kWh
+        dict_el_con['pump'] = self.dict_fe_city_balance['pump_energy'] + 0.0
+
+        dict_el_exp['pv'] = self.dict_fe_city_balance['pv_feed'] + 0.0
+        dict_el_exp['chp'] = self.dict_fe_city_balance['chp_feed'] + 0.0
+
+        dict_el_imp['dem'] = self.dict_fe_city_balance['grid_import_dem'] + 0.0
+        dict_el_imp['hp'] = self.dict_fe_city_balance['grid_import_hp'] + 0.0
+        dict_el_imp['eh'] = self.dict_fe_city_balance['grid_import_eh'] + 0.0
+
+        #  Save results to dict energy
+        dict_energy['el_con'] = dict_el_con
+        dict_energy['th_gen'] = dict_th_en
+        dict_energy['el_gen'] = dict_el_gen
+        dict_energy['el_exp'] = dict_el_exp
+        dict_energy['el_imp'] = dict_el_imp
+
+        if save_res:
+            self._dict_energy = dict_energy
+
+        return dict_energy
+
+    def plot_coverage(self, path_save_folder=None, save_plots=True,
+                      output_filename='energy_coverage',
+                      save_tikz=True, dpi=100):
+        """
+        Plot thermal and electric coverage plots. Requires
+        get_gen_and_con_energy to be run before (to generate
+        self._dict_energy)
+
+        Parameters
+        ----------
+        path_save_folder : str, optional
+            Path to folder, where plots should be saved (default: None).
+            If None, uses ..\output as savings path folder.
+        save_plots : bool, optional
+            Save plots (default: True)
+        output_filename : str, optional (if None, plot is not saved)
+            Defines name of saving file (without file ending)
+            (default: 'energy_coverage')
+        save_tikz : bool, optional
+            Save figure as tikz (default: True). If true, saves figure in
+            tikz format for latex implementation
+        dpi : int, optional
+            DPI size of figures (default: 100). 1000 recommended for Elsevier
+            EPS.
+        """
+
+        #  Extract data for stacked bar no. 1
+        list_th_energy = []
+
+        boi_th_en = self._dict_energy['th_gen']['boi']
+        chp_th_en = self._dict_energy['th_gen']['chp']
+        hp_aw_th_en = self._dict_energy['th_gen']['hp_aw']
+        hp_ww_th_en = self._dict_energy['th_gen']['hp_ww']
+        eh_th_en = self._dict_energy['th_gen']['eh']
+
+        list_th_energy.append(boi_th_en)
+        list_th_energy.append(chp_th_en)
+        list_th_energy.append(hp_aw_th_en)
+        list_th_energy.append(hp_ww_th_en)
+        list_th_energy.append(eh_th_en)
+
+        sum_th_energy = sum(list_th_energy)
+        array_th_en_cov = np.array(list_th_energy) / sum_th_energy
+
+        #  Extract data for stacked bar no. 2
+        list_th_dem = []
+
+        th_dem_city_sh = self.city.get_annual_space_heating_demand()
+        th_dem_city_dhw = self.city.get_annual_dhw_demand()
+
+        th_losses = sum(list_th_energy) - th_dem_city_dhw - th_dem_city_sh
+
+        list_th_dem.append(th_dem_city_sh)
+        list_th_dem.append(th_dem_city_dhw)
+        list_th_dem.append(th_losses)
+        list_th_dem.append(0)
+        list_th_dem.append(0)
+
+        sum_th_dem = sum(list_th_dem)
+        array_th_dem_cov = np.array(list_th_dem) / sum_th_dem
+
+        #  Extract data for stacked bar no. 3
+        list_el_energy = []
+
+        chp_gen = self._dict_energy['el_gen']['chp']
+        pv_gen = self._dict_energy['el_gen']['pv']
+
+        chp_exp = self._dict_energy['el_exp']['chp']
+        pv_exp = self._dict_energy['el_exp']['pv']
+
+        chp_self = chp_gen - chp_exp
+        pv_self = pv_gen - pv_exp
+
+        grid_import_dem = self._dict_energy['el_imp']['dem']
+        grid_import_hp = self._dict_energy['el_imp']['hp']
+        grid_import_eh = self._dict_energy['el_imp']['eh']
+
+        list_el_energy.append(chp_self)
+        list_el_energy.append(pv_self)
+        list_el_energy.append(grid_import_dem)
+        list_el_energy.append(grid_import_hp)
+        list_el_energy.append(grid_import_eh)
+
+        sum_el_en = sum(list_el_energy)
+
+        #  Extract data for stacked bar no. 4 (negative (feed-in) values)
+        list_fed_in_chp = []
+
+        list_fed_in_chp.append(0)
+        list_fed_in_chp.append(0)
+        list_fed_in_chp.append(-chp_exp)
+        list_fed_in_chp.append(0)
+
+        list_fed_in_pv = []
+        list_fed_in_pv.append(0)
+        list_fed_in_pv.append(0)
+        list_fed_in_pv.append(-pv_exp)
+        list_fed_in_pv.append(0)
+
+        sum_exp = abs(sum(list_fed_in_chp)) + abs(sum(list_fed_in_pv))
+
+        array_el_en_cov = np.array(list_el_energy) / (sum_el_en + sum_exp)
+
+        array_el_exp_chp_cov = np.array(list_fed_in_chp) / (
+                sum_el_en + sum_exp)
+
+        array_el_exp_pv_cov = np.array(list_fed_in_pv) / (sum_el_en + sum_exp)
+
+        #  Extract data for stacked bar no. 5 (electric demands)
+        list_el_dem = []
+
+        el_dem = self._dict_energy['el_con']['dem']
+        hp_aw_dem = self._dict_energy['el_con']['hp_aw']
+        hp_ww_dem = self._dict_energy['el_con']['hp_ww']
+        eh_dem = self._dict_energy['el_con']['eh']
+        pump_dem = self._dict_energy['el_con']['pump']
+
+        list_el_dem.append(el_dem)
+        list_el_dem.append(hp_aw_dem)
+        list_el_dem.append(hp_ww_dem)
+        list_el_dem.append(eh_dem)
+        list_el_dem.append(pump_dem)
+
+        sum_el_dem = sum(list_el_dem)
+        array_el_dem = np.array(list_el_dem) / sum_el_dem
+
+        #  Stack arrays together
+        array_res = np.vstack((array_th_en_cov, array_th_dem_cov))
+        array_res = np.vstack((array_res, array_el_en_cov))
+        array_res = np.vstack((array_res, array_el_dem))
+
+        # array_th_en_cov
+        # array_th_dem_cov
+        # array_el_en_cov
+        # array_el_exp(x)
+        # array_el_dem
+
+        array_res = np.transpose(array_res)
+
+        #  Stack negative values to rs
+        array_res = np.vstack((array_res, array_el_exp_chp_cov))
+        array_res = np.vstack((array_res, array_el_exp_pv_cov))
+
+        #  Start plotting
+        #  ###############################################################
+        list_col_1 = ['#E53027', '#BE4198', '#E53027', '#BE4198']
+        list_col_2 = ['#1058B0', '#008746', '#1058B0', '#008746']
+        list_col_3 = ['#F47328', '#EC635C', '#F47328', '#EC635C']
+        list_col_4 = ['#5F379B', '#4B81C4', '#5F379B', '#4B81C4']
+        list_col_5 = ['#9B231E', '#F49961', '#9B231E', '#F49961']
+
+        list_col_6 = ['#A4A4A4', '#A4A4A4', '#A4A4A4', '#A4A4A4']
+        list_col_7 = ['#B45955', '#B45955', '#B45955', '#B45955']
+
+        fig = plt.figure(figsize=(8, 6))
+
+        N = 4
+
+        ind = np.arange(N)
+
+        width = 0.6
+
+        colors = ['#624ea7', 'g', 'yellow', 'k', 'maroon']
+
+        p1 = plt.bar(ind, array_res[0], width=width, color=list_col_1)
+        p2 = plt.bar(ind, array_res[1], bottom=array_res[0], width=width,
+                     color=list_col_2)
+        p3 = plt.bar(ind, array_res[2], bottom=array_res[0] + array_res[1],
+                     width=width,
+                     color=list_col_3)
+        p4 = plt.bar(ind, array_res[3],
+                     bottom=array_res[0] + array_res[1] + array_res[2],
+                     width=width,
+                     color=list_col_4)
+        p5 = plt.bar(ind, array_res[4],
+                     bottom=array_res[0] + array_res[1] + array_res[2] +
+                            array_res[3], width=width,
+                     color=list_col_5)
+
+        #  Negative plots
+        p6 = plt.bar(ind, array_res[5], width=width,
+                     color=list_col_6)
+        p7 = plt.bar(ind, array_res[6], bottom=array_res[5], width=width,
+                     color=list_col_7)
+
+        plt.xticks(ind, ('Thermal sources',
+                         'Thermal sinks',
+                         'Electric sources',
+                         'Electric sinks'
+                         ))
+
+        #  Add hatches
+        patterns = ('//', '//', 'x', 'x')
+        for bar, pattern in zip(p1, patterns):
+            bar.set_hatch(pattern)
+        for bar, pattern in zip(p2, patterns):
+            bar.set_hatch(pattern)
+        for bar, pattern in zip(p3, patterns):
+            bar.set_hatch(pattern)
+        for bar, pattern in zip(p4, patterns):
+            bar.set_hatch(pattern)
+        for bar, pattern in zip(p5, patterns):
+            bar.set_hatch(pattern)
+        for bar, pattern in zip(p6, patterns):
+            bar.set_hatch(patterns)
+        for bar, pattern in zip(p7, patterns):
+            bar.set_hatch(patterns)
+
+        dict_th_en = {'boi': 0, 'chp': 0, 'hp_aw': 0, 'hp_ww': 0, 'eh': 0}
+
+        #  Add legend
+        patch_1_a = mpatches.Patch(facecolor='#E53027', hatch=r'//',
+                                   label='BOI')
+        patch_1_b = mpatches.Patch(facecolor='#1058B0', hatch=r'//',
+                                   label='CHP')
+        patch_1_c = mpatches.Patch(facecolor='#F47328', hatch=r'//',
+                                   label='HP (aw)')
+        patch_1_d = mpatches.Patch(facecolor='#5F379B', hatch=r'//',
+                                   label='HP (ww)')
+        patch_1_e = mpatches.Patch(facecolor='#9B231E', hatch=r'//',
+                                   label='EH')
+
+        patch_2_a = mpatches.Patch(facecolor='#BE4198', hatch=r'//',
+                                   label='Space heat')
+        patch_2_b = mpatches.Patch(facecolor='#008746', hatch=r'//',
+                                   label='Hot water')
+        patch_2_c = mpatches.Patch(facecolor='#EC635C', hatch=r'//',
+                                   label='Losses')
+
+        patch_3_a = mpatches.Patch(facecolor='#E53027', hatch=r'x',
+                                   label='CHP (self)')
+        patch_3_b = mpatches.Patch(facecolor='#1058B0', hatch=r'x',
+                                   label='PV (self)')
+        patch_3_c = mpatches.Patch(facecolor='#F47328', hatch=r'x',
+                                   label='Grid (House dem)')
+        patch_3_d = mpatches.Patch(facecolor='#5F379B', hatch=r'x',
+                                   label='Grid (HP)')
+        patch_3_e = mpatches.Patch(facecolor='#9B231E', hatch=r'x',
+                                   label='Grid (EH)')
+
+        patch_4_a = mpatches.Patch(facecolor='#BE4198', hatch=r'x',
+                                   label='House (dem)')
+        patch_4_b = mpatches.Patch(facecolor='#008746', hatch=r'x',
+                                   label='HP (aw) (dem)')
+        patch_4_c = mpatches.Patch(facecolor='#EC635C', hatch=r'x',
+                                   label='HP (ww) (dem)')
+        patch_4_d = mpatches.Patch(facecolor='#4B81C4', hatch=r'x',
+                                   label='EH (dem)')
+        patch_4_e = mpatches.Patch(facecolor='#F49961', hatch=r'x',
+                                   label='Pumps (dem)')
+
+        patch_5_a = mpatches.Patch(facecolor='#A4A4A4', hatch=r'xx',
+                                   label='CHP (exp)')
+        patch_5_b = mpatches.Patch(facecolor='#B45955', hatch=r'xx',
+                                   label='PV (exp)')
+
+        ax = fig.gca()
+        # Shrink current axis's height by 10% on the bottom
+        box = ax.get_position()
+        ax.set_position([box.x0, box.y0 + box.height * 0.2,
+                         box.width, box.height * 0.8])
+
+        plt.legend(handles=[patch_1_a, patch_1_b, patch_1_c, patch_1_d,
+                            patch_1_e,
+                            patch_2_a, patch_2_b, patch_2_c,
+                            patch_3_a, patch_3_b, patch_3_c, patch_3_d,
+                            patch_3_e,
+                            patch_5_a, patch_5_b,
+                            patch_4_a, patch_4_b, patch_4_c, patch_4_d,
+                            patch_4_e
+                            ],
+                   # loc='best', ncol=2)
+                   loc='upper center', bbox_to_anchor=(0.5, -0.1),
+                   fancybox=True, shadow=False, ncol=4)
+
+        plt.ylabel('Share of energy')
+        # plt.tight_layout()
+        plt.show()
+
+        if path_save_folder is None:
+            this_path = os.path.dirname(os.path.abspath(__file__))
+            path_save_folder = os.path.join(this_path, 'output')
+
+        # Save plot
+        if save_plots:
+            #  Generate path if not existent
+
+            #  Generate file names for different formats
+            file_pdf = output_filename + '.pdf'
+            file_eps = output_filename + '.eps'
+            file_png = output_filename + '.png'
+            file_tiff = output_filename + '.tiff'
+            file_tikz = output_filename + '.tikz'
+            file_svg = output_filename + '.svg'
+
+            #  Generate saving pathes
+            path_pdf = os.path.join(path_save_folder, file_pdf)
+            path_eps = os.path.join(path_save_folder, file_eps)
+            path_png = os.path.join(path_save_folder, file_png)
+            path_tiff = os.path.join(path_save_folder, file_tiff)
+            path_tikz = os.path.join(path_save_folder, file_tikz)
+            path_svg = os.path.join(path_save_folder, file_svg)
+
+            #  Save figure in different formats
+            plt.savefig(path_pdf, format='pdf', dpi=dpi)
+            plt.savefig(path_eps, format='eps', dpi=dpi)
+            plt.savefig(path_png, format='png', dpi=dpi)
+            # plt.savefig(path_tiff, format='tiff', dpi=dpi)
+            plt.savefig(path_svg, format='svg', dpi=dpi)
+
+            if save_tikz:
+                tikz_save(path_tikz, figureheight='\\figureheight',
+                          figurewidth='\\figurewidth')
+
+        plt.close()
 
 
 if __name__ == '__main__':
@@ -1276,6 +1733,10 @@ if __name__ == '__main__':
     #  Perform emissions calculation
     co2 = energy_balance.calc_co2_emissions(el_mix_for_chp=True)
 
+    #  Calculate amounts of generated and consumed energy to calculate
+    #  coverage
+    dict_energy = energy_balance.get_gen_and_con_energy()
+
     fuel_boiler = dict_fe_city['fuel_boiler']
     fuel_chp = dict_fe_city['fuel_chp']
     grid_import_dem = dict_fe_city['grid_import_dem']
@@ -1284,6 +1745,17 @@ if __name__ == '__main__':
     chp_feed = dict_fe_city['chp_feed']
     pv_feed = dict_fe_city['pv_feed']
     pump_energy = dict_fe_city['pump_energy']
+
+    print('Amounts of generated and consumed energy')
+    print('#############################################')
+    for key in dict_energy.keys():
+        print('Dict. key: ')
+        print(key)
+        print('Values')
+        print(dict_energy[key])
+        print()
+    print('#############################################')
+    print()
 
     print('Boiler fuel demand in kWh/a: ')
     print(round(fuel_boiler, 0))
@@ -1306,18 +1778,26 @@ if __name__ == '__main__':
     print(round(pump_energy, 0))
     print()
 
+    print('#############################################')
+    print()
+
     print('Total emissions of city district in t/a:')
     print(round(co2 / 1000, 0))
+
+    #  Plot coverage figures
+    energy_balance.plot_coverage()
+
+    print('#############################################')
+    print()
 
     #  Calculate dynamic CO2 signal
     array_co2_dyn = energy_balance.calc_co2_em_with_dyn_signal(share_ren=0.6)
 
-    print()
     print('Sum of dynamic CO2 emissions in t/a: ')
     print(round(sum(array_co2_dyn) / 1000, 0))
 
-    plt.plot(array_co2_dyn)
-    plt.ylabel('CO2 emission in kg')
-    plt.title('Dynamic CO2 emissions')
-    plt.show()
-    plt.close()
+    # plt.plot(array_co2_dyn)
+    # plt.ylabel('CO2 emission in kg')
+    # plt.title('Dynamic CO2 emissions')
+    # plt.show()
+    # plt.close()
