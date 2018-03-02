@@ -12,6 +12,9 @@ import warnings
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+from matplotlib.patches import Patch
+from matplotlib.lines import Line2D
 
 try:
     from matplotlib2tikz import save as tikz_save
@@ -1353,48 +1356,121 @@ class CityEBCalculator(object):
         for bar, pattern in zip(p5, patterns):
             bar.set_hatch(pattern)
         for bar, pattern in zip(p6, patterns):
-            bar.set_hatch(pattern)
+            bar.set_hatch(patterns)
         for bar, pattern in zip(p7, patterns):
-            bar.set_hatch(pattern)
+            bar.set_hatch(patterns)
 
+        dict_th_en = {'boi': 0, 'chp': 0, 'hp_aw': 0, 'hp_ww': 0, 'eh': 0}
+
+        #  Add legend
+        patch_1_a = mpatches.Patch(facecolor='#E53027', hatch=r'//',
+                                   label='BOI')
+        patch_1_b = mpatches.Patch(facecolor='#1058B0', hatch=r'//',
+                                   label='CHP')
+        patch_1_c = mpatches.Patch(facecolor='#F47328', hatch=r'//',
+                                   label='HP (aw)')
+        patch_1_d = mpatches.Patch(facecolor='#5F379B', hatch=r'//',
+                                   label='HP (ww)')
+        patch_1_e = mpatches.Patch(facecolor='#9B231E', hatch=r'//',
+                                   label='EH')
+
+        patch_2_a = mpatches.Patch(facecolor='#BE4198', hatch=r'//',
+                                   label='Space heat')
+        patch_2_b = mpatches.Patch(facecolor='#008746', hatch=r'//',
+                                   label='Hot water')
+        patch_2_c = mpatches.Patch(facecolor='#EC635C', hatch=r'//',
+                                   label='Losses')
+
+        patch_3_a = mpatches.Patch(facecolor='#E53027', hatch=r'x',
+                                   label='CHP (self)')
+        patch_3_b = mpatches.Patch(facecolor='#1058B0', hatch=r'x',
+                                   label='PV (self)')
+        patch_3_c = mpatches.Patch(facecolor='#F47328', hatch=r'x',
+                                   label='Grid (dem)')
+        patch_3_d = mpatches.Patch(facecolor='#5F379B', hatch=r'x',
+                                   label='Grid (HP)')
+        patch_3_e = mpatches.Patch(facecolor='#9B231E', hatch=r'x',
+                                   label='Grid (EH)')
+
+        patch_4_a = mpatches.Patch(facecolor='#BE4198', hatch=r'x',
+                                   label='Grid (dem)')
+        patch_4_b = mpatches.Patch(facecolor='#008746', hatch=r'x',
+                                   label='Grid (HP)')
+        patch_4_c = mpatches.Patch(facecolor='#EC635C', hatch=r'x',
+                                   label='Grid (EH)')
+
+        patch_5_a = mpatches.Patch(facecolor='#8768B4', hatch=r'x',
+                                   label='CHP (exp)')
+        patch_5_b = mpatches.Patch(facecolor='#B45955', hatch=r'x',
+                                   label='PV (exp)')
+
+        plt.legend(handles=[patch_1_a, patch_1_b, patch_1_c, patch_1_d,
+                            patch_1_e,
+                            patch_2_a, patch_2_b, patch_2_c,
+                            patch_3_a, patch_3_b, patch_3_c, patch_3_d,
+                            patch_3_e,
+                            patch_4_a, patch_4_b, patch_4_c,
+                            patch_5_a, patch_5_b
+                            ],
+                   loc='best', ncol=2)
+
+        # class AnyObject(object):
+        #     pass
+        #
+        # class AnyObjectHandler(object):
+        #     def legend_artist(self, legend, orig_handle, fontsize, handlebox):
+        #         x0, y0 = handlebox.xdescent, handlebox.ydescent
+        #         width, height = handlebox.width, handlebox.height
+        #         patch = mpatches.Rectangle([x0, y0], width, height,
+        #                                    facecolor='red',
+        #                                    edgecolor='black', hatch='/', #lw=1,
+        #                                    transform=handlebox.get_transform())
+        #         handlebox.add_artist(patch)
+        #         return patch
+        #
+        # plt.legend([AnyObject()], ['My first handler'],
+        #            handler_map={AnyObject: AnyObjectHandler()})
+
+        plt.ylabel('Share')
+        plt.tight_layout()
         plt.show()
 
         if path_save_folder is None:
             this_path = os.path.dirname(os.path.abspath(__file__))
             path_save_folder = os.path.join(this_path, 'output')
 
-        # # Save plot
-        # if save_plots:
-        #     #  Generate path if not existent
-        #
-        #     #  Generate file names for different formats
-        #     file_pdf = output_filename + '.pdf'
-        #     file_eps = output_filename + '.eps'
-        #     file_png = output_filename + '.png'
-        #     file_tiff = output_filename + '.tiff'
-        #     file_tikz = output_filename + '.tikz'
-        #     file_svg = output_filename + '.svg'
-        #
-        #     #  Generate saving pathes
-        #     path_pdf = os.path.join(path_save_folder, file_pdf)
-        #     path_eps = os.path.join(path_save_folder, file_eps)
-        #     path_png = os.path.join(path_save_folder, file_png)
-        #     path_tiff = os.path.join(path_save_folder, file_tiff)
-        #     path_tikz = os.path.join(path_save_folder, file_tikz)
-        #     path_svg = os.path.join(path_save_folder, file_svg)
-        #
-        #     #  Save figure in different formats
-        #     plt.savefig(path_pdf, format='pdf', dpi=dpi)
-        #     plt.savefig(path_eps, format='eps', dpi=dpi)
-        #     plt.savefig(path_png, format='png', dpi=dpi)
-        #     # plt.savefig(path_tiff, format='tiff', dpi=dpi)
-        #     plt.savefig(path_svg, format='svg', dpi=dpi)
-        #
-        #     if save_tikz:
-        #         tikz_save(path_tikz, figureheight='\\figureheight',
-        #                   figurewidth='\\figurewidth')
-        #
-        # plt.close()
+        # Save plot
+        if save_plots:
+            #  Generate path if not existent
+
+            #  Generate file names for different formats
+            file_pdf = output_filename + '.pdf'
+            file_eps = output_filename + '.eps'
+            file_png = output_filename + '.png'
+            file_tiff = output_filename + '.tiff'
+            file_tikz = output_filename + '.tikz'
+            file_svg = output_filename + '.svg'
+
+            #  Generate saving pathes
+            path_pdf = os.path.join(path_save_folder, file_pdf)
+            path_eps = os.path.join(path_save_folder, file_eps)
+            path_png = os.path.join(path_save_folder, file_png)
+            path_tiff = os.path.join(path_save_folder, file_tiff)
+            path_tikz = os.path.join(path_save_folder, file_tikz)
+            path_svg = os.path.join(path_save_folder, file_svg)
+
+            #  Save figure in different formats
+            plt.savefig(path_pdf, format='pdf', dpi=dpi)
+            plt.savefig(path_eps, format='eps', dpi=dpi)
+            plt.savefig(path_png, format='png', dpi=dpi)
+            # plt.savefig(path_tiff, format='tiff', dpi=dpi)
+            plt.savefig(path_svg, format='svg', dpi=dpi)
+
+            if save_tikz:
+                tikz_save(path_tikz, figureheight='\\figureheight',
+                          figurewidth='\\figurewidth')
+
+        plt.close()
 
 
 if __name__ == '__main__':
@@ -1724,8 +1800,8 @@ if __name__ == '__main__':
     print('Sum of dynamic CO2 emissions in t/a: ')
     print(round(sum(array_co2_dyn) / 1000, 0))
 
-    plt.plot(array_co2_dyn)
-    plt.ylabel('CO2 emission in kg')
-    plt.title('Dynamic CO2 emissions')
-    plt.show()
-    plt.close()
+    # plt.plot(array_co2_dyn)
+    # plt.ylabel('CO2 emission in kg')
+    # plt.title('Dynamic CO2 emissions')
+    # plt.show()
+    # plt.close()
