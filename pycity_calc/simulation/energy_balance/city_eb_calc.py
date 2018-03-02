@@ -11,6 +11,13 @@ import pickle
 import warnings
 import numpy as np
 import networkx as nx
+import matplotlib.pyplot as plt
+
+try:
+    from matplotlib2tikz import save as tikz_save
+except:
+    msg = 'Could not import matplotlib2tikz'
+    warnings.warn(msg)
 
 import pycity_calc.simulation.energy_balance.check_eb_requ as check_eb
 import pycity_calc.toolbox.networks.network_ops as netop
@@ -1015,7 +1022,7 @@ class CityEBCalculator(object):
 
         return array_co2_dyn
 
-    def get_gen_and_con_energy(self, save_res=False):
+    def get_gen_and_con_energy(self, save_res=True):
         """
         Calculate thermal and electric coverage of city. Returning dict with
         amounts of generated and consumed thermal and eletric energy
@@ -1027,6 +1034,7 @@ class CityEBCalculator(object):
         ----------
         save_res : bool, optional
             Defines, if results should be stored on CityEBCalculator
+            (default: True)
 
         Returns
         -------
@@ -1140,6 +1148,201 @@ class CityEBCalculator(object):
             self._dict_energy = dict_energy
 
         return dict_energy
+
+    def plot_coverage(self, path_save_folder=None, save_plots=True,
+                      output_filename='energy_coverage',
+                      save_tikz=True, dpi=100):
+        """
+        Plot thermal and electric coverage plots. Requires
+        get_gen_and_con_energy to be run before (to generate
+        self._dict_energy)
+
+        Parameters
+        ----------
+        path_save_folder : str, optional
+            Path to folder, where plots should be saved (default: None).
+            If None, uses ..\output as savings path folder.
+        save_plots : bool, optional
+            Save plots (default: True)
+        output_filename : str, optional (if None, plot is not saved)
+            Defines name of saving file (without file ending)
+            (default: 'energy_coverage')
+        save_tikz : bool, optional
+            Save figure as tikz (default: True). If true, saves figure in
+            tikz format for latex implementation
+        dpi : int, optional
+            DPI size of figures (default: 100). 1000 recommended for Elsevier
+            EPS.
+        """
+
+        #  Extract data for stacked bar no. 1
+        list_th_energy = []
+
+        boi_th_en = self._dict_energy['th_gen']['boi']
+        chp_th_en = self._dict_energy['th_gen']['chp']
+        hp_aw_th_en = self._dict_energy['th_gen']['hp_aw']
+        hp_ww_th_en = self._dict_energy['th_gen']['hp_ww']
+        eh_th_en = self._dict_energy['th_gen']['eh']
+
+        list_th_energy.append(boi_th_en)
+        list_th_energy.append(chp_th_en)
+        list_th_energy.append(hp_aw_th_en)
+        list_th_energy.append(hp_ww_th_en)
+        list_th_energy.append(eh_th_en)
+
+        #  Extract data for stacked bar no. 2
+        list_th_dem = []
+
+        th_dem_city_sh = self.city.get_annual_space_heating_demand()
+        th_dem_city_dhw = self.city.get_annual_dhw_demand()
+
+        th_losses = sum(list_th_energy) - th_dem_city_dhw - th_dem_city_sh
+
+        list_th_dem.append(th_dem_city_sh)
+        list_th_dem.append(th_dem_city_dhw)
+        list_th_dem.append(th_losses)
+
+        #  Extract data for stacked bar no. 3
+        list_el_energy = []
+
+        chp_gen = self._dict_energy['el_gen']['chp']
+        pv_gen = self._dict_energy['el_gen']['pv']
+
+        chp_exp = self._dict_energy['el_exp']['chp']
+        pv_exp = self._dict_energy['el_exp']['pv']
+
+        chp_self = chp_gen - chp_exp
+        pv_self = pv_gen - pv_exp
+
+        grid_import_dem = self._dict_energy['el_imp']['dem']
+        grid_import_hp = self._dict_energy['el_imp']['hp']
+        grid_import_eh = self._dict_energy['el_imp']['eh']
+
+        list_el_energy.append(chp_self)
+        list_el_energy.append(pv_self)
+        list_el_energy.append(grid_import_dem)
+        list_el_energy.append(grid_import_hp)
+        list_el_energy.append(grid_import_eh)
+
+        #  Extract data for stacked bar no. 4 (negative (feed-in) values)
+        list_fed_in = []
+
+        list_fed_in.append(-chp_exp)
+        list_fed_in.append(-pv_exp)
+
+        #  Extract data for stacked bar no. 5 (electric demands)
+        list_el_dem = []
+
+        el_dem = self._dict_energy['el_con']['dem']
+        hp_aw_dem = self._dict_energy['el_con']['hp_aw']
+        hp_ww_dem = self._dict_energy['el_con']['hp_ww']
+        eh_dem = self._dict_energy['el_con']['eh']
+        pump_dem = self._dict_energy['el_con']['pump']
+
+        list_el_dem.append(el_dem)
+        list_el_dem.append(hp_aw_dem)
+        list_el_dem.append(hp_ww_dem)
+        list_el_dem.append(eh_dem)
+        list_el_dem.append(pump_dem)
+
+        #  stacked plotting lists
+        list_bar_el_1 = []
+        list_bar_el_1.append(boi_th_en)
+        list_bar_el_1.append(th_dem_city_sh)
+        # list_bar_el_1.append(chp_self)
+        # list_bar_el_1.append(el_dem)
+
+        list_bar_el_2 = []
+        list_bar_el_2.append(chp_th_en)
+        list_bar_el_2.append(th_dem_city_dhw)
+        # list_bar_el_2.append(pv_self)
+        # list_bar_el_2.append(hp_aw_dem)
+
+        list_bar_el_3 = []
+        list_bar_el_3.append(hp_aw_th_en)
+        list_bar_el_3.append(th_losses)
+        # list_bar_el_3.append(grid_import_dem)
+        # list_bar_el_3.append(hp_ww_dem)
+
+        list_bar_el_4 = []
+        list_bar_el_4.append(hp_ww_th_en)
+        list_bar_el_4.append(0.0)
+        # list_bar_el_4.append(grid_import_hp)
+        # list_bar_el_4.append(eh_dem)
+
+        list_bar_el_5 = []
+        list_bar_el_5.append(eh_th_en)
+        list_bar_el_5.append(0.0)
+        # list_bar_el_5.append(grid_import_eh)
+        # list_bar_el_5.append(pump_dem)
+
+        array_1 = np.array(list_bar_el_1)
+        array_2 = np.array(list_bar_el_2)
+        array_3 = np.array(list_bar_el_3)
+        array_4 = np.array(list_bar_el_4)
+        array_5 = np.array(list_bar_el_5)
+
+        #  Start plotting
+        #  ###############################################################
+        list_color_ebc = ['#E53027', '#1058B0', '#F47328', '#5F379B',
+                                  '#9B231E', '#BE4198', '#08746']
+
+        fig = plt.figure(figsize=(8, 6))
+
+        N = 2
+
+        ind = np.arange(N)
+
+        p1 = plt.bar(ind, array_1)
+        p2 = plt.bar(ind, array_2, bottom=array_1)
+        p3 = plt.bar(ind, array_3, bottom=array_1+array_2)
+        p4 = plt.bar(ind, array_4, bottom=array_1+array_2+array_3)
+        p5 = plt.bar(ind, array_5, bottom=array_1+array_2+array_3+array_4)
+
+        plt.xticks(ind, ('Thermal energy',
+                         'Thermal demands'#,
+                         # 'Electric energy',
+                         # 'Electric demands'
+                         ))
+
+        plt.show()
+
+        if path_save_folder is None:
+            this_path = os.path.dirname(os.path.abspath(__file__))
+            path_save_folder = os.path.join(this_path, 'output')
+
+        # # Save plot
+        # if save_plots:
+        #     #  Generate path if not existent
+        #
+        #     #  Generate file names for different formats
+        #     file_pdf = output_filename + '.pdf'
+        #     file_eps = output_filename + '.eps'
+        #     file_png = output_filename + '.png'
+        #     file_tiff = output_filename + '.tiff'
+        #     file_tikz = output_filename + '.tikz'
+        #     file_svg = output_filename + '.svg'
+        #
+        #     #  Generate saving pathes
+        #     path_pdf = os.path.join(path_save_folder, file_pdf)
+        #     path_eps = os.path.join(path_save_folder, file_eps)
+        #     path_png = os.path.join(path_save_folder, file_png)
+        #     path_tiff = os.path.join(path_save_folder, file_tiff)
+        #     path_tikz = os.path.join(path_save_folder, file_tikz)
+        #     path_svg = os.path.join(path_save_folder, file_svg)
+        #
+        #     #  Save figure in different formats
+        #     plt.savefig(path_pdf, format='pdf', dpi=dpi)
+        #     plt.savefig(path_eps, format='eps', dpi=dpi)
+        #     plt.savefig(path_png, format='png', dpi=dpi)
+        #     # plt.savefig(path_tiff, format='tiff', dpi=dpi)
+        #     plt.savefig(path_svg, format='svg', dpi=dpi)
+        #
+        #     if save_tikz:
+        #         tikz_save(path_tikz, figureheight='\\figureheight',
+        #                   figurewidth='\\figurewidth')
+        #
+        # plt.close()
 
 
 if __name__ == '__main__':
@@ -1457,10 +1660,15 @@ if __name__ == '__main__':
     print('Total emissions of city district in t/a:')
     print(round(co2 / 1000, 0))
 
+    #  Plot coverage figures
+    energy_balance.plot_coverage()
+
+    print('#############################################')
+    print()
+
     #  Calculate dynamic CO2 signal
     array_co2_dyn = energy_balance.calc_co2_em_with_dyn_signal(share_ren=0.6)
 
-    print()
     print('Sum of dynamic CO2 emissions in t/a: ')
     print(round(sum(array_co2_dyn) / 1000, 0))
 
