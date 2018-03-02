@@ -1253,7 +1253,7 @@ class CityEBCalculator(object):
         array_el_en_cov = np.array(list_el_energy) / (sum_el_en + sum_exp)
 
         array_el_exp_chp_cov = np.array(list_fed_in_chp) / (
-                    sum_el_en + sum_exp)
+                sum_el_en + sum_exp)
 
         array_el_exp_pv_cov = np.array(list_fed_in_pv) / (sum_el_en + sum_exp)
 
@@ -1294,8 +1294,14 @@ class CityEBCalculator(object):
 
         #  Start plotting
         #  ###############################################################
-        list_color_ebc = ['#E53027', '#1058B0', '#F47328', '#5F379B',
-                          '#9B231E', '#BE4198', '#08746']
+        list_col_1 = ['#E53027', '#BE4198', '#E53027', '#BE4198']
+        list_col_2 = ['#1058B0', '#008746', '#1058B0', '#008746']
+        list_col_3 = ['#F47328', '#EC635C', '#F47328', '#EC635C']
+        list_col_4 = ['#5F379B', '#4B81C4', '#5F379B', '#4B81C4']
+        list_col_5 = ['#9B231E', '#F49961', '#9B231E', '#F49961']
+
+        list_col_6 = ['#8768B4', '#8768B4', '#8768B4', '#8768B4']
+        list_col_7 = ['#B45955', '#B45955', '#B45955', '#B45955']
 
         fig = plt.figure(figsize=(8, 6))
 
@@ -1303,24 +1309,53 @@ class CityEBCalculator(object):
 
         ind = np.arange(N)
 
-        p1 = plt.bar(ind, array_res[0])
-        p2 = plt.bar(ind, array_res[1], bottom=array_res[0])
-        p3 = plt.bar(ind, array_res[2], bottom=array_res[0] + array_res[1])
+        width = 0.6
+
+        colors = ['#624ea7', 'g', 'yellow', 'k', 'maroon']
+
+        p1 = plt.bar(ind, array_res[0], width=width, color=list_col_1)
+        p2 = plt.bar(ind, array_res[1], bottom=array_res[0], width=width,
+                     color=list_col_2)
+        p3 = plt.bar(ind, array_res[2], bottom=array_res[0] + array_res[1],
+                     width=width,
+                     color=list_col_3)
         p4 = plt.bar(ind, array_res[3],
-                     bottom=array_res[0] + array_res[1] + array_res[2])
+                     bottom=array_res[0] + array_res[1] + array_res[2],
+                     width=width,
+                     color=list_col_4)
         p5 = plt.bar(ind, array_res[4],
                      bottom=array_res[0] + array_res[1] + array_res[2] +
-                            array_res[3])
+                            array_res[3], width=width,
+                     color=list_col_5)
 
         #  Negative plots
-        p6 = plt.bar(ind, array_res[5])
-        p7 = plt.bar(ind, array_res[6], bottom=array_res[5])
+        p6 = plt.bar(ind, array_res[5], width=width,
+                     color=list_col_6)
+        p7 = plt.bar(ind, array_res[6], bottom=array_res[5], width=width,
+                     color=list_col_7)
 
         plt.xticks(ind, ('Thermal generation',
                          'Thermal demands',
                          'Electric energy',
                          'Electric demands'
                          ))
+
+        #  Add hatches
+        patterns = ('//', '//', 'x', 'x')
+        for bar, pattern in zip(p1, patterns):
+            bar.set_hatch(pattern)
+        for bar, pattern in zip(p2, patterns):
+            bar.set_hatch(pattern)
+        for bar, pattern in zip(p3, patterns):
+            bar.set_hatch(pattern)
+        for bar, pattern in zip(p4, patterns):
+            bar.set_hatch(pattern)
+        for bar, pattern in zip(p5, patterns):
+            bar.set_hatch(pattern)
+        for bar, pattern in zip(p6, patterns):
+            bar.set_hatch(pattern)
+        for bar, pattern in zip(p7, patterns):
+            bar.set_hatch(pattern)
 
         plt.show()
 
