@@ -1303,7 +1303,7 @@ class CityEBCalculator(object):
         list_col_4 = ['#5F379B', '#4B81C4', '#5F379B', '#4B81C4']
         list_col_5 = ['#9B231E', '#F49961', '#9B231E', '#F49961']
 
-        list_col_6 = ['#8768B4', '#8768B4', '#8768B4', '#8768B4']
+        list_col_6 = ['#A4A4A4', '#A4A4A4', '#A4A4A4', '#A4A4A4']
         list_col_7 = ['#B45955', '#B45955', '#B45955', '#B45955']
 
         fig = plt.figure(figsize=(8, 6))
@@ -1337,10 +1337,10 @@ class CityEBCalculator(object):
         p7 = plt.bar(ind, array_res[6], bottom=array_res[5], width=width,
                      color=list_col_7)
 
-        plt.xticks(ind, ('Thermal generation',
-                         'Thermal demands',
-                         'Electric energy',
-                         'Electric demands'
+        plt.xticks(ind, ('Thermal sources',
+                         'Thermal sinks',
+                         'Electric sources',
+                         'Electric sinks'
                          ))
 
         #  Add hatches
@@ -1386,53 +1386,49 @@ class CityEBCalculator(object):
         patch_3_b = mpatches.Patch(facecolor='#1058B0', hatch=r'x',
                                    label='PV (self)')
         patch_3_c = mpatches.Patch(facecolor='#F47328', hatch=r'x',
-                                   label='Grid (dem)')
+                                   label='Grid (House dem)')
         patch_3_d = mpatches.Patch(facecolor='#5F379B', hatch=r'x',
                                    label='Grid (HP)')
         patch_3_e = mpatches.Patch(facecolor='#9B231E', hatch=r'x',
                                    label='Grid (EH)')
 
         patch_4_a = mpatches.Patch(facecolor='#BE4198', hatch=r'x',
-                                   label='Grid (dem)')
+                                   label='House (dem)')
         patch_4_b = mpatches.Patch(facecolor='#008746', hatch=r'x',
-                                   label='Grid (HP)')
+                                   label='HP (aw) (dem)')
         patch_4_c = mpatches.Patch(facecolor='#EC635C', hatch=r'x',
-                                   label='Grid (EH)')
+                                   label='HP (ww) (dem)')
+        patch_4_d = mpatches.Patch(facecolor='#4B81C4', hatch=r'x',
+                                   label='EH (dem)')
+        patch_4_e = mpatches.Patch(facecolor='#F49961', hatch=r'x',
+                                   label='Pumps (dem)')
 
-        patch_5_a = mpatches.Patch(facecolor='#8768B4', hatch=r'x',
+        patch_5_a = mpatches.Patch(facecolor='#A4A4A4', hatch=r'xx',
                                    label='CHP (exp)')
-        patch_5_b = mpatches.Patch(facecolor='#B45955', hatch=r'x',
+        patch_5_b = mpatches.Patch(facecolor='#B45955', hatch=r'xx',
                                    label='PV (exp)')
+
+        ax = fig.gca()
+        # Shrink current axis's height by 10% on the bottom
+        box = ax.get_position()
+        ax.set_position([box.x0, box.y0 + box.height * 0.2,
+                         box.width, box.height * 0.8])
 
         plt.legend(handles=[patch_1_a, patch_1_b, patch_1_c, patch_1_d,
                             patch_1_e,
                             patch_2_a, patch_2_b, patch_2_c,
                             patch_3_a, patch_3_b, patch_3_c, patch_3_d,
                             patch_3_e,
-                            patch_4_a, patch_4_b, patch_4_c,
-                            patch_5_a, patch_5_b
+                            patch_5_a, patch_5_b,
+                            patch_4_a, patch_4_b, patch_4_c, patch_4_d,
+                            patch_4_e
                             ],
-                   loc='best', ncol=2)
+                   # loc='best', ncol=2)
+                   loc='upper center', bbox_to_anchor=(0.5, -0.1),
+                   fancybox=True, shadow=False, ncol=4)
 
-        # class AnyObject(object):
-        #     pass
-        #
-        # class AnyObjectHandler(object):
-        #     def legend_artist(self, legend, orig_handle, fontsize, handlebox):
-        #         x0, y0 = handlebox.xdescent, handlebox.ydescent
-        #         width, height = handlebox.width, handlebox.height
-        #         patch = mpatches.Rectangle([x0, y0], width, height,
-        #                                    facecolor='red',
-        #                                    edgecolor='black', hatch='/', #lw=1,
-        #                                    transform=handlebox.get_transform())
-        #         handlebox.add_artist(patch)
-        #         return patch
-        #
-        # plt.legend([AnyObject()], ['My first handler'],
-        #            handler_map={AnyObject: AnyObjectHandler()})
-
-        plt.ylabel('Share')
-        plt.tight_layout()
+        plt.ylabel('Share of energy')
+        # plt.tight_layout()
         plt.show()
 
         if path_save_folder is None:
