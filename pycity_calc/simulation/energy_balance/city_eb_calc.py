@@ -1190,6 +1190,9 @@ class CityEBCalculator(object):
         list_th_energy.append(hp_ww_th_en)
         list_th_energy.append(eh_th_en)
 
+        sum_th_energy = sum(list_th_energy)
+        array_th_en_cov = np.array(list_th_energy) / sum_th_energy
+
         #  Extract data for stacked bar no. 2
         list_th_dem = []
 
@@ -1201,6 +1204,11 @@ class CityEBCalculator(object):
         list_th_dem.append(th_dem_city_sh)
         list_th_dem.append(th_dem_city_dhw)
         list_th_dem.append(th_losses)
+        list_th_dem.append(0)
+        list_th_dem.append(0)
+
+        sum_th_dem = sum(list_th_dem)
+        array_th_dem_cov = np.array(list_th_dem) / sum_th_dem
 
         #  Extract data for stacked bar no. 3
         list_el_energy = []
@@ -1224,11 +1232,30 @@ class CityEBCalculator(object):
         list_el_energy.append(grid_import_hp)
         list_el_energy.append(grid_import_eh)
 
-        #  Extract data for stacked bar no. 4 (negative (feed-in) values)
-        list_fed_in = []
+        sum_el_en = sum(list_el_energy)
 
-        list_fed_in.append(-chp_exp)
-        list_fed_in.append(-pv_exp)
+        #  Extract data for stacked bar no. 4 (negative (feed-in) values)
+        list_fed_in_chp = []
+
+        list_fed_in_chp.append(0)
+        list_fed_in_chp.append(0)
+        list_fed_in_chp.append(-chp_exp)
+        list_fed_in_chp.append(0)
+
+        list_fed_in_pv = []
+        list_fed_in_pv.append(0)
+        list_fed_in_pv.append(0)
+        list_fed_in_pv.append(-pv_exp)
+        list_fed_in_pv.append(0)
+
+        sum_exp = abs(sum(list_fed_in_chp)) + abs(sum(list_fed_in_pv))
+
+        array_el_en_cov = np.array(list_el_energy) / (sum_el_en + sum_exp)
+
+        array_el_exp_chp_cov = np.array(list_fed_in_chp) / (
+                    sum_el_en + sum_exp)
+
+        array_el_exp_pv_cov = np.array(list_fed_in_pv) / (sum_el_en + sum_exp)
 
         #  Extract data for stacked bar no. 5 (electric demands)
         list_el_dem = []
@@ -1245,64 +1272,54 @@ class CityEBCalculator(object):
         list_el_dem.append(eh_dem)
         list_el_dem.append(pump_dem)
 
-        #  stacked plotting lists
-        list_bar_el_1 = []
-        list_bar_el_1.append(boi_th_en)
-        list_bar_el_1.append(th_dem_city_sh)
-        # list_bar_el_1.append(chp_self)
-        # list_bar_el_1.append(el_dem)
+        sum_el_dem = sum(list_el_dem)
+        array_el_dem = np.array(list_el_dem) / sum_el_dem
 
-        list_bar_el_2 = []
-        list_bar_el_2.append(chp_th_en)
-        list_bar_el_2.append(th_dem_city_dhw)
-        # list_bar_el_2.append(pv_self)
-        # list_bar_el_2.append(hp_aw_dem)
+        #  Stack arrays together
+        array_res = np.vstack((array_th_en_cov, array_th_dem_cov))
+        array_res = np.vstack((array_res, array_el_en_cov))
+        array_res = np.vstack((array_res, array_el_dem))
 
-        list_bar_el_3 = []
-        list_bar_el_3.append(hp_aw_th_en)
-        list_bar_el_3.append(th_losses)
-        # list_bar_el_3.append(grid_import_dem)
-        # list_bar_el_3.append(hp_ww_dem)
+        # array_th_en_cov
+        # array_th_dem_cov
+        # array_el_en_cov
+        # array_el_exp(x)
+        # array_el_dem
 
-        list_bar_el_4 = []
-        list_bar_el_4.append(hp_ww_th_en)
-        list_bar_el_4.append(0.0)
-        # list_bar_el_4.append(grid_import_hp)
-        # list_bar_el_4.append(eh_dem)
+        array_res = np.transpose(array_res)
 
-        list_bar_el_5 = []
-        list_bar_el_5.append(eh_th_en)
-        list_bar_el_5.append(0.0)
-        # list_bar_el_5.append(grid_import_eh)
-        # list_bar_el_5.append(pump_dem)
-
-        array_1 = np.array(list_bar_el_1)
-        array_2 = np.array(list_bar_el_2)
-        array_3 = np.array(list_bar_el_3)
-        array_4 = np.array(list_bar_el_4)
-        array_5 = np.array(list_bar_el_5)
+        #  Stack negative values to rs
+        array_res = np.vstack((array_res, array_el_exp_chp_cov))
+        array_res = np.vstack((array_res, array_el_exp_pv_cov))
 
         #  Start plotting
         #  ###############################################################
         list_color_ebc = ['#E53027', '#1058B0', '#F47328', '#5F379B',
-                                  '#9B231E', '#BE4198', '#08746']
+                          '#9B231E', '#BE4198', '#08746']
 
         fig = plt.figure(figsize=(8, 6))
 
-        N = 2
+        N = 4
 
         ind = np.arange(N)
 
-        p1 = plt.bar(ind, array_1)
-        p2 = plt.bar(ind, array_2, bottom=array_1)
-        p3 = plt.bar(ind, array_3, bottom=array_1+array_2)
-        p4 = plt.bar(ind, array_4, bottom=array_1+array_2+array_3)
-        p5 = plt.bar(ind, array_5, bottom=array_1+array_2+array_3+array_4)
+        p1 = plt.bar(ind, array_res[0])
+        p2 = plt.bar(ind, array_res[1], bottom=array_res[0])
+        p3 = plt.bar(ind, array_res[2], bottom=array_res[0] + array_res[1])
+        p4 = plt.bar(ind, array_res[3],
+                     bottom=array_res[0] + array_res[1] + array_res[2])
+        p5 = plt.bar(ind, array_res[4],
+                     bottom=array_res[0] + array_res[1] + array_res[2] +
+                            array_res[3])
 
-        plt.xticks(ind, ('Thermal energy',
-                         'Thermal demands'#,
-                         # 'Electric energy',
-                         # 'Electric demands'
+        #  Negative plots
+        p6 = plt.bar(ind, array_res[5])
+        p7 = plt.bar(ind, array_res[6], bottom=array_res[5])
+
+        plt.xticks(ind, ('Thermal generation',
+                         'Thermal demands',
+                         'Electric energy',
+                         'Electric demands'
                          ))
 
         plt.show()
