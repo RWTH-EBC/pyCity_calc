@@ -1429,7 +1429,6 @@ class CityEBCalculator(object):
 
         plt.ylabel('Share of energy')
         # plt.tight_layout()
-        plt.show()
 
         if path_save_folder is None:
             this_path = os.path.dirname(os.path.abspath(__file__))
@@ -1466,6 +1465,7 @@ class CityEBCalculator(object):
                 tikz_save(path_tikz, figureheight='\\figureheight',
                           figurewidth='\\figurewidth')
 
+        plt.show()
         plt.close()
 
 
