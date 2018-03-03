@@ -1297,14 +1297,14 @@ class CityEBCalculator(object):
 
         #  Start plotting
         #  ###############################################################
-        list_col_1 = ['#E53027', '#BE4198', '#E53027', '#BE4198']
-        list_col_2 = ['#1058B0', '#008746', '#1058B0', '#008746']
-        list_col_3 = ['#F47328', '#EC635C', '#F47328', '#EC635C']
-        list_col_4 = ['#5F379B', '#4B81C4', '#5F379B', '#4B81C4']
-        list_col_5 = ['#9B231E', '#F49961', '#9B231E', '#F49961']
+        list_col_1 = ['#e6194b', '#911eb4', '#008080', '#aaffc3']
+        list_col_2 = ['#3cb44b', '#46f0f0', '#e6beff', '#808000']
+        list_col_3 = ['#ffe119', '#f032e6', '#aa6e28', '#ffd8b1']
+        list_col_4 = ['#0082c8', '#d2f53c', '#fffac8', '#000080']
+        list_col_5 = ['#f58231', '#fabebe', '#800000', '#000000']
 
-        list_col_6 = ['#A4A4A4', '#A4A4A4', '#A4A4A4', '#A4A4A4']
-        list_col_7 = ['#B45955', '#B45955', '#B45955', '#B45955']
+        list_col_6 = ['#C0C0C0', '#C0C0C0', '#C0C0C0', '#C0C0C0']
+        list_col_7 = ['#646464', '#646464', '#646464', '#646464']
 
         fig = plt.figure(figsize=(8, 6))
 
@@ -1313,8 +1313,6 @@ class CityEBCalculator(object):
         ind = np.arange(N)
 
         width = 0.6
-
-        colors = ['#624ea7', 'g', 'yellow', 'k', 'maroon']
 
         p1 = plt.bar(ind, array_res[0], width=width, color=list_col_1)
         p2 = plt.bar(ind, array_res[1], bottom=array_res[0], width=width,
@@ -1343,69 +1341,90 @@ class CityEBCalculator(object):
                          'Electric sinks'
                          ))
 
-        #  Add hatches
-        patterns = ('//', '//', 'x', 'x')
-        for bar, pattern in zip(p1, patterns):
-            bar.set_hatch(pattern)
-        for bar, pattern in zip(p2, patterns):
-            bar.set_hatch(pattern)
-        for bar, pattern in zip(p3, patterns):
-            bar.set_hatch(pattern)
-        for bar, pattern in zip(p4, patterns):
-            bar.set_hatch(pattern)
-        for bar, pattern in zip(p5, patterns):
-            bar.set_hatch(pattern)
-        for bar, pattern in zip(p6, patterns):
-            bar.set_hatch(patterns)
-        for bar, pattern in zip(p7, patterns):
-            bar.set_hatch(patterns)
-
-        dict_th_en = {'boi': 0, 'chp': 0, 'hp_aw': 0, 'hp_ww': 0, 'eh': 0}
+        # #  Add hatches
+        # patterns = ('', '', '//', '//')
+        # patterns2 = ('//')
+        # for bar, pattern in zip(p1, patterns):
+        #     bar.set_hatch(pattern)
+        # for bar, pattern in zip(p2, patterns):
+        #     bar.set_hatch(pattern)
+        # for bar, pattern in zip(p3, patterns):
+        #     bar.set_hatch(pattern)
+        # for bar, pattern in zip(p4, patterns):
+        #     bar.set_hatch(pattern)
+        # for bar, pattern in zip(p5, patterns):
+        #     bar.set_hatch(pattern)
+        # for bar, pattern in zip(p6, patterns):
+        #     bar.set_hatch(patterns2)
+        # for bar, pattern in zip(p7, patterns):
+        #     bar.set_hatch(patterns2)
 
         #  Add legend
-        patch_1_a = mpatches.Patch(facecolor='#E53027', hatch=r'//',
+        patch_1_a = mpatches.Patch(facecolor='#e6194b',
+                                   # hatch=r'//',
                                    label='BOI')
-        patch_1_b = mpatches.Patch(facecolor='#1058B0', hatch=r'//',
+        patch_1_b = mpatches.Patch(facecolor='#3cb44b',
+                                   # hatch=r'//',
                                    label='CHP')
-        patch_1_c = mpatches.Patch(facecolor='#F47328', hatch=r'//',
+        patch_1_c = mpatches.Patch(facecolor='#ffe119',
+                                   # hatch=r'//',
                                    label='HP (aw)')
-        patch_1_d = mpatches.Patch(facecolor='#5F379B', hatch=r'//',
+        patch_1_d = mpatches.Patch(facecolor='#0082c8',
+                                   # hatch=r'//',
                                    label='HP (ww)')
-        patch_1_e = mpatches.Patch(facecolor='#9B231E', hatch=r'//',
+        patch_1_e = mpatches.Patch(facecolor='#f58231',
+                                   # hatch=r'//',
                                    label='EH')
 
-        patch_2_a = mpatches.Patch(facecolor='#BE4198', hatch=r'//',
+        patch_2_a = mpatches.Patch(facecolor='#911eb4',
+                                   # hatch=r'//',
                                    label='Space heat')
-        patch_2_b = mpatches.Patch(facecolor='#008746', hatch=r'//',
+        patch_2_b = mpatches.Patch(facecolor='#46f0f0',
+                                   # hatch=r'//',
                                    label='Hot water')
-        patch_2_c = mpatches.Patch(facecolor='#EC635C', hatch=r'//',
+        patch_2_c = mpatches.Patch(facecolor='#f032e6',
+                                   # hatch=r'//',
+                                   #EC635C
                                    label='Losses')
 
-        patch_3_a = mpatches.Patch(facecolor='#E53027', hatch=r'x',
+        patch_3_a = mpatches.Patch(facecolor='#d2f53c',
+                                   # hatch=r'//',
                                    label='CHP (self)')
-        patch_3_b = mpatches.Patch(facecolor='#1058B0', hatch=r'x',
+        patch_3_b = mpatches.Patch(facecolor='#fabebe',
+                                   # hatch=r'//',
                                    label='PV (self)')
-        patch_3_c = mpatches.Patch(facecolor='#F47328', hatch=r'x',
+        patch_3_c = mpatches.Patch(facecolor='#008080',
+                                   # hatch=r'//',
                                    label='Grid (House dem)')
-        patch_3_d = mpatches.Patch(facecolor='#5F379B', hatch=r'x',
+        patch_3_d = mpatches.Patch(facecolor='#e6beff',
+                                   # hatch=r'//',
                                    label='Grid (HP)')
-        patch_3_e = mpatches.Patch(facecolor='#9B231E', hatch=r'x',
+        patch_3_e = mpatches.Patch(facecolor='#aa6e28',
+                                   # hatch=r'//',
                                    label='Grid (EH)')
 
-        patch_4_a = mpatches.Patch(facecolor='#BE4198', hatch=r'x',
+        patch_4_a = mpatches.Patch(facecolor='#fffac8',
+                                   # hatch=r'//',
                                    label='House (dem)')
-        patch_4_b = mpatches.Patch(facecolor='#008746', hatch=r'x',
+        patch_4_b = mpatches.Patch(facecolor='#800000',
+                                   # hatch=r'//',
                                    label='HP (aw) (dem)')
-        patch_4_c = mpatches.Patch(facecolor='#EC635C', hatch=r'x',
+        patch_4_c = mpatches.Patch(facecolor='#aaffc3',
+                                   # hatch=r'//',
                                    label='HP (ww) (dem)')
-        patch_4_d = mpatches.Patch(facecolor='#4B81C4', hatch=r'x',
+        patch_4_d = mpatches.Patch(facecolor='#808000',
+                                   # hatch=r'//',
                                    label='EH (dem)')
-        patch_4_e = mpatches.Patch(facecolor='#F49961', hatch=r'x',
+        patch_4_e = mpatches.Patch(facecolor='#ffd8b1',
+                                   # hatch=r'//',
+                                   #F49961
                                    label='Pumps (dem)')
 
-        patch_5_a = mpatches.Patch(facecolor='#A4A4A4', hatch=r'xx',
+        patch_5_a = mpatches.Patch(facecolor='#C0C0C0',
+                                   # hatch=r'//',
                                    label='CHP (exp)')
-        patch_5_b = mpatches.Patch(facecolor='#B45955', hatch=r'xx',
+        patch_5_b = mpatches.Patch(facecolor='#646464',
+                                   # hatch=r'//',
                                    label='PV (exp)')
 
         ax = fig.gca()
