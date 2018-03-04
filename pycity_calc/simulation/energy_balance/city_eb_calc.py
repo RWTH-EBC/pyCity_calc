@@ -1387,38 +1387,38 @@ class CityEBCalculator(object):
                                    #EC635C
                                    label='Losses')
 
-        patch_3_a = mpatches.Patch(facecolor='#d2f53c',
+        patch_3_a = mpatches.Patch(facecolor='#008080',
                                    # hatch=r'//',
                                    label='CHP (self)')
-        patch_3_b = mpatches.Patch(facecolor='#fabebe',
+        patch_3_b = mpatches.Patch(facecolor='#e6beff',
                                    # hatch=r'//',
                                    label='PV (self)')
-        patch_3_c = mpatches.Patch(facecolor='#008080',
+        patch_3_c = mpatches.Patch(facecolor='#aa6e28',
                                    # hatch=r'//',
-                                   label='Grid (House dem)')
-        patch_3_d = mpatches.Patch(facecolor='#e6beff',
+                                   label='Grid imp (Building)')
+        patch_3_d = mpatches.Patch(facecolor='#fffac8',
                                    # hatch=r'//',
-                                   label='Grid (HP)')
-        patch_3_e = mpatches.Patch(facecolor='#aa6e28',
+                                   label='Grid imp (HP)')
+        patch_3_e = mpatches.Patch(facecolor='#800000',
                                    # hatch=r'//',
-                                   label='Grid (EH)')
+                                   label='Grid imp (EH)')
 
-        patch_4_a = mpatches.Patch(facecolor='#fffac8',
+        patch_4_a = mpatches.Patch(facecolor='#aaffc3',
                                    # hatch=r'//',
-                                   label='House (dem)')
-        patch_4_b = mpatches.Patch(facecolor='#800000',
+                                   label='Building')
+        patch_4_b = mpatches.Patch(facecolor='#808000',
                                    # hatch=r'//',
-                                   label='HP (aw) (dem)')
-        patch_4_c = mpatches.Patch(facecolor='#aaffc3',
+                                   label='HP (aw)')
+        patch_4_c = mpatches.Patch(facecolor='#ffd8b1',
                                    # hatch=r'//',
-                                   label='HP (ww) (dem)')
-        patch_4_d = mpatches.Patch(facecolor='#808000',
+                                   label='HP (ww)')
+        patch_4_d = mpatches.Patch(facecolor='#000080',
                                    # hatch=r'//',
-                                   label='EH (dem)')
-        patch_4_e = mpatches.Patch(facecolor='#ffd8b1',
+                                   label='EH')
+        patch_4_e = mpatches.Patch(facecolor='#000000',
                                    # hatch=r'//',
                                    #F49961
-                                   label='Pumps (dem)')
+                                   label='Pumps (LHN)')
 
         patch_5_a = mpatches.Patch(facecolor='#C0C0C0',
                                    # hatch=r'//',
