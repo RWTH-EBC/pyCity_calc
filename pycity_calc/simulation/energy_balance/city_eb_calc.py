@@ -1395,13 +1395,13 @@ class CityEBCalculator(object):
                                    label='PV (self)')
         patch_3_c = mpatches.Patch(facecolor='#aa6e28',
                                    # hatch=r'//',
-                                   label='Grid imp (Building)')
+                                   label='Building (Grid imp)')
         patch_3_d = mpatches.Patch(facecolor='#fffac8',
                                    # hatch=r'//',
-                                   label='Grid imp (HP)')
+                                   label='HP (Grid imp)')
         patch_3_e = mpatches.Patch(facecolor='#800000',
                                    # hatch=r'//',
-                                   label='Grid imp (EH)')
+                                   label='EH (Grid imp')
 
         patch_4_a = mpatches.Patch(facecolor='#aaffc3',
                                    # hatch=r'//',
