@@ -663,7 +663,7 @@ def calc_pow_flex_forced(building, array_t_forced, array_p_el_ref,
     if building.bes.hasChp:
         p_ehg_nom += building.bes.chp.pNominal
     if building.bes.hasHeatpump:
-        p_ehg_nom += building.bes.heatpump.pNominal
+        p_ehg_nom += max(building.bes.heatpump.array_el_power_in)
 
     if building.bes.hasElectricalHeater and use_eh:
         p_ehg_nom += building.bes.electricalHeater.qNominal
