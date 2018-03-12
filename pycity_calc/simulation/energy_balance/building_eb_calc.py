@@ -1421,29 +1421,22 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
 
                 temp_prior = tes.t_current
 
-                if sh_pow_remain > 0:
-                    #  Use storage to cover remaining demands
-                    q_tes_out = sh_pow_remain
+                #  Check if q_tes_out_max is larger than sh_pow_remain
+                #  Then, tes can be used to fully cover sh_pow_remain
+                if sh_pow_remain <= q_tes_out_max:
+                    q_tes_out = sh_pow_remain + 0.0
+                    sh_pow_remain = 0
                 else:
-                    q_tes_out = 0
+                    #  Cover part of remaining sh power with tes (fully
+                    #  discharge storage)
+                    q_tes_out = q_tes_out_max + 0.0
+                    sh_pow_remain -= q_tes_out
 
-                if q_tes_out_max < q_tes_out:
-                    msg = 'TES stored energy cannot cover remaining ' \
-                          'demand in ' \
-                          'building' + str(id) + ' at timestep ' + str(i) + '.'
-                    raise EnergyBalanceException(msg)
+                assert sh_pow_remain >= 0
+                assert q_tes_out >= 0
+                assert q_tes_in >= 0
 
-                # Check if q_in is not exceeding maximum possible
-                #  discharging power
-                q_in_limit = tes.calc_storage_q_in_max(q_out=q_tes_out)
-                if q_tes_in > q_in_limit:
-                    msg = 'q_tes_in (' \
-                          + str(q_tes_in) + ' W) exceeds tes input' \
-                                            'power limit of ' \
-                          + str(q_in_limit) + ' W.'
-                    raise EnergyBalanceException(msg)
-
-                # Load storage with q_tes_in
+                # Load storage with q_tes_in / discharge with q_tes_out
                 tes.calc_storage_temp_for_next_timestep(q_in=q_tes_in,
                                                         q_out=q_tes_out,
                                                         t_prior=temp_prior,
