@@ -14,6 +14,7 @@ import copy
 import numpy as np
 import warnings
 
+import pycity_calc.energysystems.boiler as boisys
 import pycity_calc.cities.scripts.energy_sys_generator as esysgen
 import pycity_calc.simulation.energy_balance.building_eb_calc as buildeb
 
@@ -124,9 +125,10 @@ def calc_t_forced_build(building, id=None):
     return array_t_forced
 
 
-def calc_t_delayed_build(building, id=None):
+def calc_t_delayed_build(building, id=None, use_boi=False, plot_soc=False):
     """
-    Calculate t delayed array for building
+    Calculate t delayed array for building. Precalculates SOC based on
+    EHG thermal output power and thermal power of building (demand)
 
     Parameters
     ----------
@@ -134,6 +136,14 @@ def calc_t_delayed_build(building, id=None):
         Building object of pyCity_calc
     id : int, optional
         Building id (default: None)
+    use_boi : bool, optional
+        Defines, if boiler can be used to charge thermal storage in prior
+        timesteps (default: False). This can be of interest, if the EHG
+        nominal thermal power is below the thermal power of the building
+        (e.g. for CHPs) and the TES is not fully charged (reducing the delayed
+        time)
+    plot_soc : bool, optional
+        Plots SOC of storage over year for pre-charging (Default: False)
 
     Returns
     -------
@@ -171,6 +181,8 @@ def calc_t_delayed_build(building, id=None):
         q_ehg_nom += building.bes.heatpump.qNominal
     if building.bes.hasElectricalHeater:
         q_ehg_nom += building.bes.electricalHeater.qNominal
+    if building.bes.hasBoiler:
+        q_boi_nom = building.bes.boiler.qNominal
 
     #  ###########################################################
     if q_ehg_nom == 0:
@@ -197,18 +209,24 @@ def calc_t_delayed_build(building, id=None):
     #  Assuming empty storage at beginning
     q_sto_cur = 0
 
+    #  If use_boi is True, boiler can also be used for pre-charging of TES
+    if use_boi:
+        q_ref_nom = q_ehg_nom + q_boi_nom
+    else:
+        q_ref_nom = q_ehg_nom + 0.0
+
     for i in range(len(th_power) - 1):
 
-        if q_ehg_nom > th_power[i]:
+        if q_ref_nom > th_power[i]:
             #  Charging possible
-            delta_q = (q_ehg_nom - th_power[i]) * timestep / (3600 * 1000)
+            delta_q = (q_ref_nom - th_power[i]) * timestep / (3600 * 1000)
             if q_sto_cur + delta_q < q_sto_max:
                 q_sto_cur += delta_q
             else:
                 q_sto_cur = q_sto_max + 0.0
         else:
             #  Discharging event
-            delta_q = (-q_ehg_nom + th_power[i]) * timestep / (3600 * 1000)
+            delta_q = (-q_ref_nom + th_power[i]) * timestep / (3600 * 1000)
             if q_sto_cur - delta_q > 0:
                 q_sto_cur -= delta_q
             else:
@@ -218,9 +236,17 @@ def calc_t_delayed_build(building, id=None):
         #  availability is given at next timestep
         array_tes_en[i + 1] = q_sto_cur
 
-    #  Calculate soc value for eacht timestep
+    #  Calculate soc value for each timestep
     for i in range(len(th_power)):
         array_tes_soc[i] = array_tes_en[i] / q_sto_max
+
+    if plot_soc:
+        #  Plot tes soc array
+        plt.plot(array_tes_soc)
+        plt.xlabel('Time in hours')
+        plt.ylabel('TES SOC')
+        plt.show()
+        plt.close()
 
     #  Loop over each timestep
     #  ###########################################################
@@ -261,16 +287,24 @@ def calc_t_delayed_build(building, id=None):
     return array_t_delayed
 
 
-def calc_power_ref_curve(building):
+def calc_pow_ref(building, tes_cap=0.001, boiler_resc=1, eta_boi=0.95):
     """
     Calculate reference electric heat generator load curve by solving thermal
     and electric energy balance with reduced tes size.
     (+ used energy (HP/EH) / - produced electric energy (CHP))
+    Deactivate PV and el. battery, if existent.
 
     Parameters
     ----------
     building : object
         Building object
+    tes_cap : float, optional
+        Storage capacity (mass in kg) of TES (default: 0.001). Default value
+        is low to minimize tes flexibility influence on reference curve.
+    boiler_resc : float, optional
+        Boiler nominal thermal power rescaling factor (default: 1)
+    eta_boi : float, optional
+        Initial boiler efficiency (default: 0.95)
 
     Returns
     -------
@@ -288,7 +322,7 @@ def calc_power_ref_curve(building):
 
     #  Reduce TES size (TES still required to prevent assertion error in
     #  energy balance, when CHP is used!)
-    build_copy.bes.tes.capacity = 0.001
+    build_copy.bes.tes.capacity = tes_cap
 
     #  Remove PV, if existent
     if build_copy.bes.hasPv:
@@ -299,6 +333,16 @@ def calc_power_ref_curve(building):
     if build_copy.bes.hasBattery:
         build_copy.bes.battery = None
         build_copy.bes.hasBattery = False
+
+    if build_copy.bes.hasBoiler:
+        build_copy.bes.boiler.qNominal *= boiler_resc
+    else:
+        #  Generate boiler object (also for HP/EH combi to prevent assertion
+        #  error, if TES capacity is reduced)
+        boi = boisys.BoilerExtended(environment=build_copy.environment,
+                                    q_nominal=10 * boiler_resc,
+                                    eta=eta_boi)
+        build_copy.bes.addDevice(boi)
 
     #  Calculate thermal energy balance with reduced TES
     buildeb.calc_build_therm_eb(build=build_copy)
@@ -322,6 +366,59 @@ def calc_power_ref_curve(building):
             copy(build_copy.bes.heatpump.array_el_power_in)
     else:
         array_el_power_hp_in = None
+
+    return (array_p_el_ref, array_el_power_hp_in)
+
+
+def calc_power_ref_curve(building, boiler_resc=1):
+    """
+    Calculate reference electric heat generator load curve by solving thermal
+    and electric energy balance with reduced tes size.
+    (+ used energy (HP/EH) / - produced electric energy (CHP))
+    Deactivate PV and el. battery, if existent.
+
+    Important: calc_power_ref_curve uses try/except block to prevent failure
+    (in comparison to calc_pow_ref())
+
+    Parameters
+    ----------
+    building : object
+        Building object
+    boiler_resc : float, optional
+        Boiler nominal thermal power rescaling factor (default: 1)
+
+    Returns
+    -------
+    res_tuple : tuple
+        Tuple holding (array_p_el_ref, array_el_power_hp_in)
+        array_p_el_ref : np.array
+            Array holding electric power values in Watt (used/produced by
+            electric heat generator (EHG)) (+ used energy (HP/EH) / - produced
+            electric energy (CHP))
+        array_el_power_hp_in : np.array
+            Array holding input electrical power for heat pump in Watt
+    """
+
+    do_ref_curve = True
+
+    boiler_resc_use = boiler_resc + 0.0
+
+    boiler_resc_use = 100
+
+    while do_ref_curve:
+        # try:
+        #     (array_p_el_ref, array_el_power_hp_in) = \
+        #         calc_pow_ref(building, boiler_resc=boiler_resc_use)
+        #     do_ref_curve = False
+        # except:
+        #     msg = 'El. ref. curve calc. failed. Thus, going to increase ' \
+        #           'boiler thermal power (and add boiler, if not existent)' \
+        #           '. New boiler size: ' + str(boiler_resc + 10) + ' kW.'
+        #     warnings.warn(msg)
+        #     boiler_resc_use += 10
+        (array_p_el_ref, array_el_power_hp_in) = \
+            calc_pow_ref(building, boiler_resc=boiler_resc_use)
+        do_ref_curve = False
 
     return (array_p_el_ref, array_el_power_hp_in)
 
@@ -551,7 +648,7 @@ if __name__ == '__main__':
     #  Necessary to perform flexibility calculation
     add_esys = True
 
-    build_id = 1001
+    build_id = 1004
 
     city_name = 'aachen_kronenberg_6.pkl'
     path_here = os.path.dirname(os.path.abspath(__file__))
@@ -618,7 +715,6 @@ if __name__ == '__main__':
     ###################################################################
     (array_p_el_ref, array_el_power_hp_in) = \
         calc_power_ref_curve(building=curr_build)
-    #  TODO: This way not working for heat pump usage (undersupply)
 
     plt.plot(array_p_el_ref / 1000)
     plt.xlabel('Time in hours')

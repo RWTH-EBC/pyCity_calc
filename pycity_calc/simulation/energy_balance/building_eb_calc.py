@@ -1430,7 +1430,9 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
                 if q_tes_out_max < q_tes_out:
                     msg = 'TES stored energy cannot cover remaining ' \
                           'demand in ' \
-                          'building' + str(id) + ' at timestep ' + str(i) + '.'
+                          'building' + str(id) + ' at timestep ' \
+                          + str(i) + '. Missing thermal power: ' \
+                          + str(q_tes_out - q_tes_out_max)
                     raise EnergyBalanceException(msg)
 
                 # Check if q_in is not exceeding maximum possible
