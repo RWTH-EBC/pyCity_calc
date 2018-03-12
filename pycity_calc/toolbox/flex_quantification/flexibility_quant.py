@@ -39,17 +39,18 @@ def calc_t_forced_build(building, id=None, use_eh=False):
         Array holding t forced for each timestep. t_forced is given in seconds
     """
 
-    #  Check if building has energy system
-    #  ###########################################################
-    if building.hasBes is False:
-        msg = 'Building ' + str(id) + ' has no building energy system! ' \
-                                      'Thus, cannot calculate t_forece array.'
-        raise AssertionError(msg)
-
     timestep = building.environment.timer.timeDiscretization
 
     #  Create initial array
     array_t_forced = np.zeros(int(365 * 24 * 3600 / timestep))
+
+    #  Check if building has energy system
+    #  ###########################################################
+    if building.hasBes is False:
+        msg = 'Building ' + str(id) + ' has no building energy system! ' \
+                                      'Thus, cannot calculate t_forced array.'
+        warnings.warn(msg)
+        return array_t_forced
 
     #  ###########################################################
     if building.bes.hasTes is False:
@@ -331,6 +332,13 @@ def calc_pow_ref(building, tes_cap=0.001, mod_boi=True,
         array_el_power_hp_in : np.array
             Array holding input electrical power for heat pump in Watt
     """
+
+    if building.hasBes is False:
+        msg = 'Buiding has no BES. Thus, cannot calculate reference EHG ' \
+              'power curves. Going to return (None, None).'
+        warnings.warn(msg)
+        return (None, None)
+
     #  Copy building object
     build_copy = copy.deepcopy(building)
 
@@ -375,12 +383,23 @@ def calc_pow_ref(building, tes_cap=0.001, mod_boi=True,
 
     array_p_el_ref = np.zeros(int(365 * 24 * 3600 / timestep))
 
-    #  Minus CHP power production
-    array_p_el_ref -= dict_el_eb_res['chp_feed']
-    #  Plus HP grid usage
-    array_p_el_ref += dict_el_eb_res['grid_import_hp']
-    #  Plus EH grid usage
-    array_p_el_ref += dict_el_eb_res['grid_import_eh']
+    #  Only use grid import/export values (also account for internal el.
+    #  demand of building
+    # #  Minus CHP power production
+    # array_p_el_ref -= dict_el_eb_res['chp_feed']
+    # #  Plus HP grid usage
+    # array_p_el_ref += dict_el_eb_res['grid_import_hp']
+    # #  Plus EH grid usage
+    # array_p_el_ref += dict_el_eb_res['grid_import_eh']
+
+    if build_copy.bes.hasChp:
+        array_p_el_ref -= build_copy.bes.chp.totalPOutput
+    else:
+        #  Only account for EH, if CHP is not present
+        if build_copy.bes.hasHeatpump:
+            array_p_el_ref += build_copy.bes.heatpump.array_el_power_in
+        if build_copy.bes.hasElectricalHeater:
+            array_p_el_ref += build_copy.bes.electricalHeater.totalPConsumption
 
     if build_copy.bes.hasHeatpump:
         array_el_power_hp_in = copy. \
@@ -429,6 +448,12 @@ def calc_power_ref_curve(building, mod_boi=True, boi_size=0, use_eh=False):
             Array holding input electrical power for heat pump in Watt
     """
 
+    if building.hasBes is False:
+        msg = 'Buiding has no BES. Thus, cannot calculate reference EHG ' \
+              'power curves. Going to return (None, None).'
+        warnings.warn(msg)
+        return (None, None)
+
     do_ref_curve = True
 
     boi_size_use = boi_size + 0.0
@@ -444,7 +469,7 @@ def calc_power_ref_curve(building, mod_boi=True, boi_size=0, use_eh=False):
         except:
             msg = 'El. ref. curve calc. failed. Thus, going to increase ' \
                   'boiler thermal power (and add boiler, if not existent)' \
-                  '. New boiler size: ' + str(boi_size_use/1000) + ' kW.'
+                  '. New boiler size: ' + str(boi_size_use / 1000) + ' kW.'
             warnings.warn(msg)
             boi_size_use += 50000
             counter += 1
@@ -454,88 +479,6 @@ def calc_power_ref_curve(building, mod_boi=True, boi_size=0, use_eh=False):
                 raise AssertionError(msg)
 
     return (array_p_el_ref, array_el_power_hp_in)
-
-
-# def calc_power_flex(building, type, array_p_el_ref, array_el_power_hp_in=None):
-#     """
-#     Calculate P_flex (with t_forced or t_delayed)
-#
-#     Parameters
-#     ----------
-#     building : object
-#         Building object of pyCity_calc
-#     type : str
-#         Type of flexibility ('forced' or 'delayed')
-#     array_p_el_ref : np.array
-#         Array holding electric power values in Watt (used/produced by
-#         electric heat generator (EHG)) (+ used energy (HP/EH) / - produced
-#         electric energy (CHP))
-#     array_el_power_hp_in : np.array
-#         Array holding input electrical power for heat pump in Watt
-#         (default: None). If None, no heat pump is in use.
-#
-#     Returns
-#     -------
-#     array_p_flex : array
-#         Array with electrical power flexibility
-#     """
-#     assert type in ['forced', 'delayed'], 'Unknown flexibility type!'
-#
-#     array_p_flex = np.zeros()
-#
-#     #  Get maximal el output power of electric heat generators
-#     #  (CHP, EH, HP)
-#     p_el_ehg_nom = 0  # in Watt
-#     if building.bes.hasChp:
-#         p_el_ehg_nom -= building.bes.chp.pNominal
-#     # if building.bes.hasHeatpump:
-#     #     p_el_ehg_nom += max(array_el_power_hp_in)
-#     if building.bes.hasElectricalHeater:
-#         p_el_ehg_nom += building.bes.electricalHeater.qNominal
-#
-#     #  ###########################################################
-#     if p_el_ehg_nom == 0:
-#         msg = 'Building ' \
-#               + str(id) + ' has no thermo-electric energy systems. ' \
-#                           'Thus, therm. flexibility is zero.'
-#         warnings.warn(msg)
-#         #  Flexibility is zero, return array with zeros
-#         return array_t_delayed
-
-# def calc_power_flex(building, type, array_p_el_ref,
-#                     array_t, method='cycle'):
-#     """
-#     Calculate electric power flexibility.
-#
-#     Parameters
-#     ----------
-#     building : object
-#         Building object of pyCity_calc
-#     type : str
-#         Type of flexibility ('forced' or 'delayed')
-#     array_p_el_ref : np.array
-#         Array holding electric power values in Watt (used/produced by
-#         electric heat generator (EHG)) (+ used energy (HP/EH) / - produced
-#         electric energy (CHP))
-#     array_t : np.array
-#         Array holding t_forced or t_delayed values
-#     method : str, optional
-#         Defininig calculation method (default: 'cycle')
-#         Options:
-#         - 'average': Average power curve values
-#         - 'cycle': Average power curve values, but accounting for whole
-#         charging/discharging cycle
-#
-#     Returns
-#     -------
-#     array_p_flex : float
-#         Electric power flexibility value
-#     """
-#
-#     assert type in ['forced', 'delayed'], 'Unknown flexibility type!'
-#     assert method in ['cycle', 'average'], 'Unknown method!'
-#
-#     #
 
 
 def calc_dimless_th_power_flex(building, id=None, use_eh=False):
@@ -681,6 +624,72 @@ def calc_dimless_tes_th_flex(building, id=None, use_eh=False):
     return beta_th
 
 
+def calc_pow_flex_forced(building, array_t_forced, array_p_el_ref,
+                         use_eh=False):
+    """
+    Calculate forced power flexibility for every timestep in given
+    forced period
+
+    Parameters
+    ----------
+    building : object
+        Building object of pyCity_calc
+    array_t_force : np.array
+        Array holding t forced for each timestep. t_forced is given in seconds
+    array_p_el_ref : np.array
+        Array holding electric power values in Watt (used/produced by
+        electric heat generator (EHG)) (+ used energy (HP/EH) / - produced
+        electric energy (CHP))
+    use_eh : bool, optional
+        Defines, if electric heater is also used to define t_forced_build
+        (default: False).
+
+    Returns
+    -------
+    list_lists_pow_forced : list (of lists)
+        List of lists, holding power flexibility values for forced flexibility.
+        Each lists represents a timespan, beginning at timestep t, with
+        corresponding el. power values for forced flexibility in Watt.
+        HP/EH flexiblility (+); CHP flexibility (-)
+    """
+
+    timestep = building.environment.timer.timeDiscretization
+
+    list_lists_pow_forced = []
+
+    #  Get maximal thermal output power of electric heat generators
+    #  (CHP, EH, HP)
+    p_ehg_nom = 0  # in Watt
+    if building.bes.hasChp:
+        p_ehg_nom += building.bes.chp.pNominal
+    if building.bes.hasHeatpump:
+        p_ehg_nom += building.bes.heatpump.pNominal
+
+    if building.bes.hasElectricalHeater and use_eh:
+        p_ehg_nom += building.bes.electricalHeater.qNominal
+
+    print('p_ehg_nom: ', p_ehg_nom)
+
+    #  Loop over t_forced array
+    for i in range(len(array_t_forced)):
+
+        list_pow_forced = []
+
+        t_forced = array_t_forced[i]  # in seconds
+        t_forced_steps = int(t_forced / timestep)
+
+        #  Loop over number of timesteps
+        for t in range(t_forced_steps):
+            #  Prevent out of index error
+            if i + t <= len(array_t_forced) - 1:
+                pow_flex = p_ehg_nom - abs(array_p_el_ref[i + t])
+                list_pow_forced.append(pow_flex)
+
+        list_lists_pow_forced.append(list_pow_forced)
+
+    return list_lists_pow_forced
+
+
 if __name__ == '__main__':
 
     import matplotlib.pyplot as plt
@@ -689,12 +698,12 @@ if __name__ == '__main__':
     #  Necessary to perform flexibility calculation
     add_esys = True
 
-    build_id = 1004
+    build_id = 1001
 
-    mod_boi = True  #  Add boiler, if necessary to solve energy balance to
+    mod_boi = True  # Add boiler, if necessary to solve energy balance to
     #  calculate reference ehg electric load
 
-    use_eh = False  # If True, also accounts for electric heater power to
+    use_eh = True  # If True, also accounts for electric heater power to
     #  quantify flexiblity
 
     city_name = 'aachen_kronenberg_6.pkl'
@@ -772,3 +781,12 @@ if __name__ == '__main__':
     plt.ylabel('Reference EHG el. power in kW')
     plt.show()
     plt.close()
+
+    #  Calculate pow_force_flex for each timespan
+    list_lists_pow_forced = calc_pow_flex_forced(building=curr_build,
+                                                 array_t_forced=array_t_forced,
+                                                 array_p_el_ref=array_p_el_ref,
+                                                 use_eh=use_eh)
+
+    for sublist in list_lists_pow_forced:
+        print(sublist)
