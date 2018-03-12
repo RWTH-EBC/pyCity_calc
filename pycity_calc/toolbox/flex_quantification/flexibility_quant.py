@@ -19,7 +19,7 @@ import pycity_calc.cities.scripts.energy_sys_generator as esysgen
 import pycity_calc.simulation.energy_balance.building_eb_calc as buildeb
 
 
-def calc_t_forced_build(building, id=None):
+def calc_t_forced_build(building, id=None, use_eh=False):
     """
     Calculate t forced array for building
 
@@ -29,6 +29,9 @@ def calc_t_forced_build(building, id=None):
         Building object of pyCity_calc
     id : int, optional
         Building id (default: None)
+    use_eh : bool, optional
+        Defines, if electric heater is also used to define t_forced_build
+        (default: False).
 
     Returns
     -------
@@ -63,7 +66,8 @@ def calc_t_forced_build(building, id=None):
         q_ehg_nom += building.bes.chp.qNominal
     if building.bes.hasHeatpump:
         q_ehg_nom += building.bes.heatpump.qNominal
-    if building.bes.hasElectricalHeater:
+
+    if building.bes.hasElectricalHeater and use_eh:
         q_ehg_nom += building.bes.electricalHeater.qNominal
 
     #  ###########################################################
@@ -336,11 +340,11 @@ def calc_pow_ref(building, tes_cap=0.001, boiler_resc=1, eta_boi=0.95):
 
     if build_copy.bes.hasBoiler:
         build_copy.bes.boiler.qNominal *= boiler_resc
-    else:
+    elif build_copy.bes.hasBoiler is False and boiler_resc != 1:
         #  Generate boiler object (also for HP/EH combi to prevent assertion
         #  error, if TES capacity is reduced)
         boi = boisys.BoilerExtended(environment=build_copy.environment,
-                                    q_nominal=10 * boiler_resc,
+                                    q_nominal=boiler_resc,
                                     eta=eta_boi)
         build_copy.bes.addDevice(boi)
 
@@ -507,7 +511,7 @@ def calc_power_ref_curve(building, boiler_resc=1):
 #     #
 
 
-def calc_dimless_th_power_flex(building, id=None):
+def calc_dimless_th_power_flex(building, id=None, use_eh=False):
     """
     Calculates dimensionless thermal power flexibility alpha_th
 
@@ -517,6 +521,9 @@ def calc_dimless_th_power_flex(building, id=None):
         Building object of pyCity_calc
     id : int, optional
         Building id (default: None)
+    use_eh : bool, optional
+        Defines, if electric heater is also used to define t_forced_build
+        (default: False).
 
     Returns
     -------
@@ -538,7 +545,8 @@ def calc_dimless_th_power_flex(building, id=None):
         q_ehg_nom += building.bes.chp.qNominal
     if building.bes.hasHeatpump:
         q_ehg_nom += building.bes.heatpump.qNominal
-    if building.bes.hasElectricalHeater:
+
+    if building.bes.hasElectricalHeater and use_eh:
         q_ehg_nom += building.bes.electricalHeater.qNominal
 
     #  ###########################################################
@@ -564,7 +572,7 @@ def calc_dimless_th_power_flex(building, id=None):
     return alpha_th
 
 
-def calc_dimless_tes_th_flex(building, id=None):
+def calc_dimless_tes_th_flex(building, id=None, use_eh=False):
     """
     Calculate dimensionless thermal storage flexibility beta_th
 
@@ -574,6 +582,9 @@ def calc_dimless_tes_th_flex(building, id=None):
         Building object of pyCity_calc
     id : int, optional
         Building id (default: None)
+    use_eh : bool, optional
+        Defines, if electric heater is also used to define t_forced_build
+        (default: False).
 
     Returns
     -------
@@ -595,7 +606,8 @@ def calc_dimless_tes_th_flex(building, id=None):
         q_ehg_nom += building.bes.chp.qNominal
     if building.bes.hasHeatpump:
         q_ehg_nom += building.bes.heatpump.qNominal
-    if building.bes.hasElectricalHeater:
+
+    if building.bes.hasElectricalHeater and use_eh:
         q_ehg_nom += building.bes.electricalHeater.qNominal
 
     #  ###########################################################
