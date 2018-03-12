@@ -403,22 +403,24 @@ def calc_power_ref_curve(building, boiler_resc=1):
 
     boiler_resc_use = boiler_resc + 0.0
 
-    boiler_resc_use = 100
+    counter = 0
 
     while do_ref_curve:
-        # try:
-        #     (array_p_el_ref, array_el_power_hp_in) = \
-        #         calc_pow_ref(building, boiler_resc=boiler_resc_use)
-        #     do_ref_curve = False
-        # except:
-        #     msg = 'El. ref. curve calc. failed. Thus, going to increase ' \
-        #           'boiler thermal power (and add boiler, if not existent)' \
-        #           '. New boiler size: ' + str(boiler_resc + 10) + ' kW.'
-        #     warnings.warn(msg)
-        #     boiler_resc_use += 10
-        (array_p_el_ref, array_el_power_hp_in) = \
-            calc_pow_ref(building, boiler_resc=boiler_resc_use)
-        do_ref_curve = False
+        try:
+            (array_p_el_ref, array_el_power_hp_in) = \
+                calc_pow_ref(building, boiler_resc=boiler_resc_use)
+            do_ref_curve = False
+        except:
+            msg = 'El. ref. curve calc. failed. Thus, going to increase ' \
+                  'boiler thermal power (and add boiler, if not existent)' \
+                  '. New boiler size: ' + str(boiler_resc + 10) + ' kW.'
+            warnings.warn(msg)
+            boiler_resc_use += 10
+            counter += 1
+            if counter == 20:
+                msg = 'Failed to calculate electric reference curve for' \
+                      ' flexibility quantification'
+                raise AssertionError(msg)
 
     return (array_p_el_ref, array_el_power_hp_in)
 
