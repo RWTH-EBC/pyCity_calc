@@ -291,7 +291,9 @@ def calc_t_delayed_build(building, id=None, use_boi=False, plot_soc=False):
     return array_t_delayed
 
 
-def calc_pow_ref(building, tes_cap=0.001, boiler_resc=1, eta_boi=0.95):
+def calc_pow_ref(building, tes_cap=0.001, mod_boi=True,
+                 boi_size=50000, eta_boi=0.95,
+                 use_eh=False):
     """
     Calculate reference electric heat generator load curve by solving thermal
     and electric energy balance with reduced tes size.
@@ -305,10 +307,18 @@ def calc_pow_ref(building, tes_cap=0.001, boiler_resc=1, eta_boi=0.95):
     tes_cap : float, optional
         Storage capacity (mass in kg) of TES (default: 0.001). Default value
         is low to minimize tes flexibility influence on reference curve.
-    boiler_resc : float, optional
-        Boiler nominal thermal power rescaling factor (default: 1)
+    mod_boi : bool, optional
+        Defines, if boiler size should be modified (CHP/BOI) /
+        added (for HP/EH system) (default: True)
+    boi_size : float, optional
+        Boiler nominal thermal power in Watt (default: 50000). Used to add
+        boiler, if no boiler exists and run fails (e.g. HP/EH usage).
+        Increasing boiler size for CHP/BOI system
     eta_boi : float, optional
         Initial boiler efficiency (default: 0.95)
+    use_eh : bool, optional
+        Defines, if electric heater is also used to define t_forced_build
+        (default: False).
 
     Returns
     -------
@@ -338,15 +348,22 @@ def calc_pow_ref(building, tes_cap=0.001, boiler_resc=1, eta_boi=0.95):
         build_copy.bes.battery = None
         build_copy.bes.hasBattery = False
 
-    if build_copy.bes.hasBoiler:
-        build_copy.bes.boiler.qNominal *= boiler_resc
-    elif build_copy.bes.hasBoiler is False and boiler_resc != 1:
-        #  Generate boiler object (also for HP/EH combi to prevent assertion
-        #  error, if TES capacity is reduced)
-        boi = boisys.BoilerExtended(environment=build_copy.environment,
-                                    q_nominal=boiler_resc,
-                                    eta=eta_boi)
-        build_copy.bes.addDevice(boi)
+    if use_eh is False and build_copy.bes.hasElectricalHeater:
+        #  Remove electric heater
+        build_copy.bes.electricalHeater = None
+        build_copy.bes.hasElectricalHeater = False
+
+    if mod_boi and boi_size > 0:
+        if build_copy.bes.hasBoiler:
+            build_copy.bes.boiler.qNominal = boi_size
+        elif build_copy.bes.hasBoiler is False:
+            #  Generate boiler object (also for HP/EH combi to prevent assertion
+            #  error, if TES capacity is reduced)
+            print('boi_size ', boi_size)
+            boi = boisys.BoilerExtended(environment=build_copy.environment,
+                                        q_nominal=boi_size,
+                                        eta=eta_boi)
+            build_copy.bes.addDevice(boi)
 
     #  Calculate thermal energy balance with reduced TES
     buildeb.calc_build_therm_eb(build=build_copy)
@@ -374,7 +391,7 @@ def calc_pow_ref(building, tes_cap=0.001, boiler_resc=1, eta_boi=0.95):
     return (array_p_el_ref, array_el_power_hp_in)
 
 
-def calc_power_ref_curve(building, boiler_resc=1):
+def calc_power_ref_curve(building, mod_boi=True, boi_size=0, use_eh=False):
     """
     Calculate reference electric heat generator load curve by solving thermal
     and electric energy balance with reduced tes size.
@@ -388,8 +405,17 @@ def calc_power_ref_curve(building, boiler_resc=1):
     ----------
     building : object
         Building object
-    boiler_resc : float, optional
-        Boiler nominal thermal power rescaling factor (default: 1)
+    mod_boi : bool, optional
+        Defines, if boiler size should be modified (CHP/BOI) /
+        added (for HP/EH system) (default: True)
+    boi_size : float, optional
+        Boiler nominal thermal power in Watt (default: 0). Used to add
+        boiler, if no boiler exists and run fails (e.g. HP/EH usage).
+        Increasing boiler size for CHP/BOI system. If 0, does not perform
+        modification.
+    use_eh : bool, optional
+        Defines, if electric heater is also used to define t_forced_build
+        (default: False).
 
     Returns
     -------
@@ -405,21 +431,22 @@ def calc_power_ref_curve(building, boiler_resc=1):
 
     do_ref_curve = True
 
-    boiler_resc_use = boiler_resc + 0.0
+    boi_size_use = boi_size + 0.0
 
     counter = 0
 
     while do_ref_curve:
         try:
             (array_p_el_ref, array_el_power_hp_in) = \
-                calc_pow_ref(building, boiler_resc=boiler_resc_use)
+                calc_pow_ref(building, boi_size=boi_size_use, mod_boi=mod_boi,
+                             use_eh=use_eh)
             do_ref_curve = False
         except:
             msg = 'El. ref. curve calc. failed. Thus, going to increase ' \
                   'boiler thermal power (and add boiler, if not existent)' \
-                  '. New boiler size: ' + str(boiler_resc + 10) + ' kW.'
+                  '. New boiler size: ' + str(boi_size_use/1000) + ' kW.'
             warnings.warn(msg)
-            boiler_resc_use += 10
+            boi_size_use += 50000
             counter += 1
             if counter == 20:
                 msg = 'Failed to calculate electric reference curve for' \
@@ -664,6 +691,12 @@ if __name__ == '__main__':
 
     build_id = 1004
 
+    mod_boi = True  #  Add boiler, if necessary to solve energy balance to
+    #  calculate reference ehg electric load
+
+    use_eh = False  # If True, also accounts for electric heater power to
+    #  quantify flexiblity
+
     city_name = 'aachen_kronenberg_6.pkl'
     path_here = os.path.dirname(os.path.abspath(__file__))
     path_city = os.path.join(path_here, 'input', city_name)
@@ -688,14 +721,16 @@ if __name__ == '__main__':
     curr_build = city.nodes[build_id]['entity']
 
     #  Calculate dimensionless thermal power flexibility
-    alpha_th = calc_dimless_th_power_flex(building=curr_build, id=build_id)
+    alpha_th = calc_dimless_th_power_flex(building=curr_build, id=build_id,
+                                          use_eh=use_eh)
 
     print('Dimensionless thermal power flexibility (alpha_th): ')
     print(alpha_th)
     print()
 
     #  Calculate dimensionless thermal storage energy flexibility
-    beta_th = calc_dimless_tes_th_flex(building=curr_build, id=build_id)
+    beta_th = calc_dimless_tes_th_flex(building=curr_build, id=build_id,
+                                       use_eh=use_eh)
 
     print('Dimensionless thermal storage energy flexibility (beta_th): ')
     print(beta_th)
@@ -705,7 +740,8 @@ if __name__ == '__main__':
     #  ###################################################################
 
     #  Calculate t_force array
-    array_t_forced = calc_t_forced_build(building=curr_build, id=build_id)
+    array_t_forced = calc_t_forced_build(building=curr_build, id=build_id,
+                                         use_eh=use_eh)
 
     plt.plot(array_t_forced / 3600)
     plt.xlabel('Time in hours')
@@ -728,7 +764,8 @@ if __name__ == '__main__':
     #  Calculate reference EHG el. load curve
     ###################################################################
     (array_p_el_ref, array_el_power_hp_in) = \
-        calc_power_ref_curve(building=curr_build)
+        calc_power_ref_curve(building=curr_build, mod_boi=mod_boi,
+                             use_eh=use_eh)
 
     plt.plot(array_p_el_ref / 1000)
     plt.xlabel('Time in hours')

@@ -1731,7 +1731,10 @@ def calc_build_therm_eb(build, soc_init=0.8, boiler_full_pl=True,
 
             if sh_pow_remain > 0 or dhw_pow_remain > 0:
                 msg = 'Could not solve thermal energy balance in ' \
-                      'building ' + str(id) + ' at timestep ' + str(i) + '.'
+                      'building ' + str(id) + ' at timestep ' \
+                      + str(i) + '. Remaining sh power ' \
+                      + str(sh_pow_remain) + ' W. Remaining dhw power ' \
+                      + str(dhw_pow_remain) + ' W.'
                 raise EnergyBalanceException(msg)
 
     elif has_tes and has_boiler and has_chp is False and has_hp is False:
