@@ -689,16 +689,24 @@ def calc_pow_flex_forced(building, array_t_forced, array_p_el_ref,
     return list_lists_pow_forced
 
 
-def calc_av_pow_flex_forced(list_lists_pow_forced):
+def calc_av_pow_flex_forced(list_lists_pow_forced, timestep):
     """
+    Calculate average power flexibility for forced operation
 
     Parameters
     ----------
-    list_lists_pow_forced
+    list_lists_pow_forced : list (of lists)
+        List of lists, holding power flexibility values for forced flexibility.
+        Each lists represents a timespan, beginning at timestep t, with
+        corresponding el. power values for forced flexibility in Watt.
+    timestep : int
+        timestep in seconds
 
     Returns
     -------
     array_av_flex_forced : np.array
+        Array holding average flexibility power values in Watt for each
+        timestep (forced operation)
     """
 
     array_av_flex_forced = np.zeros(len(list_lists_pow_forced))
@@ -706,14 +714,70 @@ def calc_av_pow_flex_forced(list_lists_pow_forced):
     for i in range(len(array_av_flex_forced)):
         list_pow_forced = list_lists_pow_forced[i]
 
-        if len(list_pow_forced) > 0:
-            av_pow_forced = sum(list_pow_forced) / len(list_pow_forced)
+        av_energy_forced = sum(list_pow_forced) * timestep
+
+        timespan = len(list_pow_forced) * timestep
+
+        if timespan > 0:
+            av_pow_forced = av_energy_forced / timespan
         else:
             av_pow_forced = 0
 
         array_av_flex_forced[i] = av_pow_forced
 
     return array_av_flex_forced
+
+
+def calc_cycle_pow_flex_forced(list_lists_pow_forced, array_t_delayed,
+                               timestep):
+    """
+    Calculate cycle power flexibility for forced operation
+
+    Parameters
+    ----------
+    list_lists_pow_forced : list (of lists)
+        List of lists, holding power flexibility values for forced flexibility.
+        Each lists represents a timespan, beginning at timestep t, with
+        corresponding el. power values for forced flexibility in Watt.
+    array_t_delayed : np.array
+        Array holding t delayed for each timestep.
+        t_delayed is given in seconds
+    timestep : int
+        timestep in seconds
+
+    Returns
+    -------
+    array_cycle_flex_forced : np.array
+        Array holding cycle flexibility power values in Watt for each
+        timestep (forced operation)
+    """
+
+    array_cycle_flex_forced = np.zeros(len(list_lists_pow_forced))
+
+    for i in range(len(array_av_flex_forced)):
+        list_pow_forced = list_lists_pow_forced[i]
+
+        av_energy_forced = sum(list_pow_forced) * timestep
+
+        timespan_forced = len(list_pow_forced) * timestep
+
+        idx = i + len(list_pow_forced)
+        if idx > len(array_t_delayed) - 1:
+            #  Move index to start of array_t_delayed
+            idx -= len(array_t_delayed) - 1
+
+        timespan_delayed = array_t_delayed[idx]
+
+        sum_timespans = timespan_forced + timespan_delayed
+
+        if sum_timespans > 0:
+            cycle_pow_forced = av_energy_forced / sum_timespans
+        else:
+            cycle_pow_forced = 0
+
+        array_cycle_flex_forced[i] = cycle_pow_forced
+
+    return array_cycle_flex_forced
 
 
 def calc_pow_flex_delayed(timestep, array_t_delayed, array_p_el_ref):
@@ -765,12 +829,14 @@ def calc_pow_flex_delayed(timestep, array_t_delayed, array_p_el_ref):
     return list_lists_pow_delayed
 
 
-def calc_av_pow_flex_delayed(list_lists_pow_delayed):
+def calc_av_pow_flex_delayed(list_lists_pow_delayed, timestep):
     """
 
     Parameters
     ----------
     list_lists_pow_delayed
+    timestep : int
+        timestep in seconds
 
     Returns
     -------
@@ -782,8 +848,12 @@ def calc_av_pow_flex_delayed(list_lists_pow_delayed):
     for i in range(len(array_av_flex_delayed)):
         list_pow_delayed = list_lists_pow_delayed[i]
 
-        if len(list_pow_delayed) > 0:
-            av_pow_delayed = sum(list_pow_delayed) / len(list_pow_delayed)
+        av_energy_delayed = sum(list_pow_delayed) * timestep
+
+        timespan = len(list_pow_delayed) * timestep
+
+        if timespan > 0:
+            av_pow_delayed = av_energy_delayed / timespan
         else:
             av_pow_delayed = 0
 
@@ -898,11 +968,21 @@ if __name__ == '__main__':
 
     #  Calculate average forced flex power for each timestep
     array_av_flex_forced = \
-        calc_av_pow_flex_forced(list_lists_pow_forced=list_lists_pow_forced)
+        calc_av_pow_flex_forced(list_lists_pow_forced=list_lists_pow_forced,
+                                timestep=timestep)
 
-    plt.plot(array_av_flex_forced / 1000)
+    #  Calculate cycle forced flex. power for each timestep
+    array_cycle_flex_forced = \
+        calc_cycle_pow_flex_forced(list_lists_pow_forced=list_lists_pow_forced,
+                                   array_t_delayed=array_t_delayed,
+                                   timestep=timestep)
+
+    plt.plot(array_av_flex_forced / 1000, label='Average')
+    plt.plot(array_cycle_flex_forced / 1000, label='Cycle')
     plt.xlabel('Time in hours')
-    plt.ylabel('Average forced el. power flexibility in kW')
+    plt.ylabel('Forced el. power flexibility in kW')
+    plt.legend()
+    plt.tight_layout()
     plt.show()
     plt.close()
 
@@ -917,7 +997,8 @@ if __name__ == '__main__':
     #     print(sublist)
 
     array_av_flex_delayed = \
-        calc_av_pow_flex_delayed(list_lists_pow_delayed=list_lists_pow_delayed)
+        calc_av_pow_flex_delayed(list_lists_pow_delayed=list_lists_pow_delayed,
+                                 timestep=timestep)
 
     plt.plot(array_av_flex_delayed / 1000)
     plt.xlabel('Time in hours')
