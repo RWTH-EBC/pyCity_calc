@@ -650,7 +650,6 @@ def calc_pow_flex_forced(building, array_t_forced, array_p_el_ref,
         List of lists, holding power flexibility values for forced flexibility.
         Each lists represents a timespan, beginning at timestep t, with
         corresponding el. power values for forced flexibility in Watt.
-        HP/EH flexiblility (+); CHP flexibility (-)
     """
 
     timestep = building.environment.timer.timeDiscretization
@@ -681,6 +680,7 @@ def calc_pow_flex_forced(building, array_t_forced, array_p_el_ref,
         for t in range(t_forced_steps):
             #  Prevent out of index error
             if i + t <= len(array_t_forced) - 1:
+                #  Max - Ref
                 pow_flex = p_ehg_nom - abs(array_p_el_ref[i + t])
                 list_pow_forced.append(pow_flex)
 
@@ -716,6 +716,82 @@ def calc_av_pow_flex_forced(list_lists_pow_forced):
     return array_av_flex_forced
 
 
+def calc_pow_flex_delayed(timestep, array_t_delayed, array_p_el_ref):
+    """
+    Calculate delayed power flexibility for every timestep in given
+    delayed period
+
+    Parameters
+    ----------
+    timestep : int
+        timestep in seconds
+    array_t_delayed : np.array
+        Array holding t delayed for each timestep.
+        t_delayed is given in seconds
+    array_p_el_ref : np.array
+        Array holding electric power values in Watt (used/produced by
+        electric heat generator (EHG)) (+ used energy (HP/EH) / - produced
+        electric energy (CHP))
+
+    Returns
+    -------
+    list_lists_pow_delayed : list (of lists)
+        List of lists, holding power flexibility values for delayed
+        flexibility.
+        Each lists represents a timespan, beginning at timestep t, with
+        corresponding el. power values for delayed flexibility in Watt.
+    """
+
+    list_lists_pow_delayed = []
+
+    #  Loop over array_t_delayed
+    for i in range(len(array_t_delayed)):
+
+        list_pow_delayed = []
+
+        t_delayed = array_t_delayed[i]  # in seconds
+        t_delayed_steps = int(t_delayed / timestep)
+
+        #  Loop over number of timesteps
+        for t in range(t_delayed_steps):
+            #  Prevent out of index error
+            if i + t <= len(array_t_delayed) - 1:
+                #  Ref - min (min == 0)
+                pow_flex = abs(array_p_el_ref[i + t])
+                list_pow_delayed.append(pow_flex)
+
+        list_lists_pow_delayed.append(list_pow_delayed)
+
+    return list_lists_pow_delayed
+
+
+def calc_av_pow_flex_delayed(list_lists_pow_delayed):
+    """
+
+    Parameters
+    ----------
+    list_lists_pow_delayed
+
+    Returns
+    -------
+    array_av_flex_delayed : np.array
+    """
+
+    array_av_flex_delayed = np.zeros(len(list_lists_pow_delayed))
+
+    for i in range(len(array_av_flex_delayed)):
+        list_pow_delayed = list_lists_pow_delayed[i]
+
+        if len(list_pow_delayed) > 0:
+            av_pow_delayed = sum(list_pow_delayed) / len(list_pow_delayed)
+        else:
+            av_pow_delayed = 0
+
+        array_av_flex_delayed[i] = av_pow_delayed
+
+    return array_av_flex_delayed
+
+
 if __name__ == '__main__':
 
     import matplotlib.pyplot as plt
@@ -737,6 +813,8 @@ if __name__ == '__main__':
     path_city = os.path.join(path_here, 'input', city_name)
 
     city = pickle.load(open(path_city, mode='rb'))
+
+    timestep = city.environment.timer.timeDiscretization
 
     if add_esys:
         #  Add energy system
@@ -797,7 +875,7 @@ if __name__ == '__main__':
     plt.close()
 
     #  Calculate reference EHG el. load curve
-    ###################################################################
+    #  ##################################################################
     (array_p_el_ref, array_el_power_hp_in) = \
         calc_power_ref_curve(building=curr_build, mod_boi=mod_boi,
                              use_eh=use_eh)
@@ -809,6 +887,7 @@ if __name__ == '__main__':
     plt.close()
 
     #  Calculate pow_force_flex for each timespan
+    #  ##################################################################
     list_lists_pow_forced = calc_pow_flex_forced(building=curr_build,
                                                  array_t_forced=array_t_forced,
                                                  array_p_el_ref=array_p_el_ref,
@@ -823,6 +902,25 @@ if __name__ == '__main__':
 
     plt.plot(array_av_flex_forced / 1000)
     plt.xlabel('Time in hours')
-    plt.ylabel('Average forced el. flexibility in kW')
+    plt.ylabel('Average forced el. power flexibility in kW')
+    plt.show()
+    plt.close()
+
+    #  Calculate pow_delayed_flex for each timespan
+    #  ##################################################################
+    list_lists_pow_delayed = \
+        calc_pow_flex_delayed(timestep=timestep,
+                              array_t_delayed=array_t_delayed,
+                              array_p_el_ref=array_p_el_ref)
+
+    # for sublist in list_lists_pow_delayed:
+    #     print(sublist)
+
+    array_av_flex_delayed = \
+        calc_av_pow_flex_delayed(list_lists_pow_delayed=list_lists_pow_delayed)
+
+    plt.plot(array_av_flex_delayed / 1000)
+    plt.xlabel('Time in hours')
+    plt.ylabel('Average delayed el. power flexibility in kW')
     plt.show()
     plt.close()
