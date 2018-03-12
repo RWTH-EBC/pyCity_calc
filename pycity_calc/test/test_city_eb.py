@@ -338,7 +338,7 @@ class TestCityEnergyBalance():
         #  Add small tes to prevent start-check assertion error
         tes = sto.thermalEnergyStorageExtended(environment=city.environment,
                                                capacity=0.1, k_loss=0,
-                                               t_init=80)
+                                               t_init=60)
 
         bes = BES.BES(environment=city.environment)
 
@@ -467,7 +467,7 @@ class TestCityEnergyBalance():
         #  Add small tes to prevent start-check assertion error
         tes = sto.thermalEnergyStorageExtended(environment=city.environment,
                                                capacity=0.01, k_loss=0,
-                                               t_init=80)
+                                               t_init=60)
 
         tes2 = copy.deepcopy(tes)
 

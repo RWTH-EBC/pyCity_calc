@@ -472,7 +472,7 @@ class TestBuildingEnergyBalance():
                                  p_nominal=p_nom, eta_total=eta_total)
 
         tes = sto.thermalEnergyStorageExtended \
-            (environment=build.environment, t_init=75, capacity=100)
+            (environment=build.environment, t_init=55, capacity=100)
 
         bes = BES.BES(environment=build.environment)
 
@@ -553,7 +553,7 @@ class TestBuildingEnergyBalance():
                                  p_nominal=p_nom, eta_total=eta_total)
 
         tes = sto.thermalEnergyStorageExtended \
-            (environment=build.environment, t_init=80, capacity=500, k_loss=0)
+            (environment=build.environment, t_init=60, capacity=500, k_loss=0)
 
         boiler = boil.BoilerExtended(environment=build.environment,
                                      q_nominal=30000, eta=1)
@@ -668,7 +668,7 @@ class TestBuildingEnergyBalance():
                                  p_nominal=p_nom, eta_total=eta_total)
 
         tes = sto.thermalEnergyStorageExtended \
-            (environment=build.environment, t_init=80, capacity=500, k_loss=0)
+            (environment=build.environment, t_init=60, capacity=500, k_loss=0)
 
         pv = PV.PV(environment=build.environment, area=10, eta=1)
 
@@ -1044,7 +1044,7 @@ class TestBuildingEnergyBalance():
         eh = ehsys.ElectricalHeaterExtended(environment=build.environment,
                                             q_nominal=50000)
 
-        t_init = 70
+        t_init = 55
 
         tes = sto.thermalEnergyStorageExtended(environment=build.environment,
                                                capacity=1000, k_loss=0,
@@ -1231,7 +1231,7 @@ class TestBuildingEnergyBalance():
 
         tes = sto.thermalEnergyStorageExtended(environment=build.environment,
                                                capacity=1, k_loss=0,
-                                               t_init=70)
+                                               t_init=55)
 
         q_nom = 10000
         eta_total = 1
@@ -1496,7 +1496,7 @@ class TestBuildingEnergyBalance():
 
         tes = sto.thermalEnergyStorageExtended(environment=build.environment,
                                                capacity=1000, k_loss=0,
-                                               t_init=70)
+                                               t_init=55)
 
         q_nom = 10000
         eta_total = 1

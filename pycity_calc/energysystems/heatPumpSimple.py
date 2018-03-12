@@ -23,8 +23,12 @@ class heatPumpSimple(heat.HeatingDevice):
 
     def __init__(self, environment, q_nominal, t_max=55.0,
                  lower_activation_limit=0.5, hp_type='aw',
-                 t_sink=45.0, qual_grade_aw=0.34, qual_grade_ww=0.43):
+                 t_sink=43.0, qual_grade_aw=0.34, qual_grade_ww=0.43):
         """
+        Constructor of simplified heat pump. Performance is calculated based
+        on Carnot efficiency and quality grades. t_sink is used for Carnot
+        efficiency calculation (not t_max!)
+
         Parameters
         ----------
         environment : Extended environment object
@@ -33,7 +37,7 @@ class heatPumpSimple(heat.HeatingDevice):
             Nominal heat output in Watt
         t_max : float, optional
             Maximum provided temperature in °C
-            (default : 85 °C)
+            (default : 55 °C)
         lower_activation_limit : float, optional
             Define the lower activation limit (Default: 1). For example, heat
             pumps are
@@ -53,7 +57,7 @@ class heatPumpSimple(heat.HeatingDevice):
             (default : 'aw')
         t_sink : float, optional
             Temperature of heat sink in °C
-            (default : 45 °C). Default temperature of 45 °C enables usage of
+            (default : 43 °C). Default temperature of 43 °C enables usage of
             heat pump with regular radiators. Value should be reduced when
             using floor heating system.
         qual_grade_aw : float, optional

@@ -388,9 +388,9 @@ class TestCityCO2():
 
         #  Create thermal storage
         # Create Heating Device
-        t_init = 70  # °C
+        t_init = 55  # °C
         capacity = 100  # kg
-        t_max = 80  # °C
+        t_max = 60  # °C
         t_min = 20  # °C
         cp = 4186  # J/kgK
         t_surroundings = 20  # °C
@@ -489,7 +489,7 @@ class TestCityCO2():
         co2_gas = city.environment.co2emissions.co2_factor_gas
         co2_el = city.environment.co2emissions.co2_factor_el_mix
 
-        co2_ref = co2_gas * chp_energy_gas + co2_el * el_energy_import
+        co2_ref = co2_gas * chp_energy_gas / 1.11 + co2_el * el_energy_import
 
         assert abs(co2_ref - co2) <= 0.001 * co2
 
@@ -503,7 +503,7 @@ class TestCityCO2():
 
         el_energy_import_b = el_energy - chp_el_gen_ref
 
-        co2_ref_b = co2_gas * gas_ref + co2_el * el_energy_import_b
+        co2_ref_b = co2_gas * gas_ref / 1.11 + co2_el * el_energy_import_b
 
         assert abs(co2_ref_b - co2) <= 0.001 * co2
 
@@ -593,9 +593,9 @@ class TestCityCO2():
 
         #  Create thermal storage
         # Create Heating Device
-        t_init = 70  # °C
+        t_init = 55  # °C
         capacity = 100  # kg
-        t_max = 80  # °C
+        t_max = 60  # °C
         t_min = 20  # °C
         cp = 4186  # J/kgK
         t_surroundings = 20  # °C
@@ -692,7 +692,7 @@ class TestCityCO2():
         co2_gas = city.environment.co2emissions.co2_factor_gas
         co2_el = city.environment.co2emissions.co2_factor_el_mix
 
-        co2_ref = co2_gas * chp_energy_gas - co2_el * el_energy_export
+        co2_ref = co2_gas / 1.11 * chp_energy_gas - co2_el * el_energy_export
 
         assert abs(co2_ref - co2) <= 0.001 * co2
 
@@ -706,6 +706,6 @@ class TestCityCO2():
 
         el_energy_export_b = chp_el_gen_ref - el_energy
 
-        co2_ref_b = co2_gas * gas_ref - co2_el * el_energy_export_b
+        co2_ref_b = co2_gas * gas_ref / 1.11 - co2_el * el_energy_export_b
 
         assert abs(co2_ref_b - co2) <= 0.001 * co2

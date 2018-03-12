@@ -16,7 +16,7 @@ import pycity_calc.environments.market as mark
 import pycity_calc.environments.timer as time
 
 
-def init_pv(environment, area=50, eta=0.15, alpha=0, temperature_nominal=45,
+def init_pv(environment, area=50, eta=0.1275, alpha=0, temperature_nominal=45,
             beta=30, gamma=0, tau_alpha=0.9):
     """
 
