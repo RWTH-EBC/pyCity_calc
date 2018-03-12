@@ -660,15 +660,14 @@ def calc_pow_flex_forced(building, array_t_forced, array_p_el_ref,
     #  Get maximal thermal output power of electric heat generators
     #  (CHP, EH, HP)
     p_ehg_nom = 0  # in Watt
+
     if building.bes.hasChp:
         p_ehg_nom += building.bes.chp.pNominal
-    if building.bes.hasHeatpump:
+    elif building.bes.hasHeatpump:
         p_ehg_nom += max(building.bes.heatpump.array_el_power_in)
 
-    if building.bes.hasElectricalHeater and use_eh:
-        p_ehg_nom += building.bes.electricalHeater.qNominal
-
-    print('p_ehg_nom: ', p_ehg_nom)
+        if building.bes.hasElectricalHeater and use_eh:
+            p_ehg_nom += building.bes.electricalHeater.qNominal
 
     #  Loop over t_forced array
     for i in range(len(array_t_forced)):
@@ -688,6 +687,33 @@ def calc_pow_flex_forced(building, array_t_forced, array_p_el_ref,
         list_lists_pow_forced.append(list_pow_forced)
 
     return list_lists_pow_forced
+
+
+def calc_av_pow_flex_forced(list_lists_pow_forced):
+    """
+
+    Parameters
+    ----------
+    list_lists_pow_forced
+
+    Returns
+    -------
+    array_av_flex_forced : np.array
+    """
+
+    array_av_flex_forced = np.zeros(len(list_lists_pow_forced))
+
+    for i in range(len(array_av_flex_forced)):
+        list_pow_forced = list_lists_pow_forced[i]
+
+        if len(list_pow_forced) > 0:
+            av_pow_forced = sum(list_pow_forced) / len(list_pow_forced)
+        else:
+            av_pow_forced = 0
+
+        array_av_flex_forced[i] = av_pow_forced
+
+    return array_av_flex_forced
 
 
 if __name__ == '__main__':
@@ -788,5 +814,15 @@ if __name__ == '__main__':
                                                  array_p_el_ref=array_p_el_ref,
                                                  use_eh=use_eh)
 
-    for sublist in list_lists_pow_forced:
-        print(sublist)
+    # for sublist in list_lists_pow_forced:
+    #     print(sublist)
+
+    #  Calculate average forced flex power for each timestep
+    array_av_flex_forced = \
+        calc_av_pow_flex_forced(list_lists_pow_forced=list_lists_pow_forced)
+
+    plt.plot(array_av_flex_forced / 1000)
+    plt.xlabel('Time in hours')
+    plt.ylabel('Average forced el. flexibility in kW')
+    plt.show()
+    plt.close()
