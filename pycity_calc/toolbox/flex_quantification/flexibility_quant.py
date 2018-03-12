@@ -862,6 +862,58 @@ def calc_av_pow_flex_delayed(list_lists_pow_delayed, timestep):
     return array_av_flex_delayed
 
 
+def calc_cycle_pow_flex_delayed(list_lists_pow_delayed, array_t_forced,
+                                timestep):
+    """
+    Calculate cycle power flexibility for forced operation
+
+    Parameters
+    ----------
+    list_lists_pow_delayed : list (of lists)
+        List of lists, holding power flexibility values for forced flexibility.
+        Each lists represents a timespan, beginning at timestep t, with
+        corresponding el. power values for forced flexibility in Watt.
+    array_t_forced : np.array
+        Array holding t delayed for each timestep.
+        t_delayed is given in seconds
+    timestep : int
+        timestep in seconds
+
+    Returns
+    -------
+    array_cycle_flex_delayed : np.array
+        Array holding cycle flexibility power values in Watt for each
+        timestep (forced operation)
+    """
+
+    array_cycle_flex_delayed = np.zeros(len(list_lists_pow_delayed))
+
+    for i in range(len(array_av_flex_delayed)):
+        list_pow_delayed = list_lists_pow_delayed[i]
+
+        av_energy_delayed = sum(list_pow_delayed) * timestep
+
+        timespan_delayed = len(list_pow_delayed) * timestep
+
+        idx = i + len(list_pow_delayed)
+        if idx > len(array_t_forced) - 1:
+            #  Move index to start of array_t_delayed
+            idx -= len(array_t_forced) - 1
+
+        timespan_forced = array_t_forced[idx]
+
+        sum_timespans = timespan_delayed + timespan_forced
+
+        if sum_timespans > 0:
+            cycle_pow_delayed = av_energy_delayed / sum_timespans
+        else:
+            cycle_pow_delayed = 0
+
+        array_cycle_flex_delayed[i] = cycle_pow_delayed
+
+    return array_cycle_flex_delayed
+
+
 if __name__ == '__main__':
 
     import matplotlib.pyplot as plt
@@ -1000,8 +1052,15 @@ if __name__ == '__main__':
         calc_av_pow_flex_delayed(list_lists_pow_delayed=list_lists_pow_delayed,
                                  timestep=timestep)
 
-    plt.plot(array_av_flex_delayed / 1000)
+    array_cycle_flex_delayed = \
+        calc_cycle_pow_flex_delayed(
+            list_lists_pow_delayed=list_lists_pow_delayed,
+            array_t_forced=array_t_forced,
+            timestep=timestep)
+
+    plt.plot(array_av_flex_delayed / 1000, label='Average')
+    plt.plot(array_cycle_flex_delayed / 1000, label='Cycle')
     plt.xlabel('Time in hours')
-    plt.ylabel('Average delayed el. power flexibility in kW')
+    plt.ylabel('Delayed el. power flexibility in kW')
     plt.show()
     plt.close()
