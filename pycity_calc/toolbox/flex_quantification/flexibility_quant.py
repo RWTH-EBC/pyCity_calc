@@ -664,7 +664,9 @@ def calc_pow_flex_forced(building, array_t_forced, array_p_el_ref,
     if building.bes.hasChp:
         p_ehg_nom += building.bes.chp.pNominal
     elif building.bes.hasHeatpump:
-        p_ehg_nom += max(building.bes.heatpump.array_el_power_in)
+        # p_ehg_nom += max(building.bes.heatpump.array_el_power_in)
+        #  TODO: Add option to estimate
+        p_ehg_nom += building.bes.heatpump.qNominal / 3
 
         if building.bes.hasElectricalHeater and use_eh:
             p_ehg_nom += building.bes.electricalHeater.qNominal
@@ -684,6 +686,7 @@ def calc_pow_flex_forced(building, array_t_forced, array_p_el_ref,
                 #  Max - Ref
                 pow_flex = p_ehg_nom - abs(array_p_el_ref[i + t])
                 list_pow_forced.append(pow_flex)
+            #  TODO: Move idx to front, if too large
 
         list_lists_pow_forced.append(list_pow_forced)
 
@@ -1000,12 +1003,12 @@ def main():
     #  Necessary to perform flexibility calculation
     add_esys = True
 
-    build_id = 1001
+    build_id = 1004
 
     mod_boi = True  # Add boiler, if necessary to solve energy balance to
     #  calculate reference ehg electric load
 
-    use_eh = True  # If True, also accounts for electric heater power to
+    use_eh = False  # If True, also accounts for electric heater power to
     #  quantify flexiblity
 
     city_name = 'aachen_kronenberg_6.pkl'
@@ -1161,6 +1164,7 @@ def main():
     plt.plot(array_cycle_flex_delayed / 1000, label='Cycle')
     plt.xlabel('Time in hours')
     plt.ylabel('Delayed el. power flexibility in kW')
+    plt.legend()
     plt.show()
     plt.close()
 
