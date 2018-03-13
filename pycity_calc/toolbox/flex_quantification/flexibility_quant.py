@@ -1008,6 +1008,72 @@ def calc_dimless_el_power_flex(building, array_el_flex):
     return array_alpha_el
 
 
+def calc_dimless_tes_el_flex(building, flex_energy, id=None, use_eh=False):
+    """
+    Calculate dimensionless electric storage flexibility beta_el
+
+    Parameters
+    ----------
+    building : object
+        Building object of pyCity_calc
+    flex_energy : float
+        Energy flexibility in Joule
+    id : int, optional
+        Building id (default: None)
+    use_eh : bool, optional
+        Defines, if electric heater is also used to define t_forced_build
+        (default: False).
+
+    Returns
+    -------
+    beta_el : float
+        Dimensionless electric storage flexibility
+    """
+
+    #  Check if building has energy system
+    #  ###########################################################
+    if building.hasBes is False:
+        msg = 'Building ' + str(id) + ' has no building energy system! ' \
+                                      'Thus, cannot calculate el. flexibility.'
+        raise AssertionError(msg)
+
+    #  Get maximal thermal output power of electric heat generators
+    #  (CHP, EH, HP)
+    q_ehg_nom = 0  # in Watt
+    if building.bes.hasChp:
+        q_ehg_nom += building.bes.chp.qNominal
+    elif building.bes.hasHeatpump:
+        q_ehg_nom += building.bes.heatpump.qNominal
+
+        if building.bes.hasElectricalHeater and use_eh:
+            q_ehg_nom += building.bes.electricalHeater.qNominal
+
+    #  ###########################################################
+    if q_ehg_nom == 0:
+        msg = 'Building ' \
+              + str(id) + ' has no thermo-electric energy systems. ' \
+                          'Thus, el. flexibility is zero.'
+        warnings.warn(msg)
+        #  Flexibility is zero
+        return 0
+
+    #  Copy building object
+    build_copy = copy.deepcopy(building)
+
+    #  Get thermal energy demands
+    #  ###########################################################
+    sh_dem = build_copy.get_annual_space_heat_demand()
+    dhw_dem = build_copy.get_annual_dhw_demand()
+
+    #  Run thermal energy balance
+    buildeb.calc_build_therm_eb(build=build_copy)
+
+    #  Calculate beta_el
+    beta_el = flex_energy / ((sh_dem + dhw_dem) / 365)
+
+    return beta_el
+
+
 def main():
     #  Add energy system, if no energy system exists on city.pkl file
     #  Necessary to perform flexibility calculation
@@ -1150,6 +1216,16 @@ def main():
     plt.show()
     plt.close()
 
+    #  Calculate energy flexibility for forced operation
+    beta_th_forced = \
+        calc_dimless_tes_el_flex(building=curr_build,
+                                 flex_energy=energy_flex_forced,
+                                 id=build_id, use_eh=use_eh)
+
+    print('Dimensionless el. energy flexibility for force operation:')
+    print(beta_th_forced / (3600 * 1000))
+    print()
+
     #  Calculate pow_delayed_flex for each timespan
     #  ##################################################################
     list_lists_pow_delayed = \
@@ -1197,6 +1273,15 @@ def main():
     plt.ylabel('Dimensionless el. power flexibility alpha_el (delayed)')
     plt.show()
     plt.close()
+
+    #  Calculate energy flexibility for delayed operation
+    beta_th_delayed = \
+        calc_dimless_tes_el_flex(building=curr_build,
+                                 flex_energy=energy_flex_delayed,
+                                 id=build_id, use_eh=use_eh)
+
+    print('Dimensionless el. energy flexibility for delayed operation:')
+    print(beta_th_delayed / (3600 * 1000))
 
 
 if __name__ == '__main__':
