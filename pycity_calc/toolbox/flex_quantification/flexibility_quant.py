@@ -780,6 +780,27 @@ def calc_cycle_pow_flex_forced(list_lists_pow_forced, array_t_delayed,
     return array_cycle_flex_forced
 
 
+def calc_cycle_energy_forced_year(timestep, array_cycle_flex_forced):
+    """
+    Calculate cycle energy flexibility for whole year (with forced operation)
+
+    Parameters
+    ----------
+    timestep : int
+        Timestep in seconds
+    array_cycle_flex_forced : np.array
+        Array holding cycle flexibility power values in Watt for each
+        timestep (forced operation)
+
+    Returns
+    -------
+    energy_flex_forced : float
+        Energy flexibility (in J) for forced operation
+    """
+
+    return sum(array_cycle_flex_forced) * timestep
+
+
 def calc_pow_flex_delayed(timestep, array_t_delayed, array_p_el_ref):
     """
     Calculate delayed power flexibility for every timestep in given
@@ -914,6 +935,27 @@ def calc_cycle_pow_flex_delayed(list_lists_pow_delayed, array_t_forced,
     return array_cycle_flex_delayed
 
 
+def calc_cycle_energy_delayed_year(timestep, array_cycle_flex_delayed):
+    """
+    Calculate cycle energy flexibility for whole year (with delayed operation)
+
+    Parameters
+    ----------
+    timestep : int
+        Timestep in seconds
+    array_cycle_flex_delayed : np.array
+        Array holding cycle flexibility power values in Watt for each
+        timestep (delayed operation)
+
+    Returns
+    -------
+    energy_flex_delayed : float
+        Energy flexibility (in J) for delayed operation
+    """
+
+    return sum(array_cycle_flex_delayed) * timestep
+
+
 if __name__ == '__main__':
 
     import matplotlib.pyplot as plt
@@ -1038,6 +1080,14 @@ if __name__ == '__main__':
     plt.show()
     plt.close()
 
+    energy_flex_forced = \
+        calc_cycle_energy_forced_year(timestep=timestep,
+                                      array_cycle_flex_forced=
+                                      array_cycle_flex_forced)
+
+    print('Energy flexibility in kWh for forced operation:')
+    print(energy_flex_forced / (3600 * 1000))
+
     #  Calculate pow_delayed_flex for each timespan
     #  ##################################################################
     list_lists_pow_delayed = \
@@ -1064,3 +1114,11 @@ if __name__ == '__main__':
     plt.ylabel('Delayed el. power flexibility in kW')
     plt.show()
     plt.close()
+
+    energy_flex_delayed = \
+        calc_cycle_energy_delayed_year(timestep=timestep,
+                                      array_cycle_flex_delayed=
+                                      array_cycle_flex_delayed)
+
+    print('Energy flexibility in kWh for delayed operation:')
+    print(energy_flex_delayed / (3600 * 1000))
