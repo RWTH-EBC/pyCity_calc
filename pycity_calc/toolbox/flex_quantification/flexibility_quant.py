@@ -15,6 +15,8 @@ import numpy as np
 import warnings
 import matplotlib.pyplot as plt
 
+import pycity_base.functions.changeResolution as chres
+
 import pycity_calc.energysystems.boiler as boisys
 import pycity_calc.cities.scripts.energy_sys_generator as esysgen
 import pycity_calc.simulation.energy_balance.building_eb_calc as buildeb
@@ -482,149 +484,6 @@ def calc_power_ref_curve(building, mod_boi=True, boi_size=0, use_eh=False):
     return (array_p_el_ref, array_el_power_hp_in)
 
 
-def calc_dimless_th_power_flex(building, id=None, use_eh=False):
-    """
-    Calculates dimensionless thermal power flexibility alpha_th
-
-    Parameters
-    ----------
-    building : object
-        Building object of pyCity_calc
-    id : int, optional
-        Building id (default: None)
-    use_eh : bool, optional
-        Defines, if electric heater is also used to define t_forced_build
-        (default: False).
-
-    Returns
-    -------
-    alpha_th : float
-        Dimensionless thermal power flexibility of BES
-    """
-
-    #  Check if building has energy system
-    #  ###########################################################
-    if building.hasBes is False:
-        msg = 'Building ' + str(id) + ' has no building energy system! ' \
-                                      'Thus, cannot calculate th. flexibility.'
-        raise AssertionError(msg)
-
-    #  Get maximal thermal output power of electric heat generators
-    #  (CHP, EH, HP)
-    q_ehg_nom = 0  # in Watt
-    if building.bes.hasChp:
-        q_ehg_nom += building.bes.chp.qNominal
-    if building.bes.hasHeatpump:
-        q_ehg_nom += building.bes.heatpump.qNominal
-
-    if building.bes.hasElectricalHeater and use_eh:
-        q_ehg_nom += building.bes.electricalHeater.qNominal
-
-    #  ###########################################################
-    if q_ehg_nom == 0:
-        msg = 'Building ' \
-              + str(id) + ' has no thermo-electric energy systems. ' \
-                          'Thus, therm. flexibility is zero.'
-        warnings.warn(msg)
-        #  Flexibility is zero
-        return 0
-
-    #  Calculate average building thermal power
-    #  ###########################################################
-    #  Extract thermal power curve of building
-    sh_power = building.get_space_heating_power_curve()
-    dhw_power = building.get_dhw_power_curve()
-    th_power = sh_power + dhw_power
-
-    q_dot_build_av = sum(th_power) / len(th_power)
-
-    alpha_th = q_ehg_nom / q_dot_build_av
-
-    return alpha_th
-
-
-def calc_dimless_tes_th_flex(building, id=None, use_eh=False):
-    """
-    Calculate dimensionless thermal storage flexibility beta_th
-
-    Parameters
-    ----------
-    building : object
-        Building object of pyCity_calc
-    id : int, optional
-        Building id (default: None)
-    use_eh : bool, optional
-        Defines, if electric heater is also used to define t_forced_build
-        (default: False).
-
-    Returns
-    -------
-    beta_th : float
-        Dimensionless thermal storage flexibility
-    """
-
-    #  Check if building has energy system
-    #  ###########################################################
-    if building.hasBes is False:
-        msg = 'Building ' + str(id) + ' has no building energy system! ' \
-                                      'Thus, cannot calculate th. flexibility.'
-        raise AssertionError(msg)
-
-    #  Get maximal thermal output power of electric heat generators
-    #  (CHP, EH, HP)
-    q_ehg_nom = 0  # in Watt
-    if building.bes.hasChp:
-        q_ehg_nom += building.bes.chp.qNominal
-    if building.bes.hasHeatpump:
-        q_ehg_nom += building.bes.heatpump.qNominal
-
-    if building.bes.hasElectricalHeater and use_eh:
-        q_ehg_nom += building.bes.electricalHeater.qNominal
-
-    #  ###########################################################
-    if q_ehg_nom == 0:
-        msg = 'Building ' \
-              + str(id) + ' has no thermo-electric energy systems. ' \
-                          'Thus, therm. flexibility is zero.'
-        warnings.warn(msg)
-        #  Flexibility is zero
-        return 0
-
-    #  Copy building object
-    build_copy = copy.deepcopy(building)
-
-    #  Get thermal energy demands
-    #  ###########################################################
-    sh_dem = build_copy.get_annual_space_heat_demand()
-    dhw_dem = build_copy.get_annual_dhw_demand()
-
-    #  Run thermal energy balance
-    buildeb.calc_build_therm_eb(build=build_copy)
-
-    #  Extract tes data
-    #  Pointer to tes temperature array
-    array_temp_storage = build_copy.bes.tes.array_temp_storage
-    #  Pointer to minimum storage temperature, c_p and capacity
-    t_min = build_copy.bes.tes.t_min
-    c_p = build_copy.bes.tes.c_p
-    mass = build_copy.bes.tes.capacity
-
-    #  Calculate array with stored energy within tes
-    array_tes_en = np.zeros(len(array_temp_storage))
-
-    for i in range(len(array_tes_en)):  # in kWh
-        array_tes_en[i] = mass * c_p * \
-                          (array_temp_storage[i] * t_min) / (3600 * 1000)
-
-    #  Calculate average amount of energy within tes
-    en_av_tes = sum(array_tes_en) / len(array_tes_en)
-
-    #  Calculate beta_th
-    beta_th = en_av_tes / ((sh_dem + dhw_dem) / 365)
-
-    return beta_th
-
-
 def calc_pow_flex_forced(building, array_t_forced, array_p_el_ref,
                          use_eh=False):
     """
@@ -958,6 +817,153 @@ def calc_cycle_energy_delayed_year(timestep, array_cycle_flex_delayed):
     """
 
     return sum(array_cycle_flex_delayed) * timestep
+
+
+def calc_dimless_th_power_flex(building, id=None, use_eh=False):
+    """
+    Calculates dimensionless thermal power flexibility alpha_th
+
+    Parameters
+    ----------
+    building : object
+        Building object of pyCity_calc
+    id : int, optional
+        Building id (default: None)
+    use_eh : bool, optional
+        Defines, if electric heater is also used to define t_forced_build
+        (default: False).
+
+    Returns
+    -------
+    alpha_th : float
+        Dimensionless thermal power flexibility of BES
+    """
+
+    #  Check if building has energy system
+    #  ###########################################################
+    if building.hasBes is False:
+        msg = 'Building ' + str(id) + ' has no building energy system! ' \
+                                      'Thus, cannot calculate th. flexibility.'
+        raise AssertionError(msg)
+
+    #  Get maximal thermal output power of electric heat generators
+    #  (CHP, EH, HP)
+    q_ehg_nom = 0  # in Watt
+    if building.bes.hasChp:
+        q_ehg_nom += building.bes.chp.qNominal
+    if building.bes.hasHeatpump:
+        q_ehg_nom += building.bes.heatpump.qNominal
+
+    if building.bes.hasElectricalHeater and use_eh:
+        q_ehg_nom += building.bes.electricalHeater.qNominal
+
+    #  ###########################################################
+    if q_ehg_nom == 0:
+        msg = 'Building ' \
+              + str(id) + ' has no thermo-electric energy systems. ' \
+                          'Thus, therm. flexibility is zero.'
+        warnings.warn(msg)
+        #  Flexibility is zero
+        return 0
+
+    #  Calculate average building thermal power
+    #  ###########################################################
+    #  Extract thermal power curve of building
+    sh_power = building.get_space_heating_power_curve()
+    dhw_power = building.get_dhw_power_curve()
+    th_power = sh_power + dhw_power
+
+    timestep = int(3600 * 24 * 365 / len(th_power))  # in seconds
+    # If timestep is different from 3600 seconds, convert th_power array
+    th_power_new = chres.changeResolution(th_power,
+                                          oldResolution=timestep,
+                                          newResolution=3600)
+
+    alpha_th = q_ehg_nom / max(th_power_new)
+
+    return alpha_th
+
+
+def calc_dimless_tes_th_flex(building, id=None, use_eh=False):
+    """
+    Calculate dimensionless thermal storage flexibility beta_th
+
+    Parameters
+    ----------
+    building : object
+        Building object of pyCity_calc
+    id : int, optional
+        Building id (default: None)
+    use_eh : bool, optional
+        Defines, if electric heater is also used to define t_forced_build
+        (default: False).
+
+    Returns
+    -------
+    beta_th : float
+        Dimensionless thermal storage flexibility
+    """
+
+    #  Check if building has energy system
+    #  ###########################################################
+    if building.hasBes is False:
+        msg = 'Building ' + str(id) + ' has no building energy system! ' \
+                                      'Thus, cannot calculate th. flexibility.'
+        raise AssertionError(msg)
+
+    #  Get maximal thermal output power of electric heat generators
+    #  (CHP, EH, HP)
+    q_ehg_nom = 0  # in Watt
+    if building.bes.hasChp:
+        q_ehg_nom += building.bes.chp.qNominal
+    elif building.bes.hasHeatpump:
+        q_ehg_nom += building.bes.heatpump.qNominal
+
+        if building.bes.hasElectricalHeater and use_eh:
+            q_ehg_nom += building.bes.electricalHeater.qNominal
+
+    #  ###########################################################
+    if q_ehg_nom == 0:
+        msg = 'Building ' \
+              + str(id) + ' has no thermo-electric energy systems. ' \
+                          'Thus, therm. flexibility is zero.'
+        warnings.warn(msg)
+        #  Flexibility is zero
+        return 0
+
+    #  Copy building object
+    build_copy = copy.deepcopy(building)
+
+    #  Get thermal energy demands
+    #  ###########################################################
+    sh_dem = build_copy.get_annual_space_heat_demand()
+    dhw_dem = build_copy.get_annual_dhw_demand()
+
+    #  Run thermal energy balance
+    buildeb.calc_build_therm_eb(build=build_copy)
+
+    #  Extract tes data
+    #  Pointer to tes temperature array
+    array_temp_storage = build_copy.bes.tes.array_temp_storage
+    #  Pointer to minimum storage temperature, c_p and capacity
+    t_min = build_copy.bes.tes.t_min
+    c_p = build_copy.bes.tes.c_p
+    mass = build_copy.bes.tes.capacity
+
+    #  Calculate array with stored energy within tes
+    array_tes_en = np.zeros(len(array_temp_storage))
+
+    for i in range(len(array_tes_en)):  # in kWh
+        array_tes_en[i] = mass * c_p * \
+                          (array_temp_storage[i] * t_min) / (3600 * 1000)
+
+    #  Calculate average amount of energy within tes
+    en_av_tes = sum(array_tes_en) / len(array_tes_en)
+
+    #  Calculate beta_th
+    beta_th = en_av_tes / ((sh_dem + dhw_dem) / 365)
+
+    return beta_th
 
 
 def calc_dimless_el_power_flex(building, array_el_flex):
