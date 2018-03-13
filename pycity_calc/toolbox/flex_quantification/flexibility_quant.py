@@ -996,10 +996,14 @@ def calc_dimless_el_power_flex(building, array_el_flex):
     dhw_power = building.get_dhw_power_curve()
     th_power = sh_power + dhw_power
 
-    q_dot_build_av = sum(th_power) / len(th_power)
+    timestep = int(3600 * 24 * 365 / len(th_power))  # in seconds
+    # If timestep is different from 3600 seconds, convert th_power array
+    th_power_new = chres.changeResolution(th_power,
+                                          oldResolution=timestep,
+                                          newResolution=3600)
 
     for i in range(len(array_alpha_el)):
-        array_alpha_el[i] = array_el_flex[i] / q_dot_build_av
+        array_alpha_el[i] = array_el_flex[i] / max(th_power_new)
 
     return array_alpha_el
 
@@ -1009,7 +1013,7 @@ def main():
     #  Necessary to perform flexibility calculation
     add_esys = True
 
-    build_id = 1004
+    build_id = 1001
 
     mod_boi = True  # Add boiler, if necessary to solve energy balance to
     #  calculate reference ehg electric load
