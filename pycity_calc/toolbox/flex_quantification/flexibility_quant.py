@@ -1069,9 +1069,11 @@ def calc_dimless_tes_el_flex(building, array_flex_energy, id=None,
     #  Run thermal energy balance
     buildeb.calc_build_therm_eb(build=build_copy)
 
+    #  Convert array_flex_energy from Joule to kWh
+    array_flex_energy_kwh = array_flex_energy / (3600 * 1000)
+
     #  Calculate beta_el
-    array_beta_el = array_flex_energy / ((sh_dem + dhw_dem) / 365) * \
-                    (3600 * 1000)
+    array_beta_el = array_flex_energy_kwh / ((sh_dem + dhw_dem) / 365)
 
     return array_beta_el
 
@@ -1225,7 +1227,7 @@ def main():
                                  id=build_id, use_eh=use_eh)
 
     print('Dimensionless el. energy flexibility for force operation:')
-    print(sum(array_beta_th_forced) / (3600 * 1000))
+    print(sum(array_beta_th_forced))
     print()
 
     plt.plot(array_beta_th_forced)
@@ -1289,7 +1291,7 @@ def main():
                                  id=build_id, use_eh=use_eh)
 
     print('Dimensionless el. energy flexibility for delayed operation:')
-    print(sum(array_beta_th_delayed) / (3600 * 1000))
+    print(sum(array_beta_th_delayed))
 
     plt.plot(array_beta_th_delayed)
     plt.xlabel('Time in hours')
