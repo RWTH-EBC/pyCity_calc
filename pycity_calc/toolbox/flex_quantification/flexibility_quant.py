@@ -819,6 +819,85 @@ def calc_cycle_energy_delayed_year(timestep, array_cycle_flex_delayed):
     return array_cycle_flex_delayed * timestep
 
 
+def calc_storage_av_energy_year(building):
+    """
+    Returns array holding stored usable amount of thermal energy within TES
+    per timestep (in kWh). Building has to be processed with thermal energy
+    balance before calling calc_storage_av_energy_year()!
+
+    Parameters
+    ----------
+    building : object
+        Building object of pyCity (requires bes with thermal supplier and
+        TES). Needs to be processed with thermal energy balance calculation!
+
+    Returns
+    -------
+    array_tes_en : array (of float)
+        Array holding stored usable amount of thermal energy within TES
+        per timestep (in kWh)
+    """
+
+    timestep = building.environment.timer.timeDiscretization
+
+    #  Calculate array with stored energy within tes
+    array_tes_en = np.zeros(int(3600 * 24 * 365 / timestep))
+
+    if building.hasBes is False:
+        msg = 'Building has no BES. Thus, cannot calculate array with TES' \
+              ' energy. Return zero array!'
+        warnings.warn(msg)
+        return array_tes_en
+    else:
+        #  Check if TES exists
+        if building.bes.hasTes is False:
+            msg = 'Building has no TES. Thus, cannot calculate array ' \
+                  'with TES energy. Return zero array!'
+            warnings.warn(msg)
+            return array_tes_en
+
+    #  Extract tes data
+    #  Pointer to tes temperature array
+    array_temp_storage = building.bes.tes.array_temp_storage
+    #  Pointer to minimum storage temperature, c_p and capacity
+    t_min = building.bes.tes.t_min
+    c_p = building.bes.tes.c_p
+    mass = building.bes.tes.capacity
+
+    for i in range(len(array_tes_en)):  # in kWh
+        array_tes_en[i] = mass * c_p * \
+                          (array_temp_storage[i] * t_min) / (3600 * 1000)
+
+    return array_tes_en
+
+
+def calc_av_energy_tes_year(building):
+    """
+    Calculates average stored amount of energy within TES for a whole year.
+    Building has to be processed with thermal energy
+    balance before calling calc_av_energy_tes_year()!
+
+    Parameters
+    ----------
+    building : object
+        Building object of pyCity (requires bes with thermal supplier and
+        TES). Needs to be processed with thermal energy balance calculation!
+
+    Returns
+    -------
+    en_av_tes : float
+        Average stored usable amount of thermal energy within TES for a
+        whole year in kWh
+    """
+
+    array_tes_en = calc_storage_av_energy_year(building=building)
+
+    #  Calculate average amount of energy within tes
+    en_av_tes = sum(array_tes_en) / len(array_tes_en)
+
+    return en_av_tes
+
+
 def calc_dimless_th_power_flex(q_ehg_nom, array_sh, array_dhw, timestep):
     """
     Calculates dimensionless thermal power flexibility alpha_th
@@ -867,84 +946,37 @@ def calc_dimless_th_power_flex(q_ehg_nom, array_sh, array_dhw, timestep):
     return alpha_th
 
 
-def calc_dimless_tes_th_flex(building, id=None, use_eh=False):
+def calc_dimless_tes_th_flex(sh_dem, dhw_dem, en_av_tes):
     """
     Calculate dimensionless thermal storage flexibility beta_th
 
     Parameters
     ----------
-    building : object
-        Building object of pyCity_calc
-    id : int, optional
-        Building id (default: None)
-    use_eh : bool, optional
-        Defines, if electric heater is also used to define t_forced_build
-        (default: False).
+    sh_dem : float
+        Annual space heating demand in kWh
+    dhw_dem : float
+        Annual hot water demand in kWh
+    en_av_tes : float
+        Average stored usable amount of thermal energy within TES for a
+        whole year in kWh
 
     Returns
     -------
     beta_th : float
         Dimensionless thermal storage flexibility
     """
+    assert sh_dem >= 0
+    assert dhw_dem >= 0
+    assert en_av_tes >= 0
 
-    #  Check if building has energy system
-    #  ###########################################################
-    if building.hasBes is False:
-        msg = 'Building ' + str(id) + ' has no building energy system! ' \
-                                      'Thus, cannot calculate th. flexibility.'
-        raise AssertionError(msg)
-
-    #  Get maximal thermal output power of electric heat generators
-    #  (CHP, EH, HP)
-    q_ehg_nom = 0  # in Watt
-    if building.bes.hasChp:
-        q_ehg_nom += building.bes.chp.qNominal
-    elif building.bes.hasHeatpump:
-        q_ehg_nom += building.bes.heatpump.qNominal
-
-        if building.bes.hasElectricalHeater and use_eh:
-            q_ehg_nom += building.bes.electricalHeater.qNominal
-
-    #  ###########################################################
-    if q_ehg_nom == 0:
-        msg = 'Building ' \
-              + str(id) + ' has no thermo-electric energy systems. ' \
-                          'Thus, therm. flexibility is zero.'
+    if sh_dem + dhw_dem == 0:
+        msg = 'Cannot calculate beta_th, as thermal demands are zero!' \
+              ' Going to return None.'
         warnings.warn(msg)
-        #  Flexibility is zero
-        return 0
-
-    #  Copy building object
-    build_copy = copy.deepcopy(building)
-
-    #  Get thermal energy demands
-    #  ###########################################################
-    sh_dem = build_copy.get_annual_space_heat_demand()
-    dhw_dem = build_copy.get_annual_dhw_demand()
-
-    #  Run thermal energy balance
-    buildeb.calc_build_therm_eb(build=build_copy)
-
-    #  Extract tes data
-    #  Pointer to tes temperature array
-    array_temp_storage = build_copy.bes.tes.array_temp_storage
-    #  Pointer to minimum storage temperature, c_p and capacity
-    t_min = build_copy.bes.tes.t_min
-    c_p = build_copy.bes.tes.c_p
-    mass = build_copy.bes.tes.capacity
-
-    #  Calculate array with stored energy within tes
-    array_tes_en = np.zeros(len(array_temp_storage))
-
-    for i in range(len(array_tes_en)):  # in kWh
-        array_tes_en[i] = mass * c_p * \
-                          (array_temp_storage[i] * t_min) / (3600 * 1000)
-
-    #  Calculate average amount of energy within tes
-    en_av_tes = sum(array_tes_en) / len(array_tes_en)
-
-    #  Calculate beta_th
-    beta_th = en_av_tes / ((sh_dem + dhw_dem) / 365)
+        beta_th = None
+    else:
+        #  Calculate beta_th
+        beta_th = en_av_tes / ((sh_dem + dhw_dem) / 365)
 
     return beta_th
 
@@ -1111,10 +1143,15 @@ def main():
             q_ehg_nom += curr_build.bes.electricalHeater.qNominal
 
     #  Calculate average building thermal power
-    #  ###########################################################
     #  Extract thermal power curve of building
     array_sh = curr_build.get_space_heating_power_curve()
     array_dhw = curr_build.get_dhw_power_curve()
+
+    sh_dem = sum(array_sh) * timestep / (3600 * 1000)
+    dhw_dem = sum(array_dhw) * timestep / (3600 * 1000)
+
+    #  Begin calculations
+    #  #####################################################################
 
     #  Calculate dimensionless thermal power flexibility
     alpha_th = calc_dimless_th_power_flex(q_ehg_nom=q_ehg_nom,
@@ -1126,9 +1163,18 @@ def main():
     print(alpha_th)
     print()
 
+    #  Copy building to perform energy balance calculation (necessary to
+    #  estimate stored amount of energy in TES per timestep)
+    build_copy = copy.deepcopy(curr_build)
+    #  Run thermal energy balance
+    buildeb.calc_build_therm_eb(build=build_copy)
+    #  Calculate average stored amount of energy in TES per timestep (for a
+    #  whole year)
+    en_av_tes = calc_av_energy_tes_year(building=build_copy)
+
     #  Calculate dimensionless thermal storage energy flexibility
-    beta_th = calc_dimless_tes_th_flex(building=curr_build, id=build_id,
-                                       use_eh=use_eh)
+    beta_th = calc_dimless_tes_th_flex(sh_dem=sh_dem, dhw_dem=dhw_dem,
+                                       en_av_tes=en_av_tes)
 
     print('Dimensionless thermal storage energy flexibility (beta_th): ')
     print(beta_th)
