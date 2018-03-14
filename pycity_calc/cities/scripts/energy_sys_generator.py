@@ -469,8 +469,7 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
                                             q_nominal=hp_th_power,
                                             hp_type=hp_type)
 
-            #  TODO: Size el. heater based on max. space heating and dhw power
-            el_h_space_h_power = hp_th_power * buffer_factor
+            el_h_space_h_power = hp_th_power * 0.2
 
             if dhw_scale:
                 #  Size el. heater according to max. dhw power of building
@@ -492,8 +491,8 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
 
             #  TES sizing
             #  Storage should be capable of storing full hp thermal
-            #  power for 2 hour (T_spread = 30 Kelvin)
-            mass_tes = hp_th_power * 2 * 3600 / (4180 * 30)
+            #  power for 1 hour (T_spread = 20 Kelvin)
+            mass_tes = hp_th_power * 1 * 3600 / (4180 * 20)
 
             #  Round to realistic storage size
             mass_tes = dimfunc.storage_rounding(mass_tes)
