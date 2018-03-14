@@ -22,19 +22,22 @@ import pycity_calc.cities.scripts.energy_sys_generator as esysgen
 import pycity_calc.simulation.energy_balance.building_eb_calc as buildeb
 
 
-def calc_t_forced_build(building, id=None, use_eh=False):
+def calc_t_forced_build(q_ehg_nom, array_sh, array_dhw, timestep, tes):
     """
     Calculate t forced array for building
 
     Parameters
     ----------
-    building : object
-        Building object of pyCity_calc
-    id : int, optional
-        Building id (default: None)
-    use_eh : bool, optional
-        Defines, if electric heater is also used to define t_forced_build
-        (default: False).
+    q_ehg_nom : float
+        Nominal thermal power of electric heat generator(s) in Watt
+    array_sh : array (of floats)
+        Array holding space heating power values in Watt
+    array_dhw : array (of floats)
+        Array holding hot water power values in Watt
+    timestep : int
+        Timestep in seconds
+    tes : object
+        TES object of pyCity_calc
 
     Returns
     -------
@@ -42,37 +45,37 @@ def calc_t_forced_build(building, id=None, use_eh=False):
         Array holding t forced for each timestep. t_forced is given in seconds
     """
 
-    timestep = building.environment.timer.timeDiscretization
+    # timestep = building.environment.timer.timeDiscretization
 
     #  Create initial array
     array_t_forced = np.zeros(int(365 * 24 * 3600 / timestep))
 
-    #  Check if building has energy system
-    #  ###########################################################
-    if building.hasBes is False:
-        msg = 'Building ' + str(id) + ' has no building energy system! ' \
-                                      'Thus, cannot calculate t_forced array.'
-        warnings.warn(msg)
-        return array_t_forced
+    # #  Check if building has energy system
+    # #  ###########################################################
+    # if building.hasBes is False:
+    #     msg = 'Building ' + str(id) + ' has no building energy system! ' \
+    #                                   'Thus, cannot calculate t_forced array.'
+    #     warnings.warn(msg)
+    #     return array_t_forced
+    #
+    # #  ###########################################################
+    # if building.bes.hasTes is False:
+    #     msg = 'Building ' + str(id) + ' has no thermal storage. ' \
+    #                                   'Thus, therm. flexibility is zero.'
+    #     warnings.warn(msg)
+    #     #  Flexibility is zero, return array with zeros
+    #     return array_t_forced
 
-    #  ###########################################################
-    if building.bes.hasTes is False:
-        msg = 'Building ' + str(id) + ' has no thermal storage. ' \
-                                      'Thus, therm. flexibility is zero.'
-        warnings.warn(msg)
-        #  Flexibility is zero, return array with zeros
-        return array_t_forced
-
-    #  Get maximal thermal output power of electric heat generators
-    #  (CHP, EH, HP)
-    q_ehg_nom = 0  # in Watt
-    if building.bes.hasChp:
-        q_ehg_nom += building.bes.chp.qNominal
-    if building.bes.hasHeatpump:
-        q_ehg_nom += building.bes.heatpump.qNominal
-
-    if building.bes.hasElectricalHeater and use_eh:
-        q_ehg_nom += building.bes.electricalHeater.qNominal
+    # #  Get maximal thermal output power of electric heat generators
+    # #  (CHP, EH, HP)
+    # q_ehg_nom = 0  # in Watt
+    # if building.bes.hasChp:
+    #     q_ehg_nom += building.bes.chp.qNominal
+    # if building.bes.hasHeatpump:
+    #     q_ehg_nom += building.bes.heatpump.qNominal
+    #
+    # if building.bes.hasElectricalHeater and use_eh:
+    #     q_ehg_nom += building.bes.electricalHeater.qNominal
 
     #  ###########################################################
     if q_ehg_nom == 0:
@@ -83,16 +86,16 @@ def calc_t_forced_build(building, id=None, use_eh=False):
         #  Flexibility is zero, return array with zeros
         return array_t_forced
 
-    #  Extract thermal power curve of building
-    sh_power = building.get_space_heating_power_curve()
-    dhw_power = building.get_dhw_power_curve()
-    th_power = sh_power + dhw_power
+    # #  Extract thermal power curve of building
+    # sh_power = building.get_space_heating_power_curve()
+    # dhw_power = building.get_dhw_power_curve()
+    array_th = array_sh + array_dhw
 
     #  Loop over each timestep
     #  ###########################################################
     for i in range(len(array_t_forced)):
         #  Copy storage and set initial / current temperature to t_min (empty)
-        tes_copy = copy.deepcopy(building.bes.tes)
+        tes_copy = copy.deepcopy(tes)
         tes_copy.t_current = tes_copy.t_min
         tes_copy.tInit = tes_copy.t_min
 
@@ -100,7 +103,7 @@ def calc_t_forced_build(building, id=None, use_eh=False):
         for t in range(len(array_t_forced) - i):
 
             #  Current thermal power demand
-            th_pow_cur = th_power[t + i]
+            th_pow_cur = array_th[t + i]
 
             #  Calculate possible charging power
             if q_ehg_nom > th_pow_cur:
@@ -1183,9 +1186,15 @@ def main():
     #  Calculate t_forced
     #  ###################################################################
 
+    #  Pointer to tes
+    tes = curr_build.bes.tes
+
     #  Calculate t_force array
-    array_t_forced = calc_t_forced_build(building=curr_build, id=build_id,
-                                         use_eh=use_eh)
+    array_t_forced = calc_t_forced_build(q_ehg_nom=q_ehg_nom,
+                                         array_sh=array_sh,
+                                         array_dhw=array_dhw,
+                                         timestep=timestep,
+                                         tes=tes)
 
     plt.plot(array_t_forced / 3600)
     plt.xlabel('Time in hours')
