@@ -819,43 +819,26 @@ def calc_cycle_energy_delayed_year(timestep, array_cycle_flex_delayed):
     return array_cycle_flex_delayed * timestep
 
 
-def calc_dimless_th_power_flex(building, id=None, use_eh=False):
+def calc_dimless_th_power_flex(q_ehg_nom, array_sh, array_dhw, timestep):
     """
     Calculates dimensionless thermal power flexibility alpha_th
 
     Parameters
     ----------
-    building : object
-        Building object of pyCity_calc
-    id : int, optional
-        Building id (default: None)
-    use_eh : bool, optional
-        Defines, if electric heater is also used to define t_forced_build
-        (default: False).
+    q_ehg_nom : float
+        Nominal thermal power of electric heat generator(s) in Watt
+    array_sh : array (of floats)
+        Array holding space heating power values in Watt
+    array_dhw : array (of floats)
+        Array holding hot water power values in Watt
+    timestep : int
+        Timestep in seconds
 
     Returns
     -------
     alpha_th : float
         Dimensionless thermal power flexibility of BES
     """
-
-    #  Check if building has energy system
-    #  ###########################################################
-    if building.hasBes is False:
-        msg = 'Building ' + str(id) + ' has no building energy system! ' \
-                                      'Thus, cannot calculate th. flexibility.'
-        raise AssertionError(msg)
-
-    #  Get maximal thermal output power of electric heat generators
-    #  (CHP, EH, HP)
-    q_ehg_nom = 0  # in Watt
-    if building.bes.hasChp:
-        q_ehg_nom += building.bes.chp.qNominal
-    if building.bes.hasHeatpump:
-        q_ehg_nom += building.bes.heatpump.qNominal
-
-    if building.bes.hasElectricalHeater and use_eh:
-        q_ehg_nom += building.bes.electricalHeater.qNominal
 
     #  ###########################################################
     if q_ehg_nom == 0:
@@ -866,20 +849,20 @@ def calc_dimless_th_power_flex(building, id=None, use_eh=False):
         #  Flexibility is zero
         return 0
 
-    #  Calculate average building thermal power
-    #  ###########################################################
-    #  Extract thermal power curve of building
-    sh_power = building.get_space_heating_power_curve()
-    dhw_power = building.get_dhw_power_curve()
-    th_power = sh_power + dhw_power
+    array_thermal = array_sh + array_dhw
 
-    timestep = int(3600 * 24 * 365 / len(th_power))  # in seconds
     # If timestep is different from 3600 seconds, convert th_power array
-    th_power_new = chres.changeResolution(th_power,
+    th_power_new = chres.changeResolution(array_thermal,
                                           oldResolution=timestep,
                                           newResolution=3600)
 
-    alpha_th = q_ehg_nom / max(th_power_new)
+    if max(th_power_new) > 0:
+        alpha_th = q_ehg_nom / max(th_power_new)
+    else:
+        msg = 'Thermal power is zero! Thus, alpha_th cannot be calculated' \
+              ' Return None'
+        warnings.warn(msg)
+        alpha_th = None
 
     return alpha_th
 
@@ -1116,9 +1099,28 @@ def main():
     #  Pointer to current building object
     curr_build = city.nodes[build_id]['entity']
 
+    #  Get maximal thermal output power of electric heat generators
+    #  (CHP, EH, HP)
+    q_ehg_nom = 0  # in Watt
+    if curr_build.bes.hasChp:
+        q_ehg_nom += curr_build.bes.chp.qNominal
+    elif curr_build.bes.hasHeatpump:
+        q_ehg_nom += curr_build.bes.heatpump.qNominal
+
+        if curr_build.bes.hasElectricalHeater and use_eh:
+            q_ehg_nom += curr_build.bes.electricalHeater.qNominal
+
+    #  Calculate average building thermal power
+    #  ###########################################################
+    #  Extract thermal power curve of building
+    array_sh = curr_build.get_space_heating_power_curve()
+    array_dhw = curr_build.get_dhw_power_curve()
+
     #  Calculate dimensionless thermal power flexibility
-    alpha_th = calc_dimless_th_power_flex(building=curr_build, id=build_id,
-                                          use_eh=use_eh)
+    alpha_th = calc_dimless_th_power_flex(q_ehg_nom=q_ehg_nom,
+                                          array_sh=array_sh,
+                                          array_dhw=array_dhw,
+                                          timestep=timestep)
 
     print('Dimensionless thermal power flexibility (alpha_th): ')
     print(alpha_th)
@@ -1298,6 +1300,7 @@ def main():
     plt.ylabel('Dimensionless el. energy flexibility beta_el (delayed)')
     plt.show()
     plt.close()
+
 
 if __name__ == '__main__':
     main()
