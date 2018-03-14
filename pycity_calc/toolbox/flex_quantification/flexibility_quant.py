@@ -11,6 +11,7 @@ from __future__ import division
 import os
 import pickle
 import copy
+import time
 import numpy as np
 import warnings
 import matplotlib.pyplot as plt
@@ -20,6 +21,8 @@ import pycity_base.functions.changeResolution as chres
 import pycity_calc.energysystems.boiler as boisys
 import pycity_calc.cities.scripts.energy_sys_generator as esysgen
 import pycity_calc.simulation.energy_balance.building_eb_calc as buildeb
+import pycity_calc.cities.scripts.energy_network_generator as enetgen
+import pycity_calc.toolbox.networks.network_ops as netop
 
 
 def calc_t_forced_build(q_ehg_nom, array_sh, array_dhw, timestep, tes):
@@ -1071,59 +1074,45 @@ def calc_dimless_tes_el_flex(building, array_flex_energy, id=None,
     return array_beta_el
 
 
-def main():
-    #  Add energy system, if no energy system exists on city.pkl file
-    #  Necessary to perform flexibility calculation
-    add_esys = True
+def perform_flex_analysis_single_build(build, use_eh=False, mod_boi=False,
+                                       id=None, plot_res=False):
+    """
 
-    build_id = 1001
+    Parameters
+    ----------
+    build
+    use_eh : bool, optional
+        Defines, if electric heater is also used to define t_forced_build
+        (default: False).
+    mod_boi
+    id
+    plot_res
 
-    mod_boi = True  # Add boiler, if necessary to solve energy balance to
-    #  calculate reference ehg electric load
+    Returns
+    -------
 
-    use_eh = False  # If True, also accounts for electric heater power to
-    #  quantify flexiblity
+    """
 
-    city_name = 'aachen_kronenberg_6.pkl'
-    path_here = os.path.dirname(os.path.abspath(__file__))
-    path_city = os.path.join(path_here, 'input', city_name)
+    print('Process building ' + str(id))
+    print('#############################################################')
 
-    city = pickle.load(open(path_city, mode='rb'))
-
-    timestep = city.environment.timer.timeDiscretization
-
-    if add_esys:
-        #  Add energy system
-        #  Generate one feeder with CHP, boiler and TES
-        list_esys = [(1001, 1, 4),  # CHP, Boiler, TES
-                     (1002, 1, 4),
-                     (1003, 1, 4),
-                     (1004, 2, 2),  # HP (ww), EH, TES
-                     (1005, 2, 2),
-                     (1006, 2, 2)]
-
-        esysgen.gen_esys_for_city(city=city,
-                                  list_data=list_esys,
-                                  dhw_scale=True)
-
-    #  Pointer to current building object
-    curr_build = city.nodes[build_id]['entity']
+    timestep = build.environment.timer.timeDiscretization
 
     #  Get maximal thermal output power of electric heat generators
     #  (CHP, EH, HP)
     q_ehg_nom = 0  # in Watt
-    if curr_build.bes.hasChp:
-        q_ehg_nom += curr_build.bes.chp.qNominal
-    elif curr_build.bes.hasHeatpump:
-        q_ehg_nom += curr_build.bes.heatpump.qNominal
+    if build.bes.hasChp:
+        q_ehg_nom += build.bes.chp.qNominal
+    elif build.bes.hasHeatpump:
+        q_ehg_nom += build.bes.heatpump.qNominal
 
-        if curr_build.bes.hasElectricalHeater and use_eh:
-            q_ehg_nom += curr_build.bes.electricalHeater.qNominal
+        if build.bes.hasElectricalHeater and use_eh:
+            q_ehg_nom += build.bes.electricalHeater.qNominal
 
     #  Calculate average building thermal power
     #  Extract thermal power curve of building
-    array_sh = curr_build.get_space_heating_power_curve()
-    array_dhw = curr_build.get_dhw_power_curve()
+    array_sh = build.get_space_heating_power_curve()
+    array_dhw = build.get_dhw_power_curve()
 
     sh_dem = sum(array_sh) * timestep / (3600 * 1000)
     dhw_dem = sum(array_dhw) * timestep / (3600 * 1000)
@@ -1143,7 +1132,7 @@ def main():
 
     #  Copy building to perform energy balance calculation (necessary to
     #  estimate stored amount of energy in TES per timestep)
-    build_copy = copy.deepcopy(curr_build)
+    build_copy = copy.deepcopy(build)
     #  Run thermal energy balance
     buildeb.calc_build_therm_eb(build=build_copy)
     #  Calculate average stored amount of energy in TES per timestep (for a
@@ -1162,7 +1151,7 @@ def main():
     #  ###################################################################
 
     #  Pointer to tes
-    tes = curr_build.bes.tes
+    tes = build.bes.tes
 
     #  Calculate t_force array
     array_t_forced = calc_t_forced_build(q_ehg_nom=q_ehg_nom,
@@ -1171,11 +1160,13 @@ def main():
                                          timestep=timestep,
                                          tes=tes)
 
-    plt.plot(array_t_forced / 3600)
-    plt.xlabel('Time in hours')
-    plt.ylabel('T_forced in hours')
-    plt.show()
-    plt.close()
+    if plot_res:
+        plt.plot(array_t_forced / 3600)
+        plt.title('T_forced for building ' + str(id))
+        plt.xlabel('Time in hours')
+        plt.ylabel('T_forced in hours')
+        plt.show()
+        plt.close()
 
     #  Calculate t_forced
     #  ###################################################################
@@ -1190,27 +1181,31 @@ def main():
                                            use_boi=False,
                                            q_boi_nom=None)
 
-    plt.plot(array_t_delayed / 3600)
-    plt.xlabel('Time in hours')
-    plt.ylabel('T_delayed in hours')
-    plt.show()
-    plt.close()
+    if plot_res:
+        plt.plot(array_t_delayed / 3600)
+        plt.title('T_delayed for building ' + str(id))
+        plt.xlabel('Time in hours')
+        plt.ylabel('T_delayed in hours')
+        plt.show()
+        plt.close()
 
     #  Calculate reference EHG el. load curve
     #  ##################################################################
     (array_p_el_ref, array_el_power_hp_in) = \
-        calc_power_ref_curve(building=curr_build, mod_boi=mod_boi,
+        calc_power_ref_curve(building=build, mod_boi=mod_boi,
                              use_eh=use_eh)
 
-    plt.plot(array_p_el_ref / 1000)
-    plt.xlabel('Time in hours')
-    plt.ylabel('Reference EHG el. power in kW')
-    plt.show()
-    plt.close()
+    if plot_res:
+        plt.plot(array_p_el_ref / 1000)
+        plt.title('Ref. EHG power for building ' + str(id))
+        plt.xlabel('Time in hours')
+        plt.ylabel('Reference EHG el. power in kW')
+        plt.show()
+        plt.close()
 
     #  Calculate pow_force_flex for each timespan
     #  ##################################################################
-    list_lists_pow_forced = calc_pow_flex_forced(building=curr_build,
+    list_lists_pow_forced = calc_pow_flex_forced(building=build,
                                                  array_t_forced=array_t_forced,
                                                  array_p_el_ref=array_p_el_ref,
                                                  use_eh=use_eh)
@@ -1229,14 +1224,16 @@ def main():
                                    array_t_delayed=array_t_delayed,
                                    timestep=timestep)
 
-    plt.plot(array_av_flex_forced / 1000, label='Average')
-    plt.plot(array_cycle_flex_forced / 1000, label='Cycle')
-    plt.xlabel('Time in hours')
-    plt.ylabel('Forced el. power flexibility in kW')
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
-    plt.close()
+    if plot_res:
+        plt.plot(array_av_flex_forced / 1000, label='Average')
+        plt.plot(array_cycle_flex_forced / 1000, label='Cycle')
+        plt.title('Forced power flex. for building ' + str(id))
+        plt.xlabel('Time in hours')
+        plt.ylabel('Forced el. power flexibility in kW')
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
+        plt.close()
 
     #  Calculate force energy flexibility
     array_energy_flex_forced = \
@@ -1249,31 +1246,35 @@ def main():
 
     #  Calculate dimensionless electric power flexibility for forced operation
     array_alpha_el_forced = \
-        calc_dimless_el_power_flex(building=curr_build,
+        calc_dimless_el_power_flex(building=build,
                                    array_el_flex=
                                    array_cycle_flex_forced)
 
-    plt.plot(array_alpha_el_forced)
-    plt.xlabel('Time in hours')
-    plt.ylabel('Dimensionless el. power flexibility alpha_el (forced)')
-    plt.show()
-    plt.close()
+    if plot_res:
+        plt.plot(array_alpha_el_forced)
+        plt.title('alpha_el (forced) for building ' + str(id))
+        plt.xlabel('Time in hours')
+        plt.ylabel('Dimensionless el. power flexibility alpha_el (forced)')
+        plt.show()
+        plt.close()
 
     #  Calculate energy flexibility for forced operation
     array_beta_th_forced = \
-        calc_dimless_tes_el_flex(building=curr_build,
+        calc_dimless_tes_el_flex(building=build,
                                  array_flex_energy=array_energy_flex_forced,
-                                 id=build_id, use_eh=use_eh)
+                                 use_eh=use_eh)
 
     print('Dimensionless el. energy flexibility for force operation:')
     print(sum(array_beta_th_forced))
     print()
 
-    plt.plot(array_beta_th_forced)
-    plt.xlabel('Time in hours')
-    plt.ylabel('Dimensionless el. energy flexibility beta_el (forced)')
-    plt.show()
-    plt.close()
+    if plot_res:
+        plt.plot(array_beta_th_forced)
+        plt.title('beta_el (forced) for building ' + str(id))
+        plt.xlabel('Time in hours')
+        plt.ylabel('Dimensionless el. energy flexibility beta_el (forced)')
+        plt.show()
+        plt.close()
 
     #  Calculate pow_delayed_flex for each timespan
     #  ##################################################################
@@ -1295,13 +1296,15 @@ def main():
             array_t_forced=array_t_forced,
             timestep=timestep)
 
-    plt.plot(array_av_flex_delayed / 1000, label='Average')
-    plt.plot(array_cycle_flex_delayed / 1000, label='Cycle')
-    plt.xlabel('Time in hours')
-    plt.ylabel('Delayed el. power flexibility in kW')
-    plt.legend()
-    plt.show()
-    plt.close()
+    if plot_res:
+        plt.plot(array_av_flex_delayed / 1000, label='Average')
+        plt.plot(array_cycle_flex_delayed / 1000, label='Cycle')
+        plt.title('Delayed el. power flex. for building ' + str(id))
+        plt.xlabel('Time in hours')
+        plt.ylabel('Delayed el. power flexibility in kW')
+        plt.legend()
+        plt.show()
+        plt.close()
 
     array_energy_flex_delayed = \
         calc_cycle_energy_delayed_year(timestep=timestep,
@@ -1313,31 +1316,720 @@ def main():
 
     #  Calculate dimensionless electric power flexibility for forced operation
     array_alpha_el_delayed = \
-        calc_dimless_el_power_flex(building=curr_build,
+        calc_dimless_el_power_flex(building=build,
                                    array_el_flex=
                                    array_cycle_flex_delayed)
-
-    plt.plot(array_alpha_el_delayed)
-    plt.xlabel('Time in hours')
-    plt.ylabel('Dimensionless el. power flexibility alpha_el (delayed)')
-    plt.show()
-    plt.close()
+    if plot_res:
+        plt.plot(array_alpha_el_delayed)
+        plt.title('alpha_el (delayed) for building ' + str(id))
+        plt.xlabel('Time in hours')
+        plt.ylabel('Dimensionless el. power flexibility alpha_el (delayed)')
+        plt.show()
+        plt.close()
 
     #  Calculate energy flexibility for delayed operation
     array_beta_th_delayed = \
-        calc_dimless_tes_el_flex(building=curr_build,
+        calc_dimless_tes_el_flex(building=build,
                                  array_flex_energy=array_energy_flex_delayed,
-                                 id=build_id, use_eh=use_eh)
+                                 use_eh=use_eh)
 
     print('Dimensionless el. energy flexibility for delayed operation:')
     print(sum(array_beta_th_delayed))
 
-    plt.plot(array_beta_th_delayed)
-    plt.xlabel('Time in hours')
-    plt.ylabel('Dimensionless el. energy flexibility beta_el (delayed)')
-    plt.show()
-    plt.close()
+    if plot_res:
+        plt.plot(array_beta_th_delayed)
+        plt.title('beta_el (delayed) for building ' + str(id))
+        plt.xlabel('Time in hours')
+        plt.ylabel('Dimensionless el. energy flexibility beta_el (delayed)')
+        plt.show()
+        plt.close()
+
+    print('#############################################################')
+    print()
+
+
+def perform_flex_analysis_sublhn(city, list_lhn, use_eh=False, mod_boi=False,
+                                plot_res=False):
+    """
+
+    Parameters
+    ----------
+    city
+    list_lhn
+    use_eh
+    mod_boi
+    plot_res
+
+    Returns
+    -------
+
+    """
+
+    #  Generate deepcopy of city object instance
+    city_copy = copy.deepcopy(city)
+
+    list_build_ids = city_copy.get_list_build_entity_node_ids()
+
+    #  Delete all building nodes, which are not in list_lhn
+    for n in list_build_ids:
+        if n not in list_lhn:
+            city_copy.remove_building(node_number=n)
+
+    print('Process LHN connected buildings ' + str(list_lhn))
+    print('#############################################################')
+
+    timestep = city_copy.environment.timer.timeDiscretization
+
+    #  Get maximal thermal output power of electric heat generators
+    #  (CHPs)
+    q_ehg_nom = 0  # in Watt
+    for n in list_lhn:
+        curr_build = city_copy.nodes[n]['entity']
+        if curr_build.bes.hasChp:
+            q_ehg_nom += curr_build.bes.chp.qNominal
+
+    #  Calculate average building thermal power
+    #  Extract thermal power curve of building
+    array_sh = city_copy.get_aggr_space_h_power_curve()
+    array_dhw = city_copy.get_aggr_dhw_power_curve()
+
+    sh_dem = sum(array_sh) * timestep / (3600 * 1000)
+    dhw_dem = sum(array_dhw) * timestep / (3600 * 1000)
+
+    #  Begin calculations
+    #  #####################################################################
+
+    #  Calculate dimensionless thermal power flexibility
+    alpha_th = calc_dimless_th_power_flex(q_ehg_nom=q_ehg_nom,
+                                          array_sh=array_sh,
+                                          array_dhw=array_dhw,
+                                          timestep=timestep)
+
+    print('Dimensionless thermal power flexibility (alpha_th): ')
+    print(alpha_th)
+    print()
+
+    # #  Copy building to perform energy balance calculation (necessary to
+    # #  estimate stored amount of energy in TES per timestep)
+    # build_copy = copy.deepcopy(build)
+    # #  Run thermal energy balance
+    # buildeb.calc_build_therm_eb(build=build_copy)
+
+    #  TODO: Continue over here
+    #  Run city eb
+
+    #  Calculate average stored amount of energy in TES per timestep (for a
+    #  whole year)
+    #  TODO: Loop over buildings,
+    #  TODO: Sum up average amounts of energy in tes
+    # en_av_tes = calc_av_energy_tes_year(building=build_copy)
+
+
+    # #  Calculate dimensionless thermal storage energy flexibility
+    # beta_th = calc_dimless_tes_th_flex(sh_dem=sh_dem, dhw_dem=dhw_dem,
+    #                                    en_av_tes=en_av_tes)
+    #
+    # print('Dimensionless thermal storage energy flexibility (beta_th): ')
+    # print(beta_th)
+    # print()
+    #
+    # #  Calculate t_forced
+    # #  ###################################################################
+    #
+    # #  Pointer to tes
+    # tes = build.bes.tes
+    #
+    # #  Calculate t_force array
+    # array_t_forced = calc_t_forced_build(q_ehg_nom=q_ehg_nom,
+    #                                      array_sh=array_sh,
+    #                                      array_dhw=array_dhw,
+    #                                      timestep=timestep,
+    #                                      tes=tes)
+    #
+    # if plot_res:
+    #     plt.plot(array_t_forced / 3600)
+    #     plt.title('T_forced for building ' + str(id))
+    #     plt.xlabel('Time in hours')
+    #     plt.ylabel('T_forced in hours')
+    #     plt.show()
+    #     plt.close()
+    #
+    # #  Calculate t_forced
+    # #  ###################################################################
+    #
+    # #  Calculate t_force array
+    # array_t_delayed = calc_t_delayed_build(q_ehg_nom=q_ehg_nom,
+    #                                        array_sh=array_sh,
+    #                                        array_dhw=array_dhw,
+    #                                        timestep=timestep,
+    #                                        tes=tes,
+    #                                        plot_soc=False,
+    #                                        use_boi=False,
+    #                                        q_boi_nom=None)
+    #
+    # if plot_res:
+    #     plt.plot(array_t_delayed / 3600)
+    #     plt.title('T_delayed for building ' + str(id))
+    #     plt.xlabel('Time in hours')
+    #     plt.ylabel('T_delayed in hours')
+    #     plt.show()
+    #     plt.close()
+    #
+    # #  Calculate reference EHG el. load curve
+    # #  ##################################################################
+    # (array_p_el_ref, array_el_power_hp_in) = \
+    #     calc_power_ref_curve(building=build, mod_boi=mod_boi,
+    #                          use_eh=use_eh)
+    #
+    # if plot_res:
+    #     plt.plot(array_p_el_ref / 1000)
+    #     plt.title('Ref. EHG power for building ' + str(id))
+    #     plt.xlabel('Time in hours')
+    #     plt.ylabel('Reference EHG el. power in kW')
+    #     plt.show()
+    #     plt.close()
+    #
+    # #  Calculate pow_force_flex for each timespan
+    # #  ##################################################################
+    # list_lists_pow_forced = calc_pow_flex_forced(building=build,
+    #                                              array_t_forced=array_t_forced,
+    #                                              array_p_el_ref=array_p_el_ref,
+    #                                              use_eh=use_eh)
+    #
+    # # for sublist in list_lists_pow_forced:
+    # #     print(sublist)
+    #
+    # #  Calculate average forced flex power for each timestep
+    # array_av_flex_forced = \
+    #     calc_av_pow_flex_forced(list_lists_pow_forced=list_lists_pow_forced,
+    #                             timestep=timestep)
+    #
+    # #  Calculate cycle forced flex. power for each timestep
+    # array_cycle_flex_forced = \
+    #     calc_cycle_pow_flex_forced(list_lists_pow_forced=list_lists_pow_forced,
+    #                                array_t_delayed=array_t_delayed,
+    #                                timestep=timestep)
+    #
+    # if plot_res:
+    #     plt.plot(array_av_flex_forced / 1000, label='Average')
+    #     plt.plot(array_cycle_flex_forced / 1000, label='Cycle')
+    #     plt.title('Forced power flex. for building ' + str(id))
+    #     plt.xlabel('Time in hours')
+    #     plt.ylabel('Forced el. power flexibility in kW')
+    #     plt.legend()
+    #     plt.tight_layout()
+    #     plt.show()
+    #     plt.close()
+    #
+    # #  Calculate force energy flexibility
+    # array_energy_flex_forced = \
+    #     calc_cycle_energy_forced_year(timestep=timestep,
+    #                                   array_cycle_flex_forced=
+    #                                   array_cycle_flex_forced)
+    #
+    # print('Energy flexibility in kWh for forced operation:')
+    # print(sum(array_energy_flex_forced) / (3600 * 1000))
+    #
+    # #  Calculate dimensionless electric power flexibility for forced operation
+    # array_alpha_el_forced = \
+    #     calc_dimless_el_power_flex(building=build,
+    #                                array_el_flex=
+    #                                array_cycle_flex_forced)
+    #
+    # if plot_res:
+    #     plt.plot(array_alpha_el_forced)
+    #     plt.title('alpha_el (forced) for building ' + str(id))
+    #     plt.xlabel('Time in hours')
+    #     plt.ylabel('Dimensionless el. power flexibility alpha_el (forced)')
+    #     plt.show()
+    #     plt.close()
+    #
+    # #  Calculate energy flexibility for forced operation
+    # array_beta_th_forced = \
+    #     calc_dimless_tes_el_flex(building=build,
+    #                              array_flex_energy=array_energy_flex_forced,
+    #                              use_eh=use_eh)
+    #
+    # print('Dimensionless el. energy flexibility for force operation:')
+    # print(sum(array_beta_th_forced))
+    # print()
+    #
+    # if plot_res:
+    #     plt.plot(array_beta_th_forced)
+    #     plt.title('beta_el (forced) for building ' + str(id))
+    #     plt.xlabel('Time in hours')
+    #     plt.ylabel('Dimensionless el. energy flexibility beta_el (forced)')
+    #     plt.show()
+    #     plt.close()
+    #
+    # #  Calculate pow_delayed_flex for each timespan
+    # #  ##################################################################
+    # list_lists_pow_delayed = \
+    #     calc_pow_flex_delayed(timestep=timestep,
+    #                           array_t_delayed=array_t_delayed,
+    #                           array_p_el_ref=array_p_el_ref)
+    #
+    # # for sublist in list_lists_pow_delayed:
+    # #     print(sublist)
+    #
+    # array_av_flex_delayed = \
+    #     calc_av_pow_flex_delayed(list_lists_pow_delayed=list_lists_pow_delayed,
+    #                              timestep=timestep)
+    #
+    # array_cycle_flex_delayed = \
+    #     calc_cycle_pow_flex_delayed(
+    #         list_lists_pow_delayed=list_lists_pow_delayed,
+    #         array_t_forced=array_t_forced,
+    #         timestep=timestep)
+    #
+    # if plot_res:
+    #     plt.plot(array_av_flex_delayed / 1000, label='Average')
+    #     plt.plot(array_cycle_flex_delayed / 1000, label='Cycle')
+    #     plt.title('Delayed el. power flex. for building ' + str(id))
+    #     plt.xlabel('Time in hours')
+    #     plt.ylabel('Delayed el. power flexibility in kW')
+    #     plt.legend()
+    #     plt.show()
+    #     plt.close()
+    #
+    # array_energy_flex_delayed = \
+    #     calc_cycle_energy_delayed_year(timestep=timestep,
+    #                                    array_cycle_flex_delayed=
+    #                                    array_cycle_flex_delayed)
+    #
+    # print('Energy flexibility in kWh for delayed operation:')
+    # print(sum(array_energy_flex_delayed) / (3600 * 1000))
+    #
+    # #  Calculate dimensionless electric power flexibility for forced operation
+    # array_alpha_el_delayed = \
+    #     calc_dimless_el_power_flex(building=build,
+    #                                array_el_flex=
+    #                                array_cycle_flex_delayed)
+    # if plot_res:
+    #     plt.plot(array_alpha_el_delayed)
+    #     plt.title('alpha_el (delayed) for building ' + str(id))
+    #     plt.xlabel('Time in hours')
+    #     plt.ylabel('Dimensionless el. power flexibility alpha_el (delayed)')
+    #     plt.show()
+    #     plt.close()
+    #
+    # #  Calculate energy flexibility for delayed operation
+    # array_beta_th_delayed = \
+    #     calc_dimless_tes_el_flex(building=build,
+    #                              array_flex_energy=array_energy_flex_delayed,
+    #                              use_eh=use_eh)
+    #
+    # print('Dimensionless el. energy flexibility for delayed operation:')
+    # print(sum(array_beta_th_delayed))
+    #
+    # if plot_res:
+    #     plt.plot(array_beta_th_delayed)
+    #     plt.title('beta_el (delayed) for building ' + str(id))
+    #     plt.xlabel('Time in hours')
+    #     plt.ylabel('Dimensionless el. energy flexibility beta_el (delayed)')
+    #     plt.show()
+    #     plt.close()
+    #
+    # print('#############################################################')
+    # print()
+
+
+def perform_flex_analysis_city(city, use_eh=False, mod_boi=False,
+                               plot_res=False):
+    """
+
+    Parameters
+    ----------
+    city
+    use_eh
+    mod_boi
+    plot_res
+
+    Returns
+    -------
+
+    """
+
+    #  Get list of buildings (with and without LHN connections
+    #  ######################################################################
+    #  Get list building ids
+    list_build_ids = city.get_list_build_entity_node_ids()
+
+    #  Find LHN connected buildings (--> Process as single flexibility entity)
+    #  List of lists of building interconnected nodes (heating)
+    list_lists_lhn_ids_build = \
+        netop.get_list_with_energy_net_con_node_ids(city=city,
+                                                    network_type='heating',
+                                                    build_node_only=True)
+
+    #  Make flat list with lhn conn. buildings
+    list_lhn_build = []
+
+    for sublhn in list_lists_lhn_ids_build:
+        for id in sublhn:
+            list_lhn_build.append(id)
+
+    #  Find stand alone buildings
+    list_stand_alone_build = list(set(list_build_ids) - set(list_lhn_build))
+    #  ######################################################################
+
+    #  Process stand alone buildings
+    #  ######################################################################
+    for n in list_stand_alone_build:
+        curr_build = city.nodes[n]['entity']
+
+        perform_flex_analysis_single_build(build=curr_build,
+                                           use_eh=use_eh,
+                                           mod_boi=mod_boi,
+                                           id=n, plot_res=plot_res)
+
+    #  Process LHN connected buildings
+    #  ######################################################################
+    for sublhn in list_lists_lhn_ids_build:
+
+        perform_flex_analysis_sublhn(city=city,
+                                     list_lhn=sublhn,
+                                     use_eh=use_eh,
+                                     mod_boi=mod_boi,
+                                     plot_res=plot_res)
+
+def main2():
+    time_start = time.time()
+
+    #  Add energy system, if no energy system exists on city.pkl file
+    #  Necessary to perform flexibility calculation
+    add_esys = True
+
+    mod_boi = True  # Add boiler, if necessary to solve energy balance to
+    #  calculate reference ehg electric load
+
+    use_eh = False  # If True, also accounts for electric heater power to
+    #  quantify flexiblity
+
+    plot_res = False
+
+    city_name = 'aachen_kronenberg_6.pkl'
+    path_here = os.path.dirname(os.path.abspath(__file__))
+    path_city = os.path.join(path_here, 'input', city_name)
+
+    city = pickle.load(open(path_city, mode='rb'))
+
+    if add_esys:
+        dict_data_entry = {'type': 'heating', 'method': 1,
+                           'nodelist': [1001, 1002]}
+
+        dict_data = {1: dict_data_entry}
+
+        #  Add LHN network to all buildings
+        enetgen.add_energy_networks_to_city(city=city,
+                                            dict_data=dict_data)
+
+        #  Add energy system
+        #  Generate one feeder with CHP, boiler and TES
+        list_esys = [(1001, 1, 4),  # CHP, Boiler, TES, with LHN to 1002
+                     # (1002, 1, 4),
+                     (1003, 1, 4),
+                     (1004, 2, 2),  # HP (ww), EH, TES
+                     (1005, 2, 2),
+                     (1006, 2, 2)]
+
+        esysgen.gen_esys_for_city(city=city,
+                                  list_data=list_esys,
+                                  dhw_scale=True)
+
+    perform_flex_analysis_city(city=city, use_eh=use_eh, mod_boi=mod_boi,
+                               plot_res=plot_res)
+
+    time_stop = time.time()
+
+    delta_t = time_stop - time_start
+
+    print('Required runtime for execution in seconds: ')
+    print(round(delta_t, 0))
+
+    nb_build = city.get_nb_of_building_entities()
+
+    print('Average runtime per building in seconds: ')
+    print(int(delta_t / nb_build))
+
+
+# def main():
+#     #  Add energy system, if no energy system exists on city.pkl file
+#     #  Necessary to perform flexibility calculation
+#     add_esys = True
+#
+#     build_id = 1001
+#
+#     mod_boi = True  # Add boiler, if necessary to solve energy balance to
+#     #  calculate reference ehg electric load
+#
+#     use_eh = False  # If True, also accounts for electric heater power to
+#     #  quantify flexiblity
+#
+#     city_name = 'aachen_kronenberg_6.pkl'
+#     path_here = os.path.dirname(os.path.abspath(__file__))
+#     path_city = os.path.join(path_here, 'input', city_name)
+#
+#     city = pickle.load(open(path_city, mode='rb'))
+#
+#     timestep = city.environment.timer.timeDiscretization
+#
+#     if add_esys:
+#         # dict_data_entry = {'type': 'heating', 'method': 1,
+#         #                    'nodelist': [1001, 1002]}
+#         #
+#         # dict_data = {1: dict_data_entry}
+#         #
+#         # #  Add LHN network to all buildings
+#         # enetgen.add_energy_networks_to_city(city=city,
+#         #                                     dict_data=dict_data)
+#
+#         #  Add energy system
+#         #  Generate one feeder with CHP, boiler and TES
+#         list_esys = [(1001, 1, 4),  # CHP, Boiler, TES
+#                      (1002, 1, 4),
+#                      (1003, 1, 4),
+#                      (1004, 2, 2),  # HP (ww), EH, TES
+#                      (1005, 2, 2),
+#                      (1006, 2, 2)]
+#
+#         esysgen.gen_esys_for_city(city=city,
+#                                   list_data=list_esys,
+#                                   dhw_scale=True)
+#
+#     #  Pointer to current building object
+#     curr_build = city.nodes[build_id]['entity']
+#
+#     #  Get maximal thermal output power of electric heat generators
+#     #  (CHP, EH, HP)
+#     q_ehg_nom = 0  # in Watt
+#     if curr_build.bes.hasChp:
+#         q_ehg_nom += curr_build.bes.chp.qNominal
+#     elif curr_build.bes.hasHeatpump:
+#         q_ehg_nom += curr_build.bes.heatpump.qNominal
+#
+#         if curr_build.bes.hasElectricalHeater and use_eh:
+#             q_ehg_nom += curr_build.bes.electricalHeater.qNominal
+#
+#     #  Calculate average building thermal power
+#     #  Extract thermal power curve of building
+#     array_sh = curr_build.get_space_heating_power_curve()
+#     array_dhw = curr_build.get_dhw_power_curve()
+#
+#     sh_dem = sum(array_sh) * timestep / (3600 * 1000)
+#     dhw_dem = sum(array_dhw) * timestep / (3600 * 1000)
+#
+#     #  Begin calculations
+#     #  #####################################################################
+#
+#     #  Calculate dimensionless thermal power flexibility
+#     alpha_th = calc_dimless_th_power_flex(q_ehg_nom=q_ehg_nom,
+#                                           array_sh=array_sh,
+#                                           array_dhw=array_dhw,
+#                                           timestep=timestep)
+#
+#     print('Dimensionless thermal power flexibility (alpha_th): ')
+#     print(alpha_th)
+#     print()
+#
+#     #  Copy building to perform energy balance calculation (necessary to
+#     #  estimate stored amount of energy in TES per timestep)
+#     build_copy = copy.deepcopy(curr_build)
+#     #  Run thermal energy balance
+#     buildeb.calc_build_therm_eb(build=build_copy)
+#     #  Calculate average stored amount of energy in TES per timestep (for a
+#     #  whole year)
+#     en_av_tes = calc_av_energy_tes_year(building=build_copy)
+#
+#     #  Calculate dimensionless thermal storage energy flexibility
+#     beta_th = calc_dimless_tes_th_flex(sh_dem=sh_dem, dhw_dem=dhw_dem,
+#                                        en_av_tes=en_av_tes)
+#
+#     print('Dimensionless thermal storage energy flexibility (beta_th): ')
+#     print(beta_th)
+#     print()
+#
+#     #  Calculate t_forced
+#     #  ###################################################################
+#
+#     #  Pointer to tes
+#     tes = curr_build.bes.tes
+#
+#     #  Calculate t_force array
+#     array_t_forced = calc_t_forced_build(q_ehg_nom=q_ehg_nom,
+#                                          array_sh=array_sh,
+#                                          array_dhw=array_dhw,
+#                                          timestep=timestep,
+#                                          tes=tes)
+#
+#     plt.plot(array_t_forced / 3600)
+#     plt.xlabel('Time in hours')
+#     plt.ylabel('T_forced in hours')
+#     plt.show()
+#     plt.close()
+#
+#     #  Calculate t_forced
+#     #  ###################################################################
+#
+#     #  Calculate t_force array
+#     array_t_delayed = calc_t_delayed_build(q_ehg_nom=q_ehg_nom,
+#                                            array_sh=array_sh,
+#                                            array_dhw=array_dhw,
+#                                            timestep=timestep,
+#                                            tes=tes,
+#                                            plot_soc=False,
+#                                            use_boi=False,
+#                                            q_boi_nom=None)
+#
+#     plt.plot(array_t_delayed / 3600)
+#     plt.xlabel('Time in hours')
+#     plt.ylabel('T_delayed in hours')
+#     plt.show()
+#     plt.close()
+#
+#     #  Calculate reference EHG el. load curve
+#     #  ##################################################################
+#     (array_p_el_ref, array_el_power_hp_in) = \
+#         calc_power_ref_curve(building=curr_build, mod_boi=mod_boi,
+#                              use_eh=use_eh)
+#
+#     plt.plot(array_p_el_ref / 1000)
+#     plt.xlabel('Time in hours')
+#     plt.ylabel('Reference EHG el. power in kW')
+#     plt.show()
+#     plt.close()
+#
+#     #  Calculate pow_force_flex for each timespan
+#     #  ##################################################################
+#     list_lists_pow_forced = calc_pow_flex_forced(building=curr_build,
+#                                                  array_t_forced=array_t_forced,
+#                                                  array_p_el_ref=array_p_el_ref,
+#                                                  use_eh=use_eh)
+#
+#     # for sublist in list_lists_pow_forced:
+#     #     print(sublist)
+#
+#     #  Calculate average forced flex power for each timestep
+#     array_av_flex_forced = \
+#         calc_av_pow_flex_forced(list_lists_pow_forced=list_lists_pow_forced,
+#                                 timestep=timestep)
+#
+#     #  Calculate cycle forced flex. power for each timestep
+#     array_cycle_flex_forced = \
+#         calc_cycle_pow_flex_forced(list_lists_pow_forced=list_lists_pow_forced,
+#                                    array_t_delayed=array_t_delayed,
+#                                    timestep=timestep)
+#
+#     plt.plot(array_av_flex_forced / 1000, label='Average')
+#     plt.plot(array_cycle_flex_forced / 1000, label='Cycle')
+#     plt.xlabel('Time in hours')
+#     plt.ylabel('Forced el. power flexibility in kW')
+#     plt.legend()
+#     plt.tight_layout()
+#     plt.show()
+#     plt.close()
+#
+#     #  Calculate force energy flexibility
+#     array_energy_flex_forced = \
+#         calc_cycle_energy_forced_year(timestep=timestep,
+#                                       array_cycle_flex_forced=
+#                                       array_cycle_flex_forced)
+#
+#     print('Energy flexibility in kWh for forced operation:')
+#     print(sum(array_energy_flex_forced) / (3600 * 1000))
+#
+#     #  Calculate dimensionless electric power flexibility for forced operation
+#     array_alpha_el_forced = \
+#         calc_dimless_el_power_flex(building=curr_build,
+#                                    array_el_flex=
+#                                    array_cycle_flex_forced)
+#
+#     plt.plot(array_alpha_el_forced)
+#     plt.xlabel('Time in hours')
+#     plt.ylabel('Dimensionless el. power flexibility alpha_el (forced)')
+#     plt.show()
+#     plt.close()
+#
+#     #  Calculate energy flexibility for forced operation
+#     array_beta_th_forced = \
+#         calc_dimless_tes_el_flex(building=curr_build,
+#                                  array_flex_energy=array_energy_flex_forced,
+#                                  id=build_id, use_eh=use_eh)
+#
+#     print('Dimensionless el. energy flexibility for force operation:')
+#     print(sum(array_beta_th_forced))
+#     print()
+#
+#     plt.plot(array_beta_th_forced)
+#     plt.xlabel('Time in hours')
+#     plt.ylabel('Dimensionless el. energy flexibility beta_el (forced)')
+#     plt.show()
+#     plt.close()
+#
+#     #  Calculate pow_delayed_flex for each timespan
+#     #  ##################################################################
+#     list_lists_pow_delayed = \
+#         calc_pow_flex_delayed(timestep=timestep,
+#                               array_t_delayed=array_t_delayed,
+#                               array_p_el_ref=array_p_el_ref)
+#
+#     # for sublist in list_lists_pow_delayed:
+#     #     print(sublist)
+#
+#     array_av_flex_delayed = \
+#         calc_av_pow_flex_delayed(list_lists_pow_delayed=list_lists_pow_delayed,
+#                                  timestep=timestep)
+#
+#     array_cycle_flex_delayed = \
+#         calc_cycle_pow_flex_delayed(
+#             list_lists_pow_delayed=list_lists_pow_delayed,
+#             array_t_forced=array_t_forced,
+#             timestep=timestep)
+#
+#     plt.plot(array_av_flex_delayed / 1000, label='Average')
+#     plt.plot(array_cycle_flex_delayed / 1000, label='Cycle')
+#     plt.xlabel('Time in hours')
+#     plt.ylabel('Delayed el. power flexibility in kW')
+#     plt.legend()
+#     plt.show()
+#     plt.close()
+#
+#     array_energy_flex_delayed = \
+#         calc_cycle_energy_delayed_year(timestep=timestep,
+#                                        array_cycle_flex_delayed=
+#                                        array_cycle_flex_delayed)
+#
+#     print('Energy flexibility in kWh for delayed operation:')
+#     print(sum(array_energy_flex_delayed) / (3600 * 1000))
+#
+#     #  Calculate dimensionless electric power flexibility for forced operation
+#     array_alpha_el_delayed = \
+#         calc_dimless_el_power_flex(building=curr_build,
+#                                    array_el_flex=
+#                                    array_cycle_flex_delayed)
+#
+#     plt.plot(array_alpha_el_delayed)
+#     plt.xlabel('Time in hours')
+#     plt.ylabel('Dimensionless el. power flexibility alpha_el (delayed)')
+#     plt.show()
+#     plt.close()
+#
+#     #  Calculate energy flexibility for delayed operation
+#     array_beta_th_delayed = \
+#         calc_dimless_tes_el_flex(building=curr_build,
+#                                  array_flex_energy=array_energy_flex_delayed,
+#                                  id=build_id, use_eh=use_eh)
+#
+#     print('Dimensionless el. energy flexibility for delayed operation:')
+#     print(sum(array_beta_th_delayed))
+#
+#     plt.plot(array_beta_th_delayed)
+#     plt.xlabel('Time in hours')
+#     plt.ylabel('Dimensionless el. energy flexibility beta_el (delayed)')
+#     plt.show()
+#     plt.close()
 
 
 if __name__ == '__main__':
-    main()
+    # main()
+    main2()
