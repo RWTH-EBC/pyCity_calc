@@ -59,7 +59,7 @@ def load_enersys_input_data(esys_path):
     return list_data
 
 
-def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
+def gen_esys_for_city(city, list_data, dhw_scale=True, tes_default=100,
                       tes_default_chp=None,
                       buffer_factor=2, lhn_buffer=1.2, eta_pv=0.1275,
                       eta_boi=0.95):
@@ -76,7 +76,7 @@ def gen_esys_for_city(city, list_data, dhw_scale=False, tes_default=100,
         information: (node_id, type, method)
     dhw_scale : bool, optional
         Defines, if hot water thermal energy demand should be taken into
-        account. (default: False)
+        account. (default: True)
         If True, only space heating power demand is taken into account.
     tes_default : float, optional
         Default value for smallest thermal storage size in kg (for boiler

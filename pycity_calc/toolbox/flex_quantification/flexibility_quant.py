@@ -1126,7 +1126,7 @@ def main():
 
         esysgen.gen_esys_for_city(city=city,
                                   list_data=list_esys,
-                                  dhw_scale=False)
+                                  dhw_scale=True)
 
     #  Pointer to current building object
     curr_build = city.nodes[build_id]['entity']
