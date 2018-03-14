@@ -136,25 +136,31 @@ def calc_t_forced_build(q_ehg_nom, array_sh, array_dhw, timestep, tes):
     return array_t_forced
 
 
-def calc_t_delayed_build(building, id=None, use_boi=False, plot_soc=False):
+def calc_t_delayed_build(q_ehg_nom, array_sh, array_dhw, timestep, tes,
+                         plot_soc=False, use_boi=False, q_boi_nom=None):
     """
     Calculate t delayed array for building. Precalculates SOC based on
     EHG thermal output power and thermal power of building (demand)
 
     Parameters
     ----------
-    building : object
-        Building object of pyCity_calc
-    id : int, optional
-        Building id (default: None)
-    use_boi : bool, optional
-        Defines, if boiler can be used to charge thermal storage in prior
-        timesteps (default: False). This can be of interest, if the EHG
-        nominal thermal power is below the thermal power of the building
-        (e.g. for CHPs) and the TES is not fully charged (reducing the delayed
-        time)
+    q_ehg_nom : float
+        Nominal thermal power of electric heat generator(s) in Watt
+    array_sh : array (of floats)
+        Array holding space heating power values in Watt
+    array_dhw : array (of floats)
+        Array holding hot water power values in Watt
+    timestep : int
+        Timestep in seconds
+    tes : object
+        TES object of pyCity_calc
     plot_soc : bool, optional
         Plots SOC of storage over year for pre-charging (Default: False)
+    use_boi : bool, optional
+        Defines, if boiler should be used to pre-charge tes (default: False)
+    q_boi_nom : float, optional
+        Boiler nominal thermal power in Watt (default: None). Only relevant,
+        if use_boi is True
 
     Returns
     -------
@@ -163,37 +169,8 @@ def calc_t_delayed_build(building, id=None, use_boi=False, plot_soc=False):
         t_delayed is given in seconds
     """
 
-    #  Check if building has energy system
-    #  ###########################################################
-    if building.hasBes is False:
-        msg = 'Building ' + str(id) + ' has no building energy system! ' \
-                                      'Thus, cannot calculate t_forece array.'
-        raise AssertionError(msg)
-
-    timestep = building.environment.timer.timeDiscretization
-
     #  Create initial array
     array_t_delayed = np.zeros(int(365 * 24 * 3600 / timestep))
-
-    #  ###########################################################
-    if building.bes.hasTes is False:
-        msg = 'Building ' + str(id) + ' has no thermal storage. ' \
-                                      'Thus, therm. flexibility is zero.'
-        warnings.warn(msg)
-        #  Flexibility is zero, return array with zeros
-        return array_t_delayed
-
-    #  Get maximal thermal output power of electric heat generators
-    #  (CHP, EH, HP)
-    q_ehg_nom = 0  # in Watt
-    if building.bes.hasChp:
-        q_ehg_nom += building.bes.chp.qNominal
-    if building.bes.hasHeatpump:
-        q_ehg_nom += building.bes.heatpump.qNominal
-    if building.bes.hasElectricalHeater:
-        q_ehg_nom += building.bes.electricalHeater.qNominal
-    if building.bes.hasBoiler:
-        q_boi_nom = building.bes.boiler.qNominal
 
     #  ###########################################################
     if q_ehg_nom == 0:
@@ -205,9 +182,7 @@ def calc_t_delayed_build(building, id=None, use_boi=False, plot_soc=False):
         return array_t_delayed
 
     #  Extract thermal power curve of building
-    sh_power = building.get_space_heating_power_curve()
-    dhw_power = building.get_dhw_power_curve()
-    th_power = sh_power + dhw_power
+    array_th = array_sh + array_dhw
 
     #  Precalculate, if it is possible to fully charge tes in prior timestep
     #  ###########################################################
@@ -215,7 +190,7 @@ def calc_t_delayed_build(building, id=None, use_boi=False, plot_soc=False):
     array_tes_soc = np.zeros(len(array_t_delayed))
 
     #  Calculate maximal amount of storable energy in kWh
-    q_sto_max = building.bes.tes.calc_storage_max_amount_of_energy()
+    q_sto_max = tes.calc_storage_max_amount_of_energy()
 
     #  Assuming empty storage at beginning
     q_sto_cur = 0
@@ -226,18 +201,18 @@ def calc_t_delayed_build(building, id=None, use_boi=False, plot_soc=False):
     else:
         q_ref_nom = q_ehg_nom + 0.0
 
-    for i in range(len(th_power) - 1):
+    for i in range(len(array_th) - 1):
 
-        if q_ref_nom > th_power[i]:
+        if q_ref_nom > array_th[i]:
             #  Charging possible
-            delta_q = (q_ref_nom - th_power[i]) * timestep / (3600 * 1000)
+            delta_q = (q_ref_nom - array_th[i]) * timestep / (3600 * 1000)
             if q_sto_cur + delta_q < q_sto_max:
                 q_sto_cur += delta_q
             else:
                 q_sto_cur = q_sto_max + 0.0
         else:
             #  Discharging event
-            delta_q = (-q_ref_nom + th_power[i]) * timestep / (3600 * 1000)
+            delta_q = (-q_ref_nom + array_th[i]) * timestep / (3600 * 1000)
             if q_sto_cur - delta_q > 0:
                 q_sto_cur -= delta_q
             else:
@@ -248,7 +223,7 @@ def calc_t_delayed_build(building, id=None, use_boi=False, plot_soc=False):
         array_tes_en[i + 1] = q_sto_cur
 
     #  Calculate soc value for each timestep
-    for i in range(len(th_power)):
+    for i in range(len(array_th)):
         array_tes_soc[i] = array_tes_en[i] / q_sto_max
 
     if plot_soc:
@@ -264,7 +239,7 @@ def calc_t_delayed_build(building, id=None, use_boi=False, plot_soc=False):
     for i in range(len(array_t_delayed)):
         #  Copy storage and set initial / current temperature
         #  to t_max * soc (definingn state of charge for TES)
-        tes_copy = copy.deepcopy(building.bes.tes)
+        tes_copy = copy.deepcopy(tes)
         tes_copy.t_current = tes_copy.tMax * array_tes_soc[i]
         tes_copy.tInit = tes_copy.tMax * array_tes_soc[i]
 
@@ -272,7 +247,7 @@ def calc_t_delayed_build(building, id=None, use_boi=False, plot_soc=False):
         for t in range(len(array_t_delayed) - i):
 
             #  Current thermal power demand
-            th_pow_cur = th_power[t + i]
+            th_pow_cur = array_th[t + i]
 
             #  if calc_storage_q_in_max > q_ehg_nom
             if tes_copy.calc_storage_q_out_max() > th_pow_cur:
@@ -1206,7 +1181,14 @@ def main():
     #  ###################################################################
 
     #  Calculate t_force array
-    array_t_delayed = calc_t_delayed_build(building=curr_build, id=build_id)
+    array_t_delayed = calc_t_delayed_build(q_ehg_nom=q_ehg_nom,
+                                           array_sh=array_sh,
+                                           array_dhw=array_dhw,
+                                           timestep=timestep,
+                                           tes=tes,
+                                           plot_soc=False,
+                                           use_boi=False,
+                                           q_boi_nom=None)
 
     plt.plot(array_t_delayed / 3600)
     plt.xlabel('Time in hours')
