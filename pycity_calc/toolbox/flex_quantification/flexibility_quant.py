@@ -1672,37 +1672,37 @@ def perform_flex_analysis_sublhn(city, list_lhn, use_eh=False, mod_boi=False,
     # for sublist in list_lists_pow_forced:
     #     print(sublist)
 
-    # #  Calculate average forced flex power for each timestep
-    # array_av_flex_forced = \
-    #     calc_av_pow_flex_forced(list_lists_pow_forced=list_lists_pow_forced,
-    #                             timestep=timestep)
-    #
-    # #  Calculate cycle forced flex. power for each timestep
-    # array_cycle_flex_forced = \
-    #     calc_cycle_pow_flex_forced(list_lists_pow_forced=list_lists_pow_forced,
-    #                                array_t_delayed=array_t_delayed,
-    #                                timestep=timestep)
-    #
-    # if plot_res:
-    #     plt.plot(array_av_flex_forced / 1000, label='Average')
-    #     plt.plot(array_cycle_flex_forced / 1000, label='Cycle')
-    #     plt.title('Forced power flex. for building ' + str(id))
-    #     plt.xlabel('Time in hours')
-    #     plt.ylabel('Forced el. power flexibility in kW')
-    #     plt.legend()
-    #     plt.tight_layout()
-    #     plt.show()
-    #     plt.close()
-    #
-    # #  Calculate force energy flexibility
-    # array_energy_flex_forced = \
-    #     calc_cycle_energy_forced_year(timestep=timestep,
-    #                                   array_cycle_flex_forced=
-    #                                   array_cycle_flex_forced)
-    #
-    # print('Energy flexibility in kWh for forced operation:')
-    # print(sum(array_energy_flex_forced) / (3600 * 1000))
-    #
+    #  Calculate average forced flex power for each timestep
+    array_av_flex_forced = \
+        calc_av_pow_flex_forced(list_lists_pow_forced=list_lists_pow_forced,
+                                timestep=timestep)
+
+    #  Calculate cycle forced flex. power for each timestep
+    array_cycle_flex_forced = \
+        calc_cycle_pow_flex_forced(list_lists_pow_forced=list_lists_pow_forced,
+                                   array_t_delayed=array_t_delayed,
+                                   timestep=timestep)
+
+    if plot_res:
+        plt.plot(array_av_flex_forced / 1000, label='Average')
+        plt.plot(array_cycle_flex_forced / 1000, label='Cycle')
+        plt.title('Forced power flex. for building ' + str(id))
+        plt.xlabel('Time in hours')
+        plt.ylabel('Forced el. power flexibility in kW')
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
+        plt.close()
+
+    #  Calculate force energy flexibility
+    array_energy_flex_forced = \
+        calc_cycle_energy_forced_year(timestep=timestep,
+                                      array_cycle_flex_forced=
+                                      array_cycle_flex_forced)
+
+    print('Energy flexibility in kWh for forced operation:')
+    print(sum(array_energy_flex_forced) / (3600 * 1000))
+
     # #  Calculate dimensionless electric power flexibility for forced operation
     # array_alpha_el_forced = \
     #     calc_dimless_el_power_flex(building=build,
