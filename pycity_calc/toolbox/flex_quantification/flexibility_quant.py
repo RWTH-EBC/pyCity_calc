@@ -621,25 +621,23 @@ def calc_power_ref_curve_sublhn(city, mod_boi=True, boi_size=0, use_eh=False):
     return array_p_el_ref
 
 
-def calc_pow_flex_forced(building, array_t_forced, array_p_el_ref,
-                         use_eh=False):
+def calc_pow_flex_forced(timestep, p_ehg_nom, array_t_forced, array_p_el_ref):
     """
     Calculate forced power flexibility for every timestep in given
     forced period
 
     Parameters
     ----------
-    building : object
-        Building object of pyCity_calc
+    timestep : int
+        Timestep in seconds
+    p_ehg_nom : float
+        Nominal el. power of EHG(s) in Watt
     array_t_force : np.array
         Array holding t forced for each timestep. t_forced is given in seconds
     array_p_el_ref : np.array
         Array holding electric power values in Watt (used/produced by
         electric heat generator (EHG)) (+ used energy (HP/EH) / - produced
         electric energy (CHP))
-    use_eh : bool, optional
-        Defines, if electric heater is also used to define t_forced_build
-        (default: False).
 
     Returns
     -------
@@ -649,23 +647,9 @@ def calc_pow_flex_forced(building, array_t_forced, array_p_el_ref,
         corresponding el. power values for forced flexibility in Watt.
     """
 
-    timestep = building.environment.timer.timeDiscretization
+    # timestep = building.environment.timer.timeDiscretization
 
     list_lists_pow_forced = []
-
-    #  Get maximal thermal output power of electric heat generators
-    #  (CHP, EH, HP)
-    p_ehg_nom = 0  # in Watt
-
-    if building.bes.hasChp:
-        p_ehg_nom += building.bes.chp.pNominal
-    elif building.bes.hasHeatpump:
-        # p_ehg_nom += max(building.bes.heatpump.array_el_power_in)
-        #  TODO: Add option to estimate
-        p_ehg_nom += building.bes.heatpump.qNominal / 3
-
-        if building.bes.hasElectricalHeater and use_eh:
-            p_ehg_nom += building.bes.electricalHeater.qNominal
 
     #  Loop over t_forced array
     for i in range(len(array_t_forced)):
@@ -1257,13 +1241,18 @@ def perform_flex_analysis_single_build(build, use_eh=False, mod_boi=False,
     #  Get maximal thermal output power of electric heat generators
     #  (CHP, EH, HP)
     q_ehg_nom = 0  # in Watt
+    p_ehg_nom = 0  # in Watt
     if build.bes.hasChp:
         q_ehg_nom += build.bes.chp.qNominal
+        p_ehg_nom += build.bes.chp.pNominal
     elif build.bes.hasHeatpump:
         q_ehg_nom += build.bes.heatpump.qNominal
+        #  Estimate p_ehg of HP with COP of 3
+        p_ehg_nom += build.bes.heatpump.qNominal / 3
 
         if build.bes.hasElectricalHeater and use_eh:
             q_ehg_nom += build.bes.electricalHeater.qNominal
+            p_ehg_nom += build.bes.electricalHeater.qNominal
 
     #  Calculate average building thermal power
     #  Extract thermal power curve of building
@@ -1361,10 +1350,10 @@ def perform_flex_analysis_single_build(build, use_eh=False, mod_boi=False,
 
     #  Calculate pow_force_flex for each timespan
     #  ##################################################################
-    list_lists_pow_forced = calc_pow_flex_forced(building=build,
+    list_lists_pow_forced = calc_pow_flex_forced(timestep=timestep,
+                                                 p_ehg_nom=p_ehg_nom,
                                                  array_t_forced=array_t_forced,
-                                                 array_p_el_ref=array_p_el_ref,
-                                                 use_eh=use_eh)
+                                                 array_p_el_ref=array_p_el_ref)
 
     # for sublist in list_lists_pow_forced:
     #     print(sublist)
@@ -1539,11 +1528,13 @@ def perform_flex_analysis_sublhn(city, list_lhn, use_eh=False, mod_boi=False,
     #  Get maximal thermal output power of electric heat generators
     #  (CHPs)
     q_ehg_nom = 0  # in Watt
+    p_ehg_nom = 0  # in Watt
     for n in list_lhn:
         curr_build = city_copy.nodes[n]['entity']
         if curr_build.hasBes:
             if curr_build.bes.hasChp:
                 q_ehg_nom += curr_build.bes.chp.qNominal
+                p_ehg_nom += curr_build.bes.chp.pNominal
 
     #  Calculate average building thermal power
     #  Extract thermal power curve of building
@@ -1671,16 +1662,16 @@ def perform_flex_analysis_sublhn(city, list_lhn, use_eh=False, mod_boi=False,
         plt.show()
         plt.close()
 
-    # #  Calculate pow_force_flex for each timespan
-    # #  ##################################################################
-    # list_lists_pow_forced = calc_pow_flex_forced(building=build,
-    #                                              array_t_forced=array_t_forced,
-    #                                              array_p_el_ref=array_p_el_ref,
-    #                                              use_eh=use_eh)
-    #
-    # # for sublist in list_lists_pow_forced:
-    # #     print(sublist)
-    #
+    #  Calculate pow_force_flex for each timespan
+    #  ##################################################################
+    list_lists_pow_forced = calc_pow_flex_forced(timestep=timestep,
+                                                 p_ehg_nom=p_ehg_nom,
+                                                 array_t_forced=array_t_forced,
+                                                 array_p_el_ref=array_p_el_ref)
+
+    # for sublist in list_lists_pow_forced:
+    #     print(sublist)
+
     # #  Calculate average forced flex power for each timestep
     # array_av_flex_forced = \
     #     calc_av_pow_flex_forced(list_lists_pow_forced=list_lists_pow_forced,
