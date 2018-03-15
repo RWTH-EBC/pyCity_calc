@@ -1139,8 +1139,8 @@ def calc_dimless_el_power_flex(timestep, array_sh, array_dhw, array_el_flex):
     return array_alpha_el
 
 
-def calc_dimless_tes_el_flex(building, array_flex_energy, id=None,
-                             use_eh=False):
+def calc_dimless_tes_el_flex(array_flex_energy, sh_dem,
+                             dhw_dem):
     """
     Calculate dimensionless electric storage flexibility beta_el
 
@@ -1150,55 +1150,16 @@ def calc_dimless_tes_el_flex(building, array_flex_energy, id=None,
         Building object of pyCity_calc
     array_flex_energy : np.array (of floats)
         Array holding energy flexibilities in Joule
-    id : int, optional
-        Building id (default: None)
-    use_eh : bool, optional
-        Defines, if electric heater is also used to define t_forced_build
-        (default: False).
+    sh_dem : float
+        Space heating demand in kWh
+    dhw_dem : float
+        Hot water demand in kWh
 
     Returns
     -------
     array_beta_el : np.array (of floats)
         Array holding dimensionless electric storage flexibility
     """
-
-    #  Check if building has energy system
-    #  ###########################################################
-    if building.hasBes is False:
-        msg = 'Building ' + str(id) + ' has no building energy system! ' \
-                                      'Thus, cannot calculate el. flexibility.'
-        raise AssertionError(msg)
-
-    #  Get maximal thermal output power of electric heat generators
-    #  (CHP, EH, HP)
-    q_ehg_nom = 0  # in Watt
-    if building.bes.hasChp:
-        q_ehg_nom += building.bes.chp.qNominal
-    elif building.bes.hasHeatpump:
-        q_ehg_nom += building.bes.heatpump.qNominal
-
-        if building.bes.hasElectricalHeater and use_eh:
-            q_ehg_nom += building.bes.electricalHeater.qNominal
-
-    #  ###########################################################
-    if q_ehg_nom == 0:
-        msg = 'Building ' \
-              + str(id) + ' has no thermo-electric energy systems. ' \
-                          'Thus, el. flexibility is zero.'
-        warnings.warn(msg)
-        #  Flexibility is zero
-        return 0
-
-    #  Copy building object
-    build_copy = copy.deepcopy(building)
-
-    #  Get thermal energy demands
-    #  ###########################################################
-    sh_dem = build_copy.get_annual_space_heat_demand()
-    dhw_dem = build_copy.get_annual_dhw_demand()
-
-    #  Run thermal energy balance
-    buildeb.calc_build_therm_eb(build=build_copy)
 
     #  Convert array_flex_energy from Joule to kWh
     array_flex_energy_kwh = array_flex_energy / (3600 * 1000)
@@ -1402,9 +1363,9 @@ def perform_flex_analysis_single_build(build, use_eh=False, mod_boi=False,
 
     #  Calculate energy flexibility for forced operation
     array_beta_th_forced = \
-        calc_dimless_tes_el_flex(building=build,
-                                 array_flex_energy=array_energy_flex_forced,
-                                 use_eh=use_eh)
+        calc_dimless_tes_el_flex(array_flex_energy=array_energy_flex_forced,
+                                 sh_dem=sh_dem,
+                                 dhw_dem=dhw_dem)
 
     print('Dimensionless el. energy flexibility for force operation:')
     print(sum(array_beta_th_forced))
@@ -1474,9 +1435,9 @@ def perform_flex_analysis_single_build(build, use_eh=False, mod_boi=False,
 
     #  Calculate energy flexibility for delayed operation
     array_beta_th_delayed = \
-        calc_dimless_tes_el_flex(building=build,
-                                 array_flex_energy=array_energy_flex_delayed,
-                                 use_eh=use_eh)
+        calc_dimless_tes_el_flex(array_flex_energy=array_energy_flex_delayed,
+                                 sh_dem=sh_dem,
+                                 dhw_dem=dhw_dem)
 
     print('Dimensionless el. energy flexibility for delayed operation:')
     print(sum(array_beta_th_delayed))
@@ -1719,24 +1680,24 @@ def perform_flex_analysis_sublhn(city, list_lhn, use_eh=False, mod_boi=False,
         plt.show()
         plt.close()
 
-    # #  Calculate energy flexibility for forced operation
-    # array_beta_th_forced = \
-    #     calc_dimless_tes_el_flex(building=build,
-    #                              array_flex_energy=array_energy_flex_forced,
-    #                              use_eh=use_eh)
-    #
-    # print('Dimensionless el. energy flexibility for force operation:')
-    # print(sum(array_beta_th_forced))
-    # print()
-    #
-    # if plot_res:
-    #     plt.plot(array_beta_th_forced)
-    #     plt.title('beta_el (forced) for building ' + str(id))
-    #     plt.xlabel('Time in hours')
-    #     plt.ylabel('Dimensionless el. energy flexibility beta_el (forced)')
-    #     plt.show()
-    #     plt.close()
-    #
+    #  Calculate energy flexibility for forced operation
+    array_beta_th_forced = \
+        calc_dimless_tes_el_flex(array_flex_energy=array_energy_flex_forced,
+                                 sh_dem=sh_dem,
+                                 dhw_dem=dhw_dem)
+
+    print('Dimensionless el. energy flexibility for force operation:')
+    print(sum(array_beta_th_forced))
+    print()
+
+    if plot_res:
+        plt.plot(array_beta_th_forced)
+        plt.title('beta_el (forced) for building ' + str(id))
+        plt.xlabel('Time in hours')
+        plt.ylabel('Dimensionless el. energy flexibility beta_el (forced)')
+        plt.show()
+        plt.close()
+
     # #  Calculate pow_delayed_flex for each timespan
     # #  ##################################################################
     # list_lists_pow_delayed = \
@@ -1792,9 +1753,8 @@ def perform_flex_analysis_sublhn(city, list_lhn, use_eh=False, mod_boi=False,
     #
     # #  Calculate energy flexibility for delayed operation
     # array_beta_th_delayed = \
-    #     calc_dimless_tes_el_flex(building=build,
-    #                              array_flex_energy=array_energy_flex_delayed,
-    #                              use_eh=use_eh)
+    #     calc_dimless_tes_el_flex(array_flex_energy=array_energy_flex_delayed,
+    #                              sh_dem=sh_dem, dhw_dem=dhw_dem)
     #
     # print('Dimensionless el. energy flexibility for delayed operation:')
     # print(sum(array_beta_th_delayed))
