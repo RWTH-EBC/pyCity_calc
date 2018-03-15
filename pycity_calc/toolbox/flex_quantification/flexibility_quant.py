@@ -1224,14 +1224,26 @@ def perform_flex_analysis_single_build(build, use_eh=False, mod_boi=False,
     if build.bes.hasChp:
         q_ehg_nom += build.bes.chp.qNominal
         p_ehg_nom += build.bes.chp.pNominal
+
+        has_chp = True  # Use to define algebraic-sign of forced/delayed flex.
+
     elif build.bes.hasHeatpump:
         q_ehg_nom += build.bes.heatpump.qNominal
         #  Estimate p_ehg of HP with COP of 3
         p_ehg_nom += build.bes.heatpump.qNominal / 3
 
+        has_chp = False  # Use to define algebraic-sign of forced/delayed flex.
+
         if build.bes.hasElectricalHeater and use_eh:
             q_ehg_nom += build.bes.electricalHeater.qNominal
             p_ehg_nom += build.bes.electricalHeater.qNominal
+
+    if q_ehg_nom == 0:
+        msg = 'Building ' \
+              + str(id) + 'does not have an electric heat generator (EHG). ' \
+                          'Thus, it cannot provide flexibility. Return None.'
+        warnings.warn(msg)
+        return None
 
     #  Calculate average building thermal power
     #  Extract thermal power curve of building
@@ -1358,6 +1370,11 @@ def perform_flex_analysis_single_build(build, use_eh=False, mod_boi=False,
                                    array_t_delayed=array_t_delayed,
                                    timestep=timestep)
 
+    if has_chp is False:
+        #  Convert algebraic sign to minus (for HP/EH systems)
+        array_av_flex_forced *= -1
+        array_cycle_flex_forced *= -1
+
     if plot_res:
         plt.plot(array_av_flex_forced / 1000, label='Average')
         plt.plot(array_cycle_flex_forced / 1000, label='Cycle')
@@ -1440,6 +1457,11 @@ def perform_flex_analysis_single_build(build, use_eh=False, mod_boi=False,
             list_lists_pow_delayed=list_lists_pow_delayed,
             array_t_forced=array_t_forced,
             timestep=timestep)
+
+    if has_chp is True:
+        #  Convert algebraic sign to minus (for CHP systems)
+        array_av_flex_delayed *= -1
+        array_cycle_flex_delayed *= -1
 
     if plot_res:
         plt.plot(array_av_flex_delayed / 1000, label='Average')
@@ -1732,7 +1754,7 @@ def perform_flex_analysis_sublhn(city, list_lhn, use_eh=False, mod_boi=False,
     if plot_res:
         plt.plot(array_av_flex_forced / 1000, label='Average')
         plt.plot(array_cycle_flex_forced / 1000, label='Cycle')
-        plt.title('Forced power flex. for building ' + str(id))
+        plt.title('Forced power flex. for sublhn ' + str(list_lhn))
         plt.xlabel('Time in hours')
         plt.ylabel('Forced el. power flexibility in kW')
         plt.legend()
@@ -1764,7 +1786,7 @@ def perform_flex_analysis_sublhn(city, list_lhn, use_eh=False, mod_boi=False,
 
     if plot_res:
         plt.plot(array_alpha_el_forced)
-        plt.title('alpha_el (forced) for building ' + str(id))
+        plt.title('alpha_el (forced) for sublhn ' + str(list_lhn))
         plt.xlabel('Time in hours')
         plt.ylabel('Dimensionless el. power flexibility alpha_el (forced)')
         plt.show()
@@ -1784,7 +1806,7 @@ def perform_flex_analysis_sublhn(city, list_lhn, use_eh=False, mod_boi=False,
 
     if plot_res:
         plt.plot(array_beta_th_forced)
-        plt.title('beta_el (forced) for building ' + str(id))
+        plt.title('beta_el (forced) for sublhn ' + str(list_lhn))
         plt.xlabel('Time in hours')
         plt.ylabel('Dimensionless el. energy flexibility beta_el (forced)')
         plt.show()
@@ -1812,10 +1834,14 @@ def perform_flex_analysis_sublhn(city, list_lhn, use_eh=False, mod_boi=False,
             array_t_forced=array_t_forced,
             timestep=timestep)
 
+    #  Convert pre-sign to minus, as CHP systems are used in LHN)
+    array_av_flex_delayed *= -1
+    array_cycle_flex_delayed *= -1
+
     if plot_res:
         plt.plot(array_av_flex_delayed / 1000, label='Average')
         plt.plot(array_cycle_flex_delayed / 1000, label='Cycle')
-        plt.title('Delayed el. power flex. for building ' + str(id))
+        plt.title('Delayed el. power flex. for sublhn ' + str(list_lhn))
         plt.xlabel('Time in hours')
         plt.ylabel('Delayed el. power flexibility in kW')
         plt.legend()
@@ -1842,7 +1868,7 @@ def perform_flex_analysis_sublhn(city, list_lhn, use_eh=False, mod_boi=False,
                                    array_cycle_flex_delayed)
     if plot_res:
         plt.plot(array_alpha_el_delayed)
-        plt.title('alpha_el (delayed) for building ' + str(id))
+        plt.title('alpha_el (delayed) for sublhn ' + str(list_lhn))
         plt.xlabel('Time in hours')
         plt.ylabel('Dimensionless el. power flexibility alpha_el (delayed)')
         plt.show()
@@ -1860,7 +1886,7 @@ def perform_flex_analysis_sublhn(city, list_lhn, use_eh=False, mod_boi=False,
 
     if plot_res:
         plt.plot(array_beta_th_delayed)
-        plt.title('beta_el (delayed) for building ' + str(id))
+        plt.title('beta_el (delayed) for sublhn ' + str(list_lhn))
         plt.xlabel('Time in hours')
         plt.ylabel('Dimensionless el. energy flexibility beta_el (delayed)')
         plt.show()
@@ -1894,8 +1920,41 @@ def perform_flex_analysis_city(city, use_eh=False, mod_boi=False,
 
     Returns
     -------
-
+    dict_flex_city : dict
+        Dict holding flexibility results for whole city
+            dict_flex_city['list_alpha_el_forced'] = list_alpha_el_forced
+            dict_flex_city['list_alpha_el_delayed'] = list_alpha_el_delayed
+            dict_flex_city['array_cycle_flex_forced_plus'] = \
+                array_cycle_flex_forced_plus
+            dict_flex_city['array_cycle_flex_forced_minus'] = \
+                array_cycle_flex_forced_minus
+            dict_flex_city['array_cycle_flex_delayed_plus'] = \
+                array_cycle_flex_delayed_plus
+            dict_flex_city['array_cycle_flex_delayed_minus'] = \
+                array_cycle_flex_delayed_minus
     """
+
+    timestep = city.environment.timer.timeDiscretization
+
+    dict_flex_city = {}
+
+    list_alpha_el_forced = []
+    list_alpha_el_delayed = []
+    array_cycle_flex_forced_plus = np.zeros(int(3600 * 24 * 365 / timestep))
+    array_cycle_flex_forced_minus = np.zeros(int(3600 * 24 * 365 / timestep))
+    array_cycle_flex_delayed_plus = np.zeros(int(3600 * 24 * 365 / timestep))
+    array_cycle_flex_delayed_minus = np.zeros(int(3600 * 24 * 365 / timestep))
+
+    dict_flex_city['list_alpha_el_forced'] = list_alpha_el_forced
+    dict_flex_city['list_alpha_el_delayed'] = list_alpha_el_delayed
+    dict_flex_city['array_cycle_flex_forced_plus'] = \
+        array_cycle_flex_forced_plus
+    dict_flex_city['array_cycle_flex_forced_minus'] = \
+        array_cycle_flex_forced_minus
+    dict_flex_city['array_cycle_flex_delayed_plus'] = \
+        array_cycle_flex_delayed_plus
+    dict_flex_city['array_cycle_flex_delayed_minus'] = \
+        array_cycle_flex_delayed_minus
 
     #  Get list of buildings (with and without LHN connections
     #  ######################################################################
@@ -1929,6 +1988,23 @@ def perform_flex_analysis_city(city, use_eh=False, mod_boi=False,
                                                  mod_boi=mod_boi,
                                                  plot_res=plot_res)
 
+        dict_flex_city['list_alpha_el_forced']. \
+            append(dict_flex['array_alpha_el_forced'])
+        dict_flex_city['list_alpha_el_delayed']. \
+            append(dict_flex['array_alpha_el_delayed'])
+        if max(dict_flex['array_cycle_flex_forced']) >= 0:
+            dict_flex_city['array_cycle_flex_forced_plus'] += \
+                dict_flex['array_cycle_flex_forced']
+        else:
+            dict_flex_city['array_cycle_flex_forced_minus'] += \
+                dict_flex['array_cycle_flex_forced']
+        if max(dict_flex['array_cycle_flex_delayed']) >= 0:
+            dict_flex_city['array_cycle_flex_delayed_plus'] += \
+                dict_flex['array_cycle_flex_delayed']
+        else:
+            dict_flex_city['array_cycle_flex_delayed_minus'] += \
+                dict_flex['array_cycle_flex_delayed']
+
     #  Process stand alone buildings
     #  ######################################################################
     for n in list_stand_alone_build:
@@ -1938,6 +2014,25 @@ def perform_flex_analysis_city(city, use_eh=False, mod_boi=False,
                                                        use_eh=use_eh,
                                                        mod_boi=mod_boi,
                                                        id=n, plot_res=plot_res)
+
+        dict_flex_city['list_alpha_el_forced']. \
+            append(dict_flex['array_alpha_el_forced'])
+        dict_flex_city['list_alpha_el_delayed']. \
+            append(dict_flex['array_alpha_el_delayed'])
+        if max(dict_flex['array_cycle_flex_forced']) >= 0:
+            dict_flex_city['array_cycle_flex_forced_plus'] += \
+                dict_flex['array_cycle_flex_forced']
+        else:
+            dict_flex_city['array_cycle_flex_forced_minus'] += \
+                dict_flex['array_cycle_flex_forced']
+        if max(dict_flex['array_cycle_flex_delayed']) >= 0:
+            dict_flex_city['array_cycle_flex_delayed_plus'] += \
+                dict_flex['array_cycle_flex_delayed']
+        else:
+            dict_flex_city['array_cycle_flex_delayed_minus'] += \
+                dict_flex['array_cycle_flex_delayed']
+
+    return dict_flex_city
 
 
 def main():
@@ -1984,8 +2079,10 @@ def main():
                                   list_data=list_esys,
                                   dhw_scale=True)
 
-    perform_flex_analysis_city(city=city, use_eh=use_eh, mod_boi=mod_boi,
-                               plot_res=plot_res)
+    dict_flex_city = perform_flex_analysis_city(city=city,
+                                                use_eh=use_eh,
+                                                mod_boi=mod_boi,
+                                                plot_res=plot_res)
 
     time_stop = time.time()
 
