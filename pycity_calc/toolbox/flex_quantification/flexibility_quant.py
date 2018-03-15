@@ -19,10 +19,12 @@ import matplotlib.pyplot as plt
 import pycity_base.functions.changeResolution as chres
 
 import pycity_calc.energysystems.boiler as boisys
+import pycity_calc.energysystems.thermalEnergyStorage as tessys
 import pycity_calc.cities.scripts.energy_sys_generator as esysgen
 import pycity_calc.simulation.energy_balance.building_eb_calc as buildeb
 import pycity_calc.cities.scripts.energy_network_generator as enetgen
 import pycity_calc.toolbox.networks.network_ops as netop
+import pycity_calc.simulation.energy_balance.city_eb_calc as citeb
 
 
 def calc_t_forced_build(q_ehg_nom, array_sh, array_dhw, timestep, tes):
@@ -1168,10 +1170,10 @@ def perform_flex_analysis_single_build(build, use_eh=False, mod_boi=False,
         plt.show()
         plt.close()
 
-    #  Calculate t_forced
+    #  Calculate t_delayed
     #  ###################################################################
 
-    #  Calculate t_force array
+    #  Calculate t_delayed array
     array_t_delayed = calc_t_delayed_build(q_ehg_nom=q_ehg_nom,
                                            array_sh=array_sh,
                                            array_dhw=array_dhw,
@@ -1349,7 +1351,7 @@ def perform_flex_analysis_single_build(build, use_eh=False, mod_boi=False,
 
 
 def perform_flex_analysis_sublhn(city, list_lhn, use_eh=False, mod_boi=False,
-                                plot_res=False):
+                                 plot_res=False):
     """
 
     Parameters
@@ -1385,8 +1387,9 @@ def perform_flex_analysis_sublhn(city, list_lhn, use_eh=False, mod_boi=False,
     q_ehg_nom = 0  # in Watt
     for n in list_lhn:
         curr_build = city_copy.nodes[n]['entity']
-        if curr_build.bes.hasChp:
-            q_ehg_nom += curr_build.bes.chp.qNominal
+        if curr_build.hasBes:
+            if curr_build.bes.hasChp:
+                q_ehg_nom += curr_build.bes.chp.qNominal
 
     #  Calculate average building thermal power
     #  Extract thermal power curve of building
@@ -1409,72 +1412,97 @@ def perform_flex_analysis_sublhn(city, list_lhn, use_eh=False, mod_boi=False,
     print(alpha_th)
     print()
 
-    # #  Copy building to perform energy balance calculation (necessary to
-    # #  estimate stored amount of energy in TES per timestep)
-    # build_copy = copy.deepcopy(build)
-    # #  Run thermal energy balance
-    # buildeb.calc_build_therm_eb(build=build_copy)
+    #  Copy city to perform energy balance calculation (necessary to estimate
+    #  stored amount of energy in each TES (if multipel TES exist in LHN))
+    city_copy2 = copy.deepcopy(city)
 
-    #  TODO: Continue over here
-    #  Run city eb
+    #  Generate city energy balance calculator object instance
+    cit_eb_calc = citeb.CityEBCalculator(city=city_copy2)
+
+    #  Calc. city energy balance
+    cit_eb_calc.calc_city_energy_balance()
+
 
     #  Calculate average stored amount of energy in TES per timestep (for a
     #  whole year)
-    #  TODO: Loop over buildings,
-    #  TODO: Sum up average amounts of energy in tes
-    # en_av_tes = calc_av_energy_tes_year(building=build_copy)
 
+    #  Loop over buildings in sublhn
+    en_av_tes = 0
+    for n in list_lhn:
+        curr_b = city_copy2.nodes[n]['entity']
+        en_av_tes += calc_av_energy_tes_year(building=curr_b)
 
-    # #  Calculate dimensionless thermal storage energy flexibility
-    # beta_th = calc_dimless_tes_th_flex(sh_dem=sh_dem, dhw_dem=dhw_dem,
-    #                                    en_av_tes=en_av_tes)
-    #
-    # print('Dimensionless thermal storage energy flexibility (beta_th): ')
-    # print(beta_th)
-    # print()
-    #
-    # #  Calculate t_forced
-    # #  ###################################################################
-    #
-    # #  Pointer to tes
-    # tes = build.bes.tes
-    #
-    # #  Calculate t_force array
-    # array_t_forced = calc_t_forced_build(q_ehg_nom=q_ehg_nom,
-    #                                      array_sh=array_sh,
-    #                                      array_dhw=array_dhw,
-    #                                      timestep=timestep,
-    #                                      tes=tes)
-    #
-    # if plot_res:
-    #     plt.plot(array_t_forced / 3600)
-    #     plt.title('T_forced for building ' + str(id))
-    #     plt.xlabel('Time in hours')
-    #     plt.ylabel('T_forced in hours')
-    #     plt.show()
-    #     plt.close()
-    #
-    # #  Calculate t_forced
-    # #  ###################################################################
-    #
-    # #  Calculate t_force array
-    # array_t_delayed = calc_t_delayed_build(q_ehg_nom=q_ehg_nom,
-    #                                        array_sh=array_sh,
-    #                                        array_dhw=array_dhw,
-    #                                        timestep=timestep,
-    #                                        tes=tes,
-    #                                        plot_soc=False,
-    #                                        use_boi=False,
-    #                                        q_boi_nom=None)
-    #
-    # if plot_res:
-    #     plt.plot(array_t_delayed / 3600)
-    #     plt.title('T_delayed for building ' + str(id))
-    #     plt.xlabel('Time in hours')
-    #     plt.ylabel('T_delayed in hours')
-    #     plt.show()
-    #     plt.close()
-    #
+    #  Calculate dimensionless thermal storage energy flexibility
+    beta_th = calc_dimless_tes_th_flex(sh_dem=sh_dem, dhw_dem=dhw_dem,
+                                       en_av_tes=en_av_tes)
+
+    print('Dimensionless thermal storage energy flexibility (beta_th): ')
+    print(beta_th)
+    print()
+
+    #  Calculate t_forced
+    #  ###################################################################
+
+    #  Generate virtual storage as sum of all existing storages
+    mass_tes_v = 0
+    for n in list_lhn:
+        curr_b = city_copy.nodes[n]['entity']
+        if curr_b.hasBes:
+            if curr_b.bes.hasTes:
+                mass_tes_v += curr_b.bes.tes.capacity
+                t_max = curr_b.bes.tes.tMax + 0.0
+                t_min = curr_b.bes.tes.t_min + 0.0
+                c_p = curr_b.bes.tes.c_p + 0.0
+                rho = curr_b.bes.tes.rho + 0.0
+                k_loss = curr_b.bes.tes.k_loss + 0.0
+                h_d_ratio = curr_b.bes.tes.h_d_ratio + 0.0
+
+    tes_forced = \
+        tessys.thermalEnergyStorageExtended(environment=city_copy.environment,
+                                            t_init=0.8*t_max,
+                                            capacity=mass_tes_v, c_p=c_p,
+                                            rho=rho,
+                                            t_max=t_max,
+                                            t_min=t_min,
+                                            k_loss=k_loss,
+                                            h_d_ratio=h_d_ratio)
+
+    #  Calculate t_force array (with virtual TES)
+    array_t_forced = calc_t_forced_build(q_ehg_nom=q_ehg_nom,
+                                         array_sh=array_sh,
+                                         array_dhw=array_dhw,
+                                         timestep=timestep,
+                                         tes=tes_forced)
+
+    if plot_res:
+        plt.plot(array_t_forced / 3600)
+        plt.title('T_forced for building ' + str(id))
+        plt.xlabel('Time in hours')
+        plt.ylabel('T_forced in hours')
+        plt.show()
+        plt.close()
+
+    #  Calculate t_delayed
+    #  ###################################################################
+
+    #  Calculate t_delayed array
+    array_t_delayed = calc_t_delayed_build(q_ehg_nom=q_ehg_nom,
+                                           array_sh=array_sh,
+                                           array_dhw=array_dhw,
+                                           timestep=timestep,
+                                           tes=tes_forced,
+                                           plot_soc=False,
+                                           use_boi=False,
+                                           q_boi_nom=None)
+
+    if plot_res:
+        plt.plot(array_t_delayed / 3600)
+        plt.title('T_delayed for building ' + str(id))
+        plt.xlabel('Time in hours')
+        plt.ylabel('T_delayed in hours')
+        plt.show()
+        plt.close()
+
     # #  Calculate reference EHG el. load curve
     # #  ##################################################################
     # (array_p_el_ref, array_el_power_hp_in) = \
@@ -1673,16 +1701,6 @@ def perform_flex_analysis_city(city, use_eh=False, mod_boi=False,
     list_stand_alone_build = list(set(list_build_ids) - set(list_lhn_build))
     #  ######################################################################
 
-    #  Process stand alone buildings
-    #  ######################################################################
-    for n in list_stand_alone_build:
-        curr_build = city.nodes[n]['entity']
-
-        perform_flex_analysis_single_build(build=curr_build,
-                                           use_eh=use_eh,
-                                           mod_boi=mod_boi,
-                                           id=n, plot_res=plot_res)
-
     #  Process LHN connected buildings
     #  ######################################################################
     for sublhn in list_lists_lhn_ids_build:
@@ -1692,6 +1710,16 @@ def perform_flex_analysis_city(city, use_eh=False, mod_boi=False,
                                      use_eh=use_eh,
                                      mod_boi=mod_boi,
                                      plot_res=plot_res)
+
+    #  Process stand alone buildings
+    #  ######################################################################
+    for n in list_stand_alone_build:
+        curr_build = city.nodes[n]['entity']
+
+        perform_flex_analysis_single_build(build=curr_build,
+                                           use_eh=use_eh,
+                                           mod_boi=mod_boi,
+                                           id=n, plot_res=plot_res)
 
 def main2():
     time_start = time.time()
