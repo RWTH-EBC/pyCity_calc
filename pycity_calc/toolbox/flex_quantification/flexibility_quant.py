@@ -67,6 +67,10 @@ def calc_t_forced_build(q_ehg_nom, array_sh, array_dhw, timestep, tes):
     # dhw_power = building.get_dhw_power_curve()
     array_th = array_sh + array_dhw
 
+    #  Append array_th to prevent out of index errors for t_forced, which
+    #  "passes" 365 day mark
+    array_th = np.append(array_th, array_th)
+
     #  Loop over each timestep
     #  ###########################################################
     for i in range(len(array_t_forced)):
@@ -76,7 +80,7 @@ def calc_t_forced_build(q_ehg_nom, array_sh, array_dhw, timestep, tes):
         tes_copy.tInit = tes_copy.t_min
 
         #  Initial timestep
-        for t in range(len(array_t_forced) - i):
+        for t in range(len(array_t_forced)):
 
             #  Current thermal power demand
             th_pow_cur = array_th[t + i]
@@ -160,10 +164,14 @@ def calc_t_delayed_build(q_ehg_nom, array_sh, array_dhw, timestep, tes,
     #  Extract thermal power curve of building
     array_th = array_sh + array_dhw
 
+    #  Append array_th to prevent out of index errors for t_forced, which
+    #  "passes" 365 day mark
+    array_th = np.append(array_th, array_th)
+
     #  Precalculate, if it is possible to fully charge tes in prior timestep
     #  ###########################################################
-    array_tes_en = np.zeros(len(array_t_delayed))
-    array_tes_soc = np.zeros(len(array_t_delayed))
+    array_tes_en = np.zeros(len(array_th))
+    array_tes_soc = np.zeros(len(array_th))
 
     #  Calculate maximal amount of storable energy in kWh
     q_sto_max = tes.calc_storage_max_amount_of_energy()
@@ -220,7 +228,7 @@ def calc_t_delayed_build(q_ehg_nom, array_sh, array_dhw, timestep, tes,
         tes_copy.tInit = tes_copy.tMax * array_tes_soc[i]
 
         #  Initial timestep
-        for t in range(len(array_t_delayed) - i):
+        for t in range(len(array_t_delayed)):
 
             #  Current thermal power demand
             th_pow_cur = array_th[t + i]
@@ -618,7 +626,9 @@ def calc_pow_flex_forced(timestep, p_ehg_nom, array_t_forced, array_p_el_ref):
         corresponding el. power values for forced flexibility in Watt.
     """
 
-    # timestep = building.environment.timer.timeDiscretization
+    #  Append array to prevent out of index error when flexible time span
+    #  passes 365 days mark
+    array_p_el_ref_extended = np.append(array_p_el_ref, array_p_el_ref)
 
     list_lists_pow_forced = []
 
@@ -632,12 +642,9 @@ def calc_pow_flex_forced(timestep, p_ehg_nom, array_t_forced, array_p_el_ref):
 
         #  Loop over number of timesteps
         for t in range(t_forced_steps):
-            #  Prevent out of index error
-            if i + t <= len(array_t_forced) - 1:
-                #  Max - Ref
-                pow_flex = p_ehg_nom - abs(array_p_el_ref[i + t])
-                list_pow_forced.append(pow_flex)
-            #  TODO: Move idx to front, if too large
+            #  Max - Ref
+            pow_flex = p_ehg_nom - abs(array_p_el_ref_extended[i + t])
+            list_pow_forced.append(pow_flex)
 
         list_lists_pow_forced.append(list_pow_forced)
 
@@ -2183,5 +2190,5 @@ def main2():
 
 
 if __name__ == '__main__':
-    main()
-    # main2()
+    # main()
+    main2()
