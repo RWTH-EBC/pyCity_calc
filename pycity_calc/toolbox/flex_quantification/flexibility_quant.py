@@ -1102,20 +1102,21 @@ def calc_dimless_tes_th_flex(sh_dem, dhw_dem, en_av_tes):
     return beta_th
 
 
-def calc_dimless_el_power_flex(building, array_el_flex):
+def calc_dimless_el_power_flex(timestep, array_sh, array_dhw, array_el_flex):
     """
     Calculate dimensionless electric power flexibility alpha_el
 
     Parameters
     ----------
-    building : object
-        Building object of pyCity_calc
+    timestep : int
+        Timestep in seconds
+    array_sh : array (of floats)
+        Array holding space heating power values in Watt
+    array_dhw : array (of floats)
+        Array holding hot water power values in Watt
     array_el_flex : np.array
         Array holding el. flexibility power values (for forced or delayed
         operation)
-    use_eh : bool, optional
-        Defines, if electric heater is also used to define t_forced_build
-        (default: False)
 
     Returns
     -------
@@ -1125,16 +1126,10 @@ def calc_dimless_el_power_flex(building, array_el_flex):
 
     array_alpha_el = np.zeros(len(array_el_flex))
 
-    #  Calculate average building thermal power
-    #  ###########################################################
-    #  Extract thermal power curve of building
-    sh_power = building.get_space_heating_power_curve()
-    dhw_power = building.get_dhw_power_curve()
-    th_power = sh_power + dhw_power
+    array_th = array_sh + array_dhw
 
-    timestep = int(3600 * 24 * 365 / len(th_power))  # in seconds
     # If timestep is different from 3600 seconds, convert th_power array
-    th_power_new = chres.changeResolution(th_power,
+    th_power_new = chres.changeResolution(array_th,
                                           oldResolution=timestep,
                                           newResolution=3600)
 
@@ -1391,7 +1386,9 @@ def perform_flex_analysis_single_build(build, use_eh=False, mod_boi=False,
 
     #  Calculate dimensionless electric power flexibility for forced operation
     array_alpha_el_forced = \
-        calc_dimless_el_power_flex(building=build,
+        calc_dimless_el_power_flex(timestep=timestep,
+                                   array_sh=array_sh,
+                                   array_dhw=array_dhw,
                                    array_el_flex=
                                    array_cycle_flex_forced)
 
@@ -1461,9 +1458,12 @@ def perform_flex_analysis_single_build(build, use_eh=False, mod_boi=False,
 
     #  Calculate dimensionless electric power flexibility for forced operation
     array_alpha_el_delayed = \
-        calc_dimless_el_power_flex(building=build,
+        calc_dimless_el_power_flex(timestep=timestep,
+                                   array_sh=array_sh,
+                                   array_dhw=array_dhw,
                                    array_el_flex=
                                    array_cycle_flex_delayed)
+
     if plot_res:
         plt.plot(array_alpha_el_delayed)
         plt.title('alpha_el (delayed) for building ' + str(id))
@@ -1703,20 +1703,22 @@ def perform_flex_analysis_sublhn(city, list_lhn, use_eh=False, mod_boi=False,
     print('Energy flexibility in kWh for forced operation:')
     print(sum(array_energy_flex_forced) / (3600 * 1000))
 
-    # #  Calculate dimensionless electric power flexibility for forced operation
-    # array_alpha_el_forced = \
-    #     calc_dimless_el_power_flex(building=build,
-    #                                array_el_flex=
-    #                                array_cycle_flex_forced)
-    #
-    # if plot_res:
-    #     plt.plot(array_alpha_el_forced)
-    #     plt.title('alpha_el (forced) for building ' + str(id))
-    #     plt.xlabel('Time in hours')
-    #     plt.ylabel('Dimensionless el. power flexibility alpha_el (forced)')
-    #     plt.show()
-    #     plt.close()
-    #
+    #  Calculate dimensionless electric power flexibility for forced operation
+    array_alpha_el_forced = \
+        calc_dimless_el_power_flex(timestep=timestep,
+                                   array_sh=array_sh,
+                                   array_dhw=array_dhw,
+                                   array_el_flex=
+                                   array_cycle_flex_forced)
+
+    if plot_res:
+        plt.plot(array_alpha_el_forced)
+        plt.title('alpha_el (forced) for building ' + str(id))
+        plt.xlabel('Time in hours')
+        plt.ylabel('Dimensionless el. power flexibility alpha_el (forced)')
+        plt.show()
+        plt.close()
+
     # #  Calculate energy flexibility for forced operation
     # array_beta_th_forced = \
     #     calc_dimless_tes_el_flex(building=build,
@@ -1775,7 +1777,9 @@ def perform_flex_analysis_sublhn(city, list_lhn, use_eh=False, mod_boi=False,
     #
     # #  Calculate dimensionless electric power flexibility for forced operation
     # array_alpha_el_delayed = \
-    #     calc_dimless_el_power_flex(building=build,
+    #     calc_dimless_el_power_flex(timestep=timestep,
+    # array_sh=array_sh,
+    #                                array_dhw=array_dhw,
     #                                array_el_flex=
     #                                array_cycle_flex_delayed)
     # if plot_res:
