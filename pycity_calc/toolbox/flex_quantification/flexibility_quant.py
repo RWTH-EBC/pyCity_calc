@@ -396,6 +396,104 @@ def calc_pow_ref(building, tes_cap=0.001, mod_boi=True,
     return (array_p_el_ref, array_el_power_hp_in)
 
 
+def calc_pow_ref_sublhn(city, tes_cap=0.001, mod_boi=True,
+                        boi_size=50000, eta_boi=0.95,
+                        use_eh=False):
+    """
+    Calculate reference electric heat generator load curve by solving thermal
+    and electric energy balance with reduced tes size (for sublhn)
+    (+ used energy (HP/EH) / - produced electric energy (CHP))
+    Deactivate PV and el. battery, if existent.
+
+    Parameters
+    ----------
+    building : object
+        Building object
+    tes_cap : float, optional
+        Storage capacity (mass in kg) of TES (default: 0.001). Default value
+        is low to minimize tes flexibility influence on reference curve.
+    mod_boi : bool, optional
+        Defines, if boiler size should be modified (CHP/BOI) /
+        added (for HP/EH system) (default: True)
+    boi_size : float, optional
+        Boiler nominal thermal power in Watt (default: 50000). Used to add
+        boiler, if no boiler exists and run fails (e.g. HP/EH usage).
+        Increasing boiler size for CHP/BOI system
+    eta_boi : float, optional
+        Initial boiler efficiency (default: 0.95)
+    use_eh : bool, optional
+        Defines, if electric heater is also used to define t_forced_build
+        (default: False).
+
+    Returns
+    -------
+    array_p_el_ref : np.array
+        Array holding electric power values in Watt (used/produced by
+        electric heat generator (EHG)) ( - produced electric energy (CHP))
+    """
+
+    #  Copy city object
+    city_copy = copy.deepcopy(city)
+
+    list_builds_ids = city_copy.get_list_build_entity_node_ids()
+
+    #  Loop over buildings in city_copy
+    for n in list_builds_ids:
+        curr_build = city_copy.nodes[n]['entity']
+
+        if curr_build.hasBes:
+            #  Reduce TES size (TES still required to prevent assertion error in
+            #  energy balance, when CHP is used!)
+            if curr_build.bes.hasTes:
+                curr_build.bes.tes.capacity = tes_cap
+
+            #  Remove PV, if existent
+            if curr_build.bes.hasPv:
+                curr_build.bes.pv = None
+                curr_build.bes.hasPv = False
+
+            #  Remove Bat, if existent
+            if curr_build.bes.hasBattery:
+                curr_build.bes.battery = None
+                curr_build.bes.hasBattery = False
+
+            if use_eh is False and curr_build.bes.hasElectricalHeater:
+                #  Remove electric heater
+                curr_build.bes.electricalHeater = None
+                curr_build.bes.hasElectricalHeater = False
+
+            if mod_boi and boi_size > 0:
+                if curr_build.bes.hasBoiler:
+                    curr_build.bes.boiler.qNominal = boi_size
+                elif curr_build.bes.hasBoiler is False:
+                    #  Generate boiler object (also for HP/EH combi to prevent
+                    #  assertion error, if TES capacity is reduced)
+                    print('boi_size ', boi_size)
+                    boi = boisys.BoilerExtended(environment=
+                                                curr_build.environment,
+                                                q_nominal=boi_size,
+                                                eta=eta_boi)
+                    curr_build.bes.addDevice(boi)
+
+    #  Generate city energy balance calculator object instance
+    cit_eb_calc = citeb.CityEBCalculator(city=city_copy)
+
+    #  Calc. city energy balance
+    cit_eb_calc.calc_city_energy_balance()
+
+    timestep = city_copy.environment.timer.timeDiscretization
+
+    array_p_el_ref = np.zeros(int(365 * 24 * 3600 / timestep))
+
+    for n in list_builds_ids:
+        curr_build = city_copy.nodes[n]['entity']
+        if curr_build.hasBes:
+            if curr_build.bes.hasChp:
+                array_p_el_ref -= curr_build.bes.chp.totalPOutput
+
+    return array_p_el_ref
+
+
 def calc_power_ref_curve(building, mod_boi=True, boi_size=0, use_eh=False):
     """
     Calculate reference electric heat generator load curve by solving thermal
@@ -465,6 +563,62 @@ def calc_power_ref_curve(building, mod_boi=True, boi_size=0, use_eh=False):
                 raise AssertionError(msg)
 
     return (array_p_el_ref, array_el_power_hp_in)
+
+
+def calc_power_ref_curve_sublhn(city, mod_boi=True, boi_size=0, use_eh=False):
+    """
+    Calculate EHG electric power reference curve for sub-LHN city district
+
+    Parameters
+    ----------
+    city : object
+        City object of pyCity_calc
+    mod_boi : bool, optional
+        Defines, if boiler size should be modified (CHP/BOI) /
+        added (for HP/EH system) (default: True)
+    boi_size : float, optional
+        Boiler nominal thermal power in Watt (default: 0). Used to add
+        boiler, if no boiler exists and run fails (e.g. HP/EH usage).
+        Increasing boiler size for CHP/BOI system. If 0, does not perform
+        modification.
+    use_eh : bool, optional
+        Defines, if electric heater is also used to define t_forced_build
+        (default: False).
+
+    Returns
+    -------
+    array_p_el_ref : np.array
+        Array holding electric power values in Watt (used/produced by
+        electric heat generator (EHG)) ( - produced electric energy (CHP))
+    """
+
+    do_ref_curve = True
+
+    boi_size_use = boi_size + 0.0
+
+    counter = 0
+
+    while do_ref_curve:
+        try:
+            array_p_el_ref = \
+                calc_pow_ref_sublhn(city=city,
+                                    boi_size=boi_size_use,
+                                    mod_boi=mod_boi,
+                                    use_eh=use_eh)
+            do_ref_curve = False
+        except:
+            msg = 'El. ref. curve calc. failed. Thus, going to increase ' \
+                  'boiler thermal power (and add boiler, if not existent)' \
+                  '. New boiler size: ' + str(boi_size_use / 1000) + ' kW.'
+            warnings.warn(msg)
+            boi_size_use += 50000
+            counter += 1
+            if counter == 20:
+                msg = 'Failed to calculate electric reference curve for' \
+                      ' flexibility quantification'
+                raise AssertionError(msg)
+
+    return array_p_el_ref
 
 
 def calc_pow_flex_forced(building, array_t_forced, array_p_el_ref,
@@ -1476,7 +1630,7 @@ def perform_flex_analysis_sublhn(city, list_lhn, use_eh=False, mod_boi=False,
 
     if plot_res:
         plt.plot(array_t_forced / 3600)
-        plt.title('T_forced for building ' + str(id))
+        plt.title('T_forced for sublhn ' + str(list_lhn))
         plt.xlabel('Time in hours')
         plt.ylabel('T_forced in hours')
         plt.show()
@@ -1497,26 +1651,26 @@ def perform_flex_analysis_sublhn(city, list_lhn, use_eh=False, mod_boi=False,
 
     if plot_res:
         plt.plot(array_t_delayed / 3600)
-        plt.title('T_delayed for building ' + str(id))
+        plt.title('T_delayed for sublhn ' + str(list_lhn))
         plt.xlabel('Time in hours')
         plt.ylabel('T_delayed in hours')
         plt.show()
         plt.close()
 
-    # #  Calculate reference EHG el. load curve
-    # #  ##################################################################
-    # (array_p_el_ref, array_el_power_hp_in) = \
-    #     calc_power_ref_curve(building=build, mod_boi=mod_boi,
-    #                          use_eh=use_eh)
-    #
-    # if plot_res:
-    #     plt.plot(array_p_el_ref / 1000)
-    #     plt.title('Ref. EHG power for building ' + str(id))
-    #     plt.xlabel('Time in hours')
-    #     plt.ylabel('Reference EHG el. power in kW')
-    #     plt.show()
-    #     plt.close()
-    #
+    #  Calculate reference EHG el. load curve
+    #  ##################################################################
+    array_p_el_ref = \
+        calc_power_ref_curve_sublhn(city=city_copy, mod_boi=mod_boi,
+                                    use_eh=use_eh)
+
+    if plot_res:
+        plt.plot(array_p_el_ref / 1000)
+        plt.title('Ref. EHG power for sublhn ' + str(list_lhn))
+        plt.xlabel('Time in hours')
+        plt.ylabel('Reference EHG el. power in kW')
+        plt.show()
+        plt.close()
+
     # #  Calculate pow_force_flex for each timespan
     # #  ##################################################################
     # list_lists_pow_forced = calc_pow_flex_forced(building=build,
