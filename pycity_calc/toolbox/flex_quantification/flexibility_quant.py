@@ -2012,16 +2012,17 @@ def perform_flex_analysis_city(city, use_eh=False, mod_boi=False,
 
         if dict_flex['energy_flex_forced'] >= 0:
             dict_flex_city['energy_flex_forced_pos'] += \
-                dict_flex['energy_flex_forced']
+                abs(dict_flex['energy_flex_forced'])
         else:
             dict_flex_city['energy_flex_forced_neg'] += \
-                dict_flex['energy_flex_forced']
+                abs(dict_flex['energy_flex_forced'])
+
         if dict_flex['energy_flex_delayed'] >= 0:
             dict_flex_city['energy_flex_delayed_pos'] += \
-                dict_flex['energy_flex_delayed']
+                abs(dict_flex['energy_flex_delayed'])
         else:
             dict_flex_city['energy_flex_delayed_neg'] += \
-                dict_flex['energy_flex_delayed']
+                abs(dict_flex['energy_flex_delayed'])
 
     #  Process stand alone buildings
     #  ######################################################################
@@ -2049,6 +2050,20 @@ def perform_flex_analysis_city(city, use_eh=False, mod_boi=False,
         else:
             dict_flex_city['array_cycle_flex_delayed_minus'] += \
                 dict_flex['array_cycle_flex_delayed']
+
+        if dict_flex['energy_flex_forced'] >= 0:
+            dict_flex_city['energy_flex_forced_pos'] += \
+                abs(dict_flex['energy_flex_forced'])
+        else:
+            dict_flex_city['energy_flex_forced_neg'] += \
+                abs(dict_flex['energy_flex_forced'])
+
+        if dict_flex['energy_flex_delayed'] >= 0:
+            dict_flex_city['energy_flex_delayed_pos'] += \
+                abs(dict_flex['energy_flex_delayed'])
+        else:
+            dict_flex_city['energy_flex_delayed_neg'] += \
+                abs(dict_flex['energy_flex_delayed'])
 
     return dict_flex_city
 
