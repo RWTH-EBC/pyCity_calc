@@ -50,37 +50,8 @@ def calc_t_forced_build(q_ehg_nom, array_sh, array_dhw, timestep, tes):
         Array holding t forced for each timestep. t_forced is given in seconds
     """
 
-    # timestep = building.environment.timer.timeDiscretization
-
     #  Create initial array
     array_t_forced = np.zeros(int(365 * 24 * 3600 / timestep))
-
-    # #  Check if building has energy system
-    # #  ###########################################################
-    # if building.hasBes is False:
-    #     msg = 'Building ' + str(id) + ' has no building energy system! ' \
-    #                                   'Thus, cannot calculate t_forced array.'
-    #     warnings.warn(msg)
-    #     return array_t_forced
-    #
-    # #  ###########################################################
-    # if building.bes.hasTes is False:
-    #     msg = 'Building ' + str(id) + ' has no thermal storage. ' \
-    #                                   'Thus, therm. flexibility is zero.'
-    #     warnings.warn(msg)
-    #     #  Flexibility is zero, return array with zeros
-    #     return array_t_forced
-
-    # #  Get maximal thermal output power of electric heat generators
-    # #  (CHP, EH, HP)
-    # q_ehg_nom = 0  # in Watt
-    # if building.bes.hasChp:
-    #     q_ehg_nom += building.bes.chp.qNominal
-    # if building.bes.hasHeatpump:
-    #     q_ehg_nom += building.bes.heatpump.qNominal
-    #
-    # if building.bes.hasElectricalHeater and use_eh:
-    #     q_ehg_nom += building.bes.electricalHeater.qNominal
 
     #  ###########################################################
     if q_ehg_nom == 0:
