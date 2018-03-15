@@ -2038,23 +2038,31 @@ def calc_sum_city_flexibilities(timestep, dict_flex_city):
     -------
     tup_res : tuple (of floats)
         Tuple with summed of positive and negative energy flexibilities in kWh
-        ()
+        en_flex_forced_pos, en_flex_forced_neg, en_flex_delayed_pos,
+            en_flex_delayed_neg)
     """
 
-    energy_flex_pos = 0  # Production
-    energy_flex_neg = 0  # Consumption
+    en_flex_forced_pos = 0  # Generation (forced) (CHP)
+    en_flex_forced_neg = 0  # Consumption (forced) (HP)
+    en_flex_delayed_pos = 0  # Reference consumption blocked (delayed) (HP)
+    en_flex_delayed_neg = 0  # Reference generation blocked (delayed) (CHP)
 
-    energy_flex_pos += sum(dict_flex_city['array_cycle_flex_forced_plus']) \
-                       * timestep / (3600 * 1000)
-    energy_flex_neg += sum(dict_flex_city['array_cycle_flex_forced_minus']) \
-                       * timestep / (3600 * 1000)
+    en_flex_forced_pos += \
+        sum(dict_flex_city['array_cycle_flex_forced_plus']) \
+                          * timestep / (3600 * 1000)
+    en_flex_forced_neg += \
+        sum(dict_flex_city['array_cycle_flex_forced_minus']) \
+                          * timestep / (3600 * 1000)
 
-    energy_flex_pos += sum(dict_flex_city['array_cycle_flex_delayed_minus']) \
-                       * timestep / (3600 * 1000)
-    energy_flex_neg += sum(dict_flex_city['array_cycle_flex_delayed_plus']) \
-                       * timestep / (3600 * 1000)
+    en_flex_delayed_pos += \
+        sum(dict_flex_city['array_cycle_flex_delayed_plus']) \
+        * timestep / (3600 * 1000)
+    en_flex_delayed_neg += \
+        sum(dict_flex_city['array_cycle_flex_delayed_minus']) \
+                           * timestep / (3600 * 1000)
 
-    return (energy_flex_pos, energy_flex_neg)
+    return (en_flex_forced_pos, en_flex_forced_neg, en_flex_delayed_pos,
+            en_flex_delayed_neg)
 
 def main():
     #  Perform flexibility calculation for whole city district
@@ -2109,15 +2117,23 @@ def main():
 
     timestep = city.environment.timer.timeDiscretization
 
-    (energy_flex_pos, energy_flex_neg) = \
+    (en_flex_forced_pos, en_flex_forced_neg, en_flex_delayed_pos,
+     en_flex_delayed_neg) = \
         calc_sum_city_flexibilities(timestep=timestep,
                                     dict_flex_city=dict_flex_city)
 
-    print('Positive energy flexibility in kWh:')
-    print(energy_flex_pos)
+    print('Positive energy flexibility (forced) in kWh (CHP):')
+    print(en_flex_forced_pos)
     print()
-    print('Negative energy flexibility in kWh:')
-    print(energy_flex_neg)
+    print('Negative energy flexibility (forced) in kWh (HP):')
+    print(en_flex_forced_neg)
+    print()
+
+    print('Positive energy flexibility (delayed) in kWh (HP):')
+    print(en_flex_delayed_pos)
+    print()
+    print('Negative energy flexibility (delayed) in kWh (CHP):')
+    print(en_flex_delayed_neg)
     print()
 
     time_stop = time.time()
@@ -2190,5 +2206,5 @@ def main2():
 
 
 if __name__ == '__main__':
-    # main()
-    main2()
+    main()
+    # main2()
