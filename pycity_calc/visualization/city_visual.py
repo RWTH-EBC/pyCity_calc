@@ -796,7 +796,7 @@ def plot_cluster_results(city, cluster_dict, plot_street=True,
         if use_bw:
             color = 'k'
         else:  # Use different colors
-            color = np.random.rand(3, 1)
+            color = np.random.rand(3)
 
         # Plot building nodes
         nx.draw_networkx_nodes(city, pos=pos, nodelist=node_list,
