@@ -151,7 +151,7 @@ def plot_city_district(city, city_list=None, plot_buildings=True,
                        offset=None,
                        plot_build_labels=True, plot_str_labels=False,
                        plot_heat_labels=False,
-                       equal_axis=False, font_size=16, plt_title=None,
+                       equal_axis=False, font_size=12, plt_title=None,
                        x_label='x-position in m',
                        y_label='y-position in m', show_plot=True,
                        fig_adjust=None,
@@ -191,7 +191,7 @@ def plot_city_district(city, city_list=None, plot_buildings=True,
     equal_axis : bool, optional
         Equalize x- and y-axis (default: False)
     font_size : float, optional
-        Font size of axis text and title (default: 16)
+        Font size of axis text and title (default: 12)
     plt_title : str, optional
         Title of plot (default: None)
     x_label : str, optional
@@ -483,7 +483,7 @@ def plot_city_district(city, city_list=None, plot_buildings=True,
                         if esys_tuple[1]:  # Has Boiler
                             found_esys = True
                             if plot_engl:
-                                esys_str_list.append('B')
+                                esys_str_list.append('BOI')
                             else:
                                 esys_str_list.append('K')
 
@@ -522,13 +522,13 @@ def plot_city_district(city, city_list=None, plot_buildings=True,
                                     esys_str += ', ' + str(esys_str_list[i])
 
                             # Define position next to building node
-                            x_p = city.nodes[n]['position'].x + 12
+                            x_p = city.nodes[n]['position'].x + 6
                             y_p = city.nodes[n]['position'].y
 
                             #  Plot textbox
                             ax.text(x_p, y_p, esys_str,
                                     bbox={'facecolor': 'white', 'alpha': 0.5,
-                                          'pad': 5}, fontsize=12)
+                                          'pad': 5}, fontsize=font_size)
 
         if plot_str_labels:
             #  Plot street node ids
@@ -546,6 +546,8 @@ def plot_city_district(city, city_list=None, plot_buildings=True,
         plt.ylabel(str(y_label))
 
     # TODO: Add function to normalizes axes to start with 0
+
+    # plt.plot([315], [220], color='white')
 
     if equal_axis:
         plt.gca().set_aspect('equal', adjustable='box')
