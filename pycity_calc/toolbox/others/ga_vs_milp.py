@@ -115,6 +115,8 @@ if __name__ == '__main__':
     array_allowed_keys = np.arange(max_key, 0, -1)
     list_allowed_keys = array_allowed_keys.tolist()
 
+    #  TODO: Preprocess dominated solutions. Prevent double sol. Only plot some
+
     for key in sorted(list(dict_gen.keys()), reverse=True):
         #  Get population
         pop = dict_gen[key]
@@ -225,6 +227,12 @@ if __name__ == '__main__':
     #          [146], linestyle='',
     #          marker='v', markersize=7, c='black',
     #          label='MILP (force CHPs)')
+
+    #  Reference MILP scenario (boilers only)
+    plt.plot([69.23],
+             [156.6], linestyle='',
+             marker='*', markersize=7, c='black',
+             label='Reference (BOI only)')
 
     #  #######################################################################
     ax = fig.gca()
