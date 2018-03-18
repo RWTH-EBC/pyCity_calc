@@ -34,6 +34,9 @@ if __name__ == '__main__':
 
     path_save_gen_dev = os.path.join(this_path, 'output', 'ga_gen_dev')
 
+    plot_pareto = True
+    #  Defines, if pareto frontier with solution numbers should be plotted
+
     #  Path to save figures to
     path_save = os.path.join(this_path, 'output', 'pareto_front')
     output_filename = 'pareto_front'
@@ -77,6 +80,15 @@ if __name__ == '__main__':
 
         #  Save pareto-frontier solution
         pickle.dump(dict_pareto_sol, open(path_save_par, mode='wb'))
+
+    #  Extract list of pareto solutions
+    list_inds_pareto = []
+    for key in dict_pareto_sol.keys():
+        list_inds_pareto.append(dict_pareto_sol[key])
+
+    if plot_pareto:
+        #  Print pareto front and energy system configurations
+        gadev.get_esys_pareto_info(list_pareto_sol=list_inds_pareto)
 
     #  Write down obj. of MILP runs (Min. Cost --> Min. CO2)
     #  #############################################################
