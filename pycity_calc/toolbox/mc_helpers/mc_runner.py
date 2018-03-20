@@ -15,6 +15,8 @@ import random as rd
 import numpy as np
 import traceback
 
+import matplotlib.pyplot as plt
+
 import pycity_calc.economic.city_economic_calc as citecon
 import pycity_calc.environments.germanmarket as gmarket
 import pycity_calc.simulation.energy_balance.city_eb_calc as citeb
@@ -1877,7 +1879,7 @@ class McRunner(object):
                 #  and _dict_samples_esys
                 (dict_samples_const, dict_samples_esys) = \
                     self.perform_sampling(nb_runs=nb_runs,
-                                          em_unc=dem_unc)
+                                          dem_unc=dem_unc)
             elif sampling_method == 'lhc':
                 #  Perform latin hypercube sampling
                 (dict_city_sample_lhc, dict_build_samples_lhc,
@@ -2027,7 +2029,7 @@ class McRunner(object):
         return (total_annuity, co2, sh_dem, el_dem, dhw_dem)
 
 
-if __name__ == '__main__':
+def main():
 
     #  Generate city district or load city district
 
@@ -2521,3 +2523,21 @@ if __name__ == '__main__':
 
     print('Execution time for MC-Analysis (without city generation) in'
           ' seconds: ', time_delta)
+
+    array_annuity = dict_res['annuity']
+    array_co2 = dict_res['co2']
+
+    plt.hist(array_annuity)
+    plt.xlabel('Annuity in Euro/a')
+    plt.ylabel('Number')
+    plt.show()
+    plt.close()
+
+    plt.hist(array_annuity)
+    plt.xlabel('Emissions in kg/a')
+    plt.ylabel('Number')
+    plt.show()
+    plt.close()
+
+if __name__ == '__main__':
+    main()
