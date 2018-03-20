@@ -480,6 +480,7 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
                 assert sh_dem_ref > 0
 
                 if dem_unc:
+
                     #  If demand is assumed to be uncertain
                     if load_sh_mc_res:
                         #  Use loaded results
@@ -514,8 +515,6 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
                             if array_conv[j] < 0:
                                 array_conv[j] = 0
                 else:
-                    print('pause')
-                    input()
 
                     #  Demand is certain
                     array_conv = np.ones(nb_samples) * sh_dem_ref

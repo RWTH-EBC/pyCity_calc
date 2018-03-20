@@ -2526,15 +2526,22 @@ def main():
 
     array_annuity = dict_res['annuity']
     array_co2 = dict_res['co2']
+    array_sh = dict_res['sh_dem']
 
-    plt.hist(array_annuity)
+    plt.hist(array_annuity, bins='auto')
     plt.xlabel('Annuity in Euro/a')
     plt.ylabel('Number')
     plt.show()
     plt.close()
 
-    plt.hist(array_annuity)
+    plt.hist(array_co2, bins='auto')
     plt.xlabel('Emissions in kg/a')
+    plt.ylabel('Number')
+    plt.show()
+    plt.close()
+
+    plt.hist(array_sh, bins='auto')
+    plt.xlabel('Space heating demand in kWh/a')
     plt.ylabel('Number')
     plt.show()
     plt.close()
