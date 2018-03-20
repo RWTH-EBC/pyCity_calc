@@ -217,7 +217,7 @@ def calc_nb_unc_par(city, nb_city_unc_par=15,
 
 def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
                          dict_build_samples, load_sh_mc_res=False,
-                         path_mc_res_folder=None):
+                         path_mc_res_folder=None, dem_unc=True):
     """
     Performs latin hypercube sampling and adds samples to empty
     dict_city_sample, dict_build_samples
@@ -245,6 +245,10 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
     path_mc_res_folder : str, optional
         Path to folder, where sh mc run results are stored (default: None).
         Only necessary if load_sh_mc_res is True
+    dem_unc : bool, optional
+        Defines, if thermal, el. and dhw demand are assumed to be uncertain
+        (default: True). If True, samples demands. If False, uses reference
+        demands.
     """
 
     list_build_ids = city.get_list_build_entity_node_ids()
@@ -475,38 +479,46 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
                     .get_annual_space_heat_demand()
                 assert sh_dem_ref > 0
 
-                if load_sh_mc_res:
-                    #  Use loaded results
+                if dem_unc:
+                    #  If demand is assumed to be uncertain
+                    if load_sh_mc_res:
+                        #  Use loaded results
 
-                    #  Sample from dict_build_mc_res
-                    list_sh_res = dict_build_mc_res[key]
+                        #  Sample from dict_build_mc_res
+                        list_sh_res = dict_build_mc_res[key]
 
-                    # #  Estimate params of gaussian distribution
-                    # mean_val, std_val = stats.norm.fit(data=list_sh_res)
+                        # #  Estimate params of gaussian distribution
+                        # mean_val, std_val = stats.norm.fit(data=list_sh_res)
 
-                    # plt.hist(list_sh_res, bins=int(len(list_sh_res)/10))
-                    # plt.show()
-                    # plt.close()
+                        # plt.hist(list_sh_res, bins=int(len(list_sh_res)/10))
+                        # plt.show()
+                        # plt.close()
 
-                    #  Estimate parameters for log. normal distribution
-                    shape, loc, scale = stats.lognorm.fit(data=list_sh_res,
-                                                          floc=0)
+                        #  Estimate parameters for log. normal distribution
+                        shape, loc, scale = stats.lognorm.fit(data=list_sh_res,
+                                                              floc=0)
 
-                    array_conv = distr.lognorm(s=shape).ppf(design[:,
-                                                            design_count])
-                    array_conv *= sh_dem_ref
+                        array_conv = distr.lognorm(s=shape).ppf(design[:,
+                                                                design_count])
+                        array_conv *= sh_dem_ref
+                    else:
+                        mean_val = sh_dem_ref * dict_ref_val_build[parkey][0]
+                        std_val = sh_dem_ref * dict_ref_val_build[parkey][1]
+
+                        array_conv = stats.norm(loc=mean_val,
+                                                scale=std_val).ppf(
+                            design[:, design_count])
+
+                        #  Eliminate negative values, if necessary
+                        for j in range(len(array_conv)):
+                            if array_conv[j] < 0:
+                                array_conv[j] = 0
                 else:
-                    mean_val = sh_dem_ref * dict_ref_val_build[parkey][0]
-                    std_val = sh_dem_ref * dict_ref_val_build[parkey][1]
+                    print('pause')
+                    input()
 
-                    array_conv = stats.norm(loc=mean_val,
-                                            scale=std_val).ppf(
-                        design[:, design_count])
-
-                    #  Eliminate negative values, if necessary
-                    for j in range(len(array_conv)):
-                        if array_conv[j] < 0:
-                            array_conv[j] = 0
+                    #  Demand is certain
+                    array_conv = np.ones(nb_samples) * sh_dem_ref
 
                 dict_build_samples[key][parkey] = array_conv
 
@@ -522,50 +534,86 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
         elif nb_app > 1:
             res_type = 'mfh'
 
-        # Loop over nb of apartments
-        for i in range(nb_app):
+        if dem_unc:
+            #  Demand is assumed to be uncertain
 
-            #  Sample nb. of occupants
-            array_nb_occ = useunc.calc_sampling_occ_per_app(nb_samples=
-                                                            nb_samples)
+            # Loop over nb of apartments
+            for i in range(nb_app):
 
-            #  Save array to results dict
-            dict_build_samples[key]['app_nb_occ'][i, :] = array_nb_occ
+                #  Sample nb. of occupants
+                array_nb_occ = useunc.calc_sampling_occ_per_app(nb_samples=
+                                                                nb_samples)
 
-            for k in range(len(array_nb_occ)):
-                #  Sample el. demand value per apartment
-                el_dem_per_app = useunc. \
-                    calc_sampling_el_demand_per_apartment(
-                    nb_samples=1,
-                    nb_persons=array_nb_occ[k], type=res_type)[0]
-                #  Sample dhw demand value per apartment
-                dhw_dem_per_app = useunc. \
-                    calc_sampling_dhw_per_apartment(nb_samples=1,
-                                                    nb_persons=array_nb_occ[k],
-                                                    b_type=res_type)
+                #  Save array to results dict
+                dict_build_samples[key]['app_nb_occ'][i, :] = array_nb_occ
 
+                for k in range(len(array_nb_occ)):
+                    #  Sample el. demand value per apartment
+                    el_dem_per_app = useunc. \
+                        calc_sampling_el_demand_per_apartment(
+                        nb_samples=1,
+                        nb_persons=array_nb_occ[k], type=res_type)[0]
+                    #  Sample dhw demand value per apartment
+                    dhw_dem_per_app = useunc. \
+                        calc_sampling_dhw_per_apartment(nb_samples=1,
+                                                        nb_persons=
+                                                        array_nb_occ[k],
+                                                        b_type=res_type)
+
+                    #  Save el. demand
+                    dict_build_samples[key]['app_el_dem'][i, k] = \
+                        el_dem_per_app
+                    #  Save dhw demand
+                    dict_build_samples[key]['app_dhw_dem'][i, k] = \
+                        dhw_dem_per_app
+
+                    # plt.plot(sorted(dict_build_samples[1001]['eta_pv']))
+                    # plt.show()
+                    # plt.close()
+
+                    # plt.plot(sorted(dict_build_samples[1001]['app_nb_occ'][0]))
+                    # plt.show()
+                    # plt.close()
+                    #
+                    # plt.plot(sorted(dict_build_samples[1001]['app_el_dem'][0]))
+                    # plt.show()
+                    # plt.close()
+                    #
+                    # plt.plot(sorted(dict_build_samples[1001]['app_dhw_dem'][0]))
+                    # plt.show()
+                    # plt.close()
+        else:
+            #  Demand is certain
+
+            #  Reference el. energy demand
+            el_dem = city.nodes[key]['entity'].get_annual_el_demand()
+
+            #  Reference el. energy demand
+            dhw_dem = city.nodes[key]['entity'].get_annual_dhw_demand()
+
+            el_per_app = el_dem / nb_app
+            dhw_per_app = dhw_dem / nb_app
+
+            # Loop over nb of apartments
+            for i in range(nb_app):
+                #  Apartment pointer
+                app = city.nodes[key]['entity'].apartments[i]
+
+                #  Get nb. of occupants within apartment
+                nb_occ = app.occupancy.number_occupants
+
+                array_nb_occ = np.ones(nb_samples) * int(nb_occ)
+
+                #  Save array to results dict
+                dict_build_samples[key]['app_nb_occ'][i, :] = array_nb_occ
+
+                #  Now distribute reference demand equally to each apartment
                 #  Save el. demand
-                dict_build_samples[key]['app_el_dem'][i, k] = \
-                    el_dem_per_app
+                dict_build_samples[key]['app_el_dem'][i, :] = \
+                    el_per_app
                 #  Save dhw demand
-                dict_build_samples[key]['app_dhw_dem'][i, k] = \
-                    dhw_dem_per_app
-
-                # plt.plot(sorted(dict_build_samples[1001]['eta_pv']))
-                # plt.show()
-                # plt.close()
-
-                # plt.plot(sorted(dict_build_samples[1001]['app_nb_occ'][0]))
-                # plt.show()
-                # plt.close()
-                #
-                # plt.plot(sorted(dict_build_samples[1001]['app_el_dem'][0]))
-                # plt.show()
-                # plt.close()
-                #
-                # plt.plot(sorted(dict_build_samples[1001]['app_dhw_dem'][0]))
-                # plt.show()
-                # plt.close()
+                dict_build_samples[key]['app_dhw_dem'][i, :] = \
+                    dhw_per_app
 
 
 def gen_profile_pool(city, nb_samples, dict_build_samples, share_profiles=1):
@@ -670,7 +718,8 @@ def run_overall_lhc_sampling(city, nb_samples,
                              nb_profiles=None,
                              load_city_n_build_samples=False,
                              path_city_sample_dict=None,
-                             path_build_sample_dict=None):
+                             path_build_sample_dict=None,
+                             dem_unc=True):
     """
     Generates empty sample dicts and performs latin hypercube sampling.
     Adds samples to dict_city_sample, dict_build_samples
@@ -711,6 +760,10 @@ def run_overall_lhc_sampling(city, nb_samples,
     path_build_sample_dict : str, optional
         Defines path to building sample dict (default: None). Only relevant,
         if load_city_n_build_samples is True
+    dem_unc : bool, optional
+        Defines, if thermal, el. and dhw demand are assumed to be uncertain
+        (default: True). If True, samples demands. If False, uses reference
+        demands.
 
     Returns
     -------
@@ -766,8 +819,8 @@ def run_overall_lhc_sampling(city, nb_samples,
                              dict_city_sample=dict_city_sample,
                              dict_build_samples=dict_build_samples,
                              load_sh_mc_res=load_sh_mc_res,
-                             path_mc_res_folder=path_mc_res_folder
-                             )
+                             path_mc_res_folder=path_mc_res_folder,
+                             dem_unc=dem_unc)
 
     if use_profile_pool:
         if gen_use_prof_method == 0:
@@ -805,6 +858,12 @@ if __name__ == '__main__':
     #  uncertainty run results for each building from given folder
     #  If load_sh_mc_res is False, uses default value to sample sh demand
     #  uncertainty per building
+
+    dem_unc = True
+    # dem_unc : bool, optional
+    #     Defines, if thermal, el. and dhw demand are assumed to be uncertain
+    #     (default: True). If True, samples demands. If False, uses reference
+    #     demands.
 
     save_dicts = True
 
@@ -852,7 +911,8 @@ if __name__ == '__main__':
                                  use_profile_pool=use_profile_pool,
                                  gen_use_prof_method=gen_use_prof_method,
                                  path_profile_dict=path_profile_dict,
-                                 nb_profiles=nb_profiles)
+                                 nb_profiles=nb_profiles,
+                                 dem_unc=dem_unc)
 
     #  Save sample dicts
     if save_dicts:
