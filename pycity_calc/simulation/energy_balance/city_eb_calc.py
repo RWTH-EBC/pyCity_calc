@@ -1229,6 +1229,14 @@ class CityEBCalculator(object):
         grid_import_hp = self._dict_energy['el_imp']['hp']
         grid_import_eh = self._dict_energy['el_imp']['eh']
 
+        print()
+        print('CHP self consumed el. energy in kWh: ')
+        print(chp_self)
+        print('PV self consumed el. energy in kWh: ')
+        print(pv_self)
+        print()
+
+
         list_el_energy.append(chp_self)
         list_el_energy.append(pv_self)
         list_el_energy.append(grid_import_dem)
@@ -1268,6 +1276,13 @@ class CityEBCalculator(object):
         hp_ww_dem = self._dict_energy['el_con']['hp_ww']
         eh_dem = self._dict_energy['el_con']['eh']
         pump_dem = self._dict_energy['el_con']['pump']
+
+        print('Coverage of building, HP and EH el. energy demand'
+              ' by own CHP and PV generation: ')
+        own_cov = (chp_self + pv_self) / \
+                  (el_dem + hp_aw_dem + hp_ww_dem + eh_dem)
+        print(own_cov)
+        print()
 
         list_el_dem.append(el_dem)
         list_el_dem.append(hp_aw_dem)
