@@ -1277,11 +1277,20 @@ class CityEBCalculator(object):
         eh_dem = self._dict_energy['el_con']['eh']
         pump_dem = self._dict_energy['el_con']['pump']
 
-        print('Coverage of building, HP and EH el. energy demand'
-              ' by own CHP and PV generation: ')
         own_cov = (chp_self + pv_self) / \
                   (el_dem + hp_aw_dem + hp_ww_dem + eh_dem)
+        pv_cov = (pv_self) / \
+                  (el_dem + hp_aw_dem + hp_ww_dem + eh_dem)
+        chp_cov = (chp_self) / \
+                 (el_dem + hp_aw_dem + hp_ww_dem + eh_dem)
+
+        print('Coverage of building, HP and EH el. energy demand'
+              ' by own CHP and PV generation: ')
         print(own_cov)
+        print('Share of PV:')
+        print(pv_cov)
+        print('Share of CHP:')
+        print(chp_cov)
         print()
 
         list_el_dem.append(el_dem)
