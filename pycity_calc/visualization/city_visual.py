@@ -547,7 +547,7 @@ def plot_city_district(city, city_list=None, plot_buildings=True,
 
     # TODO: Add function to normalizes axes to start with 0
 
-    # plt.plot([315], [220], color='white')
+    # plt.plot([335], [220], color='white')
 
     if equal_axis:
         plt.gca().set_aspect('equal', adjustable='box')

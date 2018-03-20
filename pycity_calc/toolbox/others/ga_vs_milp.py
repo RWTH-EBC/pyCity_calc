@@ -92,14 +92,14 @@ if __name__ == '__main__':
 
     #  Write down obj. of MILP runs (Min. Cost --> Min. CO2)
     #  #############################################################
-    list_mip_cost = [67550, 68539, 70199,
+    list_mip_cost = [67012, 68539, 70199,
                      # 72441, # Min. CO2 with cost constraint of 72441
                      # 85604, 74233,
                      102637
                      # , 143544
                      ]
 
-    list_mip_co2 = [134143, 124302, 114461,
+    list_mip_co2 = [132360, 124302, 114461,
                     # 119261, # Min. CO2 with cost constraint of 72441
                     # 104620, 114304,
                     75495
@@ -112,7 +112,7 @@ if __name__ == '__main__':
     fig = plt.figure()
 
     max_key = len(dict_gen) - 1
-    array_allowed_keys = np.arange(max_key, 0, -1)
+    array_allowed_keys = np.arange(max_key, 0, -25)
     list_allowed_keys = array_allowed_keys.tolist()
 
     #  TODO: Preprocess dominated solutions. Prevent double sol. Only plot some
@@ -231,7 +231,7 @@ if __name__ == '__main__':
     #  Reference MILP scenario (boilers only)
     plt.plot([69.23],
              [156.6], linestyle='',
-             marker='*', markersize=7, c='black',
+             marker='o', markersize=5, c='black',
              label='Reference (BOI only)')
 
     #  #######################################################################
