@@ -15,6 +15,8 @@ import random as rd
 import numpy as np
 import traceback
 
+import matplotlib.pyplot as plt
+
 import pycity_calc.economic.city_economic_calc as citecon
 import pycity_calc.environments.germanmarket as gmarket
 import pycity_calc.simulation.energy_balance.city_eb_calc as citeb
@@ -205,7 +207,7 @@ class McRunner(object):
             self._list_lhn_tuples = list_lhn_tuples
 
     @staticmethod
-    def perform_sampling_build_dem(nb_runs, building):
+    def perform_sampling_build_dem(nb_runs, building, dem_unc=True):
         """
         Perform sampling for building demand side
 
@@ -226,6 +228,10 @@ class McRunner(object):
             dict_build_samples['on_off'] = array_sh_on_off
         dict_esys : dict (of arrays)
             Dictionary holding energy system parameters
+        dem_unc : bool, optional
+            Defines, if thermal, el. and dhw demand are assumed to be uncertain
+            (default: True). If True, samples demands. If False, uses reference
+            demands.
         """
 
         #  Initial dict
@@ -242,40 +248,68 @@ class McRunner(object):
         array_el_dem = np.zeros(nb_runs)
         array_dhw_dem = np.zeros(nb_runs)
 
-        #  Sample for apartments
-        #  ################################################################
-        for ap in building.apartments:
+        if dem_unc:
+            #  Sample for apartments
+            #  ##############################################################
+            for ap in building.apartments:
 
-            #  Loop over nb. of samples
-            for i in range(nb_runs):
-                #  Sample occupants
-                occ_p_app = usersample. \
-                    calc_sampling_occ_per_app(nb_samples=1)[0]
+                #  Loop over nb. of samples
+                for i in range(nb_runs):
+                    #  Sample occupants
+                    occ_p_app = usersample. \
+                        calc_sampling_occ_per_app(nb_samples=1)[0]
 
-                #  Sample el. demand per apartment (depending on nb. persons)
-                el_per_app = usersample. \
-                    calc_sampling_el_demand_per_apartment(nb_samples=1,
-                                                          nb_persons=occ_p_app,
-                                                          type=type)[0]
+                    #  Sample el. demand per apartment (depending on nb.
+                    #  persons)
+                    el_per_app = usersample. \
+                        calc_sampling_el_demand_per_apartment(
+                        nb_samples=1,
+                        nb_persons=occ_p_app,
+                        type=type)[0]
 
-                #  Sample dhw demand per apartment (depending on nb. persons)
-                dhw_per_app = usersample. \
-                    calc_sampling_dhw_per_apartment(nb_samples=1,
-                                                    nb_persons=occ_p_app,
-                                                    b_type=type)
+                    #  Sample dhw demand per apartment (depending on nb.
+                    # persons)
+                    dhw_per_app = usersample. \
+                        calc_sampling_dhw_per_apartment(nb_samples=1,
+                                                        nb_persons=occ_p_app,
+                                                        b_type=type)
 
-                #  Sum up values on building level
-                array_occupants[i] += occ_p_app
-                array_el_dem[i] += el_per_app
-                array_dhw_dem[i] += dhw_per_app
+                    #  Sum up values on building level
+                    array_occupants[i] += occ_p_app
+                    array_el_dem[i] += el_per_app
+                    array_dhw_dem[i] += dhw_per_app
+        else:
+            timestep = building.environment.timer.timeDiscretization
+
+            #  Demand is assumed to be certain
+            for ap in building.apartments:
+
+                #  Get ref. el. demand of apartment (in kWh)
+                el_dem_app = ap.power_el.loadcurve * timestep / 3600000
+
+                #  Get ref. dhw demand per apartment (in kWh)
+                dhw_dem_app = ap.demandDomesticHotWater.loadcurve * \
+                              timestep / 3600000
+
+                #  Reference number of occupants within apartment
+                nb_occ_per_app = ap.occupancy.number_occupants
+
+                array_occupants = np.onse(nb_runs) * nb_occ_per_app
+                array_el_dem = np.onse(nb_runs) * el_dem_app
+                array_dhw_dem = np.onse(nb_runs) * dhw_dem_app
+
 
         # Sample building attributes
         #  ################################################################
         #  Calculate space heating demand sample
         sh_ref = building.get_annual_space_heat_demand()  # in kWh
 
-        array_sh_dem = buildsample.calc_sh_demand_samples(nb_samples=nb_runs,
-                                                          sh_ref=sh_ref)
+        if dem_unc:
+            array_sh_dem = buildsample.calc_sh_demand_samples(
+                nb_samples=nb_runs,
+                sh_ref=sh_ref)
+        else:
+            array_sh_dem = np.onse(nb_runs) * sh_ref
 
         # array_sh_on_off = buildsample. \
         #     calc_sh_summer_on_off_samples(nb_samples=nb_runs)
@@ -596,7 +630,7 @@ class McRunner(object):
 
         return dict_city_samples
 
-    def perform_sampling(self, nb_runs, save_samples=True):
+    def perform_sampling(self, nb_runs, save_samples=True, dem_unc=True):
         """
         Perform parameter sampling for Monte-Carlo analysis
 
@@ -607,6 +641,10 @@ class McRunner(object):
         save_samples : bool, optional
             Defines, if sampling results should be saved on MC results object
             (default: True)
+        dem_unc : bool, optional
+            Defines, if thermal, el. and dhw demand are assumed to be uncertain
+            (default: True). If True, samples demands. If False, uses reference
+            demands.
 
         Returns
         -------
@@ -642,7 +680,8 @@ class McRunner(object):
             build = self._city_eco_calc.energy_balance.city.nodes[n]['entity']
 
             dict_build_dem = self.perform_sampling_build_dem(nb_runs=nb_runs,
-                                                             building=build)
+                                                             building=build,
+                                                             dem_unc=dem_unc)
             dict_esys = self.perform_sampling_build_esys(nb_runs=nb_runs,
                                                          building=build)
 
@@ -666,7 +705,8 @@ class McRunner(object):
                              nb_profiles=None,
                              load_city_n_build_samples=False,
                              path_city_sample_dict=None,
-                             path_build_sample_dict=None
+                             path_build_sample_dict=None,
+                             dem_unc=True
                              ):
         """
         Perform latin hypercube sampling
@@ -707,6 +747,10 @@ class McRunner(object):
         path_build_sample_dict : str, optional
             Defines path to building sample dict (default: None).
             Only relevant, if load_city_n_build_samples is True
+        dem_unc : bool, optional
+            Defines, if thermal, el. and dhw demand are assumed to be uncertain
+            (default: True). If True, samples demands. If False, uses reference
+            demands.
 
         Returns
         -------
@@ -750,7 +794,8 @@ class McRunner(object):
             nb_profiles=nb_profiles,
             load_city_n_build_samples=load_city_n_build_samples,
             path_city_sample_dict=path_city_sample_dict,
-            path_build_sample_dict=path_build_sample_dict
+            path_build_sample_dict=path_build_sample_dict,
+            dem_unc=dem_unc
         )
 
         if save_res:
@@ -1635,7 +1680,8 @@ class McRunner(object):
                         path_build_sample_dict=None,
                         eeg_pv_limit=False,
                         use_kwkg_lhn_sub=False,
-                        calc_th_el_cov=False
+                        calc_th_el_cov=False,
+                        dem_unc=True
                         ):
         """
         Perform monte-carlo run with:
@@ -1714,6 +1760,10 @@ class McRunner(object):
         calc_th_el_cov : bool, optional
             Defines, if thermal and electric coverage of different types of
             devices should be calculated (default: False)
+        dem_unc : bool, optional
+            Defines, if thermal, el. and dhw demand are assumed to be uncertain
+            (default: True). If True, samples demands. If False, uses reference
+            demands.
 
         Returns
         -------
@@ -1828,7 +1878,8 @@ class McRunner(object):
                 #  Call sampling and save sample data to _dict_samples_const
                 #  and _dict_samples_esys
                 (dict_samples_const, dict_samples_esys) = \
-                    self.perform_sampling(nb_runs=nb_runs)
+                    self.perform_sampling(nb_runs=nb_runs,
+                                          dem_unc=dem_unc)
             elif sampling_method == 'lhc':
                 #  Perform latin hypercube sampling
                 (dict_city_sample_lhc, dict_build_samples_lhc,
@@ -1843,8 +1894,8 @@ class McRunner(object):
                                          nb_profiles=nb_profiles,
                                          load_city_n_build_samples=load_city_n_build_samples,
                                          path_city_sample_dict=path_city_sample_dict,
-                                         path_build_sample_dict=path_build_sample_dict
-                                         )
+                                         path_build_sample_dict=path_build_sample_dict,
+                                         dem_unc=dem_unc)
         else:
             dict_samples_const = None
             dict_samples_esys = None
@@ -1978,7 +2029,7 @@ class McRunner(object):
         return (total_annuity, co2, sh_dem, el_dem, dhw_dem)
 
 
-if __name__ == '__main__':
+def main():
 
     #  Generate city district or load city district
 
@@ -1988,7 +2039,7 @@ if __name__ == '__main__':
 
     try:
         #  Try loading city pickle file
-        filename = 'wm_res_east_7_w_street_sh_resc_wm.pkl'
+        filename = 'city_with_esys.pkl'
         file_path = os.path.join(this_path, 'input', filename)
         city = pickle.load(open(file_path, mode='rb'))
 
@@ -2231,7 +2282,7 @@ if __name__ == '__main__':
 
 
 
-    # #  TODO: Uncomment later
+    # # #  TODO: Uncomment later
     # #  Temporary add energy systems to buildings
     # #  Generate energy systems
     # #  Generate one feeder with CHP, boiler and TES
@@ -2274,6 +2325,12 @@ if __name__ == '__main__':
     sampling_method = 'lhc'
     #  Options: 'lhc' (latin hypercube) or 'random'
 
+    dem_unc = True
+    # dem_unc : bool, optional
+    # Defines, if thermal, el. and dhw demand are assumed to be uncertain
+    # (default: True). If True, samples demands. If False, uses reference
+    # demands.
+
     failure_tolerance = 0.5
     #  Allowed share of runs, which fail with EnergyBalanceException.
     #  If failure_tolerance is exceeded, mc runner exception is raised.
@@ -2285,8 +2342,8 @@ if __name__ == '__main__':
     #  Defines, if city and building sample dictionaries should be loaded
     #  instead of generating new samples
 
-    city_sample_name = 'WM7_100_dict_city_samples.pkl'
-    build_sample_name = 'WM7_100_dict_build_samples.pkl'
+    city_sample_name = 'kronen_6_resc_2_dict_city_samples.pkl'
+    build_sample_name = 'kronen_6_resc_2_dict_build_samples.pkl'
 
     path_city_sample_dict = os.path.join(this_path,
                                          'input',
@@ -2322,7 +2379,7 @@ if __name__ == '__main__':
     #  0: Generate new profiles during runtime
     #  1: Load pre-generated profile sample dictionary
 
-    el_profile_dict = 'WM7_10_dict_profile_samples.pkl'
+    el_profile_dict = 'kronen_6_resc_2_dict_profile_20_samples.pkl'
     path_profile_dict = os.path.join(this_path,
                                      'input',
                                      'mc_el_profile_pool',
@@ -2410,7 +2467,8 @@ if __name__ == '__main__':
                                path_build_sample_dict=path_build_sample_dict,
                                eeg_pv_limit=eeg_pv_limit,
                                use_kwkg_lhn_sub=use_kwkg_lhn_sub,
-                               calc_th_el_cov=calc_th_el_cov
+                               calc_th_el_cov=calc_th_el_cov,
+                               dem_unc=dem_unc
                                )
 
     #  Perform reference run:
@@ -2465,3 +2523,28 @@ if __name__ == '__main__':
 
     print('Execution time for MC-Analysis (without city generation) in'
           ' seconds: ', time_delta)
+
+    array_annuity = dict_res['annuity']
+    array_co2 = dict_res['co2']
+    array_sh = dict_res['sh_dem']
+
+    plt.hist(array_annuity, bins='auto')
+    plt.xlabel('Annuity in Euro/a')
+    plt.ylabel('Number')
+    plt.show()
+    plt.close()
+
+    plt.hist(array_co2, bins='auto')
+    plt.xlabel('Emissions in kg/a')
+    plt.ylabel('Number')
+    plt.show()
+    plt.close()
+
+    plt.hist(array_sh, bins='auto')
+    plt.xlabel('Space heating demand in kWh/a')
+    plt.ylabel('Number')
+    plt.show()
+    plt.close()
+
+if __name__ == '__main__':
+    main()
