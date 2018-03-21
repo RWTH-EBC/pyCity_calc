@@ -19,6 +19,42 @@ except:
     msg = 'Could not import matplotlib2tikz'
     warnings.warn(msg)
 
+def ident_whisker(array_val, use_low_bound, bound):
+    """
+    Identify whisker
+
+    Parameters
+    ----------
+    array_val : np.array
+    use_low_bound : bool
+    bound : float
+
+    Returns
+    -------
+    whisker : float
+    """
+
+    #  Generate start solutions
+    if use_low_bound:
+        whisker = bound + 10000000000000000000000000000000000000
+    else:
+        whisker = bound - 10000000000000000000000000000000000000
+
+    for i in range(len(array_val)):
+        curr_val = array_val[i]
+
+        if use_low_bound:
+            if curr_val > bound:
+                if curr_val < whisker:
+                    whisker = curr_val
+        else:
+            if curr_val < bound:
+                if curr_val > whisker:
+                    whisker = curr_val
+
+    return whisker
+
+
 def main():
     this_path = os.path.dirname(os.path.abspath(__file__))
 
@@ -41,6 +77,7 @@ def main():
     print()
 
     dict_res = {}
+    dict_setups = {}
     list_ids = []
 
     for dir in list_pathes_res:
@@ -55,7 +92,57 @@ def main():
         dict_res[int(ind_nb)] = res
         list_ids.append(int(ind_nb))
 
+        path_setup = os.path.join(dirpath, 'mc_run_setup_dict.pkl')
+        setup = pickle.load(open(path_setup, mode='rb'))
+        dict_setups[int(ind_nb)] = setup
+
+    #  Sort keys in list_ids
     list_ids.sort()
+
+    print('Postprocess')
+    #  Postprocess (erase entries of failed runs)
+    for i in range(len(list_ids)):
+        id = list_ids[i]
+        print('Id: ', id)
+
+        setup = dict_setups[id]
+        res = dict_res[id]
+
+        list_idx_failed = setup['idx_failed_runs']
+
+        nb_failed_runs = len(list_idx_failed)
+        len_org = len(res['annuity'])
+        len_test_array = len(res['annuity']) - nb_failed_runs
+
+        array_cost = np.zeros(len_test_array)
+        array_co2 = np.zeros(len_test_array)
+        array_sh = np.zeros(len_test_array)
+        array_el = np.zeros(len_test_array)
+        array_dhw = np.zeros(len_test_array)
+
+        array_idx_zeros = np.where(res['annuity'] == 0)[0]
+        print(array_idx_zeros)
+
+        i = 0
+        for j in range(len_org):
+            if j not in list_idx_failed:
+                array_cost[i] = res['annuity'][j]
+                array_co2[i] = res['co2'][j]
+                array_sh[i] = res['sh_dem'][j]
+                array_el[i] = res['el_dem'][j]
+                array_dhw[i] = res['dhw_dem'][j]
+                i += 1
+
+        #  Save new arrays to results object
+        res['annuity'] = array_cost
+        res['co2'] = array_co2
+        res['sh_dem'] = array_sh
+        res['el_dem'] = array_el
+        res['dhw_dem'] = array_dhw
+
+        print('Nb. failed runs: ', nb_failed_runs)
+        print('New array length: ', len(array_cost))
+        print()
 
     fig = plt.figure()
 
@@ -70,6 +157,26 @@ def main():
 
         array_cost = res['annuity'] / 1000
         array_co2 = res['co2'] / 1000
+
+        array_sh = res['sh_dem']
+        array_el = res['el_dem']
+        array_dhw = res['dhw_dem']
+
+        array_net_energy = array_sh + array_el + array_dhw
+
+        # count_zeros = 0
+        # for j in range(len(array_el)):
+        #     if array_el[j] == 0:
+        #         count_zeros += 1
+        #
+        # print(count_zeros)
+        # print('pause')
+        # input()
+
+        # for j in range(len(array_cost)):
+        #     if array_net_energy[i] > 0:
+        #         array_cost[i] = array_cost[i] / array_net_energy[i]
+        #         array_co2[i] = array_co2[i] / array_net_energy[i]
 
         median_cost = np.median(array_cost)
         median_co2 = np.median(array_co2)
@@ -103,10 +210,23 @@ def main():
         up_bound_co2 = q_75_co2 + 1.5 * iqr_co2
         low_bound_co2 = q_25_co2 - 1.5 * iqr_co2
 
-        er_low_b_cost = median_cost - low_bound_cost
-        er_up_b_cost = up_bound_cost - median_cost
-        er_low_b_co2 = median_co2 - low_bound_co2
-        er_up_b_co2 = up_bound_co2 - median_co2
+        whisker_low_cost = ident_whisker(array_val=array_cost,
+                                         use_low_bound=True,
+                                         bound=low_bound_cost)
+        whisker_high_cost = ident_whisker(array_val=array_cost,
+                                         use_low_bound=False,
+                                         bound=up_bound_cost)
+        whisker_low_co2 = ident_whisker(array_val=array_co2,
+                                         use_low_bound=True,
+                                         bound=low_bound_co2)
+        whisker_high_co2 = ident_whisker(array_val=array_co2,
+                                          use_low_bound=False,
+                                          bound=up_bound_co2)
+
+        er_low_b_cost = median_cost - whisker_low_cost
+        er_up_b_cost = whisker_high_cost - median_cost
+        er_low_b_co2 = median_co2 - whisker_low_co2
+        er_up_b_co2 = whisker_high_co2 - median_co2
 
         color = list_colors[i]
 
@@ -127,12 +247,11 @@ def main():
                      capsize=5,
                      color=color)
 
-        #  Plot all whiskers manually
+        #  Plot all outliers manually
         for j in range(len(array_cost)):
             curr_cost = array_cost[j]
             if (curr_cost > up_bound_cost or
-                    curr_cost < low_bound_cost - 1.5 * iqr_cost) \
-                    and curr_cost > 0:
+                    curr_cost < low_bound_cost - 1.5 * iqr_cost):
                 plt.plot([curr_cost], [median_co2],
                          linestyle='',
                          marker='o',
