@@ -23,6 +23,11 @@ def main():
     print(list_city_files)
 
     for file in list_city_files:
+
+        print('File: ')
+        print(file)
+        print('#########################################################')
+
         path_load = os.path.join(path_folder_cities, file)
         city = pickle.load(open(path_load, mode='rb'))
 
@@ -98,11 +103,19 @@ def main():
         print('Total emissions of city district in t/a:')
         print(round(co2 / 1000, 0))
 
+        print()
+        print('File')
+        print(file)
+        print('#############')
+        print()
+
         #  Plot coverage figures
         energy_balance.plot_coverage(
             path_save_folder=path_save_folder,
             save_tikz=False
         )
+
+        print()
 
 
 if __name__ == '__main__':

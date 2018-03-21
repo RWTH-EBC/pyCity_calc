@@ -1222,6 +1222,12 @@ class CityEBCalculator(object):
         chp_exp = self._dict_energy['el_exp']['chp']
         pv_exp = self._dict_energy['el_exp']['pv']
 
+        print('CHP fed-in energy in kWh:')
+        print(chp_exp)
+        print('PV fed-in energy in kWh:')
+        print(pv_exp)
+        print()
+
         chp_self = chp_gen - chp_exp
         pv_self = pv_gen - pv_exp
 
@@ -1289,8 +1295,13 @@ class CityEBCalculator(object):
         print(own_cov)
         print('Share of PV:')
         print(pv_cov)
-        print('Share of CHP:')
+        print('Share of CHP (el.):')
         print(chp_cov)
+        print()
+
+        print('Share of CHP (th.):')
+        chp_th_cov = chp_th_en / sum_th_dem
+        print(chp_th_cov)
         print()
 
         list_el_dem.append(el_dem)
