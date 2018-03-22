@@ -180,12 +180,27 @@ def main():
 
         median_cost = np.median(array_cost)
         median_co2 = np.median(array_co2)
+        median_sh = np.median(array_sh)
+        median_el = np.median(array_el)
+        median_dhw = np.median(array_dhw)
 
         print('Median cost ', median_cost)
+        print('Av. cost: ', sum(array_cost) / len(array_cost))
         print('Median co2: ', median_co2)
+        print('Av. CO2: ', sum(array_co2) / len(array_co2))
+        print('Median SH ', median_sh)
+        print('Median El.: ', median_el)
+        print('Median DHW: ', median_dhw)
+        print('Av. DHW: ', sum(array_dhw) / len(array_dhw))
 
         iqr_cost = stats.iqr(array_cost)
         iqr_co2 = stats.iqr(array_co2)
+
+        riqr_cost = iqr_cost / median_cost
+        riqr_co2 = iqr_co2 / median_co2
+
+        print('RIQR (cost): ', riqr_cost)
+        print('RIQR (CO2): ', riqr_co2)
 
         q_25_cost = np.percentile(array_cost, q=25)
         q_25_co2 = np.percentile(array_co2, q=25)
