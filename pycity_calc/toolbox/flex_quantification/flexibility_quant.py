@@ -238,6 +238,16 @@ def calc_t_delayed_build(q_ehg_nom, array_sh, array_dhw, timestep, tes,
             #  Current thermal power demand
             th_pow_cur = array_th[t + i]
 
+            if th_pow_cur > q_ref_nom:
+                #  If thermal power is larger than ehg (resp. ref. power),
+                #  end flexibility timespan (cannot be switched of reasonably)
+                #  Reduce by one increment of t, if t > 0
+                if t > 0:
+                    t -= 1
+                #  End seconds for loop
+                break
+
+
             #  if calc_storage_q_in_max > q_ehg_nom
             if tes_copy.calc_storage_q_out_max() > th_pow_cur:
                 t_prior = tes_copy.t_current
