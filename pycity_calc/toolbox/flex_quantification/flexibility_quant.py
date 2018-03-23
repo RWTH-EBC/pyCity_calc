@@ -247,7 +247,6 @@ def calc_t_delayed_build(q_ehg_nom, array_sh, array_dhw, timestep, tes,
                 #  End seconds for loop
                 break
 
-
             #  if calc_storage_q_in_max > q_ehg_nom
             if tes_copy.calc_storage_q_out_max() > th_pow_cur:
                 t_prior = tes_copy.t_current
@@ -775,7 +774,7 @@ def calc_cycle_energy_forced_year(timestep, array_cycle_flex_forced):
         Maximum annual energy flexibility (in kWh) for forced operation
     """
 
-    return abs(sum(array_cycle_flex_forced) * timestep / 3600000)
+    return sum(array_cycle_flex_forced) * timestep / 3600000
 
 
 def calc_pow_flex_delayed(timestep, array_t_delayed, array_p_el_ref):
@@ -930,7 +929,7 @@ def calc_cycle_energy_delayed_year(timestep, array_cycle_flex_delayed):
         Maximum annual energy flexibility (in kWh) for delayed operation
     """
 
-    return abs(sum(array_cycle_flex_delayed) * timestep / 3600000)
+    return sum(array_cycle_flex_delayed) * timestep / 3600000
 
 
 def calc_storage_av_energy_year(building):
@@ -1133,7 +1132,7 @@ def calc_dimless_el_power_flex(timestep, array_sh, array_dhw, array_el_flex):
 
 
 def calc_dimless_el_en_flex(flex_energy, sh_dem,
-                             dhw_dem):
+                            dhw_dem):
     """
     Calculate dimensionless electric energy flexibility beta_el
 
@@ -1194,12 +1193,12 @@ def perform_flex_analysis_single_build(build, use_eh=False, mod_boi=False,
             dict_flex['array_energy_flex_forced'] = array_energy_flex_forced
             dict_flex['energy_flex_forced'] = energy_flex_forced
             dict_flex['array_alpha_el_forced'] = array_alpha_el_forced
-            dict_flex['array_beta_th_forced'] = array_beta_th_forced
+            dict_flex['beta_el_forced'] = beta_el_forced
             dict_flex['array_av_flex_delayed'] = array_av_flex_delayed
             dict_flex['array_cycle_flex_delayed'] = array_cycle_flex_delayed
             dict_flex['energy_flex_delayed'] = energy_flex_delayed
             dict_flex['array_alpha_el_delayed'] = array_alpha_el_delayed
-            dict_flex['array_beta_th_delayed'] = array_beta_th_delayed
+            dict_flex['beta_el_delayed'] = beta_el_delayed
     """
 
     dict_flex = {}
@@ -1413,8 +1412,8 @@ def perform_flex_analysis_single_build(build, use_eh=False, mod_boi=False,
     #  Calculate energy flexibility for forced operation
     beta_el_forced = \
         calc_dimless_el_en_flex(flex_energy=energy_flex_forced,
-                                 sh_dem=sh_dem,
-                                 dhw_dem=dhw_dem)
+                                sh_dem=sh_dem,
+                                dhw_dem=dhw_dem)
 
     print('Dimensionless el. energy flexibility for force operation:')
     print(beta_el_forced)
@@ -1539,12 +1538,12 @@ def perform_flex_analysis_sublhn(city, list_lhn, use_eh=False, mod_boi=False,
             dict_flex['array_energy_flex_forced'] = array_energy_flex_forced
             dict_flex['energy_flex_forced'] = energy_flex_forced
             dict_flex['array_alpha_el_forced'] = array_alpha_el_forced
-            dict_flex['array_beta_th_forced'] = array_beta_th_forced
+            dict_flex['beta_el_forced'] = beta_el_forced
             dict_flex['array_av_flex_delayed'] = array_av_flex_delayed
             dict_flex['array_cycle_flex_delayed'] = array_cycle_flex_delayed
             dict_flex['energy_flex_delayed'] = energy_flex_delayed
             dict_flex['array_alpha_el_delayed'] = array_alpha_el_delayed
-            dict_flex['array_beta_th_delayed'] = array_beta_th_delayed
+            dict_flex['beta_el_delayed'] = beta_el_delayed
     """
 
     dict_flex = {}
@@ -1775,24 +1774,16 @@ def perform_flex_analysis_sublhn(city, list_lhn, use_eh=False, mod_boi=False,
     dict_flex['array_alpha_el_forced'] = array_alpha_el_forced
 
     #  Calculate energy flexibility for forced operation
-    array_beta_th_forced = \
+    beta_el_forced = \
         calc_dimless_el_en_flex(flex_energy=energy_flex_forced,
-                                 sh_dem=sh_dem,
-                                 dhw_dem=dhw_dem)
+                                sh_dem=sh_dem,
+                                dhw_dem=dhw_dem)
 
-    print('Dimensionless el. energy flexibility for force operation:')
-    print(sum(array_beta_th_forced))
-    print()
+    print('Dimensionless el. energy flexibility (beta_el) '
+          'for forced operation in kWh:')
+    print(beta_el_forced)
 
-    if plot_res:
-        plt.plot(array_beta_th_forced)
-        plt.title('beta_el (forced) for sublhn ' + str(list_lhn))
-        plt.xlabel('Time in hours')
-        plt.ylabel('Dimensionless el. energy flexibility beta_el (forced)')
-        plt.show()
-        plt.close()
-
-    dict_flex['array_beta_th_forced'] = array_beta_th_forced
+    dict_flex['beta_el_forced'] = beta_el_forced
 
     #  Calculate pow_delayed_flex for each timespan
     #  ##################################################################
@@ -1859,22 +1850,15 @@ def perform_flex_analysis_sublhn(city, list_lhn, use_eh=False, mod_boi=False,
     dict_flex['array_alpha_el_delayed'] = array_alpha_el_delayed
 
     #  Calculate energy flexibility for delayed operation
-    array_beta_th_delayed = \
+    beta_el_delayed = \
         calc_dimless_el_en_flex(flex_energy=energy_flex_delayed,
-                                 sh_dem=sh_dem, dhw_dem=dhw_dem)
+                                sh_dem=sh_dem, dhw_dem=dhw_dem)
 
-    print('Dimensionless el. energy flexibility for delayed operation:')
-    print(sum(array_beta_th_delayed))
+    print('Dimensionless el. energy flexibility (beta_el) '
+          'for delayed operation in kWh:')
+    print(beta_el_delayed)
 
-    if plot_res:
-        plt.plot(array_beta_th_delayed)
-        plt.title('beta_el (delayed) for sublhn ' + str(list_lhn))
-        plt.xlabel('Time in hours')
-        plt.ylabel('Dimensionless el. energy flexibility beta_el (delayed)')
-        plt.show()
-        plt.close()
-
-    dict_flex['array_beta_th_delayed'] = array_beta_th_delayed
+    dict_flex['beta_el_delayed'] = beta_el_delayed
 
     print('#############################################################')
     print()
@@ -1918,6 +1902,8 @@ def perform_flex_analysis_city(city, use_eh=False, mod_boi=False,
             dict_flex_city['energy_flex_forced_neg']
             dict_flex_city['energy_flex_delayed_pos']
             dict_flex_city['energy_flex_delayed_neg']
+            dict_flex_city['beta_el_pos']
+            dict_flex_city['beta_el_neg']
     """
 
     timestep = city.environment.timer.timeDiscretization
@@ -1945,6 +1931,9 @@ def perform_flex_analysis_city(city, use_eh=False, mod_boi=False,
         array_cycle_flex_delayed_plus
     dict_flex_city['array_cycle_flex_delayed_minus'] = \
         array_cycle_flex_delayed_minus
+
+    dict_flex_city['beta_el_pos'] = 0
+    dict_flex_city['beta_el_neg'] = 0
 
     #  Get list of buildings (with and without LHN connections
     #  ######################################################################
@@ -2010,6 +1999,16 @@ def perform_flex_analysis_city(city, use_eh=False, mod_boi=False,
             dict_flex_city['energy_flex_delayed_neg'] += \
                 abs(dict_flex['energy_flex_delayed'])
 
+        if dict_flex['beta_el_forced'] >= 0:
+            dict_flex_city['beta_el_pos'] += dict_flex['beta_el_forced']
+        else:
+            dict_flex_city['beta_el_neg'] +=dict_flex['beta_el_forced']
+
+        if dict_flex['beta_el_delayed'] >= 0:
+            dict_flex_city['beta_el_pos'] += dict_flex['beta_el_delayed']
+        else:
+            dict_flex_city['beta_el_neg'] +=dict_flex['beta_el_delayed']
+
     #  Process stand alone buildings
     #  ######################################################################
     for n in list_stand_alone_build:
@@ -2051,59 +2050,48 @@ def perform_flex_analysis_city(city, use_eh=False, mod_boi=False,
             dict_flex_city['energy_flex_delayed_neg'] += \
                 abs(dict_flex['energy_flex_delayed'])
 
+        if dict_flex['beta_el_forced'] >= 0:
+            dict_flex_city['beta_el_pos'] += dict_flex['beta_el_forced']
+        else:
+            dict_flex_city['beta_el_neg'] +=dict_flex['beta_el_forced']
+
+        if dict_flex['beta_el_delayed'] >= 0:
+            dict_flex_city['beta_el_pos'] += dict_flex['beta_el_delayed']
+        else:
+            dict_flex_city['beta_el_neg'] +=dict_flex['beta_el_delayed']
+
     return dict_flex_city
 
 
-# def calc_sum_city_flexibilities(timestep, dict_flex_city):
-#     """
-#     Calculate sum of flexibilities within city
-#
-#     Parameters
-#     ----------
-#     timestep : int
-#         Timestep in seconds
-#     dict_flex_city : dict
-#         Dict holding flexibility results for whole city
-#             dict_flex_city['list_alpha_el_forced'] = list_alpha_el_forced
-#             dict_flex_city['list_alpha_el_delayed'] = list_alpha_el_delayed
-#             dict_flex_city['array_cycle_flex_forced_plus'] = \
-#                 array_cycle_flex_forced_plus
-#             dict_flex_city['array_cycle_flex_forced_minus'] = \
-#                 array_cycle_flex_forced_minus
-#             dict_flex_city['array_cycle_flex_delayed_plus'] = \
-#                 array_cycle_flex_delayed_plus
-#             dict_flex_city['array_cycle_flex_delayed_minus'] = \
-#                 array_cycle_flex_delayed_minus
-#
-#     Returns
-#     -------
-#     tup_res : tuple (of floats)
-#         Tuple with summed of positive and negative energy flexibilities in kWh
-#         en_flex_forced_pos, en_flex_forced_neg, en_flex_delayed_pos,
-#             en_flex_delayed_neg)
-#     """
-#
-#     en_flex_forced_pos = 0  # Generation (forced) (CHP)
-#     en_flex_forced_neg = 0  # Consumption (forced) (HP)
-#     en_flex_delayed_pos = 0  # Reference consumption blocked (delayed) (HP)
-#     en_flex_delayed_neg = 0  # Reference generation blocked (delayed) (CHP)
-#
-#     en_flex_forced_pos += \
-#         sum(dict_flex_city['array_cycle_flex_forced_plus']) \
-#                           * timestep / (3600 * 1000)
-#     en_flex_forced_neg += \
-#         sum(dict_flex_city['array_cycle_flex_forced_minus']) \
-#                           * timestep / (3600 * 1000)
-#
-#     en_flex_delayed_pos += \
-#         sum(dict_flex_city['array_cycle_flex_delayed_plus']) \
-#         * timestep / (3600 * 1000)
-#     en_flex_delayed_neg += \
-#         sum(dict_flex_city['array_cycle_flex_delayed_minus']) \
-#                            * timestep / (3600 * 1000)
-#
-#     return (en_flex_forced_pos, en_flex_forced_neg, en_flex_delayed_pos,
-#             en_flex_delayed_neg)
+def calc_beta_el_city(city, use_eh=False, mod_boi=True):
+    """
+    Calculate dimensionless electric energy flexibility factor beta_el for
+    whole city.
+
+    Parameters
+    ----------
+    city : object
+        city object of pyCity_calc
+    use_eh : bool, optional
+        Defines, if electric heater is also used to define t_forced_build
+        (default: False).
+    mod_boi : bool, optional
+        Defines, if boiler size should be modified (CHP/BOI) /
+        added (for HP/EH system) (default: True)
+
+    Returns
+    -------
+    (beta_el_pos, beta_el_neg)
+    """
+
+    dict_flex_city = \
+        perform_flex_analysis_city(city=city, use_eh=use_eh, mod_boi=mod_boi)
+
+    beta_el_pos = dict_flex_city['beta_el_pos']
+    beta_el_neg = dict_flex_city['beta_el_neg']
+
+    return (beta_el_pos, beta_el_neg)
+
 
 def main():
     #  Perform flexibility calculation for whole city district
@@ -2245,5 +2233,5 @@ def main2():
 
 
 if __name__ == '__main__':
-    # main()
-    main2()
+    main()
+    # main2()
