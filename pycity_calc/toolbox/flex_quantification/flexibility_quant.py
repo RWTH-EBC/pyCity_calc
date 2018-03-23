@@ -1496,7 +1496,7 @@ def perform_flex_analysis_single_build(build, use_eh=False, mod_boi=False,
     print('Dimensionless el. energy flexibility for delayed operation:')
     print(beta_el_delayed)
 
-    dict_flex['array_beta_th_delayed'] = beta_el_delayed
+    dict_flex['beta_el_delayed'] = beta_el_delayed
 
     print('#############################################################')
     print()
