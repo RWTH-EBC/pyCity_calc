@@ -89,8 +89,13 @@ def calc_t_forced_build(q_ehg_nom, array_sh, array_dhw, timestep, tes):
             if q_ehg_nom > th_pow_cur:
                 p_charge = q_ehg_nom - th_pow_cur
             else:
-                p_charge = 0
-                #  TODO: Add discharging?
+                #  break loop, as system cannot over "real" flexibility,
+                #  as it has to be driven anyway
+                #  Reduce by one increment of t, if t > 0
+                if t > 0:
+                    t -= 1
+                #  End seconds for loop
+                break
 
             #  if calc_storage_q_in_max > q_ehg_nom
             if tes_copy.calc_storage_q_in_max() > p_charge:
@@ -2259,5 +2264,5 @@ def main2():
 
 
 if __name__ == '__main__':
-    main()
-    # main2()
+    # main()
+    main2()
