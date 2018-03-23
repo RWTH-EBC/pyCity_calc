@@ -771,11 +771,11 @@ def calc_cycle_energy_forced_year(timestep, array_cycle_flex_forced):
 
     Returns
     -------
-    array_energy_flex_forced : np.array (of floats)
-        Array holding energy flexibilities (in J) for forced operation
+    energy_flex_forced : float
+        Maximum annual energy flexibility (in kWh) for forced operation
     """
 
-    return array_cycle_flex_forced * timestep
+    return abs(sum(array_cycle_flex_forced) * timestep / 3600000)
 
 
 def calc_pow_flex_delayed(timestep, array_t_delayed, array_p_el_ref):
@@ -926,11 +926,11 @@ def calc_cycle_energy_delayed_year(timestep, array_cycle_flex_delayed):
 
     Returns
     -------
-    array_energy_flex_delayed : np.array (of floats)
-        Array holding energy flexibilities (in J) for delayed operation
+    energy_flex_delayed : float
+        Maximum annual energy flexibility (in kWh) for delayed operation
     """
 
-    return array_cycle_flex_delayed * timestep
+    return abs(sum(array_cycle_flex_delayed) * timestep / 3600000)
 
 
 def calc_storage_av_energy_year(building):
@@ -1132,17 +1132,17 @@ def calc_dimless_el_power_flex(timestep, array_sh, array_dhw, array_el_flex):
     return array_alpha_el
 
 
-def calc_dimless_tes_el_flex(array_flex_energy, sh_dem,
+def calc_dimless_el_en_flex(flex_energy, sh_dem,
                              dhw_dem):
     """
-    Calculate dimensionless electric storage flexibility beta_el
+    Calculate dimensionless electric energy flexibility beta_el
 
     Parameters
     ----------
     building : object
         Building object of pyCity_calc
-    array_flex_energy : np.array (of floats)
-        Array holding energy flexibilities in Joule
+    array_flex_energy : float
+        Energy flexibility in kWh
     sh_dem : float
         Space heating demand in kWh
     dhw_dem : float
@@ -1150,17 +1150,14 @@ def calc_dimless_tes_el_flex(array_flex_energy, sh_dem,
 
     Returns
     -------
-    array_beta_el : np.array (of floats)
-        Array holding dimensionless electric storage flexibility
+    beta_el : float
+        Dimensionless electric energy flexibility
     """
 
-    #  Convert array_flex_energy from Joule to kWh
-    array_flex_energy_kwh = array_flex_energy / (3600 * 1000)
-
     #  Calculate beta_el
-    array_beta_el = array_flex_energy_kwh / ((sh_dem + dhw_dem) / 365)
+    beta_el = flex_energy / ((sh_dem + dhw_dem) / 365)
 
-    return array_beta_el
+    return beta_el
 
 
 def perform_flex_analysis_single_build(build, use_eh=False, mod_boi=False,
@@ -1385,17 +1382,14 @@ def perform_flex_analysis_single_build(build, use_eh=False, mod_boi=False,
     dict_flex['array_cycle_flex_forced'] = array_cycle_flex_forced
 
     #  Calculate force energy flexibility
-    array_energy_flex_forced = \
+    energy_flex_forced = \
         calc_cycle_energy_forced_year(timestep=timestep,
                                       array_cycle_flex_forced=
                                       array_cycle_flex_forced)
 
-    energy_flex_forced = sum(array_energy_flex_forced) / (3600 * 1000)
-
     print('Energy flexibility in kWh for forced operation:')
     print(energy_flex_forced)
 
-    dict_flex['array_energy_flex_forced'] = array_energy_flex_forced
     dict_flex['energy_flex_forced'] = energy_flex_forced
 
     #  Calculate dimensionless electric power flexibility for forced operation
@@ -1417,24 +1411,16 @@ def perform_flex_analysis_single_build(build, use_eh=False, mod_boi=False,
     dict_flex['array_alpha_el_forced'] = array_alpha_el_forced
 
     #  Calculate energy flexibility for forced operation
-    array_beta_th_forced = \
-        calc_dimless_tes_el_flex(array_flex_energy=array_energy_flex_forced,
+    beta_el_forced = \
+        calc_dimless_el_en_flex(flex_energy=energy_flex_forced,
                                  sh_dem=sh_dem,
                                  dhw_dem=dhw_dem)
 
     print('Dimensionless el. energy flexibility for force operation:')
-    print(sum(array_beta_th_forced))
+    print(beta_el_forced)
     print()
 
-    if plot_res:
-        plt.plot(array_beta_th_forced)
-        plt.title('beta_el (forced) for building ' + str(id))
-        plt.xlabel('Time in hours')
-        plt.ylabel('Dimensionless el. energy flexibility beta_el (forced)')
-        plt.show()
-        plt.close()
-
-    dict_flex['array_beta_th_forced'] = array_beta_th_forced
+    dict_flex['beta_el_forced'] = beta_el_forced
 
     #  Calculate pow_delayed_flex for each timespan
     #  ##################################################################
@@ -1474,12 +1460,10 @@ def perform_flex_analysis_single_build(build, use_eh=False, mod_boi=False,
     dict_flex['array_av_flex_delayed'] = array_av_flex_delayed
     dict_flex['array_cycle_flex_delayed'] = array_cycle_flex_delayed
 
-    array_energy_flex_delayed = \
+    energy_flex_delayed = \
         calc_cycle_energy_delayed_year(timestep=timestep,
                                        array_cycle_flex_delayed=
                                        array_cycle_flex_delayed)
-
-    energy_flex_delayed = sum(array_energy_flex_delayed) / (3600 * 1000)
 
     print('Energy flexibility in kWh for delayed operation:')
     print(energy_flex_delayed)
@@ -1505,23 +1489,15 @@ def perform_flex_analysis_single_build(build, use_eh=False, mod_boi=False,
     dict_flex['array_alpha_el_delayed'] = array_alpha_el_delayed
 
     #  Calculate energy flexibility for delayed operation
-    array_beta_th_delayed = \
-        calc_dimless_tes_el_flex(array_flex_energy=array_energy_flex_delayed,
-                                 sh_dem=sh_dem,
-                                 dhw_dem=dhw_dem)
+    beta_el_delayed = \
+        calc_dimless_el_en_flex(flex_energy=energy_flex_delayed,
+                                sh_dem=sh_dem,
+                                dhw_dem=dhw_dem)
 
     print('Dimensionless el. energy flexibility for delayed operation:')
-    print(sum(array_beta_th_delayed))
+    print(beta_el_delayed)
 
-    if plot_res:
-        plt.plot(array_beta_th_delayed)
-        plt.title('beta_el (delayed) for building ' + str(id))
-        plt.xlabel('Time in hours')
-        plt.ylabel('Dimensionless el. energy flexibility beta_el (delayed)')
-        plt.show()
-        plt.close()
-
-    dict_flex['array_beta_th_delayed'] = array_beta_th_delayed
+    dict_flex['array_beta_th_delayed'] = beta_el_delayed
 
     print('#############################################################')
     print()
@@ -1770,17 +1746,14 @@ def perform_flex_analysis_sublhn(city, list_lhn, use_eh=False, mod_boi=False,
     dict_flex['array_cycle_flex_forced'] = array_cycle_flex_forced
 
     #  Calculate force energy flexibility
-    array_energy_flex_forced = \
+    energy_flex_forced = \
         calc_cycle_energy_forced_year(timestep=timestep,
                                       array_cycle_flex_forced=
                                       array_cycle_flex_forced)
 
-    energy_flex_forced = sum(array_energy_flex_forced) / (3600 * 1000)
-
     print('Energy flexibility in kWh for forced operation:')
     print(energy_flex_forced)
 
-    dict_flex['array_energy_flex_forced'] = array_energy_flex_forced
     dict_flex['energy_flex_forced'] = energy_flex_forced
 
     #  Calculate dimensionless electric power flexibility for forced operation
@@ -1803,7 +1776,7 @@ def perform_flex_analysis_sublhn(city, list_lhn, use_eh=False, mod_boi=False,
 
     #  Calculate energy flexibility for forced operation
     array_beta_th_forced = \
-        calc_dimless_tes_el_flex(array_flex_energy=array_energy_flex_forced,
+        calc_dimless_el_en_flex(flex_energy=energy_flex_forced,
                                  sh_dem=sh_dem,
                                  dhw_dem=dhw_dem)
 
@@ -1858,12 +1831,10 @@ def perform_flex_analysis_sublhn(city, list_lhn, use_eh=False, mod_boi=False,
     dict_flex['array_av_flex_delayed'] = array_av_flex_delayed
     dict_flex['array_cycle_flex_delayed'] = array_cycle_flex_delayed
 
-    array_energy_flex_delayed = \
+    energy_flex_delayed = \
         calc_cycle_energy_delayed_year(timestep=timestep,
                                        array_cycle_flex_delayed=
                                        array_cycle_flex_delayed)
-
-    energy_flex_delayed = sum(array_energy_flex_delayed) / (3600 * 1000)
 
     print('Energy flexibility in kWh for delayed operation:')
     print(energy_flex_delayed)
@@ -1889,7 +1860,7 @@ def perform_flex_analysis_sublhn(city, list_lhn, use_eh=False, mod_boi=False,
 
     #  Calculate energy flexibility for delayed operation
     array_beta_th_delayed = \
-        calc_dimless_tes_el_flex(array_flex_energy=array_energy_flex_delayed,
+        calc_dimless_el_en_flex(flex_energy=energy_flex_delayed,
                                  sh_dem=sh_dem, dhw_dem=dhw_dem)
 
     print('Dimensionless el. energy flexibility for delayed operation:')
