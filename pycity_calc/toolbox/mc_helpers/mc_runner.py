@@ -269,10 +269,14 @@ class McRunner(object):
 
                     #  Sample dhw demand per apartment (depending on nb.
                     # persons)
-                    dhw_per_app = usersample. \
+                    dhw_vol_app = usersample. \
                         calc_sampling_dhw_per_apartment(nb_samples=1,
                                                         nb_persons=occ_p_app,
                                                         b_type=type)
+
+                    #  Convert liters/app*day to kWh/app*year
+                    dhw_per_app = \
+                        usersample.recalc_dhw_vol_to_energy(vol=dhw_vol_app)
 
                     #  Sum up values on building level
                     array_occupants[i] += occ_p_app

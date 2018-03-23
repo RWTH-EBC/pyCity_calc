@@ -553,11 +553,17 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
                         nb_samples=1,
                         nb_persons=array_nb_occ[k], type=res_type)[0]
                     #  Sample dhw demand value per apartment
-                    dhw_dem_per_app = useunc. \
+
+                    #  Hot water volume per apartment
+                    dhw_vol_per_app = useunc. \
                         calc_sampling_dhw_per_apartment(nb_samples=1,
                                                         nb_persons=
                                                         array_nb_occ[k],
                                                         b_type=res_type)
+
+                    #  Convert liters/app*day to kWh/app*year
+                    dhw_dem_per_app = \
+                        useunc.recalc_dhw_vol_to_energy(vol=dhw_vol_per_app)
 
                     #  Save el. demand
                     dict_build_samples[key]['app_el_dem'][i, k] = \
@@ -847,12 +853,12 @@ if __name__ == '__main__':
     #  User inputs
     #  ###################################################################
     #  City pickle file name
-    city_name = 'wm_res_east_7_w_street_sh_resc_wm.pkl'
+    city_name = 'aachen_kronenberg_6_w_esys.pkl'
 
     #  Number of samples
     nb_samples = 100
 
-    load_sh_mc_res = True
+    load_sh_mc_res = False
     #  If load_sh_mc_res is True, tries to load monte-carlo space heating
     #  uncertainty run results for each building from given folder
     #  If load_sh_mc_res is False, uses default value to sample sh demand
@@ -879,7 +885,7 @@ if __name__ == '__main__':
 
     #  Defines name of profile dict, if profiles should be loaded
     #  (gen_use_prof_method == 1)
-    el_profile_dict = 'WM7_10_dict_profile_samples.pkl'
+    el_profile_dict = 'kronen_6_resc_2_dict_profile_20_samples.pkl'
 
     path_this = os.path.dirname(os.path.abspath(__file__))
     path_mc = os.path.dirname(path_this)
@@ -896,9 +902,9 @@ if __name__ == '__main__':
 
     #  Output path definitions
     path_save_res = os.path.join(path_mc, 'output')
-    city_pkl_name = 'WM7_100_dict_city_samples.pkl'
-    building_pkl_name = 'WM7_100_dict_build_samples.pkl'
-    profiles_pkl_name = 'WM7_10_dict_profile_samples.pkl'
+    city_pkl_name = 'aachen_kronenberg_6_w_esys_dict_city_samples.pkl'
+    building_pkl_name = 'aachen_kronenberg_6_w_esys_dict_build_samples.pkl'
+    profiles_pkl_name = 'aachen_kronenberg_6_w_esys_dict_profile_samples.pkl'
     #  ###################################################################
 
     city = pickle.load(open(path_city, mode='rb'))
