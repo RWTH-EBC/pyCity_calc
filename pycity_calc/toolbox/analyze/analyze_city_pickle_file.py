@@ -836,7 +836,7 @@ if __name__ == '__main__':
     # city_file = 'aachen_kronenberg_mod_new_1.pkl'
     # city_file = 'aachen_preusweg_mod_new_1.pkl'
     # city_file = 'aachen_tuerme_mod_new_1.pkl'
-    city_file = 'aachen_ambackes_1.pkl'
+    city_file = 'aachen_kronenberg_6_peak_resc_2.pkl'
 
     print('Analyse city file: ', city_file)
 
@@ -870,6 +870,19 @@ if __name__ == '__main__':
     run_c_file_an(city_object=city)
 
     get_min_max_th_sh_powers(city, print_out=True)
+
+    list_build_ids = city.get_list_build_entity_node_ids()
+
+    for n in list_build_ids:
+
+        curr_build = city.nodes[n]['entity']
+
+        q_dot_max = dimfunc.get_max_power_of_building(building=curr_build,
+                                                      with_dhw=True)
+
+        print('Maximum sh+dhw thermal power of building '
+              + str(n) + ' in kW:')
+        print(q_dot_max / 1000)
 
     # #  Plot city district
     # citvis.plot_city_district(city=city, offset=7,
