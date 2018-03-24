@@ -1469,8 +1469,7 @@ class CityEBCalculator(object):
         plt.close()
 
 
-if __name__ == '__main__':
-
+def main():
     import pycity_calc.cities.scripts.city_generator.city_generator as citygen
     import pycity_calc.cities.scripts.overall_gen_and_dimensioning as overall
     import matplotlib.pyplot as plt
@@ -1801,3 +1800,7 @@ if __name__ == '__main__':
     # plt.title('Dynamic CO2 emissions')
     # plt.show()
     # plt.close()
+
+
+if __name__ == '__main__':
+    main()
