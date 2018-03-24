@@ -858,7 +858,7 @@ if __name__ == '__main__':
     #  Number of samples
     nb_samples = 100
 
-    load_sh_mc_res = False
+    load_sh_mc_res = True
     #  If load_sh_mc_res is True, tries to load monte-carlo space heating
     #  uncertainty run results for each building from given folder
     #  If load_sh_mc_res is False, uses default value to sample sh demand
@@ -902,9 +902,9 @@ if __name__ == '__main__':
 
     #  Output path definitions
     path_save_res = os.path.join(path_mc, 'output')
-    city_pkl_name = 'aachen_kronenberg_6_w_esys_dict_city_samples.pkl'
-    building_pkl_name = 'aachen_kronenberg_6_w_esys_dict_build_samples.pkl'
-    profiles_pkl_name = 'aachen_kronenberg_6_w_esys_dict_profile_samples.pkl'
+    city_pkl_name = 'kronen_6_resc_2_dict_city_samples.pkl'
+    building_pkl_name = 'kronen_6_resc_2_dict_build_samples.pkl'
+    profiles_pkl_name = 'kronen_6_resc_2_dict_profile_20_samples.pkl'
     #  ###################################################################
 
     city = pickle.load(open(path_city, mode='rb'))
