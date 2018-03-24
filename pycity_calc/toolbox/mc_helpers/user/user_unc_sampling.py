@@ -489,6 +489,35 @@ def calc_sampling_dhw_per_apartment(nb_samples, nb_persons,
     return array_dhw_vol
 
 
+def recalc_dhw_vol_to_energy(vol, delta_t=35, c_p_water=4182, rho_water=995):
+    """
+    Calculates hot water energy in kWh/a from input hot water volume in
+    liters/apartment*day
+
+    Parameters
+    ----------
+    vol : float
+        Input hot water volume in liters/apartment*day
+    delta_t : float, optional
+        Temperature split of heated up water in Kelvin (default: 35)
+    c_p_water : float, optional
+        Specific heat capacity of water in J/kgK (default: 4182)
+    rho_water : float, optional
+        Density of water in kg/m3 (default: 995)
+
+    Returns
+    -------
+    dhw_annual_kwh : float
+        Annual hot water energy demand in kWh/a
+    """
+
+    en_per_day = vol / 1000 * rho_water * c_p_water * delta_t \
+                 / (3600 * 1000) # in kWh
+    dhw_annual_kwh = en_per_day * 365
+
+    return dhw_annual_kwh
+
+
 if __name__ == '__main__':
 
     nb_samples = 100000
@@ -586,12 +615,13 @@ if __name__ == '__main__':
 
     nb_persons = 5
 
-    list_dhw_per_app = calc_sampling_dhw_per_apartment(nb_samples=nb_samples,
-                                                       nb_persons=nb_persons)
+    list_dhw_vol_per_app = \
+        calc_sampling_dhw_per_apartment(nb_samples=nb_samples,
+                                        nb_persons=nb_persons)
 
     fig = plt.figure()
     # the histogram of the data
-    plt.hist(list_dhw_per_app, bins='auto')
+    plt.hist(list_dhw_vol_per_app, bins='auto')
     plt.xlabel('Hot water volumes per apartment and day in liters')
     plt.ylabel('Number of values')
     plt.title('Hot water volumes per person and day for ' + str(nb_persons)
@@ -601,7 +631,8 @@ if __name__ == '__main__':
 
     list_dhw_per_app_2 = []
     for nb_occ in list_occ_in_app:
-        sample_dhw = calc_sampling_dhw_per_apartment(nb_samples=1, nb_persons=nb_occ)[0]
+        sample_dhw = calc_sampling_dhw_per_apartment(nb_samples=1,
+                                                     nb_persons=nb_occ)[0]
         list_dhw_per_app_2.append(sample_dhw)
 
     fig = plt.figure()
