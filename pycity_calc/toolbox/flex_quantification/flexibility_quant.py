@@ -312,11 +312,16 @@ def calc_pow_ref(building, tes_cap=0.001, mod_boi=True,
             Array holding input electrical power for heat pump in Watt
     """
 
+    timestep = building.environment.timer.timeDiscretization
+
+    array_p_el_ref = np.zeros(int(365 * 24 * 3600 / timestep))
+    array_el_power_hp_in = np.zeros(int(365 * 24 * 3600 / timestep))
+
     if building.hasBes is False:
         msg = 'Buiding has no BES. Thus, cannot calculate reference EHG ' \
-              'power curves. Going to return (None, None).'
+              'power curves. Going to return zero arrays.'
         warnings.warn(msg)
-        return (None, None)
+        return (array_p_el_ref, array_el_power_hp_in)
 
     #  Copy building object
     build_copy = copy.deepcopy(building)
@@ -525,11 +530,16 @@ def calc_power_ref_curve(building, mod_boi=True, boi_size=0, use_eh=False):
             Array holding input electrical power for heat pump in Watt
     """
 
+    timestep = building.environment.timer.timeDiscretization
+
+    array_p_el_ref = np.zeros(int(365 * 24 * 3600 / timestep))
+    array_el_power_hp_in = np.zeros(int(365 * 24 * 3600 / timestep))
+
     if building.hasBes is False:
         msg = 'Buiding has no BES. Thus, cannot calculate reference EHG ' \
-              'power curves. Going to return (None, None).'
+              'power curves. Going to return zero arrays!'
         warnings.warn(msg)
-        return (None, None)
+        return (array_p_el_ref, array_el_power_hp_in)
 
     do_ref_curve = True
 
@@ -540,8 +550,8 @@ def calc_power_ref_curve(building, mod_boi=True, boi_size=0, use_eh=False):
     while do_ref_curve:
         try:
             (array_p_el_ref, array_el_power_hp_in) = \
-                calc_pow_ref(building, boi_size=boi_size_use, mod_boi=mod_boi,
-                             use_eh=use_eh)
+                calc_pow_ref(building=building, boi_size=boi_size_use,
+                             mod_boi=mod_boi, use_eh=use_eh)
             do_ref_curve = False
         except:
             msg = 'El. ref. curve calc. failed. Thus, going to increase ' \
@@ -1967,47 +1977,48 @@ def perform_flex_analysis_city(city, use_eh=False, mod_boi=False,
                                                  mod_boi=mod_boi,
                                                  plot_res=plot_res)
 
-        dict_flex_city['list_alpha_el_forced']. \
-            append(dict_flex['array_alpha_el_forced'])
-        dict_flex_city['list_alpha_el_delayed']. \
-            append(dict_flex['array_alpha_el_delayed'])
+        if dict_flex is not None:
+            dict_flex_city['list_alpha_el_forced']. \
+                append(dict_flex['array_alpha_el_forced'])
+            dict_flex_city['list_alpha_el_delayed']. \
+                append(dict_flex['array_alpha_el_delayed'])
 
-        if max(dict_flex['array_cycle_flex_forced']) >= 0:
-            dict_flex_city['array_cycle_flex_forced_plus'] += \
-                dict_flex['array_cycle_flex_forced']
-        else:
-            dict_flex_city['array_cycle_flex_forced_minus'] += \
-                dict_flex['array_cycle_flex_forced']
-        if max(dict_flex['array_cycle_flex_delayed']) >= 0:
-            dict_flex_city['array_cycle_flex_delayed_plus'] += \
-                dict_flex['array_cycle_flex_delayed']
-        else:
-            dict_flex_city['array_cycle_flex_delayed_minus'] += \
-                dict_flex['array_cycle_flex_delayed']
+            if max(dict_flex['array_cycle_flex_forced']) >= 0:
+                dict_flex_city['array_cycle_flex_forced_plus'] += \
+                    dict_flex['array_cycle_flex_forced']
+            else:
+                dict_flex_city['array_cycle_flex_forced_minus'] += \
+                    dict_flex['array_cycle_flex_forced']
+            if max(dict_flex['array_cycle_flex_delayed']) >= 0:
+                dict_flex_city['array_cycle_flex_delayed_plus'] += \
+                    dict_flex['array_cycle_flex_delayed']
+            else:
+                dict_flex_city['array_cycle_flex_delayed_minus'] += \
+                    dict_flex['array_cycle_flex_delayed']
 
-        if dict_flex['energy_flex_forced'] >= 0:
-            dict_flex_city['energy_flex_forced_pos'] += \
-                abs(dict_flex['energy_flex_forced'])
-        else:
-            dict_flex_city['energy_flex_forced_neg'] += \
-                abs(dict_flex['energy_flex_forced'])
+            if dict_flex['energy_flex_forced'] >= 0:
+                dict_flex_city['energy_flex_forced_pos'] += \
+                    abs(dict_flex['energy_flex_forced'])
+            else:
+                dict_flex_city['energy_flex_forced_neg'] += \
+                    abs(dict_flex['energy_flex_forced'])
 
-        if dict_flex['energy_flex_delayed'] >= 0:
-            dict_flex_city['energy_flex_delayed_pos'] += \
-                abs(dict_flex['energy_flex_delayed'])
-        else:
-            dict_flex_city['energy_flex_delayed_neg'] += \
-                abs(dict_flex['energy_flex_delayed'])
+            if dict_flex['energy_flex_delayed'] >= 0:
+                dict_flex_city['energy_flex_delayed_pos'] += \
+                    abs(dict_flex['energy_flex_delayed'])
+            else:
+                dict_flex_city['energy_flex_delayed_neg'] += \
+                    abs(dict_flex['energy_flex_delayed'])
 
-        if dict_flex['beta_el_forced'] >= 0:
-            dict_flex_city['beta_el_pos'] += dict_flex['beta_el_forced']
-        else:
-            dict_flex_city['beta_el_neg'] +=dict_flex['beta_el_forced']
+            if dict_flex['beta_el_forced'] >= 0:
+                dict_flex_city['beta_el_pos'] += dict_flex['beta_el_forced']
+            else:
+                dict_flex_city['beta_el_neg'] += dict_flex['beta_el_forced']
 
-        if dict_flex['beta_el_delayed'] >= 0:
-            dict_flex_city['beta_el_pos'] += dict_flex['beta_el_delayed']
-        else:
-            dict_flex_city['beta_el_neg'] +=dict_flex['beta_el_delayed']
+            if dict_flex['beta_el_delayed'] >= 0:
+                dict_flex_city['beta_el_pos'] += dict_flex['beta_el_delayed']
+            else:
+                dict_flex_city['beta_el_neg'] += dict_flex['beta_el_delayed']
 
     #  Process stand alone buildings
     #  ######################################################################
@@ -2019,46 +2030,47 @@ def perform_flex_analysis_city(city, use_eh=False, mod_boi=False,
                                                        mod_boi=mod_boi,
                                                        id=n, plot_res=plot_res)
 
-        dict_flex_city['list_alpha_el_forced']. \
-            append(dict_flex['array_alpha_el_forced'])
-        dict_flex_city['list_alpha_el_delayed']. \
-            append(dict_flex['array_alpha_el_delayed'])
-        if sum(dict_flex['array_cycle_flex_forced']) >= 0:
-            dict_flex_city['array_cycle_flex_forced_plus'] += \
-                dict_flex['array_cycle_flex_forced']
-        else:
-            dict_flex_city['array_cycle_flex_forced_minus'] += \
-                dict_flex['array_cycle_flex_forced']
-        if sum(dict_flex['array_cycle_flex_delayed']) >= 0:
-            dict_flex_city['array_cycle_flex_delayed_plus'] += \
-                dict_flex['array_cycle_flex_delayed']
-        else:
-            dict_flex_city['array_cycle_flex_delayed_minus'] += \
-                dict_flex['array_cycle_flex_delayed']
+        if dict_flex is not None:
+            dict_flex_city['list_alpha_el_forced']. \
+                append(dict_flex['array_alpha_el_forced'])
+            dict_flex_city['list_alpha_el_delayed']. \
+                append(dict_flex['array_alpha_el_delayed'])
+            if sum(dict_flex['array_cycle_flex_forced']) >= 0:
+                dict_flex_city['array_cycle_flex_forced_plus'] += \
+                    dict_flex['array_cycle_flex_forced']
+            else:
+                dict_flex_city['array_cycle_flex_forced_minus'] += \
+                    dict_flex['array_cycle_flex_forced']
+            if sum(dict_flex['array_cycle_flex_delayed']) >= 0:
+                dict_flex_city['array_cycle_flex_delayed_plus'] += \
+                    dict_flex['array_cycle_flex_delayed']
+            else:
+                dict_flex_city['array_cycle_flex_delayed_minus'] += \
+                    dict_flex['array_cycle_flex_delayed']
 
-        if dict_flex['energy_flex_forced'] >= 0:
-            dict_flex_city['energy_flex_forced_pos'] += \
-                abs(dict_flex['energy_flex_forced'])
-        else:
-            dict_flex_city['energy_flex_forced_neg'] += \
-                abs(dict_flex['energy_flex_forced'])
+            if dict_flex['energy_flex_forced'] >= 0:
+                dict_flex_city['energy_flex_forced_pos'] += \
+                    abs(dict_flex['energy_flex_forced'])
+            else:
+                dict_flex_city['energy_flex_forced_neg'] += \
+                    abs(dict_flex['energy_flex_forced'])
 
-        if dict_flex['energy_flex_delayed'] >= 0:
-            dict_flex_city['energy_flex_delayed_pos'] += \
-                abs(dict_flex['energy_flex_delayed'])
-        else:
-            dict_flex_city['energy_flex_delayed_neg'] += \
-                abs(dict_flex['energy_flex_delayed'])
+            if dict_flex['energy_flex_delayed'] >= 0:
+                dict_flex_city['energy_flex_delayed_pos'] += \
+                    abs(dict_flex['energy_flex_delayed'])
+            else:
+                dict_flex_city['energy_flex_delayed_neg'] += \
+                    abs(dict_flex['energy_flex_delayed'])
 
-        if dict_flex['beta_el_forced'] >= 0:
-            dict_flex_city['beta_el_pos'] += dict_flex['beta_el_forced']
-        else:
-            dict_flex_city['beta_el_neg'] +=dict_flex['beta_el_forced']
+            if dict_flex['beta_el_forced'] >= 0:
+                dict_flex_city['beta_el_pos'] += dict_flex['beta_el_forced']
+            else:
+                dict_flex_city['beta_el_neg'] += dict_flex['beta_el_forced']
 
-        if dict_flex['beta_el_delayed'] >= 0:
-            dict_flex_city['beta_el_pos'] += dict_flex['beta_el_delayed']
-        else:
-            dict_flex_city['beta_el_neg'] +=dict_flex['beta_el_delayed']
+            if dict_flex['beta_el_delayed'] >= 0:
+                dict_flex_city['beta_el_pos'] += dict_flex['beta_el_delayed']
+            else:
+                dict_flex_city['beta_el_neg'] += dict_flex['beta_el_delayed']
 
     return dict_flex_city
 
@@ -2087,8 +2099,16 @@ def calc_beta_el_city(city, use_eh=False, mod_boi=True):
     dict_flex_city = \
         perform_flex_analysis_city(city=city, use_eh=use_eh, mod_boi=mod_boi)
 
-    beta_el_pos = dict_flex_city['beta_el_pos']
-    beta_el_neg = dict_flex_city['beta_el_neg']
+    beta_el_pos = 0
+    beta_el_neg = 0
+
+    if dict_flex_city is not None:
+        if dict_flex_city['beta_el_pos'] is not None:
+            beta_el_pos = dict_flex_city['beta_el_pos']
+
+    if dict_flex_city is not None:
+        if dict_flex_city['beta_el_neg'] is not None:
+            beta_el_neg = dict_flex_city['beta_el_neg']
 
     return (beta_el_pos, beta_el_neg)
 
@@ -2130,10 +2150,10 @@ def main():
         #  Generate one feeder with CHP, boiler and TES
         list_esys = [(1001, 1, 4),  # CHP, Boiler, TES, with LHN to 1002
                      # (1002, 1, 4),
-                     (1003, 1, 4),
+                     (1003, 0, 1),  # BOI
                      (1004, 2, 2),  # HP (ww), EH, TES
                      (1005, 2, 2),
-                     (1006, 2, 2)]
+                     (1006, 0, 2)]  # BOI + TES
 
         esysgen.gen_esys_for_city(city=city,
                                   list_data=list_esys,
@@ -2216,7 +2236,7 @@ def main2():
                      (1003, 1, 4),
                      (1004, 2, 2),  # HP (ww), EH, TES
                      (1005, 2, 2),
-                     (1006, 2, 2)]
+                     (1006, 0, 2)]  # BOI + TES
 
         esysgen.gen_esys_for_city(city=city,
                                   list_data=list_esys,
