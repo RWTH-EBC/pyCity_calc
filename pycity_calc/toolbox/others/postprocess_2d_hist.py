@@ -58,7 +58,7 @@ def ident_whisker(array_val, use_low_bound, bound):
 def main():
     this_path = os.path.dirname(os.path.abspath(__file__))
 
-    name_folder_in = '4b_eco_mc_run'
+    name_folder_in = '4b_eco_mc_run3'
 
     path_folder_in = os.path.join(this_path, 'input', name_folder_in)
 
