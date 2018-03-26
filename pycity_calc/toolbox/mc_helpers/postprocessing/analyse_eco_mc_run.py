@@ -935,7 +935,7 @@ class EcoMCRunAnalyze(object):
 
         return risk_friendly_factor
 
-    def calc_risk_averse_parameters(self, type):
+    def calc_risk_averse_parameters(self, type, risk_factor=-1):
         """
         Calculate and returns risk averse parameter, depending on input type.
         Uses mean and standard deviation of result parameters for evaluation.
@@ -953,6 +953,9 @@ class EcoMCRunAnalyze(object):
             - 'ex_to_co2' : Net exergy to co2 ratio
             - 'dimless_an' : Dimensionless annuity
             - 'dimless_co2' : Dimensionless emissions
+        risk_factor : float, optional
+            Preference/risk value for mu-sigma-evaluation for risk averse
+            preference (default: -1)
 
         Returns
         -------
@@ -997,11 +1000,12 @@ class EcoMCRunAnalyze(object):
             array_in = self._array_dimless_co2
             obj = 'max'
 
-        risk_av_factor = self.calc_res_factor(array_in=array_in, obj=obj)
+        risk_av_factor = self.calc_res_factor(array_in=array_in, obj=obj,
+                                              q=risk_factor)
 
         return risk_av_factor
 
-    def calc_risk_friendly_parameters(self, type):
+    def calc_risk_friendly_parameters(self, type, risk_factor=1):
         """
         Calculate and returns risk friendly parameter, depending on input type.
         Uses mean and standard deviation of result parameters for evaluation.
@@ -1019,6 +1023,9 @@ class EcoMCRunAnalyze(object):
             - 'ex_to_co2' : Net exergy to co2 ratio
             - 'dimless_an' : Dimensionless annuity
             - 'dimless_co2' : Dimensionless emissions
+        risk_factor : float, optional
+            Preference/risk value for mu-sigma-evaluation for risk
+            friendly preference (default: 1)
 
         Returns
         -------
@@ -1065,7 +1072,7 @@ class EcoMCRunAnalyze(object):
 
         risk_friendly_factor = self. \
             calc_risk_friendly_factor(array_in=array_in,
-                                      obj=obj)
+                                      obj=obj, q=risk_factor)
 
         return risk_friendly_factor
 
