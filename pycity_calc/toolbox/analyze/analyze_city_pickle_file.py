@@ -196,11 +196,11 @@ def get_min_max_th_sh_powers(city, print_out=False):
 
     max_th_power_city = dimfunc.get_max_p_of_city(city_object=city) / 1000
 
-    (id, larg_max_th_power_build) = dimfunc.get_id_max_th_power(city=city,
+    (id_max, larg_max_th_power_build) = dimfunc.get_id_max_th_power(city=city,
                                                                 find_max=True,
                                                                 return_value=True)
 
-    (id, small_max_th_power_build) = dimfunc.get_id_max_th_power(city=city,
+    (id_min, small_max_th_power_build) = dimfunc.get_id_max_th_power(city=city,
                                                                  find_max=False,
                                                                  return_value=True)
 
@@ -210,13 +210,13 @@ def get_min_max_th_sh_powers(city, print_out=False):
         print(round(max_th_power_city, 2))
         print()
 
-        print('Largest max. thermal power within building ' + str(id) +
+        print('Largest max. thermal power within building ' + str(id_max) +
               '  with thermal power ' +
               str(round(larg_max_th_power_build / 1000, 2)) +
               ' kW.')
         print()
 
-        print('Smallest max. thermal power within building ' + str(id) +
+        print('Smallest max. thermal power within building ' + str(id_min) +
               '  with thermal power ' + str(
             round(small_max_th_power_build / 1000, 2)) +
               ' kW.')
@@ -819,7 +819,7 @@ def run_c_file_an(city_object):
 
 if __name__ == '__main__':
     #  City pickle filename
-    # city_file = 'city_clust_simple.p'
+    city_file = 'city_clust_simple_with_esys.pkl'
     # city_file = 'aachen_forsterlinde_osm.pkl'
     # city_file = 'aachen_frankenberg_osm.pkl'
     # city_file = 'aachen_huenefeld_osm.pkl'
@@ -836,7 +836,7 @@ if __name__ == '__main__':
     # city_file = 'aachen_kronenberg_mod_new_1.pkl'
     # city_file = 'aachen_preusweg_mod_new_1.pkl'
     # city_file = 'aachen_tuerme_mod_new_1.pkl'
-    city_file = 'aachen_kronenberg_6_peak_resc_2.pkl'
+    # city_file = 'aachen_kronenberg_6_peak_resc_2.pkl'
 
     print('Analyse city file: ', city_file)
 
