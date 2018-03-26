@@ -126,6 +126,10 @@ class EcoMCRunAnalyze(object):
         self._array_ann_to_en = None
         self._array_co2_to_en = None
 
+        #  Dimensionless parameters for annuity and co2
+        self._array_dimless_cost = None
+        self._array_dimless_co2 = None
+
     def __repr__(self):
         return 'EcoMCRunAnalyze object of pyCity_resilience. Can be used ' \
                'to analyze results of economic Monte-Carlo uncertainty run.'
@@ -940,6 +944,8 @@ class EcoMCRunAnalyze(object):
             - 'en_to_co2' : Net energy to co2 ratio
             - 'ex_to_an' : Net exergy to annuity ratio
             - 'ex_to_co2' : Net exergy to co2 ratio
+            - 'dimless_an' : Dimensionless annuity
+            - 'dimless_co2' : Dimensionless emissions
 
         Returns
         -------
@@ -948,7 +954,8 @@ class EcoMCRunAnalyze(object):
         """
 
         if type not in ['annuity', 'co2', 'en_to_an', 'en_to_co2',
-                        'ex_to_an', 'ex_to_co2', 'an_to_en', 'co2_to_en']:
+                        'ex_to_an', 'ex_to_co2', 'an_to_en', 'co2_to_en',
+                        'dimless_an', 'dimless_co2']:
             msg = 'Unknown input type for calc_risk_averse_parameters()'
             raise AssertionError(msg)
 
@@ -976,6 +983,12 @@ class EcoMCRunAnalyze(object):
         elif type == 'co2_to_en':
             array_in = self._array_co2_to_en
             obj = 'min'
+        elif type == 'dimless_an':
+            array_in = self._array_dimless_cost
+            obj = 'max'
+        elif type == 'dimless_co2':
+            array_in = self._array_dimless_co2
+            obj = 'max'
 
         risk_av_factor = self.calc_res_factor(array_in=array_in, obj=obj)
 
@@ -997,6 +1010,8 @@ class EcoMCRunAnalyze(object):
             - 'en_to_co2' : Net energy to co2 ratio
             - 'ex_to_an' : Net exergy to annuity ratio
             - 'ex_to_co2' : Net exergy to co2 ratio
+            - 'dimless_an' : Dimensionless annuity
+            - 'dimless_co2' : Dimensionless emissions
 
         Returns
         -------
@@ -1005,7 +1020,8 @@ class EcoMCRunAnalyze(object):
         """
 
         if type not in ['annuity', 'co2', 'en_to_an', 'en_to_co2',
-                        'ex_to_an', 'ex_to_co2', 'an_to_en', 'co2_to_en']:
+                        'ex_to_an', 'ex_to_co2', 'an_to_en', 'co2_to_en',
+                        'dimless_an', 'dimless_co2']:
             msg = 'Unknown input type for calc_risk_averse_parameters()'
             raise AssertionError(msg)
 
@@ -1033,6 +1049,12 @@ class EcoMCRunAnalyze(object):
         elif type == 'co2_to_en':
             array_in = self._array_co2_to_en
             obj = 'min'
+        elif type == 'dimless_an':
+            array_in = self._array_dimless_cost
+            obj = 'max'
+        elif type == 'dimless_co2':
+            array_in = self._array_dimless_co2
+            obj = 'max'
 
         risk_friendly_factor = self. \
             calc_risk_friendly_factor(array_in=array_in,
@@ -1040,6 +1062,71 @@ class EcoMCRunAnalyze(object):
 
         return risk_friendly_factor
 
+    def calc_dimless_cost_co2(self, dict_ref_run, save_res=True):
+        """
+        Calculate dimensionless cost and co2 values. Requires external
+        mc run results dict (of reference run with boilers, only)
+
+        Parameters
+        ----------
+        dict_ref_run : dict
+            Results dict of MC runner (ref. run with boilers, only)
+        save_res : bool, optional
+            Defines, if results should be saved
+            (default: True)
+
+        Returns
+        -------
+        tup_res : tuple (of arrays)
+            2d tuple holding arrays with dimensionless parameters for cost
+            and emissions (array_dimless_cost, array_dimless_co2)
+        """
+
+        #  Extract dict_ref_run values for successful runs of opt. run
+        self._list_idx_failed_runs
+
+        #  Extract result arrays (full length)
+        array_cost_ref = dict_ref_run['annuity']
+        array_co2_ref = dict_ref_run['co2']
+
+        #  Dummy arrays with length of successful opt. runs
+        array_cost_extr = np.zeros(len(array_cost_ref) -
+                                   len(self._list_idx_failed_runs))
+        array_co2_extr = np.zeros(len(array_co2_ref) -
+                                  len(self._list_idx_failed_runs))
+
+        #  Write results to new arrays (length of sucessful runs)
+        j = 0
+        for i in range(len(array_cost_ref)):
+            if i not in self._list_idx_failed_runs:
+                array_cost_extr[j] = array_cost_ref[i]
+                array_co2_extr[j] = array_co2_ref[i]
+                j += 1
+
+        #  Generate dummy arrays for dimensionless cost and co2 factors
+        array_dimless_cost = np.zeros(array_cost_ref)
+        array_dimless_co2 = np.zeros(array_co2_ref)
+
+        for i in range(len(array_dimless_cost)):
+            if array_cost_extr[i] != 0:
+                array_dimless_cost[i] = \
+                    self._array_ann_mod[i] / array_cost_extr[i]
+            else:
+                array_dimless_cost[i] = \
+                    self._array_ann_mod[i] / 0.0000000000000000000000000001
+
+            if array_co2_extr[i] != 0:
+                array_dimless_co2[i] = \
+                    self._array_co2_mod[i] / array_co2_extr[i]
+            else:
+                array_dimless_co2[i] = \
+                    self._array_co2_mod[i] / 0.0000000000000000000000000001
+
+        if save_res:
+            self._array_dimless_cost = array_dimless_cost
+            self._array_dimless_co2 = array_dimless_co2
+
+        return (array_dimless_cost, array_dimless_co2)
 
 if __name__ == '__main__':
     this_path = os.path.dirname(os.path.abspath(__file__))
