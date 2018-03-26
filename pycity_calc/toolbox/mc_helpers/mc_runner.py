@@ -1704,8 +1704,9 @@ class McRunner(object):
             - 'lhc': latin hypercube sampling
             - 'random': randomized sampling
         do_sampling : bool, optional
-            Defines, if sampling should be performed or existing samples
-            should be used (default: True)
+            Defines, if sampling should be performed/samples should be loaded
+            from path (default: True). Else: Use existing sample data on
+            mc_runner.py object
         failure_tolerance : float, optional
             Allowed EnergyBalanceException failure tolerance (default: 0.05).
             E.g. 0.05 means, that 5% of runs are allowed to fail with
