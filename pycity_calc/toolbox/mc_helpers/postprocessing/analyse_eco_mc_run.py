@@ -1118,8 +1118,8 @@ class EcoMCRunAnalyze(object):
                 j += 1
 
         #  Generate dummy arrays for dimensionless cost and co2 factors
-        array_dimless_cost = np.zeros(array_cost_ref)
-        array_dimless_co2 = np.zeros(array_co2_ref)
+        array_dimless_cost = np.zeros(len(array_cost_extr))
+        array_dimless_co2 = np.zeros(len(array_co2_extr))
 
         for i in range(len(array_dimless_cost)):
             if array_cost_extr[i] != 0:
