@@ -858,7 +858,7 @@ class EcoMCRunAnalyze(object):
         return array_ann_to_en
 
     @staticmethod
-    def calc_res_factor(array_in, obj):
+    def calc_res_factor(array_in, obj, q=-1):
         """
         Calculate resilience factor
 
@@ -870,6 +870,8 @@ class EcoMCRunAnalyze(object):
             Objective. Options:
             - 'min' : Minimization
             - 'max' : Maximization
+        q : float
+            Preference value for mu-sigma-evaluation (default: -1)
 
         Returns
         -------
@@ -886,13 +888,15 @@ class EcoMCRunAnalyze(object):
         std = np.std(a=array_in)
 
         if obj == 'max':
-            risk_av_factor = mean / (std ** (10 / 25))
+            # risk_av_factor = mean / (std ** (10 / 25))
+            risk_av_factor = mean + q * std ** 2
         elif obj == 'min':
-            risk_av_factor = mean + 10 * std ** 2 / mean
+            # risk_av_factor = mean + 10 * std ** 2 / mean
+            risk_av_factor = mean - q * std ** 2
         return risk_av_factor
 
     @staticmethod
-    def calc_risk_friendly_factor(array_in, obj):
+    def calc_risk_friendly_factor(array_in, obj, q=1):
         """
         Calculate risk friendly factor
 
@@ -904,6 +908,8 @@ class EcoMCRunAnalyze(object):
             Objective. Options:
             - 'min' : Minimization
             - 'max' : Maximization
+        q : float
+            Preference value for mu-sigma-evaluation (default: 1)
 
         Returns
         -------
@@ -921,10 +927,11 @@ class EcoMCRunAnalyze(object):
 
         if obj == 'max':
             # risk_friendly_factor = mean / (std ** (25 / 10))
-            msg = 'calc_risk_friendly_factor has currently no max method!'
-            raise NotImplementedError(msg)
+            risk_friendly_factor = mean + q * std ** 2
+
         elif obj == 'min':
-            risk_friendly_factor = mean - 10 * std ** 2 / mean
+            # risk_friendly_factor = mean - 10 * std ** 2 / mean
+            risk_friendly_factor = mean - q * std ** 2
 
         return risk_friendly_factor
 
