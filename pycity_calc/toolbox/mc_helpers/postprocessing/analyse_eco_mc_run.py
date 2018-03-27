@@ -1123,6 +1123,7 @@ class EcoMCRunAnalyze(object):
 
         for i in range(len(array_dimless_cost)):
             if array_cost_extr[i] != 0:
+                #  Annuity of optimized system to annuity of ref. system
                 array_dimless_cost[i] = \
                     self._array_ann_mod[i] / array_cost_extr[i]
             else:
