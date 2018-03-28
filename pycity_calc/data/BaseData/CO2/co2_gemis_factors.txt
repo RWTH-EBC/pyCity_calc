@@ -9,4 +9,4 @@ Brennholz / Wood	6	11	12
 Holz-Pellets / Wood pellets	41	18	12
 Strom-mix / Electricity mix	633	617	494
 PV  (multi) 	62	62	62
-Verdrängungsstrom / feed-in	840	840	840
+Verdrängungsstrom / feed-in	810	810	810

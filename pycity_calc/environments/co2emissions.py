@@ -19,7 +19,8 @@ class Emissions(object):
                  co2_factor_hard_coal=0.419, co2_factor_soft_coal=0.417,
                  co2_factor_woodchip=0.012, co2_factors_wood=0.012,
                  co2_factor_pellets=0.012, co2_factor_el_mix=0.494,
-                 co2_factor_pv_multi=0.062, co2_factor_el_feed_in=0.84,
+                 co2_factor_pv_multi=0.062, co2_factor_el_feed_in=0.81,
+                 co2_factor_pv_fed_in=0.651,
                  pe_oil=1.1, pe_gas=1.1, pe_liquid_gas=1.1, pe_hard_coal=1.2,
                  pe_soft_coal=1.2, pe_total_biogas=1.5, pe_non_ren_biogas=0.5,
                  pe_total_wood=1.2, pe_non_ren_wood=0.2, pe_total_el_mix=2.8,
@@ -33,8 +34,6 @@ class Emissions(object):
         - 2014
         (based on IWU GEMIS calculations)
         - 2017 (default)
-        (based on IFEU
-        https://www.ifeu.de/energie/pdf/ifeu_Endbericht_Weiterentwicklung_PEF.pdf)
 
         If year is set, code tries to import emission values from input data
         file. If this is successful, default values/input values are
@@ -84,7 +83,10 @@ class Emissions(object):
             CO2 emission factor for PV (multi) in kg/kWh (default: 0.062)
         co2_factor_el_feed_in : float, optional
             CO2 factor feed in (Verdrängungsstrommix) in kg/kWh
-            (default: 0.84); see [3]
+            (default: 0.81); see [5]
+        co2_factor_pv_fed_in : float, optional
+            CO2 factor of PV feed in electricity in kg/kWh
+            (default: 0.651) see [5]
         pe_oil : float, optional
             Primary energy factor for oil (default: 1.1)
         pe_gas : float, optional
@@ -136,6 +138,10 @@ class Emissions(object):
         [3] IFEU:
         https://www.ifeu.de/energie/pdf/ifeu_Endbericht_Weiterentwicklung_PEF.pdf
         [4] DIN 18599-1 - Primaerenergiefaktoren
+        [5] Umweltbundesamt - CO2 Minderung im Stromsektor durch den
+        Einsatz erneuerbarer Energien in den Jahren 2012 und 2013
+        https://www.umweltbundesamt.de/publikationen/co2-minderung-im-stromsektor-durch-den-einsatz
+        https://www.umweltbundesamt.de/sites/default/files/medien/378/publikationen/climate_change_11_2016_co2_minderung_im_stromsektor_durch_den_einsatz_erneuerbarer_energien_0.pdf
         """
 
         self.year = year
@@ -198,6 +204,7 @@ class Emissions(object):
         self.co2_factor_el_mix = co2_factor_el_mix
         self.co2_factor_pv_multi = co2_factor_pv_multi
         self.co2_factor_el_feed_in = co2_factor_el_feed_in
+        self.co2_factor_pv_fed_in = co2_factor_pv_fed_in
         self.pe_oil = pe_oil
         self.pe_gas = pe_gas
         self.pe_liquid_gas = pe_liquid_gas
