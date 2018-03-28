@@ -1936,7 +1936,7 @@ class McRunner(object):
 
     def perform_ref_run(self, save_res=True, eeg_pv_limit=False,
                         use_kwkg_lhn_sub=False, chp_switch_pen=False,
-                        max_switch=None):
+                        max_switch=None, obj='max'):
         """
         Perform reference energy balance and annuity run with default values
         given by city object, environment etc.
@@ -1963,6 +1963,13 @@ class McRunner(object):
             CHP for a single day (default: None), e.g. 8 means that a
             maximum of 8 on/off or off/on switching commands is allowed as
             average per day. Only relevant, if chp_switch_pen is True
+        obj : str, optional
+            Defines if objective should be maximized or minimized (if
+            optimization is used (default: 'max').
+            Options:
+            - 'max': Maximization
+            - 'min': Minimization
+            Only relevant, if CHP switching penalty is used
 
         Returns
         -------
@@ -1979,6 +1986,8 @@ class McRunner(object):
             dhw_dem : float
                 Net hot water thermal energy demand in kWH/a
         """
+
+        assert obj in ['min', 'max'], 'Unknown objective'
 
         if chp_switch_pen:
             if max_switch is None:
@@ -2008,8 +2017,13 @@ class McRunner(object):
                 msg = 'Too many CHP switchings per day. ' \
                       'Penalize solution.'
                 warnings.warn(msg)
-                total_annuity = 10 ** 100
-                co2 = 10 ** 100
+                if obj == 'max':
+                    total_annuity = -10 ** 100
+                    co2 = -10 ** 100
+                elif obj == 'min':
+                    total_annuity = 10 ** 100
+                    co2 = 10 ** 100
+
             if switch_okay is None:
                 msg = 'penalize_switching retunred None. Thus, CHP results' \
                       ' array is empty / one CHP might not have been used.' \

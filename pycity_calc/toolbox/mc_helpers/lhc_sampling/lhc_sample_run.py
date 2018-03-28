@@ -357,7 +357,7 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
                           # 'bat_lifetime': [0.9, 0.005],  # curr. const.
                           # 'bat_maintain': [0.9, 0.005],  # curr. const.
                           'bat_inv': [0, 0.3],  # log mean, std
-                          'eta_boi': [0.92, 0.01],  # mean, std
+                          'eta_boi': [0.95, 0.005],  # mean, std
                           # 'boi_lifetime': [0.9, 0.005],  # curr. const.
                           # 'boi_maintain': [0.9, 0.005],  # curr. const.
                           'boi_inv': [0, 0.2],  # log mean, std
