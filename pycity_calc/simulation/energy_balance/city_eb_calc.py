@@ -813,8 +813,8 @@ class CityEBCalculator(object):
 
         return dict_fe_city_balance
 
-    def calc_co2_emissions(self, el_mix_for_chp=True, gcv_to_ncv=True,
-                           gcv_to_ncv_factor=1.11):
+    def calc_co2_emissions(self, el_mix_for_chp=True, el_mix_for_pv=True,
+                           gcv_to_ncv=True, gcv_to_ncv_factor=1.11):
         """
         Calculate overall CO2 emissions of city district for building energy
         supply.
@@ -824,7 +824,11 @@ class CityEBCalculator(object):
         el_mix_for_chp : bool, optional
             Defines, if el. mix should be used for CHP fed-in electricity
             (default: True). If False, uses specific fed-in CHP factor,
-            defined in co2emissions object.
+            defined in co2emissions object (co2_factor_el_feed_in)
+        el_mix_for_pv : bool, optional
+            Defines, if el. mix should be used for PV fed-in electricity
+            (default: True). If False, uses specific fed-in PV factor,
+            defined in co2emissions object (co2_factor_pv_fed_in)
         gcv_to_ncv : bool, optional
             Perform gross calorific to net calorific conversion
             for gas emissions calculation (default: True)
@@ -862,6 +866,11 @@ class CityEBCalculator(object):
         else:
             f_chp = co2em.co2_factor_el_feed_in
 
+        if el_mix_for_pv:
+            f_pv = co2em.co2_factor_el_mix
+        else:
+            f_pv = co2em.co2_factor_pv_fed_in - co2em.co2_factor_pv_multi
+
         # Add emission depending on energy system and fuel
         if gcv_to_ncv:
             co2 += self.dict_fe_city_balance[
@@ -884,7 +893,7 @@ class CityEBCalculator(object):
 
         #  Subtract feed in amount
         co2 -= self.dict_fe_city_balance['chp_feed'] * f_chp
-        co2 -= self.dict_fe_city_balance['pv_feed'] * co2em.co2_factor_el_mix
+        co2 -= self.dict_fe_city_balance['pv_feed'] * f_pv
 
         self.co2 = co2
 
@@ -1530,8 +1539,8 @@ def main():
 
     this_path = os.path.dirname(os.path.abspath(__file__))
 
-    #  Check requirements for pycity_deap
-    pycity_deap = False
+    el_mix_for_chp = True  # Use el. mix for CHP fed-in electricity
+    el_mix_for_pv = True  # Use el. mix for PV fed-in electricity
 
     try:
         #  Try loading city pickle file
@@ -1784,7 +1793,8 @@ def main():
     dict_fe_city = energy_balance.calc_final_energy_balance_city()
 
     #  Perform emissions calculation
-    co2 = energy_balance.calc_co2_emissions(el_mix_for_chp=True)
+    co2 = energy_balance.calc_co2_emissions(el_mix_for_chp=el_mix_for_chp,
+                                            el_mix_for_pv=el_mix_for_pv)
 
     #  Calculate amounts of generated and consumed energy to calculate
     #  coverage
