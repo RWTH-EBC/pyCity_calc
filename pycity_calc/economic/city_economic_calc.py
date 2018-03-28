@@ -1211,7 +1211,9 @@ class CityAnnuityCalc(object):
                                                          sampling_method=None,
                                                          dict_city_sample_lhc=None,
                                                          dict_build_samples_lhc=None,
-                                                         use_kwkg_lhn_sub=False):
+                                                         use_kwkg_lhn_sub=False,
+                                                         el_mix_for_chp=True,
+                                                         el_mix_for_pv=True):
         """
         Script runs energy balance and annuity calculation for city in
         energy_balance object
@@ -1261,6 +1263,14 @@ class CityAnnuityCalc(object):
             Defines, if KWKG LHN subsidies are used (default: False).
             If True, can get 100 Euro/m as subdidy, if share of CHP LHN fed-in
             is equal to or higher than 60 %
+        el_mix_for_chp : bool, optional
+            Defines, if el. mix should be used for CHP fed-in electricity
+            (default: True). If False, uses specific fed-in CHP factor,
+            defined in co2emissions object (co2_factor_el_feed_in)
+        el_mix_for_pv : bool, optional
+            Defines, if el. mix should be used for PV fed-in electricity
+            (default: True). If False, uses specific fed-in PV factor,
+            defined in co2emissions object (co2_factor_pv_fed_in)
 
         Returns
         -------
@@ -1315,7 +1325,8 @@ class CityAnnuityCalc(object):
 
         #  Perform emissions calculation
         co2 = self.energy_balance.calc_co2_emissions(
-            el_mix_for_chp=True)
+            el_mix_for_chp=el_mix_for_chp,
+            el_mix_for_pv=el_mix_for_pv)
 
         #  ##################################################################
         #  Perform economic calculations
@@ -1368,6 +1379,9 @@ if __name__ == '__main__':
     eeg_pv_limit = True
 
     use_kwkg_lhn_sub = False
+
+    el_mix_for_chp = True  # Use el. mix for CHP fed-in electricity
+    el_mix_for_pv = True  # Use el. mix for PV fed-in electricity
 
     try:
         #  Try loading city pickle file
@@ -1639,7 +1653,9 @@ if __name__ == '__main__':
         city_eco_calc.energy_balance.calc_final_energy_balance_city()
 
     #  Perform emissions calculation
-    co2 = city_eco_calc.energy_balance.calc_co2_emissions(el_mix_for_chp=True)
+    co2 = city_eco_calc.energy_balance.calc_co2_emissions(
+        el_mix_for_chp=el_mix_for_chp,
+        el_mix_for_pv=el_mix_for_pv)
 
     #  #####################################################################
     #  Perform economic calculations
