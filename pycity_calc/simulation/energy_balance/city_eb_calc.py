@@ -1485,8 +1485,8 @@ def main():
 
     this_path = os.path.dirname(os.path.abspath(__file__))
 
-    #  Check requirements for pycity_deap
-    pycity_deap = False
+    el_mix_for_chp = True  # Use el. mix for CHP fed-in electricity
+    el_mix_for_pv = True  # Use el. mix for PV fed-in electricity
 
     try:
         #  Try loading city pickle file
@@ -1739,7 +1739,8 @@ def main():
     dict_fe_city = energy_balance.calc_final_energy_balance_city()
 
     #  Perform emissions calculation
-    co2 = energy_balance.calc_co2_emissions(el_mix_for_chp=True)
+    co2 = energy_balance.calc_co2_emissions(el_mix_for_chp=el_mix_for_chp,
+                                            el_mix_for_pv=el_mix_for_pv)
 
     #  Calculate amounts of generated and consumed energy to calculate
     #  coverage
