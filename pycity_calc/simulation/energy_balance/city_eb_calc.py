@@ -869,7 +869,7 @@ class CityEBCalculator(object):
         if el_mix_for_pv:
             f_pv = co2em.co2_factor_el_mix
         else:
-            f_pv = co2em.co2_factor_pv_fed_in
+            f_pv = co2em.co2_factor_pv_fed_in - co2em.co2_factor_pv_multi
 
         # Add emission depending on energy system and fuel
         if gcv_to_ncv:
