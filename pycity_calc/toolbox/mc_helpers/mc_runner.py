@@ -813,7 +813,8 @@ class McRunner(object):
     def perform_mc_runs(self, nb_runs, sampling_method, failure_tolerance=0.05,
                         heating_off=True, eeg_pv_limit=False,
                         random_profile=False, use_kwkg_lhn_sub=False,
-                        calc_th_el_cov=False):
+                        calc_th_el_cov=False, el_mix_for_chp=True,
+                        el_mix_for_pv=True):
         """
         Perform mc runs.
         - Extract sample values
@@ -854,6 +855,14 @@ class McRunner(object):
         calc_th_el_cov : bool, optional
             Defines, if thermal and electric coverage of different types of
             devices should be calculated (default: False)
+        el_mix_for_chp : bool, optional
+            Defines, if el. mix should be used for CHP fed-in electricity
+            (default: True). If False, uses specific fed-in CHP factor,
+            defined in co2emissions object (co2_factor_el_feed_in)
+        el_mix_for_pv : bool, optional
+            Defines, if el. mix should be used for PV fed-in electricity
+            (default: True). If False, uses specific fed-in PV factor,
+            defined in co2emissions object (co2_factor_pv_fed_in)
 
         Returns
         -------
@@ -1457,7 +1466,10 @@ class McRunner(object):
                     dict_build_samples_lhc=self._dict_build_samples_lhc,
                     run_idx=i,
                     eeg_pv_limit=eeg_pv_limit,
-                    use_kwkg_lhn_sub=use_kwkg_lhn_sub)
+                    use_kwkg_lhn_sub=use_kwkg_lhn_sub,
+                    el_mix_for_chp=el_mix_for_chp,
+                    el_mix_for_pv=el_mix_for_pv
+                )
 
                 #  Extract further results
                 sh_dem = c_eco_copy.energy_balance. \
@@ -1685,7 +1697,9 @@ class McRunner(object):
                         eeg_pv_limit=False,
                         use_kwkg_lhn_sub=False,
                         calc_th_el_cov=False,
-                        dem_unc=True
+                        dem_unc=True,
+                        el_mix_for_chp=True,
+                        el_mix_for_pv=True
                         ):
         """
         Perform monte-carlo run with:
@@ -1769,6 +1783,14 @@ class McRunner(object):
             Defines, if thermal, el. and dhw demand are assumed to be uncertain
             (default: True). If True, samples demands. If False, uses reference
             demands.
+        el_mix_for_chp : bool, optional
+            Defines, if el. mix should be used for CHP fed-in electricity
+            (default: True). If False, uses specific fed-in CHP factor,
+            defined in co2emissions object (co2_factor_el_feed_in)
+        el_mix_for_pv : bool, optional
+            Defines, if el. mix should be used for PV fed-in electricity
+            (default: True). If False, uses specific fed-in PV factor,
+            defined in co2emissions object (co2_factor_pv_fed_in)
 
         Returns
         -------
@@ -1920,7 +1942,10 @@ class McRunner(object):
                                  random_profile=random_profile,
                                  eeg_pv_limit=eeg_pv_limit,
                                  use_kwkg_lhn_sub=use_kwkg_lhn_sub,
-                                 calc_th_el_cov=calc_th_el_cov)
+                                 calc_th_el_cov=calc_th_el_cov,
+                                 el_mix_for_chp=el_mix_for_chp,
+                                 el_mix_for_pv=el_mix_for_pv
+                                 )
 
         if prevent_printing:
             enable_print()
@@ -1936,7 +1961,8 @@ class McRunner(object):
 
     def perform_ref_run(self, save_res=True, eeg_pv_limit=False,
                         use_kwkg_lhn_sub=False, chp_switch_pen=False,
-                        max_switch=None, obj='max'):
+                        max_switch=None, obj='min', el_mix_for_chp=True,
+                        el_mix_for_pv=True):
         """
         Perform reference energy balance and annuity run with default values
         given by city object, environment etc.
@@ -1965,11 +1991,19 @@ class McRunner(object):
             average per day. Only relevant, if chp_switch_pen is True
         obj : str, optional
             Defines if objective should be maximized or minimized (if
-            optimization is used (default: 'max').
+            optimization is used (default: 'min').
             Options:
             - 'max': Maximization
             - 'min': Minimization
             Only relevant, if CHP switching penalty is used
+        el_mix_for_chp : bool, optional
+            Defines, if el. mix should be used for CHP fed-in electricity
+            (default: True). If False, uses specific fed-in CHP factor,
+            defined in co2emissions object (co2_factor_el_feed_in)
+        el_mix_for_pv : bool, optional
+            Defines, if el. mix should be used for PV fed-in electricity
+            (default: True). If False, uses specific fed-in PV factor,
+            defined in co2emissions object (co2_factor_pv_fed_in)
 
         Returns
         -------
@@ -2004,7 +2038,12 @@ class McRunner(object):
                                                              eeg_pv_limit=
                                                              eeg_pv_limit,
                                                              use_kwkg_lhn_sub=
-                                                             use_kwkg_lhn_sub)
+                                                             use_kwkg_lhn_sub,
+                                                             el_mix_for_chp=
+                                                             el_mix_for_chp,
+                                                             el_mix_for_pv=
+                                                             el_mix_for_pv
+                                                             )
 
         if chp_switch_pen:
             #  #####################################################
@@ -2412,6 +2451,9 @@ def main():
 
     calc_th_el_cov = True
 
+    el_mix_for_chp = True  # Use el. mix for CHP fed-in electricity
+    el_mix_for_pv = True  # Use el. mix for PV fed-in electricity
+
     #  Output options
     #  ##############################
 
@@ -2487,14 +2529,19 @@ def main():
                                eeg_pv_limit=eeg_pv_limit,
                                use_kwkg_lhn_sub=use_kwkg_lhn_sub,
                                calc_th_el_cov=calc_th_el_cov,
-                               dem_unc=dem_unc
+                               dem_unc=dem_unc,
+                               el_mix_for_chp=el_mix_for_chp,
+                               el_mix_for_pv=el_mix_for_pv
                                )
 
     #  Perform reference run:
     #  #####################################################################
     (total_annuity, co2, sh_dem, el_dem, dhw_dem) = \
         mc_run.perform_ref_run(eeg_pv_limit=eeg_pv_limit,
-                               use_kwkg_lhn_sub=use_kwkg_lhn_sub)
+                               use_kwkg_lhn_sub=use_kwkg_lhn_sub,
+                               el_mix_for_chp=el_mix_for_chp,
+                               el_mix_for_pv=el_mix_for_pv
+                               )
 
     print()
     print('Total annualized cost in Euro/a of reference run:')
