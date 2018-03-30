@@ -29,7 +29,7 @@ if __name__ == '__main__':
 
     # name_ga_res_folder = 'ga_run_ref_run_with_rescaling'
     # name_ga_res_folder = 'ga_run_aachen_kronenberg_6_peak_resc_2'
-    name_ga_res_folder = 'ga_run_kronen_6_resc_2_ref_with_chp_pen_meanshift_1'
+    name_ga_res_folder = 'ga_run_dyn_co2_ref_2'
     path_ga_results = os.path.join(path_in_folder, name_ga_res_folder)
 
     path_save_gen_dev = os.path.join(this_path, 'output', 'ga_gen_dev')
@@ -229,56 +229,56 @@ if __name__ == '__main__':
     #          label='MILP (force CHPs)')
 
     #  Reference MILP scenario (boilers only)
-    plt.plot([69.23],
-             [156.6], linestyle='',
+    plt.plot([69.310],
+             [156.597], linestyle='',
              marker='o', markersize=5, c='black',
              label='Reference (BOI only)')
 
     #  #######################################################################
     ax = fig.gca()
 
-    #  Add annotations with arrows
-    ax.annotate('BOI+PV', xy=(68, 132), xytext=(66, 147),
-                arrowprops=dict(  # facecolor='black',
-                    arrowstyle='->'
-                    # ,shrink=0.01
-                ))
-
-    ax.annotate('1 CHP+PV', xy=(71, 125), xytext=(66, 110),
-                arrowprops=dict(  # facecolor='black',
-                    arrowstyle='->'
-                    # ,shrink=0.01
-                ))
-
-    ax.annotate('2 CHP+PV', xy=(75, 115), xytext=(66, 100),
-                arrowprops=dict(  # facecolor='black',
-                    arrowstyle='->'
-                    # ,shrink=0.01
-                ))
-
-    ax.annotate('1 LHN (CHP\n+3 nodes)+PV', xy=(76, 106), xytext=(66, 90),
-                arrowprops=dict(  # facecolor='black',
-                    arrowstyle='->'
-                    # ,shrink=0.01
-                ))
-
-    ax.annotate('1 LHN (CHP\n+5 nodes)+PV', xy=(79, 102), xytext=(70, 82),
-                arrowprops=dict(  # facecolor='black',
-                    arrowstyle='->'
-                    # ,shrink=0.01
-                ))
-
-    ax.annotate('1 LHN (CHP\n+6 nodes)+PV', xy=(80, 100), xytext=(75, 74),
-                arrowprops=dict(  # facecolor='black',
-                    arrowstyle='->'
-                    # ,shrink=0.01
-                ))
-
-    ax.annotate('2 LHN (CHP\n+3 nodes)+PV', xy=(88, 91), xytext=(86, 73),
-                arrowprops=dict(  # facecolor='black',
-                    arrowstyle='->'
-                    # ,shrink=0.01
-                ))
+    # #  Add annotations with arrows
+    # ax.annotate('BOI+PV', xy=(68, 132), xytext=(66, 147),
+    #             arrowprops=dict(  # facecolor='black',
+    #                 arrowstyle='->'
+    #                 # ,shrink=0.01
+    #             ))
+    #
+    # ax.annotate('1 CHP+PV', xy=(71, 125), xytext=(66, 110),
+    #             arrowprops=dict(  # facecolor='black',
+    #                 arrowstyle='->'
+    #                 # ,shrink=0.01
+    #             ))
+    #
+    # ax.annotate('2 CHP+PV', xy=(75, 115), xytext=(66, 100),
+    #             arrowprops=dict(  # facecolor='black',
+    #                 arrowstyle='->'
+    #                 # ,shrink=0.01
+    #             ))
+    #
+    # ax.annotate('1 LHN (CHP\n+3 nodes)+PV', xy=(76, 106), xytext=(66, 90),
+    #             arrowprops=dict(  # facecolor='black',
+    #                 arrowstyle='->'
+    #                 # ,shrink=0.01
+    #             ))
+    #
+    # ax.annotate('1 LHN (CHP\n+5 nodes)+PV', xy=(79, 102), xytext=(70, 82),
+    #             arrowprops=dict(  # facecolor='black',
+    #                 arrowstyle='->'
+    #                 # ,shrink=0.01
+    #             ))
+    #
+    # ax.annotate('1 LHN (CHP\n+6 nodes)+PV', xy=(80, 100), xytext=(75, 74),
+    #             arrowprops=dict(  # facecolor='black',
+    #                 arrowstyle='->'
+    #                 # ,shrink=0.01
+    #             ))
+    #
+    # ax.annotate('2 LHN (CHP\n+3 nodes)+PV', xy=(88, 91), xytext=(86, 73),
+    #             arrowprops=dict(  # facecolor='black',
+    #                 arrowstyle='->'
+    #                 # ,shrink=0.01
+    #             ))
 
     # ax.annotate('1 LHN (CHP\n+6 nodes)+PV\n(increasing size)',
     #             xy=(92, 74), xytext=(75, 63),

@@ -18,35 +18,52 @@ except:
 
 def main():
 
-    list_cost = [68369,
-                     71194,
-                     75005,
-                     78085,
-                     80534,
-                     88221
-                     ]
+    #  Solutions with const. co2 factor (el. mix))
+    # list_cost = [68369,
+    #              71194,
+    #              75005,
+    #              78085,
+    #              80534,
+    #              88221
+    #              ]
+    #
+    # list_co2 = [129979,
+    #             126105,
+    #             116708,
+    #             107570,
+    #             101366,
+    #             91737
+    #             ]
+    # list_sol = ['1 (BOI+PV)',
+    #             '9 (1x CHP)',
+    #             '63 (2x CHP)',
+    #             '111 (1x LHN (3 nodes))',
+    #             '163 (1x LHN (6 nodes))',
+    #             '225 (2x LHN (3 nodes))']
 
-    list_co2 = [129979,
-                126105,
-                116708,
-                107570,
-                101366,
-                91737
+    #  Solutions with fed-in el. CO2 factors
+    list_cost = [68350.8853896394,
+                 70270.70545064633,
+                 75414.94526564452,
+                 77023.97912468752,
+                 79935.7724182162,
+                 88989.57192336333
+                 ]
+
+    list_co2 = [129726.98876885124,
+                122565.23199914805,
+                98118.94720458443,
+                90831.67132818933,
+                65286.63749644879,
+                35409.24639442438
                 ]
 
-    # list_sol = [1,
-    #            9,
-    #            63,
-    #            111,
-    #            163,
-    #            225]
-
     list_sol = ['1 (BOI+PV)',
-                '9 (1x CHP)',
-                '63 (2x CHP)',
-                '111 (1x LHN (3 nodes))',
-                '163 (1x LHN (6 nodes))',
-                '225 (2x LHN (3 nodes))']
+                '33 (1x CHP)',
+                '90 (2x CHP)',
+                '101 (1x LHN (3 nodes))',
+                '161 (1x LHN (6 nodes))',
+                '265 (2x LHN (3 nodes))']
 
     for i in range(len(list_cost)):
         cost = list_cost[i] / 1000
@@ -83,15 +100,16 @@ def main():
         )
 
     #  Reference MILP scenario (boilers only)
-    plt.plot([69.23],
-             [156.6], linestyle='',
+    plt.plot([69.310],
+             [156.597],
+             linestyle='',
              marker='o',
              # markersize=5,
              c='#1058B0',
              label='Reference (BOI only)')
 
-    ax.set_xlim([65, 100])
-    ax.set_ylim([90, 160])
+    ax.set_xlim([62, 102])
+    # ax.set_ylim([90, 160])
 
     plt.xlabel('Total annualized cost in thousand-Euro/a')
     plt.ylabel('CO2 emissions in t/a')

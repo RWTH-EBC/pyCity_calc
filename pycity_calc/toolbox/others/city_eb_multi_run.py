@@ -13,7 +13,7 @@ import pycity_calc.simulation.energy_balance.city_eb_calc as citeb
 def main():
     this_path = os.path.dirname(os.path.abspath(__file__))
 
-    path_folder_cities = os.path.join(this_path, 'input', 'city_eb_multi')
+    path_folder_cities = os.path.join(this_path, 'input', 'city_eb_multi2')
 
     list_city_files = []
     for file in os.listdir(path_folder_cities):

@@ -1302,15 +1302,19 @@ class CityEBCalculator(object):
         print('Coverage of building, HP and EH el. energy demand'
               ' by own CHP and PV generation: ')
         print(own_cov)
-        print('Share of PV:')
-        print(pv_cov)
-        print('Share of CHP (el.):')
-        print(chp_cov)
         print()
 
         print('Share of CHP (th.):')
         chp_th_cov = chp_th_en / sum_th_dem
         print(chp_th_cov)
+        print()
+
+        print('Share of CHP (el.):')
+        print(chp_cov)
+        print()
+
+        print('Share of PV:')
+        print(pv_cov)
         print()
 
         list_el_dem.append(el_dem)
