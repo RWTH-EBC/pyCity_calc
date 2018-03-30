@@ -30,7 +30,7 @@ def main():
 
     this_path = os.path.dirname(os.path.abspath(__file__))
 
-    name_folder_in = '4b_eco_mc_run3'
+    name_folder_in = '4b_eco_mc_run_dyn_co2'
 
     path_folder_in = os.path.join(this_path, 'input', name_folder_in)
 
@@ -100,7 +100,7 @@ def main():
         title_engl = None  # Add 'u' in front of string to define it as unicode
         # (e.g. when using non-ascii characters)
         xlab_engl = None
-        ylab_engl = 'Energy flexibility'
+        ylab_engl = 'Relative energy flexibility'
         #  ylab only used if plot_sub == False
 
         #  Labels for x-axis columns in English
@@ -117,18 +117,18 @@ def main():
         #  Labels for legend in English
         label_1_leg_engl = 'Ref.'
         label_2_leg_engl = 'Sol. 1'
-        label_3_leg_engl = 'Sol. 9'
-        label_4_leg_engl = 'Sol. 63'
-        label_5_leg_engl = 'Sol. 111'
-        label_6_leg_engl = 'Sol. 163'
-        label_7_leg_engl = 'Sol. 225'
+        label_3_leg_engl = 'Sol. 33'
+        label_4_leg_engl = 'Sol. 90'
+        label_5_leg_engl = 'Sol. 101'
+        label_6_leg_engl = 'Sol. 161'
+        label_7_leg_engl = 'Sol. 265'
         label_8_leg_engl = ''
 
         #  German infos
         title_dt = None  # Add 'u' in front of string to define it as unicode
         # (e.g. when using non-ascii characters)
         xlab_dt = None
-        ylab_dt = u'Flexible Energie'
+        ylab_dt = u'Relative Energieflexibilität'
         #  ylab only used if plot_sub == False
 
         #  Labels for x-axis columns in German
@@ -145,11 +145,11 @@ def main():
         #  Labels for legend in German
         label_1_leg_dt = 'Ref.'
         label_2_leg_dt = 'Sol. 1'
-        label_3_leg_dt = 'Sol. 9'
-        label_4_leg_dt = 'Sol. 63'
-        label_5_leg_dt = 'Sol. 111'
-        label_6_leg_dt = 'Sol. 163'
-        label_7_leg_dt = 'Sol. 225'
+        label_3_leg_dt = 'Sol. 33'
+        label_4_leg_dt = 'Sol. 90'
+        label_5_leg_dt = 'Sol. 101'
+        label_6_leg_dt = 'Sol. 161'
+        label_7_leg_dt = 'Sol. 265'
         label_8_leg_dt = ''
 
         #  Fontsize

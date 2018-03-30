@@ -58,7 +58,7 @@ def ident_whisker(array_val, use_low_bound, bound):
 def main():
     this_path = os.path.dirname(os.path.abspath(__file__))
 
-    name_folder_in = '4b_eco_mc_run3'
+    name_folder_in = '4b_eco_mc_run_dyn_co2'
 
     path_folder_in = os.path.join(this_path, 'input', name_folder_in)
 
@@ -195,6 +195,8 @@ def main():
 
         iqr_cost = stats.iqr(array_cost)
         iqr_co2 = stats.iqr(array_co2)
+        print('IQR (cost): ', iqr_cost)
+        print('IQR (CO2): ', iqr_co2)
 
         riqr_cost = iqr_cost / median_cost
         riqr_co2 = iqr_co2 / median_co2

@@ -1213,7 +1213,8 @@ class CityAnnuityCalc(object):
                                                          dict_build_samples_lhc=None,
                                                          use_kwkg_lhn_sub=False,
                                                          el_mix_for_chp=True,
-                                                         el_mix_for_pv=True):
+                                                         el_mix_for_pv=True,
+                                                         print_sol=False):
         """
         Script runs energy balance and annuity calculation for city in
         energy_balance object
@@ -1271,6 +1272,8 @@ class CityAnnuityCalc(object):
             Defines, if el. mix should be used for PV fed-in electricity
             (default: True). If False, uses specific fed-in PV factor,
             defined in co2emissions object (co2_factor_pv_fed_in)
+        print_sol : bool, optional
+            Defines, if annuity elements should be printed (default: False)
 
         Returns
         -------
@@ -1362,6 +1365,12 @@ class CityAnnuityCalc(object):
                                ann_demand=dem_rel_annuity,
                                ann_op=op_rel_ann,
                                ann_proc=proc_rel_annuity)
+
+        if print_sol:
+            print('Capital-rel: ', cap_rel_ann)
+            print('Dem-rel: ', dem_rel_annuity)
+            print('op_rel: ', op_rel_ann)
+            print('Proceedings: ', proc_rel_annuity)
 
         return (annuity, co2)
 
