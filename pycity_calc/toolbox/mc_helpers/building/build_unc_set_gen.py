@@ -106,7 +106,7 @@ def calc_inf_samples(nb_samples, mean=0, sdev=1, max_val=2):
     return array_inf
 
 
-def calc_sh_demand_samples(nb_samples, sh_ref, norm_std=0.5791):
+def calc_sh_demand_samples(nb_samples, sh_ref, norm_std=0.25):
     """
     Calculate space heating demand samples in kWh/a, based on Aachen
     space heating demand uncertainty analysis.
@@ -119,8 +119,7 @@ def calc_sh_demand_samples(nb_samples, sh_ref, norm_std=0.5791):
     sh_ref : float
         Reference space heating demand in kWh/a. Used as mean value!
     norm_std : float, optional
-        Normalized standard deviation (default. 0.5791). Results of
-        Aachen space heating demand uncertainty analysis (#239)
+        Normalized standard deviation (default. 0.25)
 
     Returns
     -------
