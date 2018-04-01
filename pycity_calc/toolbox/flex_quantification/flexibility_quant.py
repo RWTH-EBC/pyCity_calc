@@ -1222,22 +1222,23 @@ def perform_flex_analysis_single_build(build, use_eh=False, mod_boi=False,
     #  (CHP, EH, HP)
     q_ehg_nom = 0  # in Watt
     p_ehg_nom = 0  # in Watt
-    if build.bes.hasChp:
-        q_ehg_nom += build.bes.chp.qNominal
-        p_ehg_nom += build.bes.chp.pNominal
+    if build.hasBes:
+        if build.bes.hasChp:
+            q_ehg_nom += build.bes.chp.qNominal
+            p_ehg_nom += build.bes.chp.pNominal
 
-        has_chp = True  # Use to define algebraic-sign of forced/delayed flex.
+            has_chp = True  # Use to define algebraic-sign of forced/delayed flex.
 
-    elif build.bes.hasHeatpump:
-        q_ehg_nom += build.bes.heatpump.qNominal
-        #  Estimate p_ehg of HP with COP of 3
-        p_ehg_nom += build.bes.heatpump.qNominal / 3
+        elif build.bes.hasHeatpump:
+            q_ehg_nom += build.bes.heatpump.qNominal
+            #  Estimate p_ehg of HP with COP of 3
+            p_ehg_nom += build.bes.heatpump.qNominal / 3
 
-        has_chp = False  # Use to define algebraic-sign of forced/delayed flex.
+            has_chp = False  # Use to define algebraic-sign of forced/delayed flex.
 
-        if build.bes.hasElectricalHeater and use_eh:
-            q_ehg_nom += build.bes.electricalHeater.qNominal
-            p_ehg_nom += build.bes.electricalHeater.qNominal
+            if build.bes.hasElectricalHeater and use_eh:
+                q_ehg_nom += build.bes.electricalHeater.qNominal
+                p_ehg_nom += build.bes.electricalHeater.qNominal
 
     if q_ehg_nom == 0:
         msg = 'Building ' \
@@ -1245,6 +1246,15 @@ def perform_flex_analysis_single_build(build, use_eh=False, mod_boi=False,
                           'Thus, it cannot provide flexibility. Return None.'
         warnings.warn(msg)
         return None
+
+    if build.hasBes:
+        if build.bes.hasTes is False:
+            msg = 'Building ' \
+                  + str(
+                id) + 'does not have a thermal storage (TES). ' \
+                      'Thus, it cannot provide flexibility. Return None.'
+            warnings.warn(msg)
+            return None
 
     #  Calculate average building thermal power
     #  Extract thermal power curve of building
@@ -1584,6 +1594,14 @@ def perform_flex_analysis_sublhn(city, list_lhn, use_eh=False, mod_boi=False,
                 q_ehg_nom += curr_build.bes.chp.qNominal
                 p_ehg_nom += curr_build.bes.chp.pNominal
 
+    if q_ehg_nom == 0:
+        msg = 'Sub-LHN ' \
+              + str(list_lhn) + \
+              'does not have an electric heat generator (EHG). ' \
+              'Thus, it cannot provide flexibility. Return None.'
+        warnings.warn(msg)
+        return None
+
     #  Calculate average building thermal power
     #  Extract thermal power curve of building
     array_sh = city_copy.get_aggr_space_h_power_curve()
@@ -1641,6 +1659,8 @@ def perform_flex_analysis_sublhn(city, list_lhn, use_eh=False, mod_boi=False,
 
     #  Generate virtual storage as sum of all existing storages
     mass_tes_v = 0
+    count_tes = 0
+
     for n in list_lhn:
         curr_b = city_copy.nodes[n]['entity']
         if curr_b.hasBes:
@@ -1652,6 +1672,15 @@ def perform_flex_analysis_sublhn(city, list_lhn, use_eh=False, mod_boi=False,
                 rho = curr_b.bes.tes.rho + 0.0
                 k_loss = curr_b.bes.tes.k_loss + 0.0
                 h_d_ratio = curr_b.bes.tes.h_d_ratio + 0.0
+                count_tes += 1
+
+    if count_tes == 0:
+        msg = 'Sub-LHN ' \
+              + str(list_lhn) + \
+              'does not have a thermal storage (TES). ' \
+              'Thus, it cannot provide flexibility. Return None.'
+        warnings.warn(msg)
+        return None
 
     tes_forced = \
         tessys.thermalEnergyStorageExtended(environment=city_copy.environment,
