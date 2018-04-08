@@ -92,18 +92,14 @@ if __name__ == '__main__':
 
     #  Write down obj. of MILP runs (Min. Cost --> Min. CO2)
     #  #############################################################
-    list_mip_cost = [67012, 68539, 70199,
-                     # 72441, # Min. CO2 with cost constraint of 72441
-                     # 85604, 74233,
-                     102637
-                     # , 143544
+    list_mip_cost = [67012,
+                     70191,
+                     75699
                      ]
 
-    list_mip_co2 = [132609, 124302, 114461,
-                    # 119261, # Min. CO2 with cost constraint of 72441
-                    # 104620, 114304,
-                    75495
-                    # ,104479
+    list_mip_co2 = [132609,
+                    112174,
+                    71305,
                     ]
 
     #  Extract pareto solutions (blue) - print suboptimal solutions in grey
@@ -232,7 +228,19 @@ if __name__ == '__main__':
     plt.plot([69.310],
              [156.597], linestyle='',
              marker='o', markersize=5, c='black',
-             label='Reference (BOI only)')
+             label='MILP (BOI only)')
+
+    #  Reference MILP scenario (force HPs)
+    plt.plot([84.809],
+             [101.816], linestyle='',
+             marker='*', markersize=5, c='black',
+             label='MILP (HP/EH/TES/PV)')
+
+    #  Reference MILP (force overall LHN with one CHP)
+    plt.plot([75.535],
+             [137.326], linestyle='',
+             marker='D', markersize=5, c='black',
+             label='MILP (Overall LHN/1x CHP)')
 
     #  #######################################################################
     ax = fig.gca()
