@@ -231,23 +231,26 @@ if __name__ == '__main__':
     #  Reference MILP scenario (boilers only)
     plt.plot([69.310],
              [156.597], linestyle='',
-             marker='o', markersize=5, c='black',
-             label='MILP (BOI only)')
+             marker='o', markersize=5, c='black'
+             # ,label='MILP (BOI only)'
+             )
 
     #  Reference MILP scenario (force HPs)
     plt.plot([84.809],
              [101.816], linestyle='',
-             marker='*', markersize=5, c='black',
-             label='MILP (HP/EH/TES/PV)')
+             marker='*', markersize=5, c='black'
+             # ,label='MILP (HP/EH/TES/PV)'
+             )
 
     #  Reference MILP (force overall LHN with one CHP)
     plt.plot([75.535],
              [137.326], linestyle='',
-             marker='D', markersize=5, c='black',
-             label='MILP (Overall LHN/1x CHP)')
+             marker='D', markersize=5, c='black'
+             # ,label='MILP (Overall LHN/1x CHP)'
+             )
 
     plt.plot([62],
-             [40], linestyle='',
+             [168], linestyle='',
              # marker='', markersize=5,
              c='white'
              )
@@ -287,6 +290,19 @@ if __name__ == '__main__':
                 ))
 
     ax.annotate('2 LHN (CHP\n+3 nodes)+PV', xy=(88.6, 35), xytext=(72, 15),
+                arrowprops=dict(  # facecolor='black',
+                    arrowstyle='->'
+                    # ,shrink=0.01
+                ))
+
+    ax.annotate('Forced HP (Min. Cost)', xy=(84.8, 101.8), xytext=(90, 101.8),
+                arrowprops=dict(  # facecolor='black',
+                    arrowstyle='->'
+                    # ,shrink=0.01
+                ))
+
+    ax.annotate('Forced BOI (Min. Cost)', xy=(69.310, 156.597),
+                xytext=(70, 164),
                 arrowprops=dict(  # facecolor='black',
                     arrowstyle='->'
                     # ,shrink=0.01
