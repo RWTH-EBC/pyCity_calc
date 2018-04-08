@@ -265,7 +265,7 @@ if __name__ == '__main__':
                     # ,shrink=0.01
                 ))
 
-    ax.annotate('1 CHP+PV', xy=(68.3, 124.8), xytext=(62, 110),
+    ax.annotate('1 CHP+PV', xy=(70, 121), xytext=(62, 110),
                 arrowprops=dict(  # facecolor='black',
                     arrowstyle='->'
                     # ,shrink=0.01
