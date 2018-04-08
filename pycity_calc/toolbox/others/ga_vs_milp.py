@@ -242,12 +242,12 @@ if __name__ == '__main__':
              # ,label='MILP (HP/EH/TES/PV)'
              )
 
-    #  Reference MILP (force overall LHN with one CHP)
-    plt.plot([75.535],
-             [137.326], linestyle='',
-             marker='D', markersize=5, c='black'
-             # ,label='MILP (Overall LHN/1x CHP)'
-             )
+    # #  Reference MILP (force overall LHN with one CHP)
+    # plt.plot([75.535],
+    #          [137.326], linestyle='',
+    #          marker='D', markersize=5, c='black'
+    #          # ,label='MILP (Overall LHN/1x CHP)'
+    #          )
 
     plt.plot([62],
              [168], linestyle='',
