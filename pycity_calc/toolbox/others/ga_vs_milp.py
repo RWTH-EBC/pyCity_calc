@@ -94,12 +94,16 @@ if __name__ == '__main__':
     #  #############################################################
     list_mip_cost = [67012,
                      70191,
-                     75699
+                     75699,
+                     76758,
+                     80953
                      ]
 
     list_mip_co2 = [132609,
                     112174,
                     71305,
+                    50870,
+                    30435
                     ]
 
     #  Extract pareto solutions (blue) - print suboptimal solutions in grey
@@ -242,51 +246,51 @@ if __name__ == '__main__':
              marker='D', markersize=5, c='black',
              label='MILP (Overall LHN/1x CHP)')
 
+    plt.plot([62],
+             [40], linestyle='',
+             # marker='', markersize=5,
+             c='white'
+             )
+
     #  #######################################################################
     ax = fig.gca()
 
-    # #  Add annotations with arrows
-    # ax.annotate('BOI+PV', xy=(68, 132), xytext=(66, 147),
-    #             arrowprops=dict(  # facecolor='black',
-    #                 arrowstyle='->'
-    #                 # ,shrink=0.01
-    #             ))
-    #
-    # ax.annotate('1 CHP+PV', xy=(71, 125), xytext=(66, 110),
-    #             arrowprops=dict(  # facecolor='black',
-    #                 arrowstyle='->'
-    #                 # ,shrink=0.01
-    #             ))
-    #
-    # ax.annotate('2 CHP+PV', xy=(75, 115), xytext=(66, 100),
-    #             arrowprops=dict(  # facecolor='black',
-    #                 arrowstyle='->'
-    #                 # ,shrink=0.01
-    #             ))
-    #
-    # ax.annotate('1 LHN (CHP\n+3 nodes)+PV', xy=(76, 106), xytext=(66, 90),
-    #             arrowprops=dict(  # facecolor='black',
-    #                 arrowstyle='->'
-    #                 # ,shrink=0.01
-    #             ))
-    #
-    # ax.annotate('1 LHN (CHP\n+5 nodes)+PV', xy=(79, 102), xytext=(70, 82),
-    #             arrowprops=dict(  # facecolor='black',
-    #                 arrowstyle='->'
-    #                 # ,shrink=0.01
-    #             ))
-    #
-    # ax.annotate('1 LHN (CHP\n+6 nodes)+PV', xy=(80, 100), xytext=(75, 74),
-    #             arrowprops=dict(  # facecolor='black',
-    #                 arrowstyle='->'
-    #                 # ,shrink=0.01
-    #             ))
-    #
-    # ax.annotate('2 LHN (CHP\n+3 nodes)+PV', xy=(88, 91), xytext=(86, 73),
-    #             arrowprops=dict(  # facecolor='black',
-    #                 arrowstyle='->'
-    #                 # ,shrink=0.01
-    #             ))
+    #  Add annotations with arrows
+    ax.annotate('BOI+PV', xy=(68, 132), xytext=(62, 147),
+                arrowprops=dict(  # facecolor='black',
+                    arrowstyle='->'
+                    # ,shrink=0.01
+                ))
+
+    ax.annotate('1 CHP+PV', xy=(68.3, 124.8), xytext=(62, 110),
+                arrowprops=dict(  # facecolor='black',
+                    arrowstyle='->'
+                    # ,shrink=0.01
+                ))
+
+    ax.annotate('2 CHP+PV', xy=(75, 98.1), xytext=(62, 95),
+                arrowprops=dict(  # facecolor='black',
+                    arrowstyle='->'
+                    # ,shrink=0.01
+                ))
+
+    ax.annotate('1 LHN (CHP\n+3 nodes)+PV', xy=(76.6, 89.6), xytext=(62, 75),
+                arrowprops=dict(  # facecolor='black',
+                    arrowstyle='->'
+                    # ,shrink=0.01
+                ))
+
+    ax.annotate('1 LHN (CHP\n+6 nodes)+PV', xy=(79.7, 65.3), xytext=(62, 55),
+                arrowprops=dict(  # facecolor='black',
+                    arrowstyle='->'
+                    # ,shrink=0.01
+                ))
+
+    ax.annotate('2 LHN (CHP\n+3 nodes)+PV', xy=(88.6, 35), xytext=(72, 15),
+                arrowprops=dict(  # facecolor='black',
+                    arrowstyle='->'
+                    # ,shrink=0.01
+                ))
 
     # ax.annotate('1 LHN (CHP\n+6 nodes)+PV\n(increasing size)',
     #             xy=(92, 74), xytext=(75, 63),
