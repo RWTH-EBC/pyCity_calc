@@ -94,6 +94,7 @@ if __name__ == '__main__':
     #  #############################################################
     list_mip_cost = [67012,
                      70191,
+                     72178,
                      75699,
                      76758,
                      80953
@@ -101,6 +102,7 @@ if __name__ == '__main__':
 
     list_mip_co2 = [132609,
                     112174,
+                    91739,
                     71305,
                     50870,
                     30435
@@ -112,7 +114,7 @@ if __name__ == '__main__':
     fig = plt.figure()
 
     max_key = len(dict_gen) - 1
-    array_allowed_keys = np.arange(max_key, 0, -25)
+    array_allowed_keys = np.arange(max_key, 0, -5)
     list_allowed_keys = array_allowed_keys.tolist()
 
     #  TODO: Preprocess dominated solutions. Prevent double sol. Only plot some
@@ -231,14 +233,18 @@ if __name__ == '__main__':
     #  Reference MILP scenario (boilers only)
     plt.plot([69.310],
              [156.597], linestyle='',
-             marker='o', markersize=5, c='black'
+             marker='o',
+             markersize=3,
+             c='black'
              # ,label='MILP (BOI only)'
              )
 
     #  Reference MILP scenario (force HPs)
     plt.plot([84.809],
              [101.816], linestyle='',
-             marker='*', markersize=5, c='black'
+             marker='o',
+             markersize=3,
+             c='black'
              # ,label='MILP (HP/EH/TES/PV)'
              )
 
@@ -251,7 +257,7 @@ if __name__ == '__main__':
 
     plt.plot([62],
              [168], linestyle='',
-             # marker='', markersize=5,
+             marker='', markersize=3,
              c='white'
              )
 
