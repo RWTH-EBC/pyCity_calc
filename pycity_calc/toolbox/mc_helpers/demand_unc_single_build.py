@@ -809,7 +809,7 @@ if __name__ == '__main__':
     #  User inputs for Monte-Carlo Simulation
     #  ###############################################################
     nb_samples = 1000
-    time_sp_force_retro = 50  # years
+    time_sp_force_retro = 10  # years
     max_retro_year = 2000
     weather_region = 5
     weather_year = 2010
@@ -866,6 +866,8 @@ if __name__ == '__main__':
         #build_node_nb = 1010  # Tuerme
         build_node_nb = 1001  # Huenefeld
 
+        print('build_node_nb', build_node_nb)
+
         #  Path to load city file
         load_city_path = os.path.join(this_path, 'input', city_f_name)
 
@@ -875,7 +877,7 @@ if __name__ == '__main__':
         extended_building = city.nodes[build_node_nb]['entity']
 
         #  Mod. building build year
-        extended_building.build_year = 1990
+        extended_building.build_year = 1960
 
         save_file = city_f_name[:-4] + '_single_b_new_dhw_' + str(
             build_node_nb) + '.pkl'
