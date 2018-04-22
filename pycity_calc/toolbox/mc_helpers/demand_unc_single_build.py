@@ -864,7 +864,7 @@ if __name__ == '__main__':
         #build_node_nb = 1002  # Kronenberg
         #build_node_nb = 1092  # Preusweg
         #build_node_nb = 1010  # Tuerme
-        build_node_nb = 1001  # Huenefeld
+        build_node_nb = 1006  # Huenefeld
 
         print('build_node_nb', build_node_nb)
 
