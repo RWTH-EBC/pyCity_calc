@@ -10,6 +10,8 @@ import os
 import warnings
 import pickle
 import time
+import numpy as np
+import scipy
 
 import matplotlib.pyplot as plt
 
@@ -31,6 +33,10 @@ def main():
 
     nb_runs = 100  # Number of MC runs
     do_sampling = True  # Perform initial sampling or use existing samples
+
+    print('sampling_method: ', sampling_method)
+    print('nb_runs: ', nb_runs)
+    print()
 
     #  ##################################################################
 
@@ -192,9 +198,48 @@ def main():
     print('Execution time for MC-Analysis (without city generation) in'
           ' seconds: ', time_delta)
 
+    print('sampling_method: ', sampling_method)
+    print('nb_runs: ', nb_runs)
+    print()
+
     array_annuity = dict_res['annuity']
     array_co2 = dict_res['co2']
     array_sh = dict_res['sh_dem']
+
+    mean_ann = np.mean(array_annuity)
+    mean_co2 = np.mean(array_co2)
+
+    std_ann = np.std(array_annuity)
+    std_co2 = np.std(array_co2)
+
+    median_ann = np.median(array_annuity)
+    median_co2 = np.median(array_co2)
+
+    iqr_ann = scipy.stats.iqr(array_annuity)
+    iqr_co2 = scipy.stats.iqr(array_co2)
+
+    riqr_ann = iqr_ann / median_ann
+    riqr_co2 = iqr_co2 / median_co2
+
+    conf_int_ann = scipy.stats.norm.interval(0.95, loc=mean_ann,
+                                             scale=std_ann)
+    conf_int_co2 = scipy.stats.norm.interval(0.95, loc=mean_co2,
+                                             scale=std_co2)
+
+    print('mean_ann: ', mean_ann)
+    print('std_ann: ', std_ann)
+    print('median_ann: ', median_ann)
+    print('iqr_ann: ', iqr_ann)
+    print('riqr_ann: ', riqr_ann)
+    print('conf_int_ann: ', conf_int_ann)
+    print()
+
+    print('mean_co2: ', mean_co2)
+    print('std_co2: ', std_co2)
+    print('median_co2: ', median_co2)
+    print('iqr_co2: ', iqr_co2)
+    print('riqr_co2: ', riqr_co2)
+    print('conf_int_co2: ', conf_int_co2)
 
     plt.hist(array_annuity, bins='auto')
     plt.xlabel('Annuity in Euro/a')
