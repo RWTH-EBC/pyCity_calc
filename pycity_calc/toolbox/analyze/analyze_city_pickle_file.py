@@ -819,7 +819,7 @@ def run_c_file_an(city_object):
 
 if __name__ == '__main__':
     #  City pickle filename
-    city_file = 'city_clust_simple_with_esys.pkl'
+    city_file = 'aachen_kronenberg_6.pkl'
     # city_file = 'aachen_forsterlinde_osm.pkl'
     # city_file = 'aachen_frankenberg_osm.pkl'
     # city_file = 'aachen_huenefeld_osm.pkl'
@@ -883,6 +883,18 @@ if __name__ == '__main__':
         print('Maximum sh+dhw thermal power of building '
               + str(n) + ' in kW:')
         print(q_dot_max / 1000)
+
+    for n in [1001, 1002, 1003, 1004, 1005, 1006]:
+        cur_build = city.nodes[n]['entity'].build_year = 1960
+
+    import pycity_calc.toolbox.teaser_usage.teaser_use as teaseruse
+
+    #  Geneate new teaser project
+    teaser_project = teaseruse.create_teaser_project(name='Kronen')
+
+    teaseruse.create_teaser_typecity(project=teaser_project, city=city)
+
+    print()
 
     # #  Plot city district
     # citvis.plot_city_district(city=city, offset=7,
