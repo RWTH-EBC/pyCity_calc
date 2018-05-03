@@ -885,7 +885,7 @@ if __name__ == '__main__':
         print(q_dot_max / 1000)
 
     for n in [1001, 1002, 1003, 1004, 1005, 1006]:
-        cur_build = city.nodes[n]['entity'].build_year = 1960
+        city.nodes[n]['entity'].build_year = 1960
 
     import pycity_calc.toolbox.teaser_usage.teaser_use as teaseruse
 
