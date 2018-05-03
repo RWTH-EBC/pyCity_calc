@@ -357,7 +357,7 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
                           # 'bat_lifetime': [0.9, 0.005],  # curr. const.
                           # 'bat_maintain': [0.9, 0.005],  # curr. const.
                           'bat_inv': [0, 0.3],  # log mean, std
-                          'eta_boi': [0.92, 0.01],  # mean, std
+                          'eta_boi': [0.95, 0.005],  # mean, std
                           # 'boi_lifetime': [0.9, 0.005],  # curr. const.
                           # 'boi_maintain': [0.9, 0.005],  # curr. const.
                           'boi_inv': [0, 0.2],  # log mean, std
@@ -806,6 +806,53 @@ def run_overall_lhc_sampling(city, nb_samples,
         dict_city_sample = pickle.load(open(path_city_sample_dict, mode='rb'))
         dict_build_samples = pickle.load(open(path_build_sample_dict,
                                               mode='rb'))
+
+        if dem_unc is False:
+            #  Demand is assumed to be certain
+            #  Overwrite demand in dict_build_samples with ref. demands
+            list_build_ids = city.get_list_build_entity_node_ids()
+
+            for key in list_build_ids:
+                sh_dem_ref = city.nodes[key]['entity'] \
+                    .get_annual_space_heat_demand()
+
+                #  Demand is certain
+                array_conv = np.ones(nb_samples) * sh_dem_ref
+
+                #  Overwrite space heating demand entries
+                dict_build_samples[key]['sh_dem'] = array_conv
+
+                #  Reference el. energy demand
+                el_dem = city.nodes[key]['entity'].get_annual_el_demand()
+
+                #  Reference el. energy demand
+                dhw_dem = city.nodes[key]['entity'].get_annual_dhw_demand()
+
+                nb_app = len(city.nodes[key]['entity'].apartments)
+
+                el_per_app = el_dem / nb_app
+                dhw_per_app = dhw_dem / nb_app
+
+                # Loop over nb of apartments
+                for i in range(nb_app):
+                    #  Apartment pointer
+                    app = city.nodes[key]['entity'].apartments[i]
+
+                    #  Get nb. of occupants within apartment
+                    nb_occ = app.occupancy.number_occupants
+
+                    array_nb_occ = np.ones(nb_samples) * int(nb_occ)
+
+                    #  Save array to results dict
+                    dict_build_samples[key]['app_nb_occ'][i, :] = array_nb_occ
+
+                    #  Now distribute reference demand equally to each apartment
+                    #  Save el. demand
+                    dict_build_samples[key]['app_el_dem'][i, :] = \
+                        el_per_app
+                    #  Save dhw demand
+                    dict_build_samples[key]['app_dhw_dem'][i, :] = \
+                        dhw_per_app
 
     else:
         #  Generate new city and building parameter sample dicts

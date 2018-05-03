@@ -214,6 +214,9 @@ def run_example_city_energy_balance_and_annuity_calc():
     esys_path = os.path.join(this_path, 'inputs',
                              esys_filename)
 
+    el_mix_for_chp = True  # Use el. mix for CHP fed-in electricity
+    el_mix_for_pv = True  # Use el. mix for PV fed-in electricity
+
     #  #----------------------------------------------------------------------
 
     #  Load district_data file
@@ -296,7 +299,10 @@ def run_example_city_energy_balance_and_annuity_calc():
         perform_overall_energy_balance_and_economic_calc(eeg_pv_limit=
                                                          eeg_pv_limit,
                                                          use_kwkg_lhn_sub=
-                                                         use_kwkg_lhn_sub)
+                                                         use_kwkg_lhn_sub,
+                                                         el_mix_for_chp=el_mix_for_chp,
+                                                         el_mix_for_pv=el_mix_for_pv
+                                                         )
 
     print('##########################################')
     print()
