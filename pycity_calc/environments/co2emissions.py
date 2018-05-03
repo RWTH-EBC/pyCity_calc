@@ -19,7 +19,7 @@ class Emissions(object):
                  co2_factor_hard_coal=0.419, co2_factor_soft_coal=0.417,
                  co2_factor_woodchip=0.012, co2_factors_wood=0.012,
                  co2_factor_pellets=0.012, co2_factor_el_mix=0.494,
-                 co2_factor_pv_multi=0.062, co2_factor_el_feed_in=0.81,
+                 co2_factor_pv_multi=0.062, co2_factor_el_feed_in=0.768,
                  co2_factor_pv_fed_in=0.651,
                  pe_oil=1.1, pe_gas=1.1, pe_liquid_gas=1.1, pe_hard_coal=1.2,
                  pe_soft_coal=1.2, pe_total_biogas=1.5, pe_non_ren_biogas=0.5,
@@ -83,7 +83,8 @@ class Emissions(object):
             CO2 emission factor for PV (multi) in kg/kWh (default: 0.062)
         co2_factor_el_feed_in : float, optional
             CO2 factor feed in (Verdrängungsstrommix) in kg/kWh
-            (default: 0.81); see [5]
+            (default: 0.768); #452 (based on DIN 18599 and [5])
+            2.8 * 0.494 / 1.8 = 0.768
         co2_factor_pv_fed_in : float, optional
             CO2 factor of PV feed in electricity in kg/kWh
             (default: 0.651) see [5]
