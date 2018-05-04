@@ -14,12 +14,12 @@ class Emissions(object):
     factors
     """
 
-    def __init__(self, year=None, co2_factor_oil=0.31,
-                 co2_factor_gas=0.242, co2_factor_liquid_gas=0.258,
+    def __init__(self, year=None, load_gemis_file=False, co2_factor_oil=0.31,
+                 co2_factor_gas=0.241, co2_factor_liquid_gas=0.258,
                  co2_factor_hard_coal=0.419, co2_factor_soft_coal=0.417,
                  co2_factor_woodchip=0.012, co2_factors_wood=0.012,
-                 co2_factor_pellets=0.012, co2_factor_el_mix=0.494,
-                 co2_factor_pv_multi=0.062, co2_factor_el_feed_in=0.81,
+                 co2_factor_pellets=0.012, co2_factor_el_mix=0.527,
+                 co2_factor_pv_multi=0.062, co2_factor_el_feed_in=0.714,
                  co2_factor_pv_fed_in=0.651,
                  pe_oil=1.1, pe_gas=1.1, pe_liquid_gas=1.1, pe_hard_coal=1.2,
                  pe_soft_coal=1.2, pe_total_biogas=1.5, pe_non_ren_biogas=0.5,
@@ -29,11 +29,7 @@ class Emissions(object):
                  pe_non_ren_env_energy=0, load_dyn_co2=True):
         """
         Constructor of emissions object in pycity_calc. Holds emission factors
-        for Germany, currently for the years:
-        - 2010
-        - 2014
-        (based on IWU GEMIS calculations)
-        - 2017 (default)
+        for Germany.
 
         If year is set, code tries to import emission values from input data
         file. If this is successful, default values/input values are
@@ -45,48 +41,64 @@ class Emissions(object):
         year : int, optional
             Year (default: None). If year is set to None, default CO2
             values are going to be used, respectively user inputs.
-            Is year is defined, code tries to import co2 emission factors
+            Is year is defined and load_gemis_file is True,
+            code tries to import co2 emission factors
             from input path 'data', 'BaseData', 'CO2', 'co2_gemis_factors.txt'
+        load_gemis_file : bool, optional
+            Defines, if gemis file should be loaded (defalt: False).
+            If True, requires year to be set!
         co2_factor_oil : float, optional
             CO2 emission factor for oil in kg/kWh (ref: lower heating value)
             (default: 0.313).
+            Based on [1]
         co2_factor_gas : float, optional
             CO2 emission factor for gas in kg/kWh (ref: lower heating value)
             (default: 0.241).
+            Based on [1]
         co2_factor_liquid_gas : float, optional
             CO2 emission factor for liquid gas in kg/kWh
             (ref: lower heating value)
             (default: 0.261).
+            Based on [1]
         co2_factor_hard_coal : float, optional
             CO2 emission factor for hard coal in kg/kWh
             (ref: lower heating value)
             (default: 0.427).
+            Based on [1]
         co2_factor_soft_coal : float, optional
             CO2 emission factor for soft coal in kg/kWh
             (ref: lower heating value)
             (default: 0.449).
+            Based on [1]
         co2_factor_woodchip : float, optional
             CO2 emission factor for woodchips in kg/kWh
             (ref: lower heating value)
             (default: 0.014).
+            Based on [1]
         co2_factors_wood : float, optional
             CO2 emission factor for wood in kg/kWh (ref: lower heating value)
             (default: 0.011).
+            Based on [1]
         co2_factor_pellets : float, optional
             CO2 emission factor for wood pellets in kg/kWh
             (ref: lower heating value)
             (default: 0.018).
+            Based on [1]
         co2_factor_el_mix : float, optional
             CO2 emission factor for electricity mix in kg/kWh
             (default: 0.617).
+            Based on [2]
         co2_factor_pv_multi : float, optional
             CO2 emission factor for PV (multi) in kg/kWh (default: 0.062)
+            Based on [1]
         co2_factor_el_feed_in : float, optional
             CO2 factor feed in (Verdrängungsstrommix) in kg/kWh
-            (default: 0.81); see [5]
+            (default: 0.714).
+            Based on [3]
         co2_factor_pv_fed_in : float, optional
             CO2 factor of PV feed in electricity in kg/kWh
-            (default: 0.651) see [5]
+            (default: 0.651).
+            Based on [3]
         pe_oil : float, optional
             Primary energy factor for oil (default: 1.1)
         pe_gas : float, optional
@@ -129,19 +141,20 @@ class Emissions(object):
 
         References
         ----------
-        [1] Institut für Wohnen und Umwelt - IWU, Kumulierter Energieaufwand
-        verschiedener Energietraegern und –versorgungen (2009).
-        [2] Internationales Institut für Nachhaltigkeitsanalysen und
-        -strategien, GEMIS - Globales Emissions-Modell integrierter Systeme,
-         available at http://www.iinas.org/gemis-de.html (
-         accessed on January 13, 2015).
-        [3] IFEU:
-        https://www.ifeu.de/energie/pdf/ifeu_Endbericht_Weiterentwicklung_PEF.pdf
-        [4] DIN 18599-1 - Primaerenergiefaktoren
-        [5] Umweltbundesamt - CO2 Minderung im Stromsektor durch den
-        Einsatz erneuerbarer Energien in den Jahren 2012 und 2013
-        https://www.umweltbundesamt.de/publikationen/co2-minderung-im-stromsektor-durch-den-einsatz
-        https://www.umweltbundesamt.de/sites/default/files/medien/378/publikationen/climate_change_11_2016_co2_minderung_im_stromsektor_durch_den_einsatz_erneuerbarer_energien_0.pdf
+        [1] - Institut für Wohnen und Umwelt - IWU (2014):
+        Kumulierter Energieverbrauch verschiedener Energieträger und
+        Energieversorgungen. Online verfügbar unter
+        http://www.iwu.de/fileadmin/user_upload/dateien/energie/werkzeuge/kea.pdf,
+        zuletzt geprüft am 04.05.2018.
+        [2] - Icha, Petra; Kuhs, Gunter (2017):
+        Entwicklung der spezifischen Kohlendioxid-Emissionen des deutschen
+        Strommix in den Jahren 1990 - 2016. Hg. v. Umweltbundesamt.
+        Dessau-Roßlau. Online verfügbar unter
+        https://www.umweltbundesamt.de/sites/default/files/medien/1410/publikationen/2017-05-22_climate-change_15-2017_strommix.pdf,
+        zuletzt geprüft am 04.05.2018.
+        [3] - Klobasa, Marian; Sensfuß, Frank (2016):
+        CO2-Minderung im Stromsektor durch den Einsatz erneuerbarer Energien
+        in den Jahren 2012 und 2013. Hg. v. Umweltbundesamt. Dessau-Roßlau.
         """
 
         self.year = year
@@ -157,7 +170,7 @@ class Emissions(object):
         src_path = os.path.dirname(script_dir)
 
         #  CO2 factors
-        if year is not None:
+        if year is not None and load_gemis_file:
             try:
                 input_data_path = os.path.join(src_path, 'data', 'BaseData',
                                                'CO2', 'co2_gemis_factors.txt')
