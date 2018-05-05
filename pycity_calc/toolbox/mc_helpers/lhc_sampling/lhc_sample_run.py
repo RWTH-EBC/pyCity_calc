@@ -900,7 +900,7 @@ if __name__ == '__main__':
     #  User inputs
     #  ###################################################################
     #  City pickle file name
-    city_name = 'aachen_kronenberg_6_w_esys.pkl'
+    city_name = 'aachen_kronenberg_6.pkl'
 
     #  Number of samples
     nb_samples = 100
@@ -922,17 +922,17 @@ if __name__ == '__main__':
     #  Defines, if profile pool should be used
     use_profile_pool = True
 
-    gen_use_prof_method = 1
+    gen_use_prof_method = 0
     #  Options:
     #  0: Generate new profiles during runtime
     #  1: Load pre-generated profile sample dictionary
 
     #  Defines number of profiles per building, which should be generated
-    nb_profiles = 10
+    nb_profiles = 20
 
     #  Defines name of profile dict, if profiles should be loaded
     #  (gen_use_prof_method == 1)
-    el_profile_dict = 'kronen_6_resc_2_dict_profile_20_samples.pkl'
+    el_profile_dict = 'kronen_6_red_dem_unc_profile_20_samples.pkl'
 
     path_this = os.path.dirname(os.path.abspath(__file__))
     path_mc = os.path.dirname(path_this)
@@ -949,9 +949,9 @@ if __name__ == '__main__':
 
     #  Output path definitions
     path_save_res = os.path.join(path_mc, 'output')
-    city_pkl_name = 'kronen_6_resc_2_dict_city_samples.pkl'
-    building_pkl_name = 'kronen_6_resc_2_dict_build_samples.pkl'
-    profiles_pkl_name = 'kronen_6_resc_2_dict_profile_20_samples.pkl'
+    city_pkl_name = 'kronen_6_red_dem_dict_city_samples.pkl'
+    building_pkl_name = 'kronen_6_red_dem_dict_build_samples.pkl'
+    profiles_pkl_name = 'kronen_6_red_dem_unc_profile_20_samples.pkl'
     #  ###################################################################
 
     city = pickle.load(open(path_city, mode='rb'))

@@ -866,6 +866,8 @@ if __name__ == '__main__':
         #build_node_nb = 1010  # Tuerme
         build_node_nb = 1006  # Huenefeld
 
+        print('build_node_nb', build_node_nb)
+
         #  Path to load city file
         load_city_path = os.path.join(this_path, 'input', city_f_name)
 

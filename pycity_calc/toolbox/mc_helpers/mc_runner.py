@@ -298,9 +298,9 @@ class McRunner(object):
                 #  Reference number of occupants within apartment
                 nb_occ_per_app = ap.occupancy.number_occupants
 
-                array_occupants = np.onse(nb_runs) * nb_occ_per_app
-                array_el_dem = np.onse(nb_runs) * el_dem_app
-                array_dhw_dem = np.onse(nb_runs) * dhw_dem_app
+                array_occupants = np.ones(nb_runs) * nb_occ_per_app
+                array_el_dem = np.ones(nb_runs) * el_dem_app
+                array_dhw_dem = np.ones(nb_runs) * dhw_dem_app
 
 
         # Sample building attributes
@@ -313,7 +313,7 @@ class McRunner(object):
                 nb_samples=nb_runs,
                 sh_ref=sh_ref)
         else:
-            array_sh_dem = np.onse(nb_runs) * sh_ref
+            array_sh_dem = np.ones(nb_runs) * sh_ref
 
         # array_sh_on_off = buildsample. \
         #     calc_sh_summer_on_off_samples(nb_samples=nb_runs)
