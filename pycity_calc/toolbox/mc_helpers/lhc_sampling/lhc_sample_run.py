@@ -23,7 +23,162 @@ import pycity_base.classes.demand.DomesticHotWater as dhwdem
 import pycity_calc.toolbox.mc_helpers.user.user_unc_sampling as useunc
 
 
-#  TODO: Radiation uncertainty
+def main():
+    #  User inputs
+    #  ###################################################################
+    #  City pickle file name
+    city_name = 'kronen_6_new.pkl'
+
+    #  Number of samples
+    nb_samples = 100
+
+    load_sh_mc_res = True
+    #  If load_sh_mc_res is True, tries to load monte-carlo space heating
+    #  uncertainty run results for each building from given folder
+    #  If load_sh_mc_res is False, uses default value to sample sh demand
+    #  uncertainty per building
+
+    dem_unc = True
+    # dem_unc : bool, optional
+    #     Defines, if thermal, el. and dhw demand are assumed to be uncertain
+    #     (default: True). If True, samples demands. If False, uses reference
+    #     demands.
+
+    save_dicts = True
+
+    #  Defines, if profile pool should be used
+    use_profile_pool = False
+
+    gen_use_prof_method = 1
+    #  Options:
+    #  0: Generate new profiles during runtime
+    #  1: Load pre-generated profile sample dictionary
+
+    #  Defines number of profiles per building, which should be generated
+    nb_profiles = 20
+
+    #  Defines name of profile dict, if profiles should be loaded
+    #  (gen_use_prof_method == 1)
+    el_profile_dict = 'kronen_6_new_dict_profile_20_samples.pkl'
+
+    path_this = os.path.dirname(os.path.abspath(__file__))
+    path_mc = os.path.dirname(path_this)
+    path_city = os.path.join(path_mc, 'input', city_name)
+
+    #  Path to el_profile_dict (gen_use_prof_method == 1)
+    path_profile_dict = os.path.join(path_mc,
+                                     'input',
+                                     'mc_el_profile_pool',
+                                     el_profile_dict)
+
+    #  Path to space heating mc results (load_sh_mc_res is True)
+    path_mc_res_folder = os.path.join(path_mc, 'input', 'sh_mc_run')
+
+    #  Output path definitions
+    path_save_res = os.path.join(path_mc, 'output')
+    city_pkl_name = 'kronen_6_new_dict_city_samples.pkl'
+    building_pkl_name = 'kronen_6_new_dict_build_samples.pkl'
+    profiles_pkl_name = 'kronen_6_new_dict_profile_samples.pkl'
+    #  ###################################################################
+
+    city = pickle.load(open(path_city, mode='rb'))
+
+    (dict_city_sample, dict_build_samples, dict_profiles) = \
+        run_overall_lhc_sampling(city=city, nb_samples=nb_samples,
+                                 load_sh_mc_res=load_sh_mc_res,
+                                 path_mc_res_folder=path_mc_res_folder,
+                                 use_profile_pool=use_profile_pool,
+                                 gen_use_prof_method=gen_use_prof_method,
+                                 path_profile_dict=path_profile_dict,
+                                 nb_profiles=nb_profiles,
+                                 dem_unc=dem_unc)
+
+    #  Save sample dicts
+    if save_dicts:
+        if not os.path.exists(path_save_res):
+            os.mkdir(path_save_res)
+        path_save_city_sample = os.path.join(path_save_res,
+                                             city_pkl_name)
+        path_save_build_sample = os.path.join(path_save_res,
+                                              building_pkl_name)
+        path_save_build_profiles = os.path.join(path_save_res,
+                                                profiles_pkl_name)
+
+        pickle.dump(dict_city_sample, open(path_save_city_sample, mode='wb'))
+        pickle.dump(dict_build_samples,
+                    open(path_save_build_sample, mode='wb'))
+
+        print('Saved dict_city_sample to ' + str(path_save_city_sample))
+        print('Saved dict_build_samples to ' + str(path_save_build_sample))
+
+        if dict_profiles is not None:
+            pickle.dump(dict_profiles,
+                        open(path_save_build_profiles, mode='wb'))
+            print('Saved dict_profiles to ' + str(path_save_build_profiles))
+
+    # ###################################################################
+
+    build_id = 1001
+
+    plt.plot(sorted(dict_build_samples[build_id]['chp_inv']))
+    plt.title('Sorted samples for chp investment factor of building '
+              + str(build_id))
+    plt.xlabel('Number of values')
+    plt.ylabel('Change factor relative to default investment')
+    plt.tight_layout()
+    plt.show()
+    plt.close()
+
+    plt.hist(dict_build_samples[build_id]['chp_inv'], bins='auto')
+    plt.title('Histogram of uncertainty in CHP captial cost of building '
+              + str(build_id))
+    plt.xlabel('Change factor relative to default investment')
+    plt.ylabel('Number of values')
+    plt.tight_layout()
+    plt.show()
+    plt.close()
+
+    sh_dem_ref = city.nodes[build_id]['entity'].get_annual_space_heat_demand()
+    plt.hist(dict_build_samples[build_id]['sh_dem'], bins=nb_samples,
+             label='Log. sh. dist.')
+    plt.axvline(sh_dem_ref, label='Ref. sh. dem.', c='red', linestyle='--')
+    plt.title('Histogram of space heating samples of building '
+              + str(build_id))
+    plt.xlabel('Space heating demand in kWh/a')
+    plt.ylabel('Number of values')
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+    plt.close()
+
+    #  Loop over keys in dict_city_sample and identify zero arrays
+    for key in dict_city_sample.keys():
+        if key != 'list_sum_on':
+            if sum(dict_city_sample[key]) == 0:
+                msg = 'dict_city_sample value ' + str(key) + ' holds zero ' \
+                                                             'array!'
+                warnings.warn(msg)
+
+    # Loop over keys in dict_build_samples and identify zero arrays
+    for id in dict_build_samples.keys():
+        sample_dict = dict_build_samples[id]
+        for key in sample_dict.keys():
+            if key not in ['app_nb_occ', 'app_el_dem',
+                           'app_dhw_dem']:
+                if sum(sample_dict[key]) == 0:
+                    msg = str('sample_dict in building '
+                              + str(id) + ' with value '
+                              + str(key) + ' holds zero array!')
+                    warnings.warn(msg)
+            else:
+                for i in range(len(city.nodes[id]['entity'].apartments)):
+                    if sum(sample_dict[key][i, :]) == 0:
+                        msg = str('sample_dict in building '
+                                  + str(id) + ', apartment'
+                                  + str(i) + ' with value '
+                                  + str(key) + ' holds zero array!')
+                        warnings.warn(msg)
+
 
 def search_for_pkl_files_in_dir(dir, fileending='.pkl'):
     """
@@ -121,6 +276,9 @@ def gen_empty_res_dicts(city, nb_samples):
         #  Building, apartments and esys samples
         #  Uncertain space heating demand
         dict_samples['sh_dem'] = np.zeros(nb_samples)
+        dict_samples['el_dem'] = np.zeros(nb_samples)
+        dict_samples['dhw_dem'] = np.zeros(nb_samples)
+
         #  Uncertain battery params
         dict_samples['self_discharge'] = np.zeros(nb_samples)
         dict_samples['eta_charge'] = np.zeros(nb_samples)
@@ -166,11 +324,11 @@ def gen_empty_res_dicts(city, nb_samples):
         #  Get nb of apartments
         nb_app = len(city.nodes[n]['entity'].apartments)
 
-        #  Generate apartment uncertain parameters
-        #  Rows (parameter array per apartment)
-        dict_samples['app_nb_occ'] = np.zeros((nb_app, nb_samples))
-        dict_samples['app_el_dem'] = np.zeros((nb_app, nb_samples))
-        dict_samples['app_dhw_dem'] = np.zeros((nb_app, nb_samples))
+        # #  Generate apartment uncertain parameters
+        # #  Rows (parameter array per apartment)
+        # dict_samples['app_nb_occ'] = np.zeros((nb_app, nb_samples))
+        # dict_samples['app_el_dem'] = np.zeros((nb_app, nb_samples))
+        # dict_samples['app_dhw_dem'] = np.zeros((nb_app, nb_samples))
 
         #  Save parameter dict to main building dict
         dict_build_samples[n] = dict_samples
@@ -179,7 +337,7 @@ def gen_empty_res_dicts(city, nb_samples):
 
 
 def calc_nb_unc_par(city, nb_city_unc_par=15,
-                    nb_build_unc_par=33, nb_app_unc_par=3):
+                    nb_build_unc_par=35, nb_app_unc_par=0):
     """
     Calculate total number of uncertain parameters required for LHC design
 
@@ -190,9 +348,9 @@ def calc_nb_unc_par(city, nb_city_unc_par=15,
     nb_city_unc_par : int, optional
         Number of uncertain parameters on city level (default: 15)
     nb_build_unc_par : int, optional
-        Number of uncertain parameters on building level (default: 33)
+        Number of uncertain parameters on building level (default: 35)
     nb_app_unc_par : int, optional
-        Number of uncertain parameters on apartment level (default: 3)
+        Number of uncertain parameters on apartment level (default: 0)
 
     Returns
     -------
@@ -325,32 +483,9 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
 
         design_count += 1
 
-    # plt.plot(sorted(dict_city_sample['lhn_loss']))
-    # plt.show()
-    # plt.close()
-    #
-    # plt.plot(sorted(dict_city_sample['lhn_inv']))
-    # plt.show()
-    # plt.close()
-
-    # array_summer_heat_on = citysample. \
-    #     sample_quota_summer_heat_on(nb_samples=nb_runs)
-    #
-    # list_s_heat_on_id_arrays = citysample. \
-    #     sample_list_sum_heat_on_arrays(nb_samples=nb_runs,
-    #                                    array_ratio_on=array_summer_heat_on,
-    #                                    list_b_ids=self._list_build_ids)
-    #
-    # #  Only used, if LHN exists, but required to prevent ref.
-    # #  before assignment error #289
-    # #  If LHN exists, sample for LHN with ref. investment cost of 1
-    # array_lhn_inv = esyssample.sample_invest_unc(nb_samples=nb_runs,
-    #                                              ref_inv=1)
-    # #  If LHN exists, sample losses for LHN (ref loss 1)
-    # array_lhn_loss = esyssample.sample_lhn_loss_unc(nb_samples=nb_runs,
-    #                                                 ref_loss=1)
-
     dict_ref_val_build = {'sh_dem': [1, 0.5791],  # mean, std
+                          'el_dem': [1, 0.2],  # mean, std
+                          'dhw_dem': [1, 0.2],  # mean, std
                           'self_discharge': [0.00001, 0.001],
                           'eta_charge': [0.95, 0.005],  # mean, std
                           'eta_discharge': [0.9, 0.005],  # mean, std
@@ -409,6 +544,7 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
         dict_build_mc_res = {}
         #  Add results to dict_build_mc_res
         for key in dict_build_samples.keys():
+
             for entry in list_pkl_files:
                 if entry.find(str(key)) != -1:  # If key is substring of entry
 
@@ -416,8 +552,13 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
 
                     list_mc_res = pickle.load(open(path_load, mode='rb'))
 
+                    dict_mc_demands = {'sh_dem': 0, 'el_dem': 0, 'dhw_dem': 0}
+                    dict_build_mc_res[key] = dict_mc_demands
+
                     #  Save first result list in list_mc_res --> sh demands
-                    dict_build_mc_res[key] = list_mc_res[0]
+                    dict_build_mc_res[key]['sh_dem'] = list_mc_res[0]
+                    dict_build_mc_res[key]['el_dem'] = list_mc_res[2]
+                    dict_build_mc_res[key]['dhw_dem'] = list_mc_res[3]
 
                     # plt.plot(sorted(dict_build_mc_res[1001]))
                     # plt.show()
@@ -473,7 +614,7 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
                 dict_build_samples[key][parkey] = array_conv
 
             elif parkey in ['sh_dem']:
-                #  Space heating (gaussian distribution)
+                #  (log normal distribution)
                 #  Get reference space heating demand
                 sh_dem_ref = city.nodes[key]['entity'] \
                     .get_annual_space_heat_demand()
@@ -486,7 +627,7 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
                         #  Use loaded results
 
                         #  Sample from dict_build_mc_res
-                        list_sh_res = dict_build_mc_res[key]
+                        list_sh_res = dict_build_mc_res[key]['sh_dem']
 
                         # #  Estimate params of gaussian distribution
                         # mean_val, std_val = stats.norm.fit(data=list_sh_res)
@@ -521,104 +662,202 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
 
                 dict_build_samples[key][parkey] = array_conv
 
+            elif parkey in ['el_dem']:
+                #  (normal distribution)
+                #  Get reference el demand
+                el_dem_ref = city.nodes[key]['entity'] \
+                    .get_annual_el_demand()
+                assert el_dem_ref > 0
+
+                if dem_unc:
+
+                    #  If demand is assumed to be uncertain
+                    if load_sh_mc_res:
+                        #  Use loaded results
+
+                        #  Sample from dict_build_mc_res
+                        list_el_res = dict_build_mc_res[key]['el_dem']
+
+                        # #  Estimate params of gaussian distribution
+                        # mean_val, std_val = stats.norm.fit(data=list_sh_res)
+
+                        # plt.hist(list_sh_res, bins=int(len(list_sh_res)/10))
+                        # plt.show()
+                        # plt.close()
+
+                        #  Estimate parameters for log. normal distribution
+                        mean, std = stats.norm.fit(data=list_el_res)
+
+                        array_conv = \
+                            distr.norm(loc=mean, scale=std).ppf(design[:,
+                                                                design_count])
+                        array_conv *= el_dem_ref
+                    else:
+                        mean_val = el_dem_ref * dict_ref_val_build[parkey][0]
+                        std_val = el_dem_ref * dict_ref_val_build[parkey][1]
+
+                        array_conv = stats.norm(loc=mean_val,
+                                                scale=std_val).ppf(
+                            design[:, design_count])
+
+                        #  Eliminate negative values, if necessary
+                        for j in range(len(array_conv)):
+                            if array_conv[j] < 0:
+                                array_conv[j] = 0
+                else:
+
+                    #  Demand is certain
+                    array_conv = np.ones(nb_samples) * el_dem_ref
+
+                dict_build_samples[key][parkey] = array_conv
+
+            elif parkey in ['dhw_dem']:
+                #  (log normal distribution)
+                #  Get reference dhw demand
+                dhw_dem_ref = city.nodes[key]['entity'] \
+                    .get_annual_dhw_demand()
+                assert dhw_dem_ref > 0
+
+                if dem_unc:
+
+                    #  If demand is assumed to be uncertain
+                    if load_sh_mc_res:
+                        #  Use loaded results
+
+                        #  Sample from dict_build_mc_res
+                        list_dhw_res = dict_build_mc_res[key]['dhw_dem']
+
+                        # #  Estimate params of gaussian distribution
+                        # mean_val, std_val = stats.norm.fit(data=list_sh_res)
+
+                        # plt.hist(list_sh_res, bins=int(len(list_sh_res)/10))
+                        # plt.show()
+                        # plt.close()
+
+                        #  Estimate parameters for log. normal distribution
+                        shape, loc, scale = \
+                            stats.lognorm.fit(data=list_dhw_res, floc=0)
+
+                        array_conv = distr.lognorm(s=shape).ppf(design[:,
+                                                                design_count])
+                        array_conv *= dhw_dem_ref
+                    else:
+                        mean_val = dhw_dem_ref * dict_ref_val_build[parkey][0]
+                        std_val = dhw_dem_ref * dict_ref_val_build[parkey][1]
+
+                        array_conv = stats.norm(loc=mean_val,
+                                                scale=std_val).ppf(
+                            design[:, design_count])
+
+                        #  Eliminate negative values, if necessary
+                        for j in range(len(array_conv)):
+                            if array_conv[j] < 0:
+                                array_conv[j] = 0
+                else:
+
+                    #  Demand is certain
+                    array_conv = np.ones(nb_samples) * dhw_dem_ref
+
+                dict_build_samples[key][parkey] = array_conv
+
             design_count += 1
 
-        # Sample for each apartment
-        #  ###################################################################
-
-        nb_app = len(city.nodes[key]['entity'].apartments)
-        #  Get building type (sfh/mfh)
-        if nb_app == 1:
-            res_type = 'sfh'
-        elif nb_app > 1:
-            res_type = 'mfh'
-
-        if dem_unc:
-            #  Demand is assumed to be uncertain
-
-            # Loop over nb of apartments
-            for i in range(nb_app):
-
-                #  Sample nb. of occupants
-                array_nb_occ = useunc.calc_sampling_occ_per_app(nb_samples=
-                                                                nb_samples)
-
-                #  Save array to results dict
-                dict_build_samples[key]['app_nb_occ'][i, :] = array_nb_occ
-
-                for k in range(len(array_nb_occ)):
-                    #  Sample el. demand value per apartment
-                    el_dem_per_app = useunc. \
-                        calc_sampling_el_demand_per_apartment(
-                        nb_samples=1,
-                        nb_persons=array_nb_occ[k], type=res_type)[0]
-                    #  Sample dhw demand value per apartment
-
-                    #  Hot water volume per apartment
-                    dhw_vol_per_app = useunc. \
-                        calc_sampling_dhw_per_apartment(nb_samples=1,
-                                                        nb_persons=
-                                                        array_nb_occ[k],
-                                                        b_type=res_type)
-
-                    #  Convert liters/app*day to kWh/app*year
-                    dhw_dem_per_app = \
-                        useunc.recalc_dhw_vol_to_energy(vol=dhw_vol_per_app)
-
-                    #  Save el. demand
-                    dict_build_samples[key]['app_el_dem'][i, k] = \
-                        el_dem_per_app
-                    #  Save dhw demand
-                    dict_build_samples[key]['app_dhw_dem'][i, k] = \
-                        dhw_dem_per_app
-
-                    # plt.plot(sorted(dict_build_samples[1001]['eta_pv']))
-                    # plt.show()
-                    # plt.close()
-
-                    # plt.plot(sorted(dict_build_samples[1001]['app_nb_occ'][0]))
-                    # plt.show()
-                    # plt.close()
-                    #
-                    # plt.plot(sorted(dict_build_samples[1001]['app_el_dem'][0]))
-                    # plt.show()
-                    # plt.close()
-                    #
-                    # plt.plot(sorted(dict_build_samples[1001]['app_dhw_dem'][0]))
-                    # plt.show()
-                    # plt.close()
-        else:
-            #  Demand is certain
-
-            #  Reference el. energy demand
-            el_dem = city.nodes[key]['entity'].get_annual_el_demand()
-
-            #  Reference el. energy demand
-            dhw_dem = city.nodes[key]['entity'].get_annual_dhw_demand()
-
-            el_per_app = el_dem / nb_app
-            dhw_per_app = dhw_dem / nb_app
-
-            # Loop over nb of apartments
-            for i in range(nb_app):
-                #  Apartment pointer
-                app = city.nodes[key]['entity'].apartments[i]
-
-                #  Get nb. of occupants within apartment
-                nb_occ = app.occupancy.number_occupants
-
-                array_nb_occ = np.ones(nb_samples) * int(nb_occ)
-
-                #  Save array to results dict
-                dict_build_samples[key]['app_nb_occ'][i, :] = array_nb_occ
-
-                #  Now distribute reference demand equally to each apartment
-                #  Save el. demand
-                dict_build_samples[key]['app_el_dem'][i, :] = \
-                    el_per_app
-                #  Save dhw demand
-                dict_build_samples[key]['app_dhw_dem'][i, :] = \
-                    dhw_per_app
+        # # Sample for each apartment
+        # #  ###################################################################
+        #
+        # nb_app = len(city.nodes[key]['entity'].apartments)
+        # #  Get building type (sfh/mfh)
+        # if nb_app == 1:
+        #     res_type = 'sfh'
+        # elif nb_app > 1:
+        #     res_type = 'mfh'
+        #
+        # if dem_unc:
+        #     #  Demand is assumed to be uncertain
+        #
+        #     # Loop over nb of apartments
+        #     for i in range(nb_app):
+        #
+        #         #  Sample nb. of occupants
+        #         array_nb_occ = useunc.calc_sampling_occ_per_app(nb_samples=
+        #                                                         nb_samples)
+        #
+        #         #  Save array to results dict
+        #         dict_build_samples[key]['app_nb_occ'][i, :] = array_nb_occ
+        #
+        #         for k in range(len(array_nb_occ)):
+        #             #  Sample el. demand value per apartment
+        #             el_dem_per_app = useunc. \
+        #                 calc_sampling_el_demand_per_apartment(
+        #                 nb_samples=1,
+        #                 nb_persons=array_nb_occ[k], type=res_type)[0]
+        #             #  Sample dhw demand value per apartment
+        #
+        #             #  Hot water volume per apartment
+        #             dhw_vol_per_app = useunc. \
+        #                 calc_sampling_dhw_per_apartment(nb_samples=1,
+        #                                                 nb_persons=
+        #                                                 array_nb_occ[k],
+        #                                                 b_type=res_type)
+        #
+        #             #  Convert liters/app*day to kWh/app*year
+        #             dhw_dem_per_app = \
+        #                 useunc.recalc_dhw_vol_to_energy(vol=dhw_vol_per_app)
+        #
+        #             #  Save el. demand
+        #             dict_build_samples[key]['app_el_dem'][i, k] = \
+        #                 el_dem_per_app
+        #             #  Save dhw demand
+        #             dict_build_samples[key]['app_dhw_dem'][i, k] = \
+        #                 dhw_dem_per_app
+        #
+        #             # plt.plot(sorted(dict_build_samples[1001]['eta_pv']))
+        #             # plt.show()
+        #             # plt.close()
+        #
+        #             # plt.plot(sorted(dict_build_samples[1001]['app_nb_occ'][0]))
+        #             # plt.show()
+        #             # plt.close()
+        #             #
+        #             # plt.plot(sorted(dict_build_samples[1001]['app_el_dem'][0]))
+        #             # plt.show()
+        #             # plt.close()
+        #             #
+        #             # plt.plot(sorted(dict_build_samples[1001]['app_dhw_dem'][0]))
+        #             # plt.show()
+        #             # plt.close()
+        # else:
+        #     #  Demand is certain
+        #
+        #     #  Reference el. energy demand
+        #     el_dem = city.nodes[key]['entity'].get_annual_el_demand()
+        #
+        #     #  Reference el. energy demand
+        #     dhw_dem = city.nodes[key]['entity'].get_annual_dhw_demand()
+        #
+        #     el_per_app = el_dem / nb_app
+        #     dhw_per_app = dhw_dem / nb_app
+        #
+        #     # Loop over nb of apartments
+        #     for i in range(nb_app):
+        #         #  Apartment pointer
+        #         app = city.nodes[key]['entity'].apartments[i]
+        #
+        #         #  Get nb. of occupants within apartment
+        #         nb_occ = app.occupancy.number_occupants
+        #
+        #         array_nb_occ = np.ones(nb_samples) * int(nb_occ)
+        #
+        #         #  Save array to results dict
+        #         dict_build_samples[key]['app_nb_occ'][i, :] = array_nb_occ
+        #
+        #         #  Now distribute reference demand equally to each apartment
+        #         #  Save el. demand
+        #         dict_build_samples[key]['app_el_dem'][i, :] = \
+        #             el_per_app
+        #         #  Save dhw demand
+        #         dict_build_samples[key]['app_dhw_dem'][i, :] = \
+        #             dhw_per_app
 
 
 def gen_profile_pool(city, nb_samples, dict_build_samples, share_profiles=1):
@@ -896,158 +1135,4 @@ def run_overall_lhc_sampling(city, nb_samples,
 
 
 if __name__ == '__main__':
-
-    #  User inputs
-    #  ###################################################################
-    #  City pickle file name
-    city_name = 'aachen_kronenberg_6_w_esys.pkl'
-
-    #  Number of samples
-    nb_samples = 100
-
-    load_sh_mc_res = False
-    #  If load_sh_mc_res is True, tries to load monte-carlo space heating
-    #  uncertainty run results for each building from given folder
-    #  If load_sh_mc_res is False, uses default value to sample sh demand
-    #  uncertainty per building
-
-    dem_unc = True
-    # dem_unc : bool, optional
-    #     Defines, if thermal, el. and dhw demand are assumed to be uncertain
-    #     (default: True). If True, samples demands. If False, uses reference
-    #     demands.
-
-    save_dicts = True
-
-    #  Defines, if profile pool should be used
-    use_profile_pool = True
-
-    gen_use_prof_method = 1
-    #  Options:
-    #  0: Generate new profiles during runtime
-    #  1: Load pre-generated profile sample dictionary
-
-    #  Defines number of profiles per building, which should be generated
-    nb_profiles = 10
-
-    #  Defines name of profile dict, if profiles should be loaded
-    #  (gen_use_prof_method == 1)
-    el_profile_dict = 'kronen_6_resc_2_dict_profile_20_samples.pkl'
-
-    path_this = os.path.dirname(os.path.abspath(__file__))
-    path_mc = os.path.dirname(path_this)
-    path_city = os.path.join(path_mc, 'input', city_name)
-
-    #  Path to el_profile_dict (gen_use_prof_method == 1)
-    path_profile_dict = os.path.join(path_mc,
-                                     'input',
-                                     'mc_el_profile_pool',
-                                     el_profile_dict)
-
-    #  Path to space heating mc results (load_sh_mc_res is True)
-    path_mc_res_folder = os.path.join(path_mc, 'input', 'sh_mc_run')
-
-    #  Output path definitions
-    path_save_res = os.path.join(path_mc, 'output')
-    city_pkl_name = 'aachen_kronenberg_6_w_esys_dict_city_samples.pkl'
-    building_pkl_name = 'aachen_kronenberg_6_w_esys_dict_build_samples.pkl'
-    profiles_pkl_name = 'aachen_kronenberg_6_w_esys_dict_profile_samples.pkl'
-    #  ###################################################################
-
-    city = pickle.load(open(path_city, mode='rb'))
-
-    (dict_city_sample, dict_build_samples, dict_profiles) = \
-        run_overall_lhc_sampling(city=city, nb_samples=nb_samples,
-                                 load_sh_mc_res=load_sh_mc_res,
-                                 path_mc_res_folder=path_mc_res_folder,
-                                 use_profile_pool=use_profile_pool,
-                                 gen_use_prof_method=gen_use_prof_method,
-                                 path_profile_dict=path_profile_dict,
-                                 nb_profiles=nb_profiles,
-                                 dem_unc=dem_unc)
-
-    #  Save sample dicts
-    if save_dicts:
-        if not os.path.exists(path_save_res):
-            os.mkdir(path_save_res)
-        path_save_city_sample = os.path.join(path_save_res,
-                                             city_pkl_name)
-        path_save_build_sample = os.path.join(path_save_res,
-                                              building_pkl_name)
-        path_save_build_profiles = os.path.join(path_save_res,
-                                                profiles_pkl_name)
-
-        pickle.dump(dict_city_sample, open(path_save_city_sample, mode='wb'))
-        pickle.dump(dict_build_samples,
-                    open(path_save_build_sample, mode='wb'))
-
-        print('Saved dict_city_sample to ' + str(path_save_city_sample))
-        print('Saved dict_build_samples to ' + str(path_save_build_sample))
-
-        if dict_profiles is not None:
-            pickle.dump(dict_profiles,
-                        open(path_save_build_profiles, mode='wb'))
-            print('Saved dict_profiles to ' + str(path_save_build_profiles))
-
-    # ###################################################################
-
-    build_id = 1001
-
-    plt.plot(sorted(dict_build_samples[build_id]['chp_inv']))
-    plt.title('Sorted samples for chp investment factor of building '
-              + str(build_id))
-    plt.xlabel('Number of values')
-    plt.ylabel('Change factor relative to default investment')
-    plt.tight_layout()
-    plt.show()
-    plt.close()
-
-    plt.hist(dict_build_samples[build_id]['chp_inv'], bins='auto')
-    plt.title('Histogram of uncertainty in CHP captial cost of building '
-              + str(build_id))
-    plt.xlabel('Change factor relative to default investment')
-    plt.ylabel('Number of values')
-    plt.tight_layout()
-    plt.show()
-    plt.close()
-
-    sh_dem_ref = city.nodes[build_id]['entity'].get_annual_space_heat_demand()
-    plt.hist(dict_build_samples[build_id]['sh_dem'], bins=nb_samples,
-             label='Log. sh. dist.')
-    plt.axvline(sh_dem_ref, label='Ref. sh. dem.', c='red', linestyle='--')
-    plt.title('Histogram of space heating samples of building '
-              + str(build_id))
-    plt.xlabel('Space heating demand in kWh/a')
-    plt.ylabel('Number of values')
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
-    plt.close()
-
-    #  Loop over keys in dict_city_sample and identify zero arrays
-    for key in dict_city_sample.keys():
-        if key != 'list_sum_on':
-            if sum(dict_city_sample[key]) == 0:
-                msg = 'dict_city_sample value ' + str(key) + ' holds zero ' \
-                                                             'array!'
-                warnings.warn(msg)
-
-    # Loop over keys in dict_build_samples and identify zero arrays
-    for id in dict_build_samples.keys():
-        sample_dict = dict_build_samples[id]
-        for key in sample_dict.keys():
-            if key not in ['app_nb_occ', 'app_el_dem',
-                           'app_dhw_dem']:
-                if sum(sample_dict[key]) == 0:
-                    msg = str('sample_dict in building '
-                              + str(id) + ' with value '
-                              + str(key) + ' holds zero array!')
-                    warnings.warn(msg)
-            else:
-                for i in range(len(city.nodes[id]['entity'].apartments)):
-                    if sum(sample_dict[key][i, :]) == 0:
-                        msg = str('sample_dict in building '
-                                  + str(id) + ', apartment'
-                                  + str(i) + ' with value '
-                                  + str(key) + ' holds zero array!')
-                        warnings.warn(msg)
+    main()

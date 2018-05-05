@@ -10,6 +10,204 @@ import numpy as np
 from scipy.stats import nakagami
 
 
+def main():
+    nb_samples = 100000
+
+    import matplotlib.pyplot as plt
+
+    #  Get samples of set temperatures within building
+    list_set_temp = calc_set_temp_samples(nb_samples=nb_samples)
+
+    print('List of set temperatures in degree Celsius:')
+    print(list_set_temp)
+    print()
+
+    fig = plt.figure()
+    # the histogram of the data
+    plt.hist(list_set_temp, bins='auto')
+    plt.xlabel('Set temperatures in degree Celsius')
+    plt.ylabel('Number of temperatures')
+    plt.show()
+    plt.close()
+
+    #  Create constant user air exchange rates
+    list_usr_airx = calc_user_air_ex_rates(nb_samples)
+
+    print('List of user air exchange rates in 1/h:')
+    print(list_usr_airx)
+    print()
+
+    fig = plt.figure()
+    # the histogram of the data
+    plt.hist(list_usr_airx, bins='auto')
+    plt.xlabel('User air exchange rates in 1/h')
+    plt.ylabel('Number of values')
+    plt.show()
+    plt.close()
+
+    method = 'destatis'
+    # method = 'equal'
+
+    #  Sample number of occupants in apartments:
+    list_occ_in_app = calc_sampling_occ_per_app(nb_samples=nb_samples,
+                                                method=method)
+
+    fig = plt.figure()
+    # the histogram of the data
+    plt.hist(list_occ_in_app, 5)
+    plt.xlabel('Number of occupants per apartment')
+    plt.ylabel('Number of values')
+    plt.show()
+    plt.close()
+
+    #  Annual electric demand sampling per apartment (3 persons, SFH)
+    list_el_dem = calc_sampling_el_demand_per_apartment(nb_samples=nb_samples,
+                                                        nb_persons=3,
+                                                        type='sfh')
+
+    fig = plt.figure()
+    # the histogram of the data
+    plt.hist(list_el_dem, bins='auto')
+    plt.xlabel('Number of electric energy demands in kWh')
+    plt.ylabel('Number of values')
+    plt.title('Electric energy demand for\napartment with '
+              '3 occupants')
+    plt.show()
+    plt.close()
+
+    list_el_dem_2 = []
+    for nb_occ in list_occ_in_app:
+        sample_el = \
+            calc_sampling_el_demand_per_apartment(nb_samples=1,
+                                                  nb_persons=nb_occ,
+                                                  type='sfh')[0]
+        list_el_dem_2.append(sample_el)
+
+    fig = plt.figure()
+    # the histogram of the data
+    plt.hist(list_el_dem_2, bins='auto')
+    plt.xlabel('Number of electric energy demands in kWh')
+    plt.ylabel('Number of values')
+    plt.title('Electric energy demand for\napartment with '
+              'different number of occupants')
+    plt.show()
+    plt.close()
+
+    # list_dhw = calc_sampling_dhw_per_person(nb_samples=nb_samples)
+    #
+    # fig = plt.figure()
+    # # the histogram of the data
+    # plt.hist(list_dhw, bins='auto')
+    # plt.xlabel('Hot water volumes per person and day in liters')
+    # plt.ylabel('Number of values')
+    # plt.show()
+    # plt.close()
+
+    nb_persons = 5
+
+    list_dhw_vol_per_app = \
+        calc_sampling_dhw_per_apartment(nb_samples=nb_samples,
+                                        nb_persons=nb_persons)
+
+    fig = plt.figure()
+    # the histogram of the data
+    plt.hist(list_dhw_vol_per_app, bins='auto')
+    plt.xlabel('Hot water volumes per apartment and day in liters')
+    plt.ylabel('Number of values')
+    plt.title('Hot water volumes per person and day for ' + str(nb_persons)
+              + ' person apartment')
+    plt.show()
+    plt.close()
+
+    list_dhw_per_app_2 = []
+    for nb_occ in list_occ_in_app:
+        sample_dhw = calc_sampling_dhw_per_apartment(nb_samples=1,
+                                                     nb_persons=nb_occ)[0]
+        list_dhw_per_app_2.append(sample_dhw)
+
+    fig = plt.figure()
+    # the histogram of the data
+    plt.hist(list_dhw_per_app_2, bins='auto')
+    plt.xlabel('Hot water volumes per apartment and day in liters')
+    plt.ylabel('Number of values')
+    plt.title('Hot water volumes per person and day for\napartment with '
+              'different number of occupants')
+    plt.show()
+    plt.close()
+
+    # #  Create environment
+    # #  ####################################################################
+    #
+    # #  Create extended environment of pycity_calc
+    # year = 2010
+    # timestep = 3600  # Timestep in seconds
+    # location = (51.529086, 6.944689)  # (latitude, longitute) of Bottrop
+    # altitude = 55  # Altitude of Bottrop
+    #
+    # #  Generate timer object
+    # timer = time.TimerExtended(timestep=timestep, year=year)
+    #
+    # #  Generate weather object
+    # weather = Weather.Weather(timer, useTRY=True, location=location,
+    #                           altitude=altitude)
+    #
+    # #  Generate market object
+    # market = mark.Market()
+    #
+    # #  Generate co2 emissions object
+    # co2em = co2.Emissions(year=year)
+    #
+    # #  Generate environment
+    # environment = env.EnvironmentExtended(timer, weather, prices=market,
+    #                                       location=location, co2em=co2em)
+    #
+    # #  #  Create occupancy profile
+    # #  #####################################################################
+    #
+    # num_occ = 3
+    #
+    # print('Calculate occupancy.\n')
+    # #  Generate occupancy profile
+    # occupancy_obj = occ.Occupancy(environment, number_occupants=num_occ)
+    #
+    # print('Finished occupancy calculation.\n')
+
+    # #  Generate user air exchange rate profiles
+    # #  #####################################################################
+    # list_air_ex_profiles = \
+    #     calc_user_air_ex_profiles_factors(nb_samples=
+    #                                       nb_samples,
+    #                                       occ_profile=occupancy_obj.occupancy,
+    #                                       temp_profile=
+    #                                       environment.weather.tAmbient,
+    #                                       random_gauss=True)
+    #
+    # list_av_air_ex_rates = []
+    #
+    # for profile in list_air_ex_profiles:
+    #     plt.plot(profile, alpha=0.5)
+    #
+    #     av_rate = np.mean(profile)
+    #
+    #     print('Average air exchange rate in 1/h:')
+    #     print(av_rate)
+    #
+    #     list_av_air_ex_rates.append(av_rate)
+    #
+    # plt.xlabel('Time in hours')
+    # plt.ylabel('User air exchange rate in 1/h')
+    # plt.show()
+    # plt.close()
+    #
+    # fig2 = plt.figure()
+    # # the histogram of the data
+    # plt.hist(list_av_air_ex_rates, 50)
+    # plt.xlabel('Average user air exchange rate in 1/h')
+    # plt.ylabel('Number of air exchange rates')
+    # plt.show()
+    # plt.close()
+
+
 def calc_set_temp_samples(nb_samples, mean=20, sdev=2.5):
     """
     Calculate array of indoor set temperature values from gaussian
@@ -317,7 +515,8 @@ def calc_sampling_dhw_per_person(nb_samples, pdf='equal', equal_diff=34,
     elif pdf == 'equal':
         for i in range(nb_samples):
             array_dhw_vol[i] = rd.randint(int((mean - equal_diff) * 1000),
-                                    int((mean + equal_diff) * 1000)) / 1000
+                                          int((
+                                                          mean + equal_diff) * 1000)) / 1000
 
     return array_dhw_vol
 
@@ -512,208 +711,11 @@ def recalc_dhw_vol_to_energy(vol, delta_t=35, c_p_water=4182, rho_water=995):
     """
 
     en_per_day = vol / 1000 * rho_water * c_p_water * delta_t \
-                 / (3600 * 1000) # in kWh
+                 / (3600 * 1000)  # in kWh
     dhw_annual_kwh = en_per_day * 365
 
     return dhw_annual_kwh
 
 
 if __name__ == '__main__':
-
-    nb_samples = 100000
-
-    import matplotlib.pyplot as plt
-
-    #  Get samples of set temperatures within building
-    list_set_temp = calc_set_temp_samples(nb_samples=nb_samples)
-
-    print('List of set temperatures in degree Celsius:')
-    print(list_set_temp)
-    print()
-
-
-    fig = plt.figure()
-    # the histogram of the data
-    plt.hist(list_set_temp, bins='auto')
-    plt.xlabel('Set temperatures in degree Celsius')
-    plt.ylabel('Number of temperatures')
-    plt.show()
-    plt.close()
-
-    #  Create constant user air exchange rates
-    list_usr_airx = calc_user_air_ex_rates(nb_samples)
-
-    print('List of user air exchange rates in 1/h:')
-    print(list_usr_airx)
-    print()
-
-    fig = plt.figure()
-    # the histogram of the data
-    plt.hist(list_usr_airx, bins='auto')
-    plt.xlabel('User air exchange rates in 1/h')
-    plt.ylabel('Number of values')
-    plt.show()
-    plt.close()
-
-    method = 'destatis'
-    # method = 'equal'
-
-    #  Sample number of occupants in apartments:
-    list_occ_in_app = calc_sampling_occ_per_app(nb_samples=nb_samples,
-                                                method=method)
-
-    fig = plt.figure()
-    # the histogram of the data
-    plt.hist(list_occ_in_app, 5)
-    plt.xlabel('Number of occupants per apartment')
-    plt.ylabel('Number of values')
-    plt.show()
-    plt.close()
-
-    #  Annual electric demand sampling per apartment (3 persons, SFH)
-    list_el_dem = calc_sampling_el_demand_per_apartment(nb_samples=nb_samples,
-                                                        nb_persons=3,
-                                                        type='sfh')
-
-    fig = plt.figure()
-    # the histogram of the data
-    plt.hist(list_el_dem, bins='auto')
-    plt.xlabel('Number of electric energy demands in kWh')
-    plt.ylabel('Number of values')
-    plt.title('Electric energy demand for\napartment with '
-              '3 occupants')
-    plt.show()
-    plt.close()
-
-    list_el_dem_2 = []
-    for nb_occ in list_occ_in_app:
-        sample_el = \
-            calc_sampling_el_demand_per_apartment(nb_samples=1,
-                                                  nb_persons=nb_occ,
-                                                  type='sfh')[0]
-        list_el_dem_2.append(sample_el)
-
-    fig = plt.figure()
-    # the histogram of the data
-    plt.hist(list_el_dem_2, bins='auto')
-    plt.xlabel('Number of electric energy demands in kWh')
-    plt.ylabel('Number of values')
-    plt.title('Electric energy demand for\napartment with '
-              'different number of occupants')
-    plt.show()
-    plt.close()
-
-    # list_dhw = calc_sampling_dhw_per_person(nb_samples=nb_samples)
-    #
-    # fig = plt.figure()
-    # # the histogram of the data
-    # plt.hist(list_dhw, bins='auto')
-    # plt.xlabel('Hot water volumes per person and day in liters')
-    # plt.ylabel('Number of values')
-    # plt.show()
-    # plt.close()
-
-    nb_persons = 5
-
-    list_dhw_vol_per_app = \
-        calc_sampling_dhw_per_apartment(nb_samples=nb_samples,
-                                        nb_persons=nb_persons)
-
-    fig = plt.figure()
-    # the histogram of the data
-    plt.hist(list_dhw_vol_per_app, bins='auto')
-    plt.xlabel('Hot water volumes per apartment and day in liters')
-    plt.ylabel('Number of values')
-    plt.title('Hot water volumes per person and day for ' + str(nb_persons)
-              + ' person apartment')
-    plt.show()
-    plt.close()
-
-    list_dhw_per_app_2 = []
-    for nb_occ in list_occ_in_app:
-        sample_dhw = calc_sampling_dhw_per_apartment(nb_samples=1,
-                                                     nb_persons=nb_occ)[0]
-        list_dhw_per_app_2.append(sample_dhw)
-
-    fig = plt.figure()
-    # the histogram of the data
-    plt.hist(list_dhw_per_app_2, bins='auto')
-    plt.xlabel('Hot water volumes per apartment and day in liters')
-    plt.ylabel('Number of values')
-    plt.title('Hot water volumes per person and day for\napartment with '
-              'different number of occupants')
-    plt.show()
-    plt.close()
-
-
-    # #  Create environment
-    # #  ####################################################################
-    #
-    # #  Create extended environment of pycity_calc
-    # year = 2010
-    # timestep = 3600  # Timestep in seconds
-    # location = (51.529086, 6.944689)  # (latitude, longitute) of Bottrop
-    # altitude = 55  # Altitude of Bottrop
-    #
-    # #  Generate timer object
-    # timer = time.TimerExtended(timestep=timestep, year=year)
-    #
-    # #  Generate weather object
-    # weather = Weather.Weather(timer, useTRY=True, location=location,
-    #                           altitude=altitude)
-    #
-    # #  Generate market object
-    # market = mark.Market()
-    #
-    # #  Generate co2 emissions object
-    # co2em = co2.Emissions(year=year)
-    #
-    # #  Generate environment
-    # environment = env.EnvironmentExtended(timer, weather, prices=market,
-    #                                       location=location, co2em=co2em)
-    #
-    # #  #  Create occupancy profile
-    # #  #####################################################################
-    #
-    # num_occ = 3
-    #
-    # print('Calculate occupancy.\n')
-    # #  Generate occupancy profile
-    # occupancy_obj = occ.Occupancy(environment, number_occupants=num_occ)
-    #
-    # print('Finished occupancy calculation.\n')
-
-    # #  Generate user air exchange rate profiles
-    # #  #####################################################################
-    # list_air_ex_profiles = \
-    #     calc_user_air_ex_profiles_factors(nb_samples=
-    #                                       nb_samples,
-    #                                       occ_profile=occupancy_obj.occupancy,
-    #                                       temp_profile=
-    #                                       environment.weather.tAmbient,
-    #                                       random_gauss=True)
-    #
-    # list_av_air_ex_rates = []
-    #
-    # for profile in list_air_ex_profiles:
-    #     plt.plot(profile, alpha=0.5)
-    #
-    #     av_rate = np.mean(profile)
-    #
-    #     print('Average air exchange rate in 1/h:')
-    #     print(av_rate)
-    #
-    #     list_av_air_ex_rates.append(av_rate)
-    #
-    # plt.xlabel('Time in hours')
-    # plt.ylabel('User air exchange rate in 1/h')
-    # plt.show()
-    # plt.close()
-    #
-    # fig2 = plt.figure()
-    # # the histogram of the data
-    # plt.hist(list_av_air_ex_rates, 50)
-    # plt.xlabel('Average user air exchange rate in 1/h')
-    # plt.ylabel('Number of air exchange rates')
-    # plt.show()
-    # plt.close()
+    main()
