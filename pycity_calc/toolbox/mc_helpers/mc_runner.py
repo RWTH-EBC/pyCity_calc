@@ -1152,8 +1152,8 @@ class McRunner(object):
                                                el_dem=el_dem)
 
                     dhw_dem = dict_build_lhc['dhw_dem'][i]
-                    dhwmod.rescale_dhw_dem_build(building=curr_build,
-                                                 dhw_dem=dhw_dem)
+                    dhwmod.rescale_dhw_build(building=curr_build,
+                                             dhw_dem=dhw_dem)
 
                     # el_dem = 0
                     # for a in range(len(dict_build_lhc['app_el_dem'])):
