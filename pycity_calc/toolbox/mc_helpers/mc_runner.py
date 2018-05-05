@@ -298,9 +298,9 @@ class McRunner(object):
                 #  Reference number of occupants within apartment
                 nb_occ_per_app = ap.occupancy.number_occupants
 
-                array_occupants = np.onse(nb_runs) * nb_occ_per_app
-                array_el_dem = np.onse(nb_runs) * el_dem_app
-                array_dhw_dem = np.onse(nb_runs) * dhw_dem_app
+                array_occupants = np.one(nb_runs) * nb_occ_per_app
+                array_el_dem = np.one(nb_runs) * el_dem_app
+                array_dhw_dem = np.one(nb_runs) * dhw_dem_app
 
 
         # Sample building attributes
