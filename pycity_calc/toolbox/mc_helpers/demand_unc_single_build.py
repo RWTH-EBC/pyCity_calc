@@ -809,7 +809,7 @@ if __name__ == '__main__':
     #  User inputs for Monte-Carlo Simulation
     #  ###############################################################
     nb_samples = 1000
-    time_sp_force_retro = 50  # years
+    time_sp_force_retro = 10  # years
     max_retro_year = 2000
     weather_region = 5
     weather_year = 2010
@@ -856,7 +856,7 @@ if __name__ == '__main__':
         #city_f_name = 'aachen_preusweg_mod_new_1.pkl'
         #city_f_name = 'aachen_tuerme_mod_new_1.pkl'
         # city_f_name = 'aachen_huenefeld_mod_new_1.pkl'
-        city_f_name = 'aachen_kronenberg_6.pkl'
+        city_f_name = 'kronen_6_new.pkl'
 
         #  Building node number, which should be used to extract building data
         #build_node_nb = 1011  # Forsterlinde
@@ -864,7 +864,7 @@ if __name__ == '__main__':
         #build_node_nb = 1002  # Kronenberg
         #build_node_nb = 1092  # Preusweg
         #build_node_nb = 1010  # Tuerme
-        build_node_nb = 1001  # Huenefeld
+        build_node_nb = 1006  # Huenefeld
 
         #  Path to load city file
         load_city_path = os.path.join(this_path, 'input', city_f_name)
@@ -875,7 +875,7 @@ if __name__ == '__main__':
         extended_building = city.nodes[build_node_nb]['entity']
 
         #  Mod. building build year
-        extended_building.build_year = 1990
+        extended_building.build_year = 1960
 
         save_file = city_f_name[:-4] + '_single_b_new_dhw_' + str(
             build_node_nb) + '.pkl'
