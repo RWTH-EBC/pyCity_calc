@@ -47,9 +47,9 @@ def main():
     save_dicts = True
 
     #  Defines, if profile pool should be used
-    use_profile_pool = False
+    use_profile_pool = True
 
-    gen_use_prof_method = 1
+    gen_use_prof_method = 0
     #  Options:
     #  0: Generate new profiles during runtime
     #  1: Load pre-generated profile sample dictionary
@@ -59,7 +59,8 @@ def main():
 
     #  Defines name of profile dict, if profiles should be loaded
     #  (gen_use_prof_method == 1)
-    el_profile_dict = 'kronen_6_new_dict_profile_20_samples.pkl'
+    el_profile_dict = city_name[:-4] + '_dict_profile_' \
+                      + str(nb_profiles) + '_samples.pkl'
 
     path_this = os.path.dirname(os.path.abspath(__file__))
     path_mc = os.path.dirname(path_this)
@@ -76,9 +77,9 @@ def main():
 
     #  Output path definitions
     path_save_res = os.path.join(path_mc, 'output')
-    city_pkl_name = 'kronen_6_new_dict_city_samples.pkl'
-    building_pkl_name = 'kronen_6_new_dict_build_samples.pkl'
-    profiles_pkl_name = 'kronen_6_new_dict_profile_samples.pkl'
+    city_pkl_name = city_name[:-4] + '_dict_city_samples.pkl'
+    building_pkl_name = city_name[:-4] + '_dict_build_samples.pkl'
+    profiles_pkl_name = city_name[:-4] + '_dict_profile_samples.pkl'
     #  ###################################################################
 
     city = pickle.load(open(path_city, mode='rb'))
@@ -326,9 +327,9 @@ def gen_empty_res_dicts(city, nb_samples):
 
         # #  Generate apartment uncertain parameters
         # #  Rows (parameter array per apartment)
-        # dict_samples['app_nb_occ'] = np.zeros((nb_app, nb_samples))
-        # dict_samples['app_el_dem'] = np.zeros((nb_app, nb_samples))
-        # dict_samples['app_dhw_dem'] = np.zeros((nb_app, nb_samples))
+        dict_samples['app_nb_occ'] = np.zeros((nb_app, nb_samples))
+        dict_samples['app_el_dem'] = np.zeros((nb_app, nb_samples))
+        dict_samples['app_dhw_dem'] = np.zeros((nb_app, nb_samples))
 
         #  Save parameter dict to main building dict
         dict_build_samples[n] = dict_samples
@@ -762,102 +763,102 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
 
             design_count += 1
 
-        # # Sample for each apartment
-        # #  ###################################################################
-        #
-        # nb_app = len(city.nodes[key]['entity'].apartments)
-        # #  Get building type (sfh/mfh)
-        # if nb_app == 1:
-        #     res_type = 'sfh'
-        # elif nb_app > 1:
-        #     res_type = 'mfh'
-        #
-        # if dem_unc:
-        #     #  Demand is assumed to be uncertain
-        #
-        #     # Loop over nb of apartments
-        #     for i in range(nb_app):
-        #
-        #         #  Sample nb. of occupants
-        #         array_nb_occ = useunc.calc_sampling_occ_per_app(nb_samples=
-        #                                                         nb_samples)
-        #
-        #         #  Save array to results dict
-        #         dict_build_samples[key]['app_nb_occ'][i, :] = array_nb_occ
-        #
-        #         for k in range(len(array_nb_occ)):
-        #             #  Sample el. demand value per apartment
-        #             el_dem_per_app = useunc. \
-        #                 calc_sampling_el_demand_per_apartment(
-        #                 nb_samples=1,
-        #                 nb_persons=array_nb_occ[k], type=res_type)[0]
-        #             #  Sample dhw demand value per apartment
-        #
-        #             #  Hot water volume per apartment
-        #             dhw_vol_per_app = useunc. \
-        #                 calc_sampling_dhw_per_apartment(nb_samples=1,
-        #                                                 nb_persons=
-        #                                                 array_nb_occ[k],
-        #                                                 b_type=res_type)
-        #
-        #             #  Convert liters/app*day to kWh/app*year
-        #             dhw_dem_per_app = \
-        #                 useunc.recalc_dhw_vol_to_energy(vol=dhw_vol_per_app)
-        #
-        #             #  Save el. demand
-        #             dict_build_samples[key]['app_el_dem'][i, k] = \
-        #                 el_dem_per_app
-        #             #  Save dhw demand
-        #             dict_build_samples[key]['app_dhw_dem'][i, k] = \
-        #                 dhw_dem_per_app
-        #
-        #             # plt.plot(sorted(dict_build_samples[1001]['eta_pv']))
-        #             # plt.show()
-        #             # plt.close()
-        #
-        #             # plt.plot(sorted(dict_build_samples[1001]['app_nb_occ'][0]))
-        #             # plt.show()
-        #             # plt.close()
-        #             #
-        #             # plt.plot(sorted(dict_build_samples[1001]['app_el_dem'][0]))
-        #             # plt.show()
-        #             # plt.close()
-        #             #
-        #             # plt.plot(sorted(dict_build_samples[1001]['app_dhw_dem'][0]))
-        #             # plt.show()
-        #             # plt.close()
-        # else:
-        #     #  Demand is certain
-        #
-        #     #  Reference el. energy demand
-        #     el_dem = city.nodes[key]['entity'].get_annual_el_demand()
-        #
-        #     #  Reference el. energy demand
-        #     dhw_dem = city.nodes[key]['entity'].get_annual_dhw_demand()
-        #
-        #     el_per_app = el_dem / nb_app
-        #     dhw_per_app = dhw_dem / nb_app
-        #
-        #     # Loop over nb of apartments
-        #     for i in range(nb_app):
-        #         #  Apartment pointer
-        #         app = city.nodes[key]['entity'].apartments[i]
-        #
-        #         #  Get nb. of occupants within apartment
-        #         nb_occ = app.occupancy.number_occupants
-        #
-        #         array_nb_occ = np.ones(nb_samples) * int(nb_occ)
-        #
-        #         #  Save array to results dict
-        #         dict_build_samples[key]['app_nb_occ'][i, :] = array_nb_occ
-        #
-        #         #  Now distribute reference demand equally to each apartment
-        #         #  Save el. demand
-        #         dict_build_samples[key]['app_el_dem'][i, :] = \
-        #             el_per_app
-        #         #  Save dhw demand
-        #         dict_build_samples[key]['app_dhw_dem'][i, :] = \
-        #             dhw_per_app
+        # Sample for each apartment (only relevant for profile pool generation)
+        #  ###################################################################
+
+        nb_app = len(city.nodes[key]['entity'].apartments)
+        #  Get building type (sfh/mfh)
+        if nb_app == 1:
+            res_type = 'sfh'
+        elif nb_app > 1:
+            res_type = 'mfh'
+
+        if dem_unc:
+            #  Demand is assumed to be uncertain
+
+            # Loop over nb of apartments
+            for i in range(nb_app):
+
+                #  Sample nb. of occupants
+                array_nb_occ = useunc.calc_sampling_occ_per_app(nb_samples=
+                                                                nb_samples)
+
+                #  Save array to results dict
+                dict_build_samples[key]['app_nb_occ'][i, :] = array_nb_occ
+
+                for k in range(len(array_nb_occ)):
+                    #  Sample el. demand value per apartment
+                    el_dem_per_app = useunc. \
+                        calc_sampling_el_demand_per_apartment(
+                        nb_samples=1,
+                        nb_persons=array_nb_occ[k], type=res_type)[0]
+                    #  Sample dhw demand value per apartment
+
+                    #  Hot water volume per apartment
+                    dhw_vol_per_app = useunc. \
+                        calc_sampling_dhw_per_apartment(nb_samples=1,
+                                                        nb_persons=
+                                                        array_nb_occ[k],
+                                                        b_type=res_type)
+
+                    #  Convert liters/app*day to kWh/app*year
+                    dhw_dem_per_app = \
+                        useunc.recalc_dhw_vol_to_energy(vol=dhw_vol_per_app)
+
+                    #  Save el. demand
+                    dict_build_samples[key]['app_el_dem'][i, k] = \
+                        el_dem_per_app
+                    #  Save dhw demand
+                    dict_build_samples[key]['app_dhw_dem'][i, k] = \
+                        dhw_dem_per_app
+
+                    # plt.plot(sorted(dict_build_samples[1001]['eta_pv']))
+                    # plt.show()
+                    # plt.close()
+
+                    # plt.plot(sorted(dict_build_samples[1001]['app_nb_occ'][0]))
+                    # plt.show()
+                    # plt.close()
+                    #
+                    # plt.plot(sorted(dict_build_samples[1001]['app_el_dem'][0]))
+                    # plt.show()
+                    # plt.close()
+                    #
+                    # plt.plot(sorted(dict_build_samples[1001]['app_dhw_dem'][0]))
+                    # plt.show()
+                    # plt.close()
+        else:
+            #  Demand is certain
+
+            #  Reference el. energy demand
+            el_dem = city.nodes[key]['entity'].get_annual_el_demand()
+
+            #  Reference el. energy demand
+            dhw_dem = city.nodes[key]['entity'].get_annual_dhw_demand()
+
+            el_per_app = el_dem / nb_app
+            dhw_per_app = dhw_dem / nb_app
+
+            # Loop over nb of apartments
+            for i in range(nb_app):
+                #  Apartment pointer
+                app = city.nodes[key]['entity'].apartments[i]
+
+                #  Get nb. of occupants within apartment
+                nb_occ = app.occupancy.number_occupants
+
+                array_nb_occ = np.ones(nb_samples) * int(nb_occ)
+
+                #  Save array to results dict
+                dict_build_samples[key]['app_nb_occ'][i, :] = array_nb_occ
+
+                #  Now distribute reference demand equally to each apartment
+                #  Save el. demand
+                dict_build_samples[key]['app_el_dem'][i, :] = \
+                    el_per_app
+                #  Save dhw demand
+                dict_build_samples[key]['app_dhw_dem'][i, :] = \
+                    dhw_per_app
 
 
 def gen_profile_pool(city, nb_samples, dict_build_samples, share_profiles=1):

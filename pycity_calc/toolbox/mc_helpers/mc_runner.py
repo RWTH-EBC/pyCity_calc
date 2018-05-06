@@ -1132,13 +1132,49 @@ class McRunner(object):
                     curr_build = city.nodes[n]['entity']
 
                     dict_build_lhc = self._dict_build_samples_lhc[n]
+
+                    #  If profile pool is given, overwrite existing profiles
                     if self._dict_profiles_lhc is not None:
                         el_prof_pool = \
                             self._dict_profiles_lhc[n]['el_profiles']
                         dhw_prof_pool = \
                             self._dict_profiles_lhc[n]['dhw_profiles']
 
-                        #  TODO: Re-enable the usage of profile pool
+                        #  Get number of apartments in current building
+                        nb_app = len(curr_build.apartments)
+
+                        #  Add new el. profile from profile pool
+                        if random_profile or len(el_prof_pool) < nb_runs:
+
+                            msg = 'Number of el. profiles in el_prof_pool ' \
+                                  'is smaller than number of runs. Thus, ' \
+                                  'profiles are randomly chosen instead ' \
+                                  'of looping over them.'
+                            warnings.warn(msg)
+
+                            idx = rd.randint(0, len(el_prof_pool) - 1)
+                            el_profile = el_prof_pool[idx]
+                            for app in city.nodes[n]['entity'].apartments:
+                                app.power_el.loadcurve = el_profile / nb_app
+                        else:
+                            for app in city.nodes[n]['entity'].apartments:
+                                app.power_el.loadcurve = el_prof_pool[i] / \
+                                                         nb_app
+
+                        if self._dict_profiles_lhc is not None:
+                            #  Add new dhw. profile from profile pool
+                            if random_profile or len(dhw_prof_pool) < nb_runs:
+                                #  Add new dhw. profile from profile pool, if
+                                #  available
+                                idx = rd.randint(0, len(dhw_prof_pool) - 1)
+                                dhw_profile = dhw_prof_pool[idx]
+                                for app in city.nodes[n]['entity'].apartments:
+                                    app.power_el.loadcurve = \
+                                        dhw_profile / nb_app
+                            else:
+                                for app in city.nodes[n]['entity'].apartments:
+                                    app.demandDomesticHotWater.loadcurve = \
+                                        dhw_prof_pool[i] / nb_app
 
                     #  Add function to rescale sh, el, dhw demands
                     #  #######################################################
@@ -1155,6 +1191,8 @@ class McRunner(object):
                     dhwmod.rescale_dhw_build(building=curr_build,
                                              dhw_dem=dhw_dem)
 
+                    #  Uncommented, due to issue #465
+                    #  ####################################################
                     # el_dem = 0
                     # for a in range(len(dict_build_lhc['app_el_dem'])):
                     #     #  Sum up el. demand
