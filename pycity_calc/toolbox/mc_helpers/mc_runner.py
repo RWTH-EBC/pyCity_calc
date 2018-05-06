@@ -282,17 +282,18 @@ class McRunner(object):
                     array_occupants[i] += occ_p_app
                     array_el_dem[i] += el_per_app
                     array_dhw_dem[i] += dhw_per_app
-        else:
+
+        else:   # Demand is assumed to be certain
             timestep = building.environment.timer.timeDiscretization
 
             #  Demand is assumed to be certain
             for ap in building.apartments:
 
                 #  Get ref. el. demand of apartment (in kWh)
-                el_dem_app = ap.power_el.loadcurve * timestep / 3600000
+                el_dem_app = sum(ap.power_el.loadcurve) * timestep / 3600000
 
                 #  Get ref. dhw demand per apartment (in kWh)
-                dhw_dem_app = ap.demandDomesticHotWater.loadcurve * \
+                dhw_dem_app = sum(ap.demandDomesticHotWater.loadcurve) * \
                               timestep / 3600000
 
                 #  Reference number of occupants within apartment
