@@ -692,7 +692,6 @@ def do_lhc_city_sampling(city, nb_par, nb_samples, dict_city_sample,
                         array_conv = \
                             distr.norm(loc=mean, scale=std).ppf(design[:,
                                                                 design_count])
-                        array_conv *= el_dem_ref
                     else:
                         mean_val = el_dem_ref * dict_ref_val_build[parkey][0]
                         std_val = el_dem_ref * dict_ref_val_build[parkey][1]
