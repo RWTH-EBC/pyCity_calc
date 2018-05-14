@@ -995,10 +995,10 @@ class EcoMCRunAnalyze(object):
             obj = 'min'
         elif type == 'dimless_an':
             array_in = self._array_dimless_cost
-            obj = 'max'
+            obj = 'min'
         elif type == 'dimless_co2':
             array_in = self._array_dimless_co2
-            obj = 'max'
+            obj = 'min'
 
         risk_av_factor = self.calc_res_factor(array_in=array_in, obj=obj,
                                               q=risk_factor)

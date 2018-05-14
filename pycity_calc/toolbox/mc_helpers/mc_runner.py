@@ -282,17 +282,18 @@ class McRunner(object):
                     array_occupants[i] += occ_p_app
                     array_el_dem[i] += el_per_app
                     array_dhw_dem[i] += dhw_per_app
-        else:
+
+        else:   # Demand is assumed to be certain
             timestep = building.environment.timer.timeDiscretization
 
             #  Demand is assumed to be certain
             for ap in building.apartments:
 
                 #  Get ref. el. demand of apartment (in kWh)
-                el_dem_app = ap.power_el.loadcurve * timestep / 3600000
+                el_dem_app = sum(ap.power_el.loadcurve) * timestep / 3600000
 
                 #  Get ref. dhw demand per apartment (in kWh)
-                dhw_dem_app = ap.demandDomesticHotWater.loadcurve * \
+                dhw_dem_app = sum(ap.demandDomesticHotWater.loadcurve) * \
                               timestep / 3600000
 
                 #  Reference number of occupants within apartment
@@ -1132,28 +1133,18 @@ class McRunner(object):
                     curr_build = city.nodes[n]['entity']
 
                     dict_build_lhc = self._dict_build_samples_lhc[n]
+
+                    #  If profile pool is given, overwrite existing profiles
                     if self._dict_profiles_lhc is not None:
                         el_prof_pool = \
                             self._dict_profiles_lhc[n]['el_profiles']
                         dhw_prof_pool = \
                             self._dict_profiles_lhc[n]['dhw_profiles']
 
-                    #  Add function to rescale sh, el, dhw demands
-                    #  #######################################################
+                        #  Get number of apartments in current building
+                        nb_app = len(curr_build.apartments)
 
-                    sh_dem = dict_build_lhc['sh_dem'][i]
-                    shmod.rescale_sh_dem_build(building=curr_build,
-                                               sh_dem=sh_dem)
-
-                    el_dem = 0
-                    for a in range(len(dict_build_lhc['app_el_dem'])):
-                        #  Sum up el. demand
-                        el_dem += dict_build_lhc['app_el_dem'][a][i]
-
-                    nb_app = len(city.nodes[n]['entity'].apartments)
-
-                    if self._dict_profiles_lhc is not None:
-                        #  Add new el. profile from profile pool, if available
+                        #  Add new el. profile from profile pool
                         if random_profile or len(el_prof_pool) < nb_runs:
 
                             msg = 'Number of el. profiles in el_prof_pool ' \
@@ -1171,30 +1162,88 @@ class McRunner(object):
                                 app.power_el.loadcurve = el_prof_pool[i] / \
                                                          nb_app
 
-                    #  Rescale profile to el_dem sample
+                        if self._dict_profiles_lhc is not None:
+                            #  Add new dhw. profile from profile pool
+                            if random_profile or len(dhw_prof_pool) < nb_runs:
+                                #  Add new dhw. profile from profile pool, if
+                                #  available
+                                idx = rd.randint(0, len(dhw_prof_pool) - 1)
+                                dhw_profile = dhw_prof_pool[idx]
+                                for app in city.nodes[n]['entity'].apartments:
+                                    app.power_el.loadcurve = \
+                                        dhw_profile / nb_app
+                            else:
+                                for app in city.nodes[n]['entity'].apartments:
+                                    app.demandDomesticHotWater.loadcurve = \
+                                        dhw_prof_pool[i] / nb_app
+
+                    #  Add function to rescale sh, el, dhw demands
+                    #  #######################################################
+
+                    sh_dem = dict_build_lhc['sh_dem'][i]
+                    shmod.rescale_sh_dem_build(building=curr_build,
+                                               sh_dem=sh_dem)
+
+                    el_dem = dict_build_lhc['el_dem'][i]
                     elmod.rescale_el_dem_build(building=curr_build,
                                                el_dem=el_dem)
-                    dhw_dem = 0
-                    for a in range(len(dict_build_lhc['app_dhw_dem'])):
-                        dhw_dem += dict_build_lhc['app_dhw_dem'][a][i]
 
-                    if self._dict_profiles_lhc is not None:
-                        #  Add new dhw. profile from profile pool, if available
-                        if random_profile or len(dhw_prof_pool) < nb_runs:
-                            #  Add new dhw. profile from profile pool, if
-                            #  available
-                            idx = rd.randint(0, len(dhw_prof_pool) - 1)
-                            dhw_profile = dhw_prof_pool[idx]
-                            for app in city.nodes[n]['entity'].apartments:
-                                app.power_el.loadcurve = dhw_profile / nb_app
-                        else:
-                            for app in city.nodes[n]['entity'].apartments:
-                                app.demandDomesticHotWater.loadcurve = \
-                                    dhw_prof_pool[i] / nb_app
-
-                    #  Rescale demand to dhw_dem sample
+                    dhw_dem = dict_build_lhc['dhw_dem'][i]
                     dhwmod.rescale_dhw_build(building=curr_build,
                                              dhw_dem=dhw_dem)
+
+                    #  Uncommented, due to issue #465
+                    #  ####################################################
+                    # el_dem = 0
+                    # for a in range(len(dict_build_lhc['app_el_dem'])):
+                    #     #  Sum up el. demand
+                    #     el_dem += dict_build_lhc['app_el_dem'][a][i]
+                    #
+                    # nb_app = len(city.nodes[n]['entity'].apartments)
+                    #
+                    # if self._dict_profiles_lhc is not None:
+                    #     #  Add new el. profile from profile pool, if available
+                    #     if random_profile or len(el_prof_pool) < nb_runs:
+                    #
+                    #         msg = 'Number of el. profiles in el_prof_pool ' \
+                    #               'is smaller than number of runs. Thus, ' \
+                    #               'profiles are randomly chosen instead ' \
+                    #               'of looping over them.'
+                    #         warnings.warn(msg)
+                    #
+                    #         idx = rd.randint(0, len(el_prof_pool) - 1)
+                    #         el_profile = el_prof_pool[idx]
+                    #         for app in city.nodes[n]['entity'].apartments:
+                    #             app.power_el.loadcurve = el_profile / nb_app
+                    #     else:
+                    #         for app in city.nodes[n]['entity'].apartments:
+                    #             app.power_el.loadcurve = el_prof_pool[i] / \
+                    #                                      nb_app
+                    #
+                    # #  Rescale profile to el_dem sample
+                    # elmod.rescale_el_dem_build(building=curr_build,
+                    #                            el_dem=el_dem)
+                    # dhw_dem = 0
+                    # for a in range(len(dict_build_lhc['app_dhw_dem'])):
+                    #     dhw_dem += dict_build_lhc['app_dhw_dem'][a][i]
+                    #
+                    # if self._dict_profiles_lhc is not None:
+                    #     #  Add new dhw. profile from profile pool, if available
+                    #     if random_profile or len(dhw_prof_pool) < nb_runs:
+                    #         #  Add new dhw. profile from profile pool, if
+                    #         #  available
+                    #         idx = rd.randint(0, len(dhw_prof_pool) - 1)
+                    #         dhw_profile = dhw_prof_pool[idx]
+                    #         for app in city.nodes[n]['entity'].apartments:
+                    #             app.power_el.loadcurve = dhw_profile / nb_app
+                    #     else:
+                    #         for app in city.nodes[n]['entity'].apartments:
+                    #             app.demandDomesticHotWater.loadcurve = \
+                    #                 dhw_prof_pool[i] / nb_app
+                    #
+                    # #  Rescale demand to dhw_dem sample
+                    # dhwmod.rescale_dhw_build(building=curr_build,
+                    #                          dhw_dem=dhw_dem)
 
                     #  Add energy system data
                     #  #######################################################

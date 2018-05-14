@@ -538,6 +538,10 @@ def plot_city_district(city, city_list=None, plot_buildings=True,
                     labels[node] = node
             nx.draw_networkx_labels(city, pos=pos_labels, labels=labels)
 
+    # #  Add to city_visual.py as workaround to rescale figure size
+    # #  to prevent overlapping of large esys labels with axes
+    # plt.plot([335], [220], color='white')
+
     if plt_title:
         plt.title(str(plt_title))
     if x_label:
