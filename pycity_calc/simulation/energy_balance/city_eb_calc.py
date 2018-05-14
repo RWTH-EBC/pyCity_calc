@@ -1163,7 +1163,7 @@ class CityEBCalculator(object):
 
     def plot_coverage(self, path_save_folder=None, save_plots=True,
                       output_filename='energy_coverage',
-                      save_tikz=True, dpi=100):
+                      save_tikz=True, dpi=100, print_cov=True):
         """
         Plot thermal and electric coverage plots. Requires
         get_gen_and_con_energy to be run before (to generate
@@ -1185,6 +1185,8 @@ class CityEBCalculator(object):
         dpi : int, optional
             DPI size of figures (default: 100). 1000 recommended for Elsevier
             EPS.
+        print_cov : bool, optiona
+            Defines, if coverage factors should be printed (default: True)
         """
 
         #  Extract data for stacked bar no. 1
@@ -1231,11 +1233,12 @@ class CityEBCalculator(object):
         chp_exp = self._dict_energy['el_exp']['chp']
         pv_exp = self._dict_energy['el_exp']['pv']
 
-        print('CHP fed-in energy in kWh:')
-        print(chp_exp)
-        print('PV fed-in energy in kWh:')
-        print(pv_exp)
-        print()
+        if print_cov:
+            print('CHP fed-in energy in kWh:')
+            print(chp_exp)
+            print('PV fed-in energy in kWh:')
+            print(pv_exp)
+            print()
 
         chp_self = chp_gen - chp_exp
         pv_self = pv_gen - pv_exp
@@ -1244,13 +1247,13 @@ class CityEBCalculator(object):
         grid_import_hp = self._dict_energy['el_imp']['hp']
         grid_import_eh = self._dict_energy['el_imp']['eh']
 
-        print()
-        print('CHP self consumed el. energy in kWh: ')
-        print(chp_self)
-        print('PV self consumed el. energy in kWh: ')
-        print(pv_self)
-        print()
-
+        if print_cov:
+            print()
+            print('CHP self consumed el. energy in kWh: ')
+            print(chp_self)
+            print('PV self consumed el. energy in kWh: ')
+            print(pv_self)
+            print()
 
         list_el_energy.append(chp_self)
         list_el_energy.append(pv_self)
@@ -1295,27 +1298,28 @@ class CityEBCalculator(object):
         own_cov = (chp_self + pv_self) / \
                   (el_dem + hp_aw_dem + hp_ww_dem + eh_dem)
         pv_cov = (pv_self) / \
-                  (el_dem + hp_aw_dem + hp_ww_dem + eh_dem)
-        chp_cov = (chp_self) / \
                  (el_dem + hp_aw_dem + hp_ww_dem + eh_dem)
+        chp_cov = (chp_self) / \
+                  (el_dem + hp_aw_dem + hp_ww_dem + eh_dem)
 
-        print('Coverage of building, HP and EH el. energy demand'
-              ' by own CHP and PV generation: ')
-        print(own_cov)
-        print()
+        if print_cov:
+            print('Coverage of building, HP and EH el. energy demand'
+                  ' by own CHP and PV generation: ')
+            print(own_cov)
+            print()
 
-        print('Share of CHP (th.):')
-        chp_th_cov = chp_th_en / sum_th_dem
-        print(chp_th_cov)
-        print()
+            print('Share of CHP (th.):')
+            chp_th_cov = chp_th_en / sum_th_dem
+            print(chp_th_cov)
+            print()
 
-        print('Share of CHP (el.):')
-        print(chp_cov)
-        print()
+            print('Share of CHP (el.):')
+            print(chp_cov)
+            print()
 
-        print('Share of PV:')
-        print(pv_cov)
-        print()
+            print('Share of PV:')
+            print(pv_cov)
+            print()
 
         list_el_dem.append(el_dem)
         list_el_dem.append(hp_aw_dem)
@@ -1362,6 +1366,8 @@ class CityEBCalculator(object):
 
         width = 0.6
 
+        colors = ['#624ea7', 'g', 'yellow', 'k', 'maroon']
+
         p1 = plt.bar(ind, array_res[0], width=width, color=list_col_1)
         p2 = plt.bar(ind, array_res[1], bottom=array_res[0], width=width,
                      color=list_col_2)
@@ -1390,8 +1396,7 @@ class CityEBCalculator(object):
                          ))
 
         # #  Add hatches
-        # patterns = ('', '', '//', '//')
-        # patterns2 = ('//')
+        # patterns = ('//', '//', 'x', 'x')
         # for bar, pattern in zip(p1, patterns):
         #     bar.set_hatch(pattern)
         # for bar, pattern in zip(p2, patterns):
@@ -1403,9 +1408,11 @@ class CityEBCalculator(object):
         # for bar, pattern in zip(p5, patterns):
         #     bar.set_hatch(pattern)
         # for bar, pattern in zip(p6, patterns):
-        #     bar.set_hatch(patterns2)
+        #     bar.set_hatch(patterns)
         # for bar, pattern in zip(p7, patterns):
-        #     bar.set_hatch(patterns2)
+        #     bar.set_hatch(patterns)
+
+        dict_th_en = {'boi': 0, 'chp': 0, 'hp_aw': 0, 'hp_ww': 0, 'eh': 0}
 
         #  Add legend
         patch_1_a = mpatches.Patch(facecolor='#e6194b',
@@ -1432,47 +1439,45 @@ class CityEBCalculator(object):
                                    label='Hot water')
         patch_2_c = mpatches.Patch(facecolor='#f032e6',
                                    # hatch=r'//',
-                                   #EC635C
                                    label='Losses')
 
         patch_3_a = mpatches.Patch(facecolor='#008080',
-                                   # hatch=r'//',
+                                   # hatch=r'x',
                                    label='CHP (self)')
         patch_3_b = mpatches.Patch(facecolor='#e6beff',
-                                   # hatch=r'//',
+                                   # hatch=r'x',
                                    label='PV (self)')
         patch_3_c = mpatches.Patch(facecolor='#aa6e28',
-                                   # hatch=r'//',
-                                   label='Building (Grid imp)')
+                                   # hatch=r'x',
+                                   label='Grid (House dem)')
         patch_3_d = mpatches.Patch(facecolor='#fffac8',
-                                   # hatch=r'//',
-                                   label='HP (Grid imp)')
+                                   # hatch=r'x',
+                                   label='Grid (HP)')
         patch_3_e = mpatches.Patch(facecolor='#800000',
-                                   # hatch=r'//',
-                                   label='EH (Grid imp')
+                                   # hatch=r'x',
+                                   label='Grid (EH)')
 
         patch_4_a = mpatches.Patch(facecolor='#aaffc3',
-                                   # hatch=r'//',
-                                   label='Building')
+                                   # hatch=r'x',
+                                   label='House (dem)')
         patch_4_b = mpatches.Patch(facecolor='#808000',
-                                   # hatch=r'//',
-                                   label='HP (aw)')
+                                   # hatch=r'x',
+                                   label='HP (aw) (dem)')
         patch_4_c = mpatches.Patch(facecolor='#ffd8b1',
-                                   # hatch=r'//',
-                                   label='HP (ww)')
+                                   # hatch=r'x',
+                                   label='HP (ww) (dem)')
         patch_4_d = mpatches.Patch(facecolor='#000080',
-                                   # hatch=r'//',
-                                   label='EH')
+                                   # hatch=r'x',
+                                   label='EH (dem)')
         patch_4_e = mpatches.Patch(facecolor='#000000',
-                                   # hatch=r'//',
-                                   #F49961
-                                   label='Pumps (LHN)')
+                                   # hatch=r'x',
+                                   label='Pumps (dem)')
 
         patch_5_a = mpatches.Patch(facecolor='#C0C0C0',
-                                   # hatch=r'//',
+                                   # hatch=r'xx',
                                    label='CHP (exp)')
         patch_5_b = mpatches.Patch(facecolor='#646464',
-                                   # hatch=r'//',
+                                   # hatch=r'xx',
                                    label='PV (exp)')
 
         ax = fig.gca()
@@ -1496,6 +1501,7 @@ class CityEBCalculator(object):
 
         plt.ylabel('Share of energy')
         # plt.tight_layout()
+        plt.show()
 
         if path_save_folder is None:
             this_path = os.path.dirname(os.path.abspath(__file__))
@@ -1532,7 +1538,6 @@ class CityEBCalculator(object):
                 tikz_save(path_tikz, figureheight='\\figureheight',
                           figurewidth='\\figurewidth')
 
-        plt.show()
         plt.close()
 
 

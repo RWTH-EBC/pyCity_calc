@@ -1214,7 +1214,7 @@ class CityAnnuityCalc(object):
                                                          use_kwkg_lhn_sub=False,
                                                          el_mix_for_chp=True,
                                                          el_mix_for_pv=True,
-                                                         print_sol=False):
+                                                         plot_res=False):
         """
         Script runs energy balance and annuity calculation for city in
         energy_balance object
@@ -1272,8 +1272,10 @@ class CityAnnuityCalc(object):
             Defines, if el. mix should be used for PV fed-in electricity
             (default: True). If False, uses specific fed-in PV factor,
             defined in co2emissions object (co2_factor_pv_fed_in)
-        print_sol : bool, optional
-            Defines, if annuity elements should be printed (default: False)
+        plot_res : bool, optional
+            Defines if annuity results should be printed (default: False).
+            If True, prints out capital-, demand-, operations- and proceedings-
+            related annuities
 
         Returns
         -------
@@ -1366,11 +1368,17 @@ class CityAnnuityCalc(object):
                                ann_op=op_rel_ann,
                                ann_proc=proc_rel_annuity)
 
-        if print_sol:
-            print('Capital-rel: ', cap_rel_ann)
-            print('Dem-rel: ', dem_rel_annuity)
-            print('op_rel: ', op_rel_ann)
-            print('Proceedings: ', proc_rel_annuity)
+        if plot_res:
+            print()
+            print('Capital-related annuity in Euro/a: ')
+            print(cap_rel_ann)
+            print('Demand-related annuity in Euro/a: ')
+            print(dem_rel_annuity)
+            print('Operation-related annuity in Euro/a: ')
+            print(op_rel_ann)
+            print('Proceedings-related annuity in Euro/a: ')
+            print(proc_rel_annuity)
+            print()
 
         return (annuity, co2)
 
