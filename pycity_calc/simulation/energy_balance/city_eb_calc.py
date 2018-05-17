@@ -1163,7 +1163,7 @@ class CityEBCalculator(object):
 
     def plot_coverage(self, path_save_folder=None, save_plots=True,
                       output_filename='energy_coverage',
-                      save_tikz=True, dpi=100):
+                      save_tikz=True, dpi=100, print_cov=True):
         """
         Plot thermal and electric coverage plots. Requires
         get_gen_and_con_energy to be run before (to generate
@@ -1185,6 +1185,8 @@ class CityEBCalculator(object):
         dpi : int, optional
             DPI size of figures (default: 100). 1000 recommended for Elsevier
             EPS.
+        print_cov : bool, optiona
+            Defines, if coverage factors should be printed (default: True)
         """
 
         #  Extract data for stacked bar no. 1
@@ -1231,12 +1233,27 @@ class CityEBCalculator(object):
         chp_exp = self._dict_energy['el_exp']['chp']
         pv_exp = self._dict_energy['el_exp']['pv']
 
+        if print_cov:
+            print('CHP fed-in energy in kWh:')
+            print(chp_exp)
+            print('PV fed-in energy in kWh:')
+            print(pv_exp)
+            print()
+
         chp_self = chp_gen - chp_exp
         pv_self = pv_gen - pv_exp
 
         grid_import_dem = self._dict_energy['el_imp']['dem']
         grid_import_hp = self._dict_energy['el_imp']['hp']
         grid_import_eh = self._dict_energy['el_imp']['eh']
+
+        if print_cov:
+            print()
+            print('CHP self consumed el. energy in kWh: ')
+            print(chp_self)
+            print('PV self consumed el. energy in kWh: ')
+            print(pv_self)
+            print()
 
         list_el_energy.append(chp_self)
         list_el_energy.append(pv_self)
@@ -1278,6 +1295,32 @@ class CityEBCalculator(object):
         eh_dem = self._dict_energy['el_con']['eh']
         pump_dem = self._dict_energy['el_con']['pump']
 
+        own_cov = (chp_self + pv_self) / \
+                  (el_dem + hp_aw_dem + hp_ww_dem + eh_dem)
+        pv_cov = (pv_self) / \
+                 (el_dem + hp_aw_dem + hp_ww_dem + eh_dem)
+        chp_cov = (chp_self) / \
+                  (el_dem + hp_aw_dem + hp_ww_dem + eh_dem)
+
+        if print_cov:
+            print('Coverage of building, HP and EH el. energy demand'
+                  ' by own CHP and PV generation: ')
+            print(own_cov)
+            print()
+
+            print('Share of CHP (th.):')
+            chp_th_cov = chp_th_en / sum_th_dem
+            print(chp_th_cov)
+            print()
+
+            print('Share of CHP (el.):')
+            print(chp_cov)
+            print()
+
+            print('Share of PV:')
+            print(pv_cov)
+            print()
+
         list_el_dem.append(el_dem)
         list_el_dem.append(hp_aw_dem)
         list_el_dem.append(hp_ww_dem)
@@ -1306,14 +1349,14 @@ class CityEBCalculator(object):
 
         #  Start plotting
         #  ###############################################################
-        list_col_1 = ['#E53027', '#BE4198', '#E53027', '#BE4198']
-        list_col_2 = ['#1058B0', '#008746', '#1058B0', '#008746']
-        list_col_3 = ['#F47328', '#EC635C', '#F47328', '#EC635C']
-        list_col_4 = ['#5F379B', '#4B81C4', '#5F379B', '#4B81C4']
-        list_col_5 = ['#9B231E', '#F49961', '#9B231E', '#F49961']
+        list_col_1 = ['#e6194b', '#911eb4', '#008080', '#aaffc3']
+        list_col_2 = ['#3cb44b', '#46f0f0', '#e6beff', '#808000']
+        list_col_3 = ['#ffe119', '#f032e6', '#aa6e28', '#ffd8b1']
+        list_col_4 = ['#0082c8', '#d2f53c', '#fffac8', '#000080']
+        list_col_5 = ['#f58231', '#fabebe', '#800000', '#000000']
 
-        list_col_6 = ['#A4A4A4', '#A4A4A4', '#A4A4A4', '#A4A4A4']
-        list_col_7 = ['#B45955', '#B45955', '#B45955', '#B45955']
+        list_col_6 = ['#C0C0C0', '#C0C0C0', '#C0C0C0', '#C0C0C0']
+        list_col_7 = ['#646464', '#646464', '#646464', '#646464']
 
         fig = plt.figure(figsize=(8, 6))
 
@@ -1352,69 +1395,89 @@ class CityEBCalculator(object):
                          'Electric sinks'
                          ))
 
-        #  Add hatches
-        patterns = ('//', '//', 'x', 'x')
-        for bar, pattern in zip(p1, patterns):
-            bar.set_hatch(pattern)
-        for bar, pattern in zip(p2, patterns):
-            bar.set_hatch(pattern)
-        for bar, pattern in zip(p3, patterns):
-            bar.set_hatch(pattern)
-        for bar, pattern in zip(p4, patterns):
-            bar.set_hatch(pattern)
-        for bar, pattern in zip(p5, patterns):
-            bar.set_hatch(pattern)
-        for bar, pattern in zip(p6, patterns):
-            bar.set_hatch(patterns)
-        for bar, pattern in zip(p7, patterns):
-            bar.set_hatch(patterns)
+        # #  Add hatches
+        # patterns = ('//', '//', 'x', 'x')
+        # for bar, pattern in zip(p1, patterns):
+        #     bar.set_hatch(pattern)
+        # for bar, pattern in zip(p2, patterns):
+        #     bar.set_hatch(pattern)
+        # for bar, pattern in zip(p3, patterns):
+        #     bar.set_hatch(pattern)
+        # for bar, pattern in zip(p4, patterns):
+        #     bar.set_hatch(pattern)
+        # for bar, pattern in zip(p5, patterns):
+        #     bar.set_hatch(pattern)
+        # for bar, pattern in zip(p6, patterns):
+        #     bar.set_hatch(patterns)
+        # for bar, pattern in zip(p7, patterns):
+        #     bar.set_hatch(patterns)
 
         dict_th_en = {'boi': 0, 'chp': 0, 'hp_aw': 0, 'hp_ww': 0, 'eh': 0}
 
         #  Add legend
-        patch_1_a = mpatches.Patch(facecolor='#E53027', hatch=r'//',
+        patch_1_a = mpatches.Patch(facecolor='#e6194b',
+                                   # hatch=r'//',
                                    label='BOI')
-        patch_1_b = mpatches.Patch(facecolor='#1058B0', hatch=r'//',
+        patch_1_b = mpatches.Patch(facecolor='#3cb44b',
+                                   # hatch=r'//',
                                    label='CHP')
-        patch_1_c = mpatches.Patch(facecolor='#F47328', hatch=r'//',
+        patch_1_c = mpatches.Patch(facecolor='#ffe119',
+                                   # hatch=r'//',
                                    label='HP (aw)')
-        patch_1_d = mpatches.Patch(facecolor='#5F379B', hatch=r'//',
+        patch_1_d = mpatches.Patch(facecolor='#0082c8',
+                                   # hatch=r'//',
                                    label='HP (ww)')
-        patch_1_e = mpatches.Patch(facecolor='#9B231E', hatch=r'//',
+        patch_1_e = mpatches.Patch(facecolor='#f58231',
+                                   # hatch=r'//',
                                    label='EH')
 
-        patch_2_a = mpatches.Patch(facecolor='#BE4198', hatch=r'//',
+        patch_2_a = mpatches.Patch(facecolor='#911eb4',
+                                   # hatch=r'//',
                                    label='Space heat')
-        patch_2_b = mpatches.Patch(facecolor='#008746', hatch=r'//',
+        patch_2_b = mpatches.Patch(facecolor='#46f0f0',
+                                   # hatch=r'//',
                                    label='Hot water')
-        patch_2_c = mpatches.Patch(facecolor='#EC635C', hatch=r'//',
+        patch_2_c = mpatches.Patch(facecolor='#f032e6',
+                                   # hatch=r'//',
                                    label='Losses')
 
-        patch_3_a = mpatches.Patch(facecolor='#E53027', hatch=r'x',
+        patch_3_a = mpatches.Patch(facecolor='#008080',
+                                   # hatch=r'x',
                                    label='CHP (self)')
-        patch_3_b = mpatches.Patch(facecolor='#1058B0', hatch=r'x',
+        patch_3_b = mpatches.Patch(facecolor='#e6beff',
+                                   # hatch=r'x',
                                    label='PV (self)')
-        patch_3_c = mpatches.Patch(facecolor='#F47328', hatch=r'x',
+        patch_3_c = mpatches.Patch(facecolor='#aa6e28',
+                                   # hatch=r'x',
                                    label='Grid (House dem)')
-        patch_3_d = mpatches.Patch(facecolor='#5F379B', hatch=r'x',
+        patch_3_d = mpatches.Patch(facecolor='#fffac8',
+                                   # hatch=r'x',
                                    label='Grid (HP)')
-        patch_3_e = mpatches.Patch(facecolor='#9B231E', hatch=r'x',
+        patch_3_e = mpatches.Patch(facecolor='#800000',
+                                   # hatch=r'x',
                                    label='Grid (EH)')
 
-        patch_4_a = mpatches.Patch(facecolor='#BE4198', hatch=r'x',
+        patch_4_a = mpatches.Patch(facecolor='#aaffc3',
+                                   # hatch=r'x',
                                    label='House (dem)')
-        patch_4_b = mpatches.Patch(facecolor='#008746', hatch=r'x',
+        patch_4_b = mpatches.Patch(facecolor='#808000',
+                                   # hatch=r'x',
                                    label='HP (aw) (dem)')
-        patch_4_c = mpatches.Patch(facecolor='#EC635C', hatch=r'x',
+        patch_4_c = mpatches.Patch(facecolor='#ffd8b1',
+                                   # hatch=r'x',
                                    label='HP (ww) (dem)')
-        patch_4_d = mpatches.Patch(facecolor='#4B81C4', hatch=r'x',
+        patch_4_d = mpatches.Patch(facecolor='#000080',
+                                   # hatch=r'x',
                                    label='EH (dem)')
-        patch_4_e = mpatches.Patch(facecolor='#F49961', hatch=r'x',
+        patch_4_e = mpatches.Patch(facecolor='#000000',
+                                   # hatch=r'x',
                                    label='Pumps (dem)')
 
-        patch_5_a = mpatches.Patch(facecolor='#A4A4A4', hatch=r'xx',
+        patch_5_a = mpatches.Patch(facecolor='#C0C0C0',
+                                   # hatch=r'xx',
                                    label='CHP (exp)')
-        patch_5_b = mpatches.Patch(facecolor='#B45955', hatch=r'xx',
+        patch_5_b = mpatches.Patch(facecolor='#646464',
+                                   # hatch=r'xx',
                                    label='PV (exp)')
 
         ax = fig.gca()
