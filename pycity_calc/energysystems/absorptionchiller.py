@@ -53,10 +53,10 @@ class AbsorptionChiller(achill.AbsorptionChiller):
         Returns:
         ----------
         q_th_output : float [W]
-        thermal output power of KKM
+        thermal output power of AKM
 
         cop : float
-        calculated cop value for KKM
+        calculated cop value for AKM
 
         thermal_power_input: float [W]
         thermal load for current cooling load
@@ -78,9 +78,9 @@ class AbsorptionChiller(achill.AbsorptionChiller):
         self.array_thermal_power = np.zeros(timesteps_total)
         self.array_th_heat_power = np.zeros(timesteps_total)
 
-    def calc_q_thermal_power_output(self, cooling_load):
+    def calc_q_th_power_output(self, cooling_load):
         """
-        Returns thermal power output of KKM (limited by q_nominal)
+        Returns thermal power output of AKM (limited by q_nominal)
 
         Parameters
         ----------
@@ -90,16 +90,16 @@ class AbsorptionChiller(achill.AbsorptionChiller):
         Returns
         -------
         q_th_output : float [W]
-        Thermal output power of KKM
+        Thermal output power of AKM
         """
 
         if cooling_load < 0:
-            warnings.warn('Cooling load for KKM' + str(self) +
+            warnings.warn('Cooling load for AKM' + str(self) +
                           'is negative. Therefore, output is defined as zero.')
             cooling_load = 0
 
         elif cooling_load < self.lower_activation_limit * self.q_nominal:
-            warnings.warn('Cooling load for KKM' + str(self) +
+            warnings.warn('Cooling load for AKM' + str(self) +
                           'is below minimum part load performance. '
                           'Therefore, output is defined as zero.')
             cooling_load = 0
@@ -169,7 +169,7 @@ class AbsorptionChiller(achill.AbsorptionChiller):
         th_heat_power_input: float [W]
         necessary thermal heat load for current cooling load
         '''
-        q_th = self.calc_q_thermal_power_output(cooling_load)
+        q_th = self.calc_q_th_power_output(cooling_load)
 
         cop = self.akm_cop(cooling_load)
 
@@ -216,12 +216,11 @@ class AbsorptionChiller(achill.AbsorptionChiller):
         """
 
         #  Calculate thermal power output in W
-        th_power = self.calc_q_thermal_power_output(cooling_load)
+        th_power = self.calc_q_th_power_output(cooling_load)
 
         #  Calculate elec power input in W
         th_heat_power_in = self.calc_th_heat_power_input(
-            cooling_load=th_power,
-            q_nominal=self.q_nominal)
+            cooling_load=th_power)
 
         if save_res:
             #  Save results
