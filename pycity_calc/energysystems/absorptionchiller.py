@@ -8,10 +8,10 @@ from __future__ import division
 
 import numpy as np
 import warnings
-import pycity_base.classes.supply.compressionchiller as chill
+import pycity_base.classes.supply.absorptionchiller as achill
 
 
-class CompressionChiller(chill.CompressionChiller):
+class AbsorptionChiller(achill.AbsorptionChiller):
     """
     Implementation of simple Chiller. Values are based on regeressions for
     chillers based on fixme.
@@ -58,11 +58,11 @@ class CompressionChiller(chill.CompressionChiller):
         cop : float
         calculated cop value for KKM
 
-        elec_power_input: float [W]
-        electric load for current cooling load
+        thermal_power_input: float [W]
+        thermal load for current cooling load
 
         results_tuple : tuple
-        tuple holding results (thermal power, elec power)
+        tuple holding results (thermal power, thernal power)
         """
         self._kind = "kkm"
 
@@ -75,10 +75,10 @@ class CompressionChiller(chill.CompressionChiller):
         self.total_q_output = np.zeros(environment.timer.timestepsTotal)
         self.current_q_output = np.zeros(
             environment.timer.timestepsUsedHorizon)
-        self.array_elec_power = np.zeros(timesteps_total)
+        self.array_thermal_power = np.zeros(timesteps_total)
         self.array_th_heat_power = np.zeros(timesteps_total)
 
-    def calc_q_th_power_output(self, cooling_load):
+    def calc_q_thermal_power_output(self, cooling_load):
         """
         Returns thermal power output of KKM (limited by q_nominal)
 
@@ -116,17 +116,16 @@ class CompressionChiller(chill.CompressionChiller):
 
         return q_th_output
 
-    def kkm_cop(self, cooling_load):
+    def akm_cop(self, cooling_load):
         '''
         Calculation of the temporary COP-Load with the current part load
         ratio (plr)
-        and the max cooling power of the KKM
+        and the max cooling power of the AKM
 
         Parameters
         ----------
         cooling_load : float [W]
         desired thermal output
-
 
         Attributes
         ----------
@@ -136,7 +135,7 @@ class CompressionChiller(chill.CompressionChiller):
         Returns
         -------
         cop : float
-        calculated cop value for KKM
+        calculated cop value for AKM
         '''
         if cooling_load > 0:
 
@@ -146,11 +145,8 @@ class CompressionChiller(chill.CompressionChiller):
 
             if plr >= self.lower_activation_limit:
 
-                if self.q_nominal <= 1750000:
-                    cop = ((-4.4917) * plr ** 2) + (8.1083 * plr) + 2.01
-
-                elif self.q_nominal > 1750000:
-                    cop = (-7.66 * plr ** 2) + (11.169 * plr) + 1.8454
+                cop = (0.6709 * plr ** 3) - (1.5419 * plr ** 2) +\
+                    (1.1928 * plr) + 0.4528
 
             elif plr <= self.lower_activation_limit:
                 cop = 0
@@ -159,9 +155,9 @@ class CompressionChiller(chill.CompressionChiller):
 
         return cop
 
-    def calc_elec_power_input(self, cooling_load):
+    def calc_th_heat_power_input(self, cooling_load):
         '''
-        Calculates the elcetric power input of KKM.
+        Calculates the thermal heat power input of AKM.
 
         Parameters
         ----------
@@ -170,34 +166,34 @@ class CompressionChiller(chill.CompressionChiller):
 
         Returns
         -------
-        elec_power_input: float [W]
-        electric load for current cooling load
+        th_heat_power_input: float [W]
+        necessary thermal heat load for current cooling load
         '''
-        q_th = self.calc_q_th_power_output(cooling_load)
+        q_th = self.calc_q_thermal_power_output(cooling_load)
 
-        cop = self.kkm_cop(cooling_load)
+        cop = self.akm_cop(cooling_load)
 
         assert q_th >= 0, 'thermal cooling power cannot be negative'
 
-        assert q_th <= self.q_nominal, 'thermal power cannot be bigger ' +\
-            'than q_nominal'
+        assert q_th <= self.q_nominal, 'thermal cooling power cannot be ' +\
+            'bigger than q_nominal'
 
-        assert 0 <= cop <= 7, 'cop of fixed speed centrifugal chiller ' +\
-            'is below 7'
+        assert 0 <= cop <= 1, 'cop of single effect absorption chiller is ' +\
+            'below 1'
 
         if q_th > 0:
-            elec_power_input = q_th / cop
+            th_heat_power_input = q_th / cop
 
         else:
-            elec_power_input = 0
+            th_heat_power_input = 0
 
-        return elec_power_input
+        return th_heat_power_input
 
-    def calc_kkm_all_results(self, cooling_load, time_index,
+    def calc_akm_all_results(self, cooling_load, time_index,
                              save_res=True):
         """
-        Calculate and save results of kkm for next timestep
-        (thermal cooling power output and elec power input)
+        Calculate and save results of akm for next timestep
+        (thermal cooling power output and thermal heat power input)
 
         Parameters
         ----------
@@ -209,24 +205,27 @@ class CompressionChiller(chill.CompressionChiller):
         results saving (starting with 0 for first entry)
 
         save_res : bool, optional
-        defines, if results should be saved on kkm object instance
+        defines, if results should be saved on boiler object instance
         (default: True)
 
         Returns
         -------
         results_tuple : tuple
-            Tuple holding results (thermal power, elec power)
+            Tuple holding results (thermal cooling power out, thermal heat
+            power in)
         """
 
         #  Calculate thermal power output in W
-        th_power = self.calc_q_th_power_output(cooling_load)
+        th_power = self.calc_q_thermal_power_output(cooling_load)
 
         #  Calculate elec power input in W
-        elec_power_in = self.calc_elec_power_input(cooling_load=th_power)
+        th_heat_power_in = self.calc_th_heat_power_input(
+            cooling_load=th_power,
+            q_nominal=self.q_nominal)
 
         if save_res:
             #  Save results
             self.total_q_output[time_index] = th_power
-            self.array_elec_power[time_index] = elec_power_in
+            self.array_th_heat_power[time_index] = th_heat_power_in
 
-        return (th_power, elec_power_in)
+        return (th_power, th_heat_power_in)
