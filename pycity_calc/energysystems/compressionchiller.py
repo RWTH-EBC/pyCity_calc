@@ -8,10 +8,10 @@ from __future__ import division
 
 import numpy as np
 import warnings
-import pycity_base.classes.supply.chiller as chill
+import pycity_base.classes.supply.compressionchiller as chill
 
 
-class Chiller(chill.Chiller):
+class CompressionChiller(chill.CompressionChiller):
     """
     Implementation of simple Chiller. Values are based on regeressions for
     chillers based on fixme.

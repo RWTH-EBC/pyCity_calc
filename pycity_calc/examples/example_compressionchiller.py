@@ -9,7 +9,7 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as plt
 
-import pycity_calc.energysystems.chiller as chill
+import pycity_calc.energysystems.compressionchiller as chill
 
 import pycity_base.classes.Weather as Weather
 import pycity_calc.environments.co2emissions as co2
@@ -38,7 +38,7 @@ def run_test():
     t_min = 4  # °C
     lower_activation_limit = 0.2
 
-    chiller = chill.Chiller(
+    chiller = chill.CompressionChiller(
         environment,
         q_nominal=q_nominal,
         t_min=t_min,
@@ -91,7 +91,7 @@ def run_chiller_example(print_results=False):
     t_min = 4  # °C
     lower_activation_limit = 0.2
 
-    chiller = chill.Chiller(
+    chiller = chill.CompressionChiller(
         environment,
         q_nominal=q_nominal,
         t_min=t_min,
