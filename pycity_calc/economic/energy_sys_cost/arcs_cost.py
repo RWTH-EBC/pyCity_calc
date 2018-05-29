@@ -28,7 +28,7 @@ def calc_spec_cost_akm(q_nom):
         Specific cost of AKM in Euro/kW
     """
     if q_nom > 0:
-        spec_cost = 5036.2 * ((q_nom) **(-0.487))
+        spec_cost = 5036.2 * ((q_nom) ** (-0.487))
 
     else:
         warnings.warn('q_nom cannot be negative')
