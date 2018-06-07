@@ -819,7 +819,7 @@ def run_c_file_an(city_object):
 
 if __name__ == '__main__':
     #  City pickle filename
-    city_file = 'aachen_kronenberg_6.pkl'
+    city_file = 'kronen_6_new.pkl'
     # city_file = 'aachen_forsterlinde_osm.pkl'
     # city_file = 'aachen_frankenberg_osm.pkl'
     # city_file = 'aachen_huenefeld_osm.pkl'
@@ -885,14 +885,17 @@ if __name__ == '__main__':
         print(q_dot_max / 1000)
 
     for n in [1001, 1002, 1003, 1004, 1005, 1006]:
-        city.nodes[n]['entity'].build_year = 1960
+        city.nodes[n]['entity'].build_year = 1985
 
     import pycity_calc.toolbox.teaser_usage.teaser_use as teaseruse
 
     #  Geneate new teaser project
     teaser_project = teaseruse.create_teaser_project(name='Kronen')
 
-    teaseruse.create_teaser_typecity(project=teaser_project, city=city)
+    teaseruse.create_teaser_typecity(project=teaser_project, city=city,
+                                     use_exist_tbuild=False)
+
+    # teaser_project.retrofit_all_buildings(year_of_retrofit=1985)
 
     print()
 
