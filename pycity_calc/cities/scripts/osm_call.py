@@ -15,9 +15,10 @@ mercator coordinates in m
 import os
 import pickle
 import utm
+import warnings
 import shapely.geometry.point as point
 
-import uesgraphs.examples.example_osm as example_osm
+# import uesgraphs.examples.example_osm as example_osm
 
 import pycity_base.classes.demand.Apartment as apart
 
@@ -27,9 +28,11 @@ import pycity_calc.visualization.city_visual as citvis
 import pycity_calc.buildings.building as exbuild
 
 
-def gen_osm_city_topology(osm_path, environment, name=None,
+def gen_osm_city_topology(osm_path, environment,
+                          name=None,
                           check_boundary=False,
-                          show_graph_stats=False, min_area=None):
+                          min_area=None,
+                          transform_positions=True):
     """
     Initialize city object and generate building and street nodes (without
     building objects) based on openstreetmaps osm file.
@@ -52,14 +55,17 @@ def gen_osm_city_topology(osm_path, environment, name=None,
     check_boundary : bool, optional
         Defines, if only objects within boundaries of area 'name' should be
         extracted (default: False)
-    show_graph_stats : bool, optional
-        Define, if statistics of osm extracted data should be shown
-        (default: False)
     min_area : float, optional
         Minimal required ground area of building (default: None).
         If set to None, not changes happen.
         If set to specific float value, all buildings with an area smaller
         than min_area are erased from city district
+    transform_positions : boolean, optional
+            By default, positions are transformed to a coordinate system
+            that gives distances in Meter setting the origin (0, 0) at the
+            minimum position of the graph. If transform_positions is False,
+            the positions will remain in longitude and latitude as read from
+            the OSM file.
 
     Returns
     -------
@@ -71,14 +77,17 @@ def gen_osm_city_topology(osm_path, environment, name=None,
     city = cit.City(environment)
 
     #  Generate topology from osm data file
-    city = city.from_osm(osm_path, name=name,
-                         check_boundary=check_boundary, add_str_info=True)
+    city = city.from_osm(osm_path,
+                         name=name,
+                         check_boundary=check_boundary,
+                         transform_positions=transform_positions)
 
     if min_area is not None:
-        example_osm.remove_small_buildings(city, min_area=min_area)
-
-    if show_graph_stats:
-        example_osm.graph_stats(city)
+        # example_osm.remove_small_buildings(city, min_area=min_area)
+        #  See uesgraphs issue #3
+        msg = 'remove_small_buildings function is not yet implemented on' \
+              ' current uesgraphs repo (#3 on uesgraphs)'
+        warnings.warn(msg)
 
     return city
 
