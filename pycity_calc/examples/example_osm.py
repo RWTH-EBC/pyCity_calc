@@ -44,7 +44,7 @@ def run_osm_example(plot_res=False):
     #  location = (51.529086, 6.944689)  # Bottrop
     altitude = 55
     try_path = None
-    show_stats = True
+    transform_positions = True
 
     #   End of user input  ###################################################
 
@@ -60,7 +60,8 @@ def run_osm_example(plot_res=False):
     city = osm_call.gen_osm_city_topology(osm_path=file_path,
                                           environment=environment,
                                           min_area=min_allowed_ground_area,
-                                          show_graph_stats=show_stats)
+                                          transform_positions=
+                                          transform_positions)
 
     #  If building entities should be added
     if add_entities:

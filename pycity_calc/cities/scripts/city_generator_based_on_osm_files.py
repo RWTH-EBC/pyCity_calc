@@ -253,7 +253,8 @@ def main():  # pragma: no cover
     osm_path = os.path.join(this_path, 'input_osm', filename)
 
     # Generate environment
-    environment = citgen.generate_environment(timestep=timestep, year=year,
+    environment = citgen.generate_environment(timestep=timestep,
+                                              year_timer=year,
                                               try_path=try_path,
                                               location=location,
                                               altitude=altitude,
@@ -265,8 +266,7 @@ def main():  # pragma: no cover
                                      environment=environment,
                                      name=None,
                                      check_boundary=False,
-                                     min_area=min_area,
-                                     show_graph_stats=True)
+                                     min_area=min_area)
 
     if user_defined_building_distribution == True:
         print("User-defined city distrubution with", percentage_sfh, " % SFH, ", percentage_mfh, "% MFH and ",
