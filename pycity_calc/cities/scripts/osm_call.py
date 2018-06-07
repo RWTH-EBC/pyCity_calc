@@ -15,10 +15,7 @@ mercator coordinates in m
 import os
 import pickle
 import utm
-import warnings
 import shapely.geometry.point as point
-
-# import uesgraphs.examples.example_osm as example_osm
 
 import pycity_base.classes.demand.Apartment as apart
 
@@ -132,6 +129,31 @@ def main():
         print('Saved city object as pickle file to ', osm_out_path)
 
 
+def remove_small_buildings(input_graph, min_area):
+    """Removes all buildings from the graph that have area less than `min_area`
+
+    Parameters
+    ----------
+    input_graph : uesgraphs.uesgraph.UESGraph object
+        An UESGraph that will be analysed for data
+    min_area : float
+        Minimum area for a building to remain in the graph
+
+    Returns
+    -------
+    input_graph : uesgraphs.uesgraph.UESGraph object
+        An UESGraph that will be analysed for data
+    """
+    to_remove = []
+    for building in input_graph.nodelist_building:
+        if 'area' in input_graph.node[building]:
+            if input_graph.node[building]['area'] <= min_area:
+                to_remove.append(building)
+
+    for building in to_remove:
+        input_graph.remove_building(building)
+
+
 def gen_osm_city_topology(osm_path, environment,
                           name=None,
                           check_boundary=False,
@@ -187,11 +209,7 @@ def gen_osm_city_topology(osm_path, environment,
                          transform_positions=transform_positions)
 
     if min_area is not None:
-        # example_osm.remove_small_buildings(city, min_area=min_area)
-        #  See uesgraphs issue #3
-        msg = 'remove_small_buildings function is not yet implemented on' \
-              ' current uesgraphs repo (#3 on uesgraphs)'
-        warnings.warn(msg)
+        remove_small_buildings(city, min_area=min_area)
 
     return city
 
