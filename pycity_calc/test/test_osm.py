@@ -57,8 +57,7 @@ class Test_OSM():
         #  Generate city topology based on osm data
         city = osm_call.gen_osm_city_topology(osm_path=file_path,
                                               environment=environment,
-                                              min_area=min_allowed_ground_area,
-                                              show_graph_stats=show_stats)
+                                              min_area=min_allowed_ground_area)
 
         #  Get information about buildings without area
         list_b_id_without_area = \
@@ -231,8 +230,7 @@ class Test_OSM():
                                          environment=environment,
                                          name=None,
                                          check_boundary=False,
-                                         min_area=min_area,
-                                         show_graph_stats=True)
+                                         min_area=min_area)
 
         if user_defined_building_distribution == True:
             print("User-defined city distrubution with", percentage_sfh,
