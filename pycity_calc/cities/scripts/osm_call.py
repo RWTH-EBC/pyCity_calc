@@ -17,8 +17,6 @@ import pickle
 import utm
 import shapely.geometry.point as point
 
-import uesgraphs.examples.example_osm as example_osm
-
 import pycity_base.classes.demand.Apartment as apart
 
 import pycity_calc.cities.scripts.city_generator.city_generator as citgen
@@ -27,9 +25,140 @@ import pycity_calc.visualization.city_visual as citvis
 import pycity_calc.buildings.building as exbuild
 
 
-def gen_osm_city_topology(osm_path, environment, name=None,
+def main():
+    #  osm filename
+    filename = 'test.osm'
+
+    #  Minimal required building area in m2
+    min_area = 35
+
+    #  Save generated city objecct as pickle file?
+    save_city = True
+    city_filename = 'test_osm.pkl'
+
+    #  Convert lat/long to utm coordinates in meters?
+    #  Only necessary, if no conversion is done within uesgraphs itself
+    conv_utm = False
+    zone_number = 32
+
+    #  Conversion within uesgraphs
+    transform_positions = True
+
+    check_boundary = False
+    name = None
+
+    #  Add building entities?
+    add_entities = True
+    #  True: Add building object instances to building nodes
+    #  False: Only use building nodes, do not generate building objects
+    add_ap = True
+    #  Add single apartment to every building (True/False)
+
+    #  Parameters for environment
+    timestep = 3600  # in seconds
+    year = 2010
+    location = (50.781743, 6.083470)  # Aachen
+    #  location = (51.529086, 6.944689)  # Bottrop
+    altitude = 55
+    try_path = None
+
+    #   End of user input  ###################################################
+
+    this_path = os.path.dirname(os.path.abspath(__file__))
+    osm_path = os.path.join(this_path, 'input_osm', filename)
+    # osm_path = os.path.join(this_path, 'input_osm', 'Diss_Quartiere', filename)
+    osm_out_path = os.path.join(this_path, 'output_osm', city_filename)
+    # osm_out_path = os.path.join(this_path, 'input_osm',
+    #                             'Diss_Quartiere', city_filename)
+
+    #  Generate environment
+    environment = citgen.generate_environment(timestep=timestep,
+                                              year_timer=year,
+                                              year_co2=year,
+                                              try_path=try_path,
+                                              location=location,
+                                              altitude=altitude)
+
+    #  Generate city topology based on osm data
+    city = gen_osm_city_topology(osm_path=osm_path,
+                                 environment=environment,
+                                 name=name,
+                                 check_boundary=check_boundary,
+                                 min_area=min_area,
+                                 transform_positions=transform_positions)
+
+    if conv_utm:
+        #  Convert latitude, longitude to utm
+        city = conv_city_long_lat_to_utm(city, zone_number=zone_number)
+
+    #  If building entities should be added
+    if add_entities:
+        add_build_entities(city=city, add_ap=add_ap)
+
+    print()
+    print('Nodelist_building:')
+    print(city.nodelist_building)
+    print()
+
+    #  Plot city district
+    citvis.plot_city_district(city=city, node_size=10, plot_build_labels=False)
+
+    if 1001 in city.nodes():
+        print('Area of building 1001: ', city.nodes[1001]['area'])
+        print('OSM id of building 1001: ', city.nodes[1001]['osm_id'])
+        print('x-coordinate of building 1001: ',
+              city.nodes[1001]['position'].x)
+        print('y-coordinate of building 1001: ',
+              city.nodes[1001]['position'].y)
+
+        if 'addr:street' in city.nodes[1001]:
+            print('Street name at node 1001: ',
+                  city.nodes[1001]['addr:street'])
+        if 'addr:street' in city.nodes[1001]:
+            print('House number of node 1001: ',
+                  city.nodes[1001]['addr:housenumber'])
+        print()
+
+    list_miss_area = get_list_b_nodes_without_area(city)
+    print('List of building ids without area parameter: ', list_miss_area)
+
+    #  Dump as pickle file
+    if save_city:
+        pickle.dump(city, open(osm_out_path, mode='wb'))
+        print()
+        print('Saved city object as pickle file to ', osm_out_path)
+
+
+def remove_small_buildings(input_graph, min_area):
+    """Removes all buildings from the graph that have area less than `min_area`
+
+    Parameters
+    ----------
+    input_graph : uesgraphs.uesgraph.UESGraph object
+        An UESGraph that will be analysed for data
+    min_area : float
+        Minimum area for a building to remain in the graph
+
+    Returns
+    -------
+    input_graph : uesgraphs.uesgraph.UESGraph object
+        An UESGraph that will be analysed for data
+    """
+    to_remove = []
+    for building in input_graph.nodelist_building:
+        if 'area' in input_graph.node[building]:
+            if input_graph.node[building]['area'] <= min_area:
+                to_remove.append(building)
+
+    for building in to_remove:
+        input_graph.remove_building(building)
+
+
+def gen_osm_city_topology(osm_path, environment,
+                          name=None,
                           check_boundary=False,
-                          show_graph_stats=False, min_area=None):
+                          min_area=None,
+                          transform_positions=True):
     """
     Initialize city object and generate building and street nodes (without
     building objects) based on openstreetmaps osm file.
@@ -52,14 +181,17 @@ def gen_osm_city_topology(osm_path, environment, name=None,
     check_boundary : bool, optional
         Defines, if only objects within boundaries of area 'name' should be
         extracted (default: False)
-    show_graph_stats : bool, optional
-        Define, if statistics of osm extracted data should be shown
-        (default: False)
     min_area : float, optional
         Minimal required ground area of building (default: None).
         If set to None, not changes happen.
         If set to specific float value, all buildings with an area smaller
         than min_area are erased from city district
+    transform_positions : boolean, optional
+            By default, positions are transformed to a coordinate system
+            that gives distances in Meter setting the origin (0, 0) at the
+            minimum position of the graph. If transform_positions is False,
+            the positions will remain in longitude and latitude as read from
+            the OSM file.
 
     Returns
     -------
@@ -71,14 +203,13 @@ def gen_osm_city_topology(osm_path, environment, name=None,
     city = cit.City(environment)
 
     #  Generate topology from osm data file
-    city = city.from_osm(osm_path, name=name,
-                         check_boundary=check_boundary, add_str_info=True)
+    city = city.from_osm(osm_path,
+                         name=name,
+                         check_boundary=check_boundary,
+                         transform_positions=transform_positions)
 
     if min_area is not None:
-        example_osm.remove_small_buildings(city, min_area=min_area)
-
-    if show_graph_stats:
-        example_osm.graph_stats(city)
+        remove_small_buildings(city, min_area=min_area)
 
     return city
 
@@ -184,99 +315,6 @@ def add_build_entities(city, add_ap=False):
 
                 city.nodes[n]['entity'] = build
 
+
 if __name__ == '__main__':
-
-    #  osm filename
-    filename = 'test.osm'
-
-    #  Minimal required building area in m2
-    min_area = 35
-
-    #  Save generated city objecct as pickle file?
-    save_city = True
-    city_filename = 'test_osm.pkl'
-
-    #  Convert lat/long to utm coordinates in meters?
-    #  Only necessary, if no conversion is done within uesgraphs itself
-    conv_utm = False
-    zone_number = 32
-
-    check_boundary = False
-    name = None
-
-    #  Add building entities?
-    add_entities = True
-    #  True: Add building object instances to building nodes
-    #  False: Only use building nodes, do not generate building objects
-    add_ap = True
-    #  Add single apartment to every building (True/False)
-
-    #  Parameters for environment
-    timestep = 3600  # in seconds
-    year = 2010
-    location = (50.781743,6.083470)  #  Aachen
-    #  location = (51.529086, 6.944689)  # Bottrop
-    altitude = 55
-    try_path = None
-
-    #   End of user input  ###################################################
-
-    this_path = os.path.dirname(os.path.abspath(__file__))
-    osm_path = os.path.join(this_path, 'input_osm', filename)
-    # osm_path = os.path.join(this_path, 'input_osm', 'Diss_Quartiere', filename)
-    osm_out_path = os.path.join(this_path, 'output_osm', city_filename)
-    # osm_out_path = os.path.join(this_path, 'input_osm',
-    #                             'Diss_Quartiere', city_filename)
-
-    #  Generate environment
-    environment = citgen.generate_environment(timestep=timestep,
-                                              year_timer=year,
-                                              year_co2=year,
-                                              try_path=try_path,
-                                              location=location,
-                                              altitude=altitude)
-
-    #  Generate city topology based on osm data
-    city = gen_osm_city_topology(osm_path=osm_path, environment=environment,
-                                 name=name,
-                                 check_boundary=check_boundary,
-                                 min_area=min_area,
-                                 show_graph_stats=True)
-
-    if conv_utm:
-        #  Convert latitude, longitude to utm
-        city = conv_city_long_lat_to_utm(city, zone_number=zone_number)
-
-    #  If building entities should be added
-    if add_entities:
-        add_build_entities(city=city, add_ap=add_ap)
-
-    print()
-    print('Nodelist_building:')
-    print(city.nodelist_building)
-    print()
-
-    #  Plot city district
-    citvis.plot_city_district(city=city, node_size=10, plot_build_labels=False)
-
-    if 1001 in city.nodes():
-        print('Area of building 1001: ', city.nodes[1001]['area'])
-        print('OSM id of building 1001: ', city.nodes[1001]['osm_id'])
-        print('x-coordinate of building 1001: ', city.nodes[1001]['position'].x)
-        print('y-coordinate of building 1001: ', city.nodes[1001]['position'].y)
-
-        if 'addr:street' in city.nodes[1001]:
-            print('Street name at node 1001: ', city.nodes[1001]['addr:street'])
-        if 'addr:street' in city.nodes[1001]:
-            print('House number of node 1001: ',
-                  city.nodes[1001]['addr:housenumber'])
-        print()
-
-    list_miss_area = get_list_b_nodes_without_area(city)
-    print('List of building ids without area parameter: ', list_miss_area)
-
-    #  Dump as pickle file
-    if save_city:
-        pickle.dump(city, open(osm_out_path, mode='wb'))
-        print()
-        print('Saved city object as pickle file to ', osm_out_path)
+    main()
