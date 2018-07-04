@@ -8,7 +8,6 @@ from __future__ import division
 import os
 import copy
 import pickle
-import math
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -888,18 +887,12 @@ class EcoMCRunAnalyze(object):
         #  Calculate standard deviation
         std = np.std(a=array_in)
 
-        if std >= 1:
-            if obj == 'max':
-                risk_av_factor = mean + q * std ** 2
-            elif obj == 'min':
-                risk_av_factor = mean - q * std ** 2
-
-        else:  # Smaller than 1
-            if obj == 'max':
-                risk_av_factor = mean + q * math.sqrt(std)
-            elif obj == 'min':
-                risk_av_factor = mean - q * math.sqrt(std)
-
+        if obj == 'max':
+            # risk_av_factor = mean / (std ** (10 / 25))
+            risk_av_factor = mean + q * std ** 2
+        elif obj == 'min':
+            # risk_av_factor = mean + 10 * std ** 2 / mean
+            risk_av_factor = mean - q * std ** 2
         return risk_av_factor
 
     @staticmethod
@@ -932,17 +925,13 @@ class EcoMCRunAnalyze(object):
         #  Calculate standard deviation
         std = np.std(a=array_in)
 
-        if std >= 1:
-            if obj == 'max':
-                risk_friendly_factor = mean + q * std ** 2
-            elif obj == 'min':
-                risk_friendly_factor = mean - q * std ** 2
+        if obj == 'max':
+            # risk_friendly_factor = mean / (std ** (25 / 10))
+            risk_friendly_factor = mean + q * std ** 2
 
-        else:  # Smaller than 1
-            if obj == 'max':
-                risk_friendly_factor = mean + q * math.sqrt(std)
-            elif obj == 'min':
-                risk_friendly_factor = mean - q * math.sqrt(std)
+        elif obj == 'min':
+            # risk_friendly_factor = mean - 10 * std ** 2 / mean
+            risk_friendly_factor = mean - q * std ** 2
 
         return risk_friendly_factor
 
