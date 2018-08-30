@@ -3013,6 +3013,7 @@ if __name__ == '__main__':
     dhw_en = sum(dhw_p_array) * timestep / (1000 * 3600)
 
     q_hp_out_en = sum(q_hp_out) * timestep / (1000 * 3600)
+    q_hp_in = sum(el_hp_in) * timestep / (1000 * 3600)
     q_eh_out_en = sum(q_eh_out) * timestep / (1000 * 3600)
 
     print('Space heating net energy demand in kWh:')
@@ -3025,6 +3026,7 @@ if __name__ == '__main__':
     print(q_hp_out_en)
     print('EH thermal energy output in kWh:')
     print(q_eh_out_en)
+    print('Annual performance factor HP: ', q_hp_out_en/q_hp_in)
     print()
 
     fig = plt.figure()
