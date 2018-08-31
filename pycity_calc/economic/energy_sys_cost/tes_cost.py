@@ -6,6 +6,9 @@ Script to estimate thermal energy storage investment cost
 from __future__ import division
 import warnings
 
+import numpy as np
+import matplotlib.pyplot as plt
+
 
 def calc_spec_cost_tes(volume, method='spieker'):
     """
@@ -54,6 +57,7 @@ def calc_spec_cost_tes(volume, method='spieker'):
         spec_cost_tes = 8820.5 * volume ** (-0.457)
 
     return spec_cost_tes
+
 
 def calc_invest_cost_tes(volume, method='spieker'):
     """
@@ -107,3 +111,20 @@ if __name__ == '__main__':
 
     print('Investment cost (Spieker et al.) for tes in Euro: ')
     print(round(invest_cost_1, 2))
+
+    #  Volume in liters
+    array_in = np.arange(start=100, stop=5000, step=100)
+
+    array_out = np.zeros(len(array_in))
+    array_out2 = np.zeros(len(array_in))
+
+    for i in range(len(array_in)):
+        volume_in_liters = array_in[i]
+        array_out[i] = calc_invest_cost_tes(volume=volume_in_liters / 1000,
+                                            method='spieker')
+
+    plt.plot(array_in, array_out, label='spieker')
+    plt.xlabel('Volume in liters')
+    plt.ylabel('Investment in Euro')
+    plt.show()
+    plt.close()
