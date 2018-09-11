@@ -60,7 +60,8 @@ class GermanMarket(market.Market):
         self._sub_chp_self = [0.04, 0.03, 0]
 
         #  List of PV subsidies (<= 10 kW, <= 40 kW, <= 100 kW, commercial
-        self._sub_pv = [0.122, 0.1187, 0.1061, 0.0851]
+        self._sub_pv = [0.1183, 0.115, 0.1028, 0.0818] # Since 01.10.2018
+        #  E.g. https://www.photovoltaik4all.de/aktuelle-eeg-verguetungssaetze-fuer-photovoltaikanlagen-2017
 
         #  CHP tax return on gas
         self.chp_tax_return = chp_tax_return

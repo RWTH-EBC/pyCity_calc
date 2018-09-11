@@ -5,6 +5,9 @@ Script to estimate cost of electric batteries
 """
 from __future__ import division
 
+import numpy as np
+import matplotlib.pyplot as plt
+
 def calc_spec_cost_bat(cap, method='sma'):
     """
     Calculate specific battery cost in Euro / kWh.
@@ -41,7 +44,7 @@ def calc_spec_cost_bat(cap, method='sma'):
 
     return spec_bat
 
-def calc_invest_cost_bat(cap, method='carmen'):
+def calc_invest_cost_bat(cap, method='sma'):
     """
     Calculate investment cost of electric batteries in Euro.
 
@@ -94,3 +97,21 @@ if __name__ == '__main__':
               + str(method) +'):')
         print(round(inv_cost, 2))
         print()
+
+    array_in = np.arange(start=1, stop=20, step=1)
+
+    array_out = np.zeros(len(array_in))
+    array_out2 = np.zeros(len(array_in))
+
+    for i in range(len(array_in)):
+        power = array_in[i]
+        array_out[i] = calc_invest_cost_bat(cap=power, method='carmen')
+        array_out2[i] = calc_invest_cost_bat(cap=power, method='sma')
+
+    plt.plot(array_in, array_out, label='carmen')
+    plt.plot(array_in, array_out2, label='sma')
+    plt.xlabel('Electric capacity in kWh')
+    plt.ylabel('Investment in Euro')
+    plt.legend()
+    plt.show()
+    plt.close()
