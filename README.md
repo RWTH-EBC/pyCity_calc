@@ -64,6 +64,8 @@ Import should be possible without errors.
 TEASER can be installed the same way (recommended, if you want to actively work on TEASER code) or
 directly via pip `pip install teaser` (if you only want to use TEASER).
 
+Annotation: The current usage of the VDI 6007 building TEASER model in pyCity_calc requires the pyCity_calc branch issue297_vdi_core_dev_jsc!
+
 Further required packages are:
 
 - numpy
@@ -99,9 +101,26 @@ Jupyter notebook should open within your browser (such as Firefox). Click on one
 If your Pyhton path does not point at your Python installation, you have to
 open jupyter notebook directly, e.g. by looking for the jupyter.exe in your distribution.
 
+## How to cite pyCity_calc
+
++ Schiefelbein, J., Rudnick, J., Scholl, A., Remmen, P., Fuchs, M., Müller, D. (2019),
+Automated urban energy system modeling and thermal building simulation based on OpenStreetMap data sets,
+Building and Environment,
+Volume 149,
+Pages 630-639,
+ISSN 0360-1323
+[pdf](https://doi.org/10.1016/j.buildenv.2018.12.025),
+[bibtex](https://github.com/RWTH-EBC/pyCity_calc/tree/master/doc/S0360132318307686.bib)
+
+If you require a citation in German language:
++ Schiefelbein, J. , Javadi, A. , Fuchs, M. , Müller, D. , Monti, A. and Diekerhof, M. (2017), Modellierung und Optimierung von Mischgebieten. Bauphysik, 39: 23-32. doi:10.1002/bapi.201710001
+[pdf](https://doi.org/10.1002/bapi.201710001),
+[bibtex](https://github.com/RWTH-EBC/pyCity_calc/tree/master/doc/pericles_1437098039.bib)
+
 ## License
 
-pyCity_calc is released under the [MIT License](https://opensource.org/licenses/MIT)
+pyCity_calc is released by RWTH Aachen University's E.ON Energy Research Center (E.ON ERC),
+Institute for Energy Efficient Buildings and Indoor Climate (EBC) under the [MIT License](https://opensource.org/licenses/MIT)
 
 ## Acknowledgements
 
