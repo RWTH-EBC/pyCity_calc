@@ -33,6 +33,3 @@ omit =
 	pycity_calc/toolbox/data_enrichment/occupants/old/*
 
 ignore_errors = True
-
-[html]
-directory = coverage_html_report

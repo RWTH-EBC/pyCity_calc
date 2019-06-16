@@ -4,7 +4,7 @@ pyCity_Calc: Python package addon for pyCity
 
 The MIT License
 
-Copyright (C) 2015-2017 Jan Schiefelbein
+Copyright (C) 2015-2019 Jan Schiefelbein
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -38,6 +38,8 @@ setup(name='pycity_calc',
       license='MIT License',
       packages=['pycity_calc'],
       setup_requires=['numpy', 'matplotlib', 'networkx', 'shapely',
+                      'richardsonpy', 'uesgraphs',
                       'xlrd', 'pytest', 'pypower', 'utm', 'pyDOE'],
       install_requires=['numpy', 'matplotlib', 'networkx', 'shapely',
+                      'richardsonpy', 'uesgraphs',
                       'xlrd', 'pytest', 'pypower', 'utm', 'pyDOE'])

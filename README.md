@@ -1,6 +1,8 @@
 ![E.ON EBC RWTH Aachen University](./doc/_static/EBC_Logo.png)
 
-[![Build Status](https://travis-ci.com/RWTH-EBC/pyCity_calc.svg?token=ssfy4ps1Qm5kvs5yAxfm&branch=master)](https://travis-ci.com/RWTH-EBC/pyCity_calc.svg?token=ssfy4ps1Qm5kvs5yAxfm&branch=master)
+[![Build Status](https://travis-ci.org/RWTH-EBC/pyCity_calc.svg?branch=master)](https://travis-ci.org/RWTH-EBC/pyCity_calc)
+[![Coverage Status](https://coveralls.io/repos/github/RWTH-EBC/pyCity_calc/badge.svg)](https://coveralls.io/github/RWTH-EBC/pyCity_calc)
+[![License](http://img.shields.io/:license-mit-blue.svg)](http://doge.mit-license.org)
 
 #  pyCity_calc
 
@@ -29,21 +31,31 @@ pyCity_calc requires the following EBC Python packages:
 
 richardsonpy is available via [https://github.com/RWTH-EBC/richardsonpy](https://github.com/RWTH-EBC/richardsonpy)
 
-uesgraph is available via [https://github.com/RWTH-EBC/uesgraphs](https://github.com/RWTH-EBC/uesgraphs)
-
-pyCity is available via [https://github.com/RWTH-EBC/pyCity](https://github.com/RWTH-EBC/pyCity)
+uesgraphs is available via [https://github.com/RWTH-EBC/uesgraphs](https://github.com/RWTH-EBC/uesgraphs)
 
 TEASER is available  via[https://github.com/RWTH-EBC/TEASER](https://github.com/RWTH-EBC/TEASER)
 
-Both can be installed into your system Python path via pip:
+pyCity is available via [https://github.com/RWTH-EBC/pyCity](https://github.com/RWTH-EBC/pyCity)
+
+richardsonpy and uesgraphs can be installed into your system Python path via pip, e.g.:
+
+`pip install uesgraphs`
+
+If you want to use the most recent (non-published) version via git integration, you can download the 
+most recent code version on Github via SSH or https access and install an egglink, e.g.:
 
 `pip install -e 'your_path_to_richardsonpy_setup_folder'`
 
 `pip install -e 'your_path_to_uesgraph_setup_folder'`
 
+`pip install -e 'your_path_to_teaser_setup_folder'`
+
 and
 
 `pip install -e 'your_path_to_pycity_setup_folder'`
+
+Annotation: The current usage of the VDI 6007 building TEASER model in pyCity_calc requires the pyCity_calc branch issue297_vdi_core_dev_jsc!
+Thus, you should NOT install TEASER via pip but use the egglink integration instead.
 
 In your current Python path does not point at your Python installation, you 
 can directly call your Python interpreter and install the packages via pip, e.g.:
@@ -57,12 +69,11 @@ by adding new .py file and trying to import richardsonpy, uesgraphs and pycity.
 
 `import uesgraphs`
 
+`import teaser`
+
 `import pycity_base`
 
 Import should be possible without errors.
-
-TEASER can be installed the same way (recommended, if you want to actively work on TEASER code) or
-directly via pip `pip install teaser` (if you only want to use TEASER).
 
 Further required packages are:
 
@@ -99,9 +110,26 @@ Jupyter notebook should open within your browser (such as Firefox). Click on one
 If your Pyhton path does not point at your Python installation, you have to
 open jupyter notebook directly, e.g. by looking for the jupyter.exe in your distribution.
 
+## How to cite pyCity_calc
+
++ Schiefelbein, J., Rudnick, J., Scholl, A., Remmen, P., Fuchs, M., Müller, D. (2019),
+Automated urban energy system modeling and thermal building simulation based on OpenStreetMap data sets,
+Building and Environment,
+Volume 149,
+Pages 630-639,
+ISSN 0360-1323
+[pdf](https://doi.org/10.1016/j.buildenv.2018.12.025),
+[bibtex](https://github.com/RWTH-EBC/pyCity_calc/tree/master/doc/S0360132318307686.bib)
+
+If you require a citation in German language:
++ Schiefelbein, J. , Javadi, A. , Fuchs, M. , Müller, D. , Monti, A. and Diekerhof, M. (2017), Modellierung und Optimierung von Mischgebieten. Bauphysik, 39: 23-32. doi:10.1002/bapi.201710001
+[pdf](https://doi.org/10.1002/bapi.201710001),
+[bibtex](https://github.com/RWTH-EBC/pyCity_calc/tree/master/doc/pericles_1437098039.bib)
+
 ## License
 
-pyCity_calc is released under the [MIT License](https://opensource.org/licenses/MIT)
+pyCity_calc is released by RWTH Aachen University's E.ON Energy Research Center (E.ON ERC),
+Institute for Energy Efficient Buildings and Indoor Climate (EBC) under the [MIT License](https://opensource.org/licenses/MIT)
 
 ## Acknowledgements
 
