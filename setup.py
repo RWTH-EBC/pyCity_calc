@@ -41,5 +41,5 @@ setup(name='pycity_calc',
                       'richardsonpy', 'uesgraphs', 'pycity_base',
                       'xlrd', 'pytest', 'pypower', 'utm', 'pyDOE'],
       install_requires=['numpy', 'matplotlib', 'networkx', 'shapely',
-                      'richardsonpy', 'uesgraphs','pycity_base', 
+                      'richardsonpy', 'uesgraphs','pycity_base',
                       'xlrd', 'pytest', 'pypower', 'utm', 'pyDOE'])
