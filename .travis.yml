@@ -22,10 +22,10 @@ install:
   - pip install shapely
   - pip install pyproj
   - pip install pyDOE
-  - pip install -e git+git@github.com:RWTH-EBC/TEASER.git@issue297_vdi_core_dev_jsc#egg=teaser
-  - pip install -e git+git@github.com:RWTH-EBC/uesgraphs.git#egg=uesgraphs
-  - pip install -e git+git@github.com:RWTH-EBC/richardsonpy.git#egg=richardsonpy
-  - pip install -e git+git@github.com:RWTH-EBC/pyCity.git@master#egg=pyCity
+  - pip install -e git+git@https://github.com/RWTH-EBC/TEASER.git@issue297_vdi_core_dev_jsc#egg=teaser
+  - pip install -e git+git@https://github.com/RWTH-EBC/uesgraphs.git#egg=uesgraphs
+  - pip install -e git+git@https://github.com/RWTH-EBC/richardsonpy.git#egg=richardsonpy
+  - pip install -e git+git@https://github.com/RWTH-EBC/pyCity.git@master#egg=pyCity
   - pip install -e .
   - pip install pytest-cov
   - pip install coveralls
